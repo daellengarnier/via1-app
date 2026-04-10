@@ -116,6 +116,15 @@ Keine Punkte oder Ranglisten - eher spielerisch und spassig.
 | 2026-04-10 | CLAUDE.md + requirements.md als zentrale Doku | Ermoeglicht effektive Zusammenarbeit via Claude Code zwischen Daniel und Alain |
 | 2026-04-10 | TypeScript als Sprache | Typsicherheit bei 2-Personen-Zusammenarbeit, komplexe Datenstrukturen (3D etc.), TS-first Oekosystem, Claude arbeitet praeziser damit |
 | 2026-04-10 | Branch-basierter Workflow mit Claude als Merge-Helfer | Daniel und Alain arbeiten auf Feature-Branches, Claude prueft Konflikte und fragt bei Unklarheiten nach |
+| 2026-04-10 | Next.js 14+ (App Router) als Framework | Full-Stack (Frontend + API), kein separater Backend-Server noetig, grosses Oekosystem |
+| 2026-04-10 | PostgreSQL + Prisma ORM | Typsichere DB-Queries, automatische Migrationen, bewaehrt |
+| 2026-04-10 | React Three Fiber fuer 3D | Deklaratives 3D in React, passt nahtlos zu Next.js |
+| 2026-04-10 | NextAuth.js (Auth.js) fuer Authentifizierung | Credentials Provider, Erstanmeldungs-Passwort-Workflow |
+| 2026-04-10 | Tailwind CSS fuer Styling | Schnelles Prototyping, utility-first, gute DX |
+| 2026-04-10 | Docker + Docker Compose auf Infomaniak VPS | Reproduzierbare Umgebung, einfaches Deployment |
+| 2026-04-10 | GitHub Actions Auto-Deploy bei Push auf main | Aenderungen gehen automatisch live, kein manuelles Deployment |
+| 2026-04-10 | Domain: app.felsenau.org | Infomaniak VPS, Nginx + Let's Encrypt SSL |
+| 2026-04-10 | 2 Erstbenutzer: Alain, Yves | Erstanmeldung mit Passwort-Setup-Workflow |
 
 ## Priorisierung
 
@@ -139,3 +148,4 @@ Keine Punkte oder Ranglisten - eher spielerisch und spassig.
 | 2026-04-10 | Erste Anforderungen erfasst (6 Module) | Daniel |
 | 2026-04-10 | Vision geschaerft: 3D-Modell als zentrales UI, Spass statt Punkte, Melde-System fuer Aufgaben | Daniel |
 | 2026-04-10 | TypeScript als Sprache, Workflow fuer Zusammenarbeit definiert | Daniel |
+| 2026-04-10 | Kompletter Tech Stack definiert, Server-Setup-Anleitung erstellt, Deployment-Strategie dokumentiert | Daniel |

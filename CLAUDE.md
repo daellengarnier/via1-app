@@ -18,9 +18,22 @@ Beide arbeiten via Claude Code am Repository. Diese Datei dient als zentrale Wis
 ## Tech Stack
 
 - **Sprache:** TypeScript (strikt, kein `any`)
-- **Weitere Entscheide** (Framework, DB, Hosting etc.) stehen noch aus
+- **Framework:** Next.js 14+ (App Router)
+- **Datenbank:** PostgreSQL + Prisma ORM
+- **3D:** Three.js via React Three Fiber (@react-three/fiber) + @react-three/drei
+- **Auth:** NextAuth.js (Auth.js) - Credentials Provider mit Erstanmeldungs-Passwort-Setup
+- **Styling:** Tailwind CSS
+- **Deployment:** Docker + Docker Compose auf Infomaniak VPS
+- **CI/CD:** GitHub Actions -> Auto-Deploy via SSH auf VPS bei Push auf `main`
+- **Domain:** app.felsenau.org
+- **Reverse Proxy:** Nginx mit SSL (Let's Encrypt)
 
-> TypeScript gewaehlt wegen: Typsicherheit bei Zusammenarbeit zu zweit via Claude Code, komplexe Datenstrukturen (3D-Modell, Wohnungen, Tickets), modernes Oekosystem ist TS-first, Claude arbeitet praeziser mit Typen.
+> **Warum diese Wahl?**
+> - Next.js: Full-Stack (Frontend + API Routes), kein separater Backend-Server noetig
+> - PostgreSQL + Prisma: Typsichere DB-Queries, automatische Migrationen, bewaehrt und robust
+> - React Three Fiber: 3D deklarativ in React schreiben (passt zu Next.js), riesiges Oekosystem
+> - Docker: Reproduzierbare Umgebung, einfaches Deployment, isolierte Services
+> - Tailwind: Schnelles UI-Styling, gut fuer Prototyping
 
 ## Projektstruktur
 
@@ -71,18 +84,47 @@ _(noch keine Eintraege)_
 ## Offene Fragen
 
 - ~~Was genau ist der Zweck / die Vision von via1-app?~~ -> Geklaert: Hausgemeinschafts-Organisation
-- ~~Welcher Tech Stack soll verwendet werden?~~ -> TypeScript. Framework/DB/Hosting noch offen
+- ~~Welcher Tech Stack soll verwendet werden?~~ -> Geklaert: Next.js + PostgreSQL + Prisma + R3F (siehe Tech Stack)
+- ~~Hosting / Deployment - wo soll die App laufen?~~ -> Geklaert: Infomaniak VPS, Docker, app.felsenau.org
+- ~~Authentifizierung?~~ -> NextAuth.js, Credentials, Erstanmeldungs-Workflow
 - Gibt es bestehende Designs oder Mockups?
-- Hosting / Deployment - wo soll die App laufen?
 - Wie viele Bewohner sind es ungefaehr? (relevant fuer Skalierung)
 - Soll es eine native App geben oder reicht eine responsive Web-App?
-- Authentifizierung: Email/Passwort? OAuth? Einladungslinks?
 - Sollen Bewohner eigene Avatare hochladen oder aus vordefinierten waehlen?
 - 3D-Modell: Wer erstellt das Modell? Gibt es Grundrisse/Plaene vom Haus?
-- 3D-Technologie: Three.js? WebGL? Fertige Engine?
 - Wie detailliert soll das 3D-Modell sein? (Jedes Zimmer vs. nur Wohnungen/Stockwerke)
 - Sauna-Temperatur: Gibt es einen Sensor oder wird manuell eingetragen?
+- App-Name: Noch nicht definiert (Domain ist app.felsenau.org)
+
+## Deployment
+
+- **VPS:** Infomaniak VPS, Zugang via SSH (Server stellt SSH-Key)
+- **Domain:** app.felsenau.org
+- **Auto-Deploy:** GitHub Actions Workflow, triggered bei Push auf `main`
+- **Ablauf:** Claude merged PR auf `main` -> GitHub Action baut Docker Image -> Deploy via SSH auf VPS
+- **Rollback:** Vorheriges Docker Image taggen, bei Problemen darauf zurueckswitchen (dokumentiert in `docs/server-setup.md`)
+
+### Erstbenutzer
+
+Beim ersten Setup werden 2 User angelegt:
+- **Alain** 
+- **Yves**
+
+Beide muessen bei Erstanmeldung ein Passwort setzen (Einladungs-/Setup-Token-Workflow).
 
 ## Wichtige Befehle
 
-> TODO: Build-, Test- und Lint-Befehle hier eintragen sobald vorhanden.
+```bash
+# Lokal entwickeln
+npm run dev              # Next.js Dev-Server (http://localhost:3000)
+npm run build            # Production Build
+npm run lint             # ESLint
+npx prisma migrate dev   # DB-Migration ausfuehren
+npx prisma studio        # DB-GUI
+
+# Docker (lokal oder Server)
+docker compose up -d     # Alle Services starten
+docker compose down      # Alle Services stoppen
+docker compose logs -f   # Logs anzeigen
+docker compose up -d --build  # Rebuild und starten
+```
