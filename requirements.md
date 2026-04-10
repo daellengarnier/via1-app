@@ -2,7 +2,7 @@
 
 ## Uebersicht
 
-Dieses Dokument haelt alle Anforderungen, Entscheide und den aktuellen Stand des Projekts fest. Es wird laufend aktualisiert und ist die Bruecke zwischen Daniels und Alains Sessions.
+Dieses Dokument haelt alle Anforderungen, Entscheide und den aktuellen Stand des Projekts fest. Es wird laufend aktualisiert und ist die Bruecke zwischen Yvess und Alains Sessions.
 
 ## Vision / Ziel
 
@@ -188,7 +188,7 @@ Keine Punkte oder Ranglisten - eher spielerisch und spassig.
 
 | Datum | Entscheid | Begruendung |
 |-------|-----------|-------------|
-| 2026-04-10 | CLAUDE.md + requirements.md als zentrale Doku | Bruecke zwischen Daniel und Alains Claude-Sessions |
+| 2026-04-10 | CLAUDE.md + requirements.md als zentrale Doku | Bruecke zwischen Yves und Alains Claude-Sessions |
 | 2026-04-10 | TypeScript (strikt, kein any) | Typsicherheit, 2-Personen-Zusammenarbeit, Claude arbeitet praeziser |
 | 2026-04-10 | Branch-Workflow mit Claude als Merge-Helfer | Feature-Branches, Claude prueft Konflikte, fragt bei Unklarheiten |
 | 2026-04-10 | Next.js 14+ (App Router) | Full-Stack, API Routes integriert, kein separater Backend-Server |
@@ -223,10 +223,10 @@ Keine Punkte oder Ranglisten - eher spielerisch und spassig.
 | Datum | Aenderung | Wer |
 |-------|-----------|-----|
 | 2026-04-10 | Prototyp erstellt (Vite + React, 10 Seiten, Mock-Daten) | Alain |
-| 2026-04-10 | Initiale Dokumentationsstruktur erstellt | Daniel |
-| 2026-04-10 | Anforderungen erfasst, Vision geschaerft | Daniel |
-| 2026-04-10 | Tech Stack definiert (Next.js, Prisma, R3F, Docker) | Daniel |
-| 2026-04-10 | Server-Setup-Anleitung erstellt | Daniel |
-| 2026-04-10 | App-Skeleton erstellt (Next.js, Auth, Docker, CI/CD) | Daniel |
+| 2026-04-10 | Initiale Dokumentationsstruktur erstellt | Yves |
+| 2026-04-10 | Anforderungen erfasst, Vision geschaerft | Yves |
+| 2026-04-10 | Tech Stack definiert (Next.js, Prisma, R3F, Docker) | Yves |
+| 2026-04-10 | Server-Setup-Anleitung erstellt | Yves |
+| 2026-04-10 | App-Skeleton erstellt (Next.js, Auth, Docker, CI/CD) | Yves |
 | 2026-04-10 | Migration von Vite auf Next.js auf main | Server-Session |
-| 2026-04-10 | CLAUDE.md und requirements.md zusammengefuehrt (Alains + Daniels Kontext) | Daniel |
+| 2026-04-10 | CLAUDE.md und requirements.md zusammengefuehrt (Alains + Yvess Kontext) | Yves |

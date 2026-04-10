@@ -2,7 +2,7 @@
 
 ## Projekt
 
-**via1-app** - Web-App zur Organisation einer Hausgemeinschaft. Geteiltes Projekt von Daniel und Alain.
+**via1-app** - Web-App zur Organisation einer Hausgemeinschaft. Geteiltes Projekt von Alain und Yves (Brueder, Nachname d'Allengarnier).
 
 Kernmodule: Benutzerverwaltung, Sitzungen/Protokolle/Traktanden, Hauswart-Ticketing, Aufgabenorganisation, Wissensdatenbank, Gamification (Avatare, Punkte etc.).
 
@@ -10,10 +10,10 @@ Kernmodule: Benutzerverwaltung, Sitzungen/Protokolle/Traktanden, Hauswart-Ticket
 
 ## Mitarbeiter
 
-- **Daniel** (daellengarnier)
-- **Alain**
+- **Alain** - Hat den urspruenglichen Prototyp erstellt
+- **Yves** (GitHub: daellengarnier) - Server-Setup, Deployment, Infrastruktur
 
-Beide arbeiten via Claude Code am Repository. Diese Datei dient als zentrale Wissensbasis, damit Claude bei jeder Session den aktuellen Stand kennt.
+Alain und Yves sind Brueder. Beide arbeiten via Claude Code am Repository. Diese Datei dient als zentrale Wissensbasis, damit Claude bei jeder Session den aktuellen Stand kennt.
 
 ## Tech Stack
 
@@ -97,24 +97,51 @@ via1-app/
 
 ## Workflow / Zusammenarbeit
 
-Daniel und Alain arbeiten beide via Claude Code am Repo. So laeuft die Zusammenarbeit:
+Alain und Yves arbeiten beide via Claude Code am Repo. So laeuft die Zusammenarbeit:
+
+### Entwicklungsprozess
 
 1. **Feature-Branches:** Jede Aenderung auf einem eigenen Branch (nie direkt auf `main`)
 2. **Aenderungen committen & pushen** auf den eigenen Branch
-3. **Pull Request erstellen** wenn der Branch fertig ist
-4. **Claude prueft beim Merge auf Konflikte:**
-   - Keine Konflikte: Merge durchfuehren
-   - Einfache Konflikte (z.B. beide haben verschiedene Stellen geaendert): Claude loest sie
-   - Inhaltliche Konflikte (z.B. widersprüchliche Entscheide, gleiche Stelle anders geaendert): Claude fragt nach bevor er merged
-5. **CLAUDE.md und requirements.md** immer aktuell halten - das ist die Bruecke zwischen den Sessions von Daniel und Alain
-6. **Changelog in requirements.md** fuehren, damit der andere sieht was sich geaendert hat
+3. **Wenn fertig:** Claude prueft ob der Branch sauber auf `main` gemerged werden kann
+
+### Merge-Prozess (Aufgabe fuer Claude)
+
+Bevor ein Branch auf `main` gemerged wird, prueft Claude:
+
+1. **Branches vergleichen:** `git diff main...<branch>` - Was hat sich geaendert?
+2. **Konflikte pruefen:** Gibt es Merge-Konflikte mit `main`?
+3. **Entscheidung:**
+   - **Keine Konflikte, sinnvolle Aenderungen:** Direkt mergen auf `main`
+   - **Einfache Konflikte** (z.B. verschiedene Stellen geaendert): Claude loest sie selbststaendig und merged
+   - **Inhaltliche Konflikte** (z.B. gleiche Stelle anders geaendert, widersprüchliche Entscheide, Architektur-Fragen): **Claude fragt den User** bevor er merged. Nie stillschweigend eine Version bevorzugen!
+4. **Nach dem Merge:** CLAUDE.md und requirements.md aktualisieren falls noetig
+
+### Auto-Deploy auf Server
+
+Nach einem Merge auf `main` passiert automatisch:
+
+1. GitHub Actions Workflow wird getriggert (`.github/workflows/deploy.yml`)
+2. GitHub verbindet sich via SSH zum Infomaniak VPS
+3. Auf dem Server: `git pull origin main` + `docker compose up -d --build`
+4. Prisma-Migrationen werden ausgefuehrt
+5. Die Aenderungen sind live unter `app.felsenau.org`
+
+**Wichtig:** Weil `main` direkt deployed wird, muss der Code vor dem Merge funktionieren. Kaputte Aenderungen auf `main` = kaputte Live-App.
+
+### Dokumentation als Bruecke
+
+- **CLAUDE.md** und **requirements.md** sind die Bruecke zwischen Alains und Yves' Sessions
+- **Changelog in requirements.md** fuehren, damit der andere sieht was sich geaendert hat
+- Beide Dateien nach relevanten Aenderungen aktualisieren
 
 ### Wichtig fuer Claude
 
-- Vor jeder Aenderung: `CLAUDE.md` und `requirements.md` lesen um den aktuellen Stand zu kennen
-- Nach relevanten Aenderungen: beide Dateien aktualisieren
-- Bei Konflikten zwischen Daniel und Alains Aenderungen: **immer fragen**, nie stillschweigend eine Version bevorzugen
-- Learnings und Sackgassen dokumentieren, damit der andere davon profitiert
+- **Vor jeder Aenderung:** `CLAUDE.md` und `requirements.md` lesen um den aktuellen Stand zu kennen
+- **Nach relevanten Aenderungen:** beide Dateien aktualisieren
+- **Bei Konflikten:** Immer den User fragen, nie stillschweigend eine Version bevorzugen
+- **Learnings und Sackgassen** dokumentieren, damit der andere davon profitiert
+- **Vor dem Merge auf main:** Pruefen ob der Code sinnvoll ist und keine offensichtlichen Fehler hat
 
 ## Konventionen
 
@@ -142,7 +169,7 @@ Daniel und Alain arbeiten beide via Claude Code am Repo. So laeuft die Zusammena
 
 > Hier werden Erkenntnisse festgehalten, die fuer zukuenftige Sessions relevant sind.
 
-- Alain hat bereits einen funktionierenden Prototyp erstellt bevor Daniel dazukam. Immer zuerst `main` pruefen ob schon Code existiert.
+- Alain hat bereits einen funktionierenden Prototyp erstellt bevor Yves dazukam. Immer zuerst `main` pruefen ob schon Code existiert.
 - npm-Pfad auf Alains Mac: `/opt/homebrew/bin/npm` (PATH-Issue)
 
 ## Sackgassen / Was nicht funktioniert hat
