@@ -114,6 +114,8 @@ Keine Punkte oder Ranglisten - eher spielerisch und spassig.
 | Datum | Entscheid | Begruendung |
 |-------|-----------|-------------|
 | 2026-04-10 | CLAUDE.md + requirements.md als zentrale Doku | Ermoeglicht effektive Zusammenarbeit via Claude Code zwischen Daniel und Alain |
+| 2026-04-10 | TypeScript als Sprache | Typsicherheit bei 2-Personen-Zusammenarbeit, komplexe Datenstrukturen (3D etc.), TS-first Oekosystem, Claude arbeitet praeziser damit |
+| 2026-04-10 | Branch-basierter Workflow mit Claude als Merge-Helfer | Daniel und Alain arbeiten auf Feature-Branches, Claude prueft Konflikte und fragt bei Unklarheiten nach |
 
 ## Priorisierung
 
@@ -136,3 +138,4 @@ Keine Punkte oder Ranglisten - eher spielerisch und spassig.
 | 2026-04-10 | Initiale Dokumentationsstruktur erstellt | Daniel |
 | 2026-04-10 | Erste Anforderungen erfasst (6 Module) | Daniel |
 | 2026-04-10 | Vision geschaerft: 3D-Modell als zentrales UI, Spass statt Punkte, Melde-System fuer Aufgaben | Daniel |
+| 2026-04-10 | TypeScript als Sprache, Workflow fuer Zusammenarbeit definiert | Daniel |
