@@ -1,0 +1,209 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" font-family="'Space Mono', monospace">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#111111"/>
+      <stop offset="100%" stop-color="#0a0a0a"/>
+    </linearGradient>
+    <linearGradient id="nordGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2a10"/>
+      <stop offset="100%" stop-color="#0f1a08"/>
+    </linearGradient>
+    <linearGradient id="ostGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a1a0a"/>
+      <stop offset="100%" stop-color="#1a0f05"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Hintergrund -->
+  <rect width="800" height="600" fill="url(#bgGrad)"/>
+
+  <!-- Titel -->
+  <text x="400" y="35" text-anchor="middle" fill="#b8f068" font-size="16" font-weight="bold">Spinnereiweg 17 — Stockwerke</text>
+  <text x="400" y="55" text-anchor="middle" fill="#666" font-size="11">Nord (links) — Treppenhaus — Ost (rechts)</text>
+
+  <!-- Treppenhaus Mitte -->
+  <rect x="370" y="70" width="60" height="490" fill="#151515" stroke="#333" stroke-width="1" rx="3"/>
+  <text x="400" y="310" text-anchor="middle" fill="#444" font-size="9" transform="rotate(-90 400 310)">TREPPENHAUS</text>
+
+  <!-- ====== NORD (links) ====== -->
+  <!-- Stockwerk-Höhe: 150px, Offset Ost: +75px (halbes Stockwerk tiefer) -->
+
+  <!-- 2. OG Nord — Family-WG -->
+  <g>
+    <rect x="30" y="80" width="330" height="140" fill="url(#nordGrad)" stroke="#b8f068" stroke-width="1.5" rx="4"/>
+    <text x="45" y="105" fill="#b8f068" font-size="13" font-weight="bold">Family-WG</text>
+    <text x="310" y="105" text-anchor="end" fill="#555" font-size="10">2. OG Nord</text>
+    <!-- Zimmer -->
+    <g transform="translate(45, 115)">
+      <rect x="0" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="26" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N21</text>
+      <text x="26" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 1</text>
+
+      <rect x="62" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="88" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N22</text>
+      <text x="88" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 2</text>
+
+      <rect x="124" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="150" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N23</text>
+      <text x="150" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 3</text>
+
+      <rect x="186" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="212" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N24</text>
+      <text x="212" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 4</text>
+
+      <rect x="248" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="274" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N25</text>
+      <text x="274" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 5</text>
+    </g>
+  </g>
+
+  <!-- 1. OG Nord — Dreiecksbar -->
+  <g>
+    <rect x="30" y="230" width="330" height="140" fill="url(#nordGrad)" stroke="#b8f068" stroke-width="1.5" rx="4"/>
+    <text x="45" y="255" fill="#b8f068" font-size="13" font-weight="bold">Dreiecksbar</text>
+    <text x="310" y="255" text-anchor="end" fill="#555" font-size="10">1. OG Nord</text>
+    <g transform="translate(45, 265)">
+      <rect x="0" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="26" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N11</text>
+      <text x="26" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 1</text>
+
+      <rect x="62" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="88" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N12</text>
+      <text x="88" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 2</text>
+
+      <rect x="124" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="150" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N13</text>
+      <text x="150" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 3</text>
+
+      <rect x="186" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="212" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N14</text>
+      <text x="212" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 4</text>
+
+      <rect x="248" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="274" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N15</text>
+      <text x="274" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 5</text>
+    </g>
+  </g>
+
+  <!-- EG Nord — Nordwind -->
+  <g>
+    <rect x="30" y="380" width="330" height="140" fill="url(#nordGrad)" stroke="#b8f068" stroke-width="1.5" rx="4"/>
+    <text x="45" y="405" fill="#b8f068" font-size="13" font-weight="bold">Nordwind</text>
+    <text x="310" y="405" text-anchor="end" fill="#555" font-size="10">EG Nord</text>
+    <g transform="translate(45, 415)">
+      <rect x="0" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="26" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N01</text>
+      <text x="26" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 1</text>
+
+      <rect x="62" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="88" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N02</text>
+      <text x="88" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 2</text>
+
+      <rect x="124" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="150" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N03</text>
+      <text x="150" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 3</text>
+
+      <rect x="186" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="212" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N04</text>
+      <text x="212" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 4</text>
+
+      <rect x="248" y="0" width="52" height="85" fill="#1a1a1a" stroke="#3a5a20" stroke-width="1" rx="3"/>
+      <text x="274" y="20" text-anchor="middle" fill="#b8f068" font-size="11" font-weight="bold">N05</text>
+      <text x="274" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 5</text>
+    </g>
+  </g>
+
+  <!-- ====== OST (rechts, halbes Stockwerk versetzt = +75px) ====== -->
+
+  <!-- 2. OG Ost — Bonzen (nur 4 Zimmer) -->
+  <g>
+    <rect x="440" y="155" width="330" height="140" fill="url(#ostGrad)" stroke="#ff6b2b" stroke-width="1.5" rx="4"/>
+    <text x="455" y="180" fill="#ff6b2b" font-size="13" font-weight="bold">Bonzen</text>
+    <text x="720" y="180" text-anchor="end" fill="#555" font-size="10">2. OG Ost</text>
+    <g transform="translate(455, 190)">
+      <rect x="0" y="0" width="65" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="32" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O21</text>
+      <text x="32" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 1</text>
+
+      <rect x="75" y="0" width="65" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="107" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O22</text>
+      <text x="107" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 2</text>
+
+      <rect x="150" y="0" width="65" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="182" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O23</text>
+      <text x="182" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 3</text>
+
+      <rect x="225" y="0" width="65" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="257" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O24</text>
+      <text x="257" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 4</text>
+    </g>
+  </g>
+
+  <!-- 1. OG Ost — Kleenex -->
+  <g>
+    <rect x="440" y="305" width="330" height="140" fill="url(#ostGrad)" stroke="#ff6b2b" stroke-width="1.5" rx="4"/>
+    <text x="455" y="330" fill="#ff6b2b" font-size="13" font-weight="bold">Kleenex</text>
+    <text x="720" y="330" text-anchor="end" fill="#555" font-size="10">1. OG Ost</text>
+    <g transform="translate(455, 340)">
+      <rect x="0" y="0" width="52" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="26" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O11</text>
+      <text x="26" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 1</text>
+
+      <rect x="62" y="0" width="52" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="88" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O12</text>
+      <text x="88" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 2</text>
+
+      <rect x="124" y="0" width="52" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="150" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O13</text>
+      <text x="150" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 3</text>
+
+      <rect x="186" y="0" width="52" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="212" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O14</text>
+      <text x="212" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 4</text>
+
+      <rect x="248" y="0" width="52" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="274" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O15</text>
+      <text x="274" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 5</text>
+    </g>
+  </g>
+
+  <!-- EG Ost — Ostblock -->
+  <g>
+    <rect x="440" y="455" width="330" height="140" fill="url(#ostGrad)" stroke="#ff6b2b" stroke-width="1.5" rx="4"/>
+    <text x="455" y="480" fill="#ff6b2b" font-size="13" font-weight="bold">Ostblock</text>
+    <text x="720" y="480" text-anchor="end" fill="#555" font-size="10">EG Ost</text>
+    <g transform="translate(455, 490)">
+      <rect x="0" y="0" width="52" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="26" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O01</text>
+      <text x="26" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 1</text>
+
+      <rect x="62" y="0" width="52" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="88" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O02</text>
+      <text x="88" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 2</text>
+
+      <rect x="124" y="0" width="52" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="150" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O03</text>
+      <text x="150" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 3</text>
+
+      <rect x="186" y="0" width="52" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="212" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O04</text>
+      <text x="212" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 4</text>
+
+      <rect x="248" y="0" width="52" height="85" fill="#1a1a1a" stroke="#5a3010" stroke-width="1" rx="3"/>
+      <text x="274" y="20" text-anchor="middle" fill="#ff6b2b" font-size="11" font-weight="bold">O05</text>
+      <text x="274" y="38" text-anchor="middle" fill="#555" font-size="9">Zi. 5</text>
+    </g>
+  </g>
+
+  <!-- Verbindungslinien Treppenhaus -->
+  <line x1="400" y1="75" x2="400" y2="560" stroke="#333" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- Legende -->
+  <g transform="translate(30, 570)">
+    <rect x="0" y="0" width="10" height="10" fill="#b8f068" rx="2"/>
+    <text x="15" y="9" fill="#888" font-size="10">Nord (15 Zimmer)</text>
+    <rect x="160" y="0" width="10" height="10" fill="#ff6b2b" rx="2"/>
+    <text x="175" y="9" fill="#888" font-size="10">Ost (14 Zimmer)</text>
+    <text x="680" y="9" text-anchor="end" fill="#555" font-size="10">Total: 29 Zimmer / 6 WGs</text>
+  </g>
+</svg>

@@ -13,6 +13,11 @@ enum Role {
   CARETAKER
 }
 
+enum Side {
+  NORD
+  OST
+}
+
 model User {
   id          String   @id @default(cuid())
   name        String
@@ -22,6 +27,29 @@ model User {
   setupToken  String?  @unique
   passwordSet Boolean  @default(false)
   avatar      String?
+  room        Room?    @relation(fields: [roomId], references: [id])
+  roomId      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Wg {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  floor     Int      // 0=EG, 1=1.OG, 2=2.OG
+  side      Side
+  rooms     Room[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  keyNumber String   @unique // z.B. "N01", "O24"
+  number    Int      // Zimmernummer innerhalb der WG (1-5)
+  wg        Wg       @relation(fields: [wgId], references: [id])
+  wgId      String
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
