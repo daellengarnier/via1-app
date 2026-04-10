@@ -137,8 +137,9 @@ Nach einem Merge auf `main` passiert automatisch:
 
 ### Wichtig fuer Claude
 
-- **Vor jeder Aenderung:** `CLAUDE.md` und `requirements.md` lesen um den aktuellen Stand zu kennen
-- **Nach relevanten Aenderungen:** beide Dateien aktualisieren
+- **Vor jeder Aenderung:** `CLAUDE.md`, `requirements.md` und `ideenliste.md` lesen um den aktuellen Stand zu kennen
+- **Bei Fragen zu Ideen/Features:** GitHub Issues im Repo pruefen - Bewohner melden Ideen/Bugs ueber die App, die als Issues landen
+- **Nach relevanten Aenderungen:** Dokumentation aktualisieren (CLAUDE.md, requirements.md, ideenliste.md, README.md)
 - **Bei Konflikten:** Immer den User fragen, nie stillschweigend eine Version bevorzugen
 - **Learnings und Sackgassen** dokumentieren, damit der andere davon profitiert
 - **Vor dem Merge auf main:** Pruefen ob der Code sinnvoll ist und keine offensichtlichen Fehler hat
@@ -148,6 +149,8 @@ Nach einem Merge auf `main` passiert automatisch:
 - Dokumentation in Deutsch (Code und Variablen auf Englisch)
 - `CLAUDE.md` ist die zentrale Anlaufstelle fuer Claude Code - hier steht alles, was Claude wissen muss
 - `requirements.md` haelt alle Anforderungen, Entscheide und offene Fragen fest
+- `ideenliste.md` sammelt Ideen und Einfaelle (locker, unstrukturiert)
+- **GitHub Issues** pruefen wenn nach Ideen/Bugs gefragt wird (Issues werden auch ueber die App erstellt)
 - Commits: klar und beschreibend, auf Englisch
 - Branching: Feature-Branches, kein direkter Push auf `main`
 - TypeScript: strikter Modus, kein `any`

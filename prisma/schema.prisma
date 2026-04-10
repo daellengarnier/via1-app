@@ -8,9 +8,10 @@ datasource db {
 }
 
 enum Role {
-  ADMIN
-  RESIDENT
-  CARETAKER
+  ADMIN     // Volle Rechte, Benutzerverwaltung
+  USER      // Standard-Bewohner
+  GUEST     // Gast (eingeschraenkter Zugang)
+  HAUSWART  // Hauswart-Funktionen (Ticketing, Reparaturen)
 }
 
 enum Side {
@@ -23,7 +24,7 @@ model User {
   name        String
   email       String   @unique
   password    String?
-  role        Role     @default(RESIDENT)
+  roles       Role[]   @default([USER])
   setupToken  String?  @unique
   passwordSet Boolean  @default(false)
   avatar      String?
@@ -31,6 +32,8 @@ model User {
   roomId      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@map("users")
 }
 
 model Wg {

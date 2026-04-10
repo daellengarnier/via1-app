@@ -25,8 +25,11 @@ CREATE TABLE "Room" (
     CONSTRAINT "Room_pkey" PRIMARY KEY ("id")
 );
 
--- AlterTable: User bekommt roomId
-ALTER TABLE "User" ADD COLUMN "roomId" TEXT;
+-- AlterTable: users bekommt roomId (Tabelle wurde in 0002 umbenannt)
+ALTER TABLE "users" ADD COLUMN "roomId" TEXT;
+
+-- Drop wgId from 0002 (replaced by roomId -> Room -> Wg)
+ALTER TABLE "users" DROP COLUMN IF EXISTS "wgId";
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Wg_name_key" ON "Wg"("name");
@@ -35,7 +38,7 @@ CREATE UNIQUE INDEX "Wg_name_key" ON "Wg"("name");
 CREATE UNIQUE INDEX "Room_keyNumber_key" ON "Room"("keyNumber");
 
 -- AddForeignKey
-ALTER TABLE "User" ADD CONSTRAINT "User_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "Room"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "users" ADD CONSTRAINT "users_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "Room"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Room" ADD CONSTRAINT "Room_wgId_fkey" FOREIGN KEY ("wgId") REFERENCES "Wg"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -2,7 +2,7 @@ import "next-auth";
 
 declare module "next-auth" {
   interface User {
-    role: string;
+    roles: string[];
   }
 
   interface Session {
@@ -10,13 +10,13 @@ declare module "next-auth" {
       id: string;
       name: string;
       email: string;
-      role: string;
+      roles: string[];
     };
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    role: string;
+    roles: string[];
   }
 }

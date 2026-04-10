@@ -46,8 +46,16 @@ export default function ProfilPage() {
         ))}
       </div>
 
+      {/* Feedback */}
+      <a
+        href="/feedback"
+        className="mt-8 block w-full rounded-lg border border-accent/30 bg-accent/5 py-3 text-center font-mono text-sm text-accent transition-colors hover:bg-accent/10"
+      >
+        💡 Idee oder 🐛 Bug melden
+      </a>
+
       {/* Logout */}
-      <button className="mt-8 w-full rounded-lg border border-gray-700 py-2 font-mono text-sm text-gray-400 transition-colors hover:border-red-500 hover:text-red-400">
+      <button className="mt-3 w-full rounded-lg border border-gray-700 py-2 font-mono text-sm text-gray-400 transition-colors hover:border-red-500 hover:text-red-400">
         Abmelden
       </button>
     </div>
