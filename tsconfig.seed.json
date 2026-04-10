@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "./prisma",
+    "rootDir": "./prisma",
+    "strict": true
+  },
+  "include": ["prisma/seed.ts"]
+}
