@@ -2,7 +2,9 @@
 
 ## Projekt
 
-**via1-app** - Geteiltes Projekt von Daniel und Alain.
+**via1-app** - Web-App zur Organisation einer Hausgemeinschaft. Geteiltes Projekt von Daniel und Alain.
+
+Kernmodule: Benutzerverwaltung, Sitzungen/Protokolle/Traktanden, Hauswart-Ticketing, Aufgabenorganisation, Wissensdatenbank, Gamification (Avatare, Punkte etc.).
 
 ## Mitarbeiter
 
@@ -41,10 +43,14 @@ _(noch keine Eintraege)_
 
 ## Offene Fragen
 
-- Was genau ist der Zweck / die Vision von via1-app?
+- ~~Was genau ist der Zweck / die Vision von via1-app?~~ -> Geklaert: Hausgemeinschafts-Organisation
 - Welcher Tech Stack soll verwendet werden?
 - Gibt es bestehende Designs oder Mockups?
 - Hosting / Deployment - wo soll die App laufen?
+- Wie viele Bewohner sind es ungefaehr? (relevant fuer Skalierung)
+- Soll es eine native App geben oder reicht eine responsive Web-App?
+- Authentifizierung: Email/Passwort? OAuth? Einladungslinks?
+- Sollen Bewohner eigene Avatare hochladen oder aus vordefinierten waehlen?
 
 ## Wichtige Befehle
 
