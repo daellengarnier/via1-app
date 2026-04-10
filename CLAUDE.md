@@ -54,13 +54,24 @@ Das Projekt wurde auf Next.js 14+ migriert. Aktuell vorhanden:
 
 - **Adresse:** Spinnereiweg 17, 3004 Bern (Spinnerei / Via Felsenau)
 - **Bewohner:** ca. 25 Personen
+- **Gebaeude:** Dreieckiger/keilfoermiger Holzbau, 3 Stockwerke + UG
+  - **Glaspyramide** (Wintergarten) im Zentrum, geht vom UG bis zum Dach durch
+  - **Nord-Fluegel:** Abgerundete Form (Faecher), linke Seite
+  - **Ost-Fluegel:** Gerade Form, rechte Seite mit Balkonen
 - **6 Wohngemeinschaften:**
-  - EG Nord: Nordwind
-  - EG Ost: Ostblock
-  - 1. OG Nord: Dreiecksbar
-  - 1. OG Ost: Kleenex
-  - 2. OG Nord: Family-WG
-  - 2. OG Ost: Bonzen
+
+  | Ebene | Nord (abgerundet) | Ost (gerade) |
+  |-------|-------------------|-------------|
+  | 2. OG | Family-WG (5 Zi) | Bonzen (4 Zi) |
+  | 1. OG | Dreiecksbar (5 Zi) | Kleenex (5 Zi) |
+  | EG | Nordwind (5 Zi) | Ostblock (5 Zi) |
+
+- **Gemeinschaftsraeume (UG/EG):**
+  - Pyramiden-Wintergarten (Zentrum)
+  - Grotte (unter der Pyramide)
+  - Saal (Gemeinschaftsraum)
+  - Bar
+  - Amphitheater
 - **Rollen:** Admin (1 pro WG), Member (Standard-Bewohner)
 
 ## Projektstruktur
