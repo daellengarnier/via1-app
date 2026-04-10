@@ -6,6 +6,8 @@
 
 Kernmodule: Benutzerverwaltung, Sitzungen/Protokolle/Traktanden, Hauswart-Ticketing, Aufgabenorganisation, Wissensdatenbank, Gamification (Avatare, Punkte etc.).
 
+**Zentrales UI-Konzept:** Interaktives 3D-Modell von Haus und Umgebung. Avatare in Wohnungen sichtbar, Tickets/Aufgaben ortsbezogen als Marker. Bewohner koennen Dinge melden ("hier liegt ein Asthaufen"), andere erledigen sie. Kein Punkte-/Ranglisten-System - eher spassig und spielerisch (z.B. Sauna-Temperatur-Tracking).
+
 ## Mitarbeiter
 
 - **Daniel** (daellengarnier)
@@ -51,6 +53,10 @@ _(noch keine Eintraege)_
 - Soll es eine native App geben oder reicht eine responsive Web-App?
 - Authentifizierung: Email/Passwort? OAuth? Einladungslinks?
 - Sollen Bewohner eigene Avatare hochladen oder aus vordefinierten waehlen?
+- 3D-Modell: Wer erstellt das Modell? Gibt es Grundrisse/Plaene vom Haus?
+- 3D-Technologie: Three.js? WebGL? Fertige Engine?
+- Wie detailliert soll das 3D-Modell sein? (Jedes Zimmer vs. nur Wohnungen/Stockwerke)
+- Sauna-Temperatur: Gibt es einen Sensor oder wird manuell eingetragen?
 
 ## Wichtige Befehle
 

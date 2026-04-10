@@ -6,7 +6,9 @@ Dieses Dokument haelt alle Anforderungen, Entscheide und den aktuellen Stand des
 
 ## Vision / Ziel
 
-Web-App zur Organisation einer Hausgemeinschaft. Zielgruppe: alle Bewohner eines Mehrfamilienhauses. Die App soll das Zusammenleben strukturieren, Aufgaben transparent machen und durch Gamification-Elemente motivierend wirken.
+Web-App zur Organisation einer Hausgemeinschaft. Zielgruppe: alle Bewohner eines Mehrfamilienhauses. Die App soll das Zusammenleben strukturieren, Aufgaben transparent machen und Spass machen.
+
+Zentrales Konzept: ein **interaktives 3D-Modell** des Hauses und der Umgebung als Hauptinterface. Bewohner-Avatare sind in den Wohnungen sichtbar. Probleme, Aufgaben und Meldungen sind direkt am Ort im Modell verortet. Die App soll sich weniger wie ein Verwaltungstool und mehr wie ein lebendiges, spielerisches Abbild der Hausgemeinschaft anfuehlen.
 
 ## Funktionale Anforderungen
 
@@ -32,14 +34,36 @@ Web-App zur Organisation einer Hausgemeinschaft. Zielgruppe: alle Bewohner eines
 
 ### 3. Arbeiten im und ums Haus
 
-- [ ] Aufgaben erfassen und zuweisen
+Aufgaben rund um Haus und Umgebung. Jeder Bewohner kann Aufgaben melden, andere koennen sie erledigen.
+
+**Im Haus:**
+- [ ] Treppenhaus reinigen
+- [ ] Waschkueche reinigen
+- [ ] Trocknungsraum reinigen
+- [ ] Allgemeine Instandhaltungsaufgaben
+
+**Ums Haus / Umgebung:**
+- [ ] Wege vom Laub befreien
+- [ ] Asthaufen entfernen (mit Hinweis wohin)
+- [ ] Baeume zurueckschneiden
+- [ ] Aprikosen pfluecken
+- [ ] Sauna reinigen
+- [ ] Allgemeine Gartenarbeit
+
+**Allgemein:**
+- [ ] Aufgaben erfassen - jeder kann melden was er sieht
+- [ ] Andere koennen gemeldete Aufgaben uebernehmen/erledigen
 - [ ] Aufgabenstatus tracken (offen, in Arbeit, erledigt)
-- [ ] Wiederkehrende Aufgaben (z.B. Treppenhausreinigung, Gartenarbeit)
+- [ ] Wiederkehrende Aufgaben (z.B. woechentliche Reinigung)
 - [ ] Uebersicht wer was wann gemacht hat
+- [ ] Aufgaben im 3D-Modell ortsbezogen anzeigen
 
 ### 4. Hauswart / Ticketing-System
 
+Meldungen direkt aus dem 3D-Modell heraus erstellen - z.B. "Wohnung 2. OG Ost: Herd defekt" durch Klick auf die entsprechende Wohnung.
+
 - [ ] Reparatur-Tickets erstellen (mit Beschreibung, Foto, Dringlichkeit)
+- [ ] Tickets sind im 3D-Modell am betroffenen Ort sichtbar
 - [ ] Ticket-Status verfolgen (gemeldet, in Bearbeitung, erledigt)
 - [ ] Zustaendigkeiten zuweisen
 - [ ] Kommentare / Updates auf Tickets
@@ -52,14 +76,28 @@ Web-App zur Organisation einer Hausgemeinschaft. Zielgruppe: alle Bewohner eines
 - [ ] Suchfunktion
 - [ ] Von allen Bewohnern editierbar (Wiki-Stil)
 
-### 6. Gamification
+### 6. 3D-Modell / Interaktive Karte
 
-- [ ] Avatare fuer jeden User
-- [ ] Punkte / Belohnungssystem fuer erledigte Aufgaben
-- [ ] Evtl. Badges / Achievements
-- [ ] Evtl. Leaderboard / Rangliste
+Herzstrueck der App: ein 3D-Modell von Haus und Umgebung als zentrales Interface.
 
-> **Hinweis:** Weitere Anforderungen werden laufend ergaenzt.
+- [ ] 3D-Modell des Hauses (Innenansicht mit Wohnungen, Stockwerken)
+- [ ] 3D-Modell der Umgebung (Garten, Wege, Baeume, Sauna etc.)
+- [ ] Bewohner-Avatare in ihren jeweiligen Wohnungen sichtbar
+- [ ] Tickets/Meldungen als Marker im Modell (z.B. defekter Herd in Whg 2. OG Ost)
+- [ ] Aufgaben ortsbezogen anzeigen (z.B. "hier liegt ein Asthaufen")
+- [ ] Interaktiv: Orte anklicken um Meldungen zu erstellen oder Details zu sehen
+- [ ] Navigation zwischen Innen- und Aussenansicht
+
+### 7. Gamification / Spass-Faktor
+
+Keine Punkte oder Ranglisten - eher spielerisch und spassig.
+
+- [ ] Avatare fuer jeden User (im 3D-Modell sichtbar)
+- [ ] Avatar-Personalisierung
+- [ ] Lustige Features wie Sauna-Temperatur-Tracking
+- [ ] Evtl. saisonale Elemente (Schneee im Winter etc.)
+
+> **Hinweis:** Weitere Anforderungen werden laufend ergaenzt. Der Spass-Faktor soll organisch wachsen - keine erzwungene Gamification.
 
 ## Nicht-funktionale Anforderungen
 
@@ -84,9 +122,10 @@ Web-App zur Organisation einer Hausgemeinschaft. Zielgruppe: alle Bewohner eines
 1. Benutzerverwaltung (Grundlage fuer alles andere)
 2. Sitzungen / Traktanden / Protokolle (Kernfunktion)
 3. Hauswart-Ticketing (hoher praktischer Nutzen)
-4. Arbeiten im/ums Haus
+4. Arbeiten im/ums Haus (Melde- und Erledigungssystem)
 5. Wissensdatenbank
-6. Gamification (kann schrittweise eingefuehrt werden)
+6. 3D-Modell (zentrales UI - kann iterativ aufgebaut werden)
+7. Gamification / Spass-Faktor (schrittweise, kein Zwang)
 
 > Priorisierung ist vorlaeufig - wird mit Alain abgestimmt.
 
@@ -96,3 +135,4 @@ Web-App zur Organisation einer Hausgemeinschaft. Zielgruppe: alle Bewohner eines
 |-------|-----------|-----|
 | 2026-04-10 | Initiale Dokumentationsstruktur erstellt | Daniel |
 | 2026-04-10 | Erste Anforderungen erfasst (6 Module) | Daniel |
+| 2026-04-10 | Vision geschaerft: 3D-Modell als zentrales UI, Spass statt Punkte, Melde-System fuer Aufgaben | Daniel |
