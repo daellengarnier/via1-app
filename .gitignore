@@ -1,4 +1,27 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Build
+dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Debug
+npm-debug.log*
+
+# OS
 .DS_Store
 *.local
+
+# Docker
+docker-compose.override.yml
+
+# Prisma
+prisma/migrations/**/migration_lock.toml
