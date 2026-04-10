@@ -6,9 +6,6 @@ ALTER INDEX "User_pkey" RENAME TO "users_pkey";
 ALTER INDEX "User_email_key" RENAME TO "users_email_key";
 ALTER INDEX "User_setupToken_key" RENAME TO "users_setupToken_key";
 
--- Add wgId column
-ALTER TABLE "users" ADD COLUMN "wgId" TEXT;
-
 -- Add roles array column with default
 ALTER TABLE "users" ADD COLUMN "roles" "Role"[] DEFAULT ARRAY['USER']::"Role"[];
 
