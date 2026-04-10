@@ -1,9 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+const DEMO_MODE = !process.env.DATABASE_URL;
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,29 +16,55 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
-
-        if (!user || !user.password || !user.passwordSet) {
+        // Demo mode: any @via1.ch email with password "via1"
+        if (DEMO_MODE) {
+          if (
+            credentials.email.endsWith("@via1.ch") &&
+            credentials.password === "via1"
+          ) {
+            const name = credentials.email.split("@")[0]!;
+            return {
+              id: name,
+              name: name.charAt(0).toUpperCase() + name.slice(1),
+              email: credentials.email,
+              role: "ADMIN",
+            };
+          }
           return null;
         }
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        // Production mode: check against database
+        const { PrismaClient } = await import("@prisma/client");
+        const bcrypt = await import("bcryptjs");
+        const prisma = new PrismaClient();
 
-        if (!isValid) {
-          return null;
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
+
+          if (!user || !user.password || !user.passwordSet) {
+            return null;
+          }
+
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          if (!isValid) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          };
+        } finally {
+          await prisma.$disconnect();
         }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
       },
     }),
   ],
