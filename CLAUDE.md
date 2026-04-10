@@ -174,6 +174,9 @@ Nach einem Merge auf `main` passiert automatisch:
 
 - Alain hat bereits einen funktionierenden Prototyp erstellt bevor Yves dazukam. Immer zuerst `main` pruefen ob schon Code existiert.
 - npm-Pfad auf Alains Mac: `/opt/homebrew/bin/npm` (PATH-Issue)
+- **PostgreSQL Enum-Werte:** Neue Enum-Werte (`ALTER TYPE ... ADD VALUE`) muessen in einer separaten Migration committed werden, BEVOR sie in Tabellen verwendet werden. Sonst Fehler `55P04 unsafe use of new value`. Also: Migration 1 = Enum erweitern, Migration 2 = Enum verwenden.
+- **Docker Build Cache:** `--no-cache` dauert 4-5 Min. Besser: `CACHEBUST` Build-Arg im Dockerfile um nur ab `COPY . .` neu zu bauen.
+- **Fehlgeschlagene Prisma-Migration:** Manuell aus `_prisma_migrations` loeschen: `DELETE FROM _prisma_migrations WHERE migration_name = '...';`
 
 ## Sackgassen / Was nicht funktioniert hat
 
