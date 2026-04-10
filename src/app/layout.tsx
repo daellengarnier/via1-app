@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { BottomNav } from "@/components/BottomNav";
+import { ConditionalNav } from "@/components/ConditionalNav";
 
 export const metadata: Metadata = {
   title: "via1-app",
@@ -16,7 +16,7 @@ export default function RootLayout({
     <html lang="de">
       <body className="min-h-screen bg-dark font-sans antialiased">
         <div className="mx-auto max-w-lg">{children}</div>
-        <BottomNav />
+        <ConditionalNav />
       </body>
     </html>
   );
