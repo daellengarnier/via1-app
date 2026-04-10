@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { BottomNav } from "@/components/BottomNav";
 
 export const metadata: Metadata = {
   title: "via1-app",
@@ -14,7 +15,8 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className="min-h-screen bg-dark font-sans antialiased">
-        {children}
+        <div className="mx-auto max-w-lg">{children}</div>
+        <BottomNav />
       </body>
     </html>
   );
