@@ -7,14 +7,14 @@ async function main() {
         {
             name: "Alain",
             email: "alain@via1.ch",
-            role: client_1.Role.ADMIN,
+            roles: [client_1.Role.ADMIN, client_1.Role.HAUSWART],
             setupToken: "6a41ffdd2505086d2d2f6694ce41b78e",
             passwordSet: false,
         },
         {
             name: "Yves",
             email: "yves@via1.ch",
-            role: client_1.Role.ADMIN,
+            roles: [client_1.Role.ADMIN],
             setupToken: "a5197785a70c80509e7e671d6e55d089",
             passwordSet: false,
         },
@@ -25,7 +25,7 @@ async function main() {
             update: {},
             create: user,
         });
-        console.log(`Created user: ${user.name} (Token: ${user.setupToken})`);
+        console.log(`Created user: ${user.name} (Roles: ${user.roles.join(", ")}, Token: ${user.setupToken})`);
     }
     console.log("\nSetup-URLs:");
     console.log(`  Alain: https://app.felsenau.org/setup/${users[0].setupToken}`);
