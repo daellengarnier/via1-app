@@ -17,4 +17,6 @@ jobs:
           script: |
             cd /opt/via1-app
             git pull origin main
-            docker compose up -d --build
+            docker compose build --no-cache app
+            docker compose up -d
+            docker compose restart nginx
