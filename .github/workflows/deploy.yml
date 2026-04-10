@@ -17,6 +17,6 @@ jobs:
           script: |
             cd /opt/via1-app
             git pull origin main
-            docker compose build --no-cache app
+            DOCKER_BUILDKIT=1 docker compose build --build-arg CACHEBUST=$(date +%s) app
             docker compose up -d
             docker compose restart nginx

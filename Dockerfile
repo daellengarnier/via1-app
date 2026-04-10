@@ -14,6 +14,7 @@ FROM base AS builder
 RUN apk add --no-cache openssl
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+ARG CACHEBUST=1
 COPY . .
 
 RUN npx prisma generate
