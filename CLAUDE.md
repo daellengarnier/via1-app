@@ -10,8 +10,8 @@ Kernmodule: Benutzerverwaltung, Sitzungen/Protokolle/Traktanden, Hauswart-Ticket
 
 ## Mitarbeiter
 
-- **Alain** - Hat den urspruenglichen Prototyp erstellt
-- **Yves** (GitHub: daellengarnier) - Server-Setup, Deployment, Infrastruktur
+- **Alain** (GitHub: daellengarnier) - Hat den urspruenglichen Prototyp erstellt
+- **Yves** (GitHub: yvesgarnier) - Server-Setup, Deployment, Infrastruktur
 
 Alain und Yves sind Brueder. Beide arbeiten via Claude Code am Repository. Diese Datei dient als zentrale Wissensbasis, damit Claude bei jeder Session den aktuellen Stand kennt.
 
