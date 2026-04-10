@@ -149,3 +149,4 @@ Keine Punkte oder Ranglisten - eher spielerisch und spassig.
 | 2026-04-10 | Vision geschaerft: 3D-Modell als zentrales UI, Spass statt Punkte, Melde-System fuer Aufgaben | Daniel |
 | 2026-04-10 | TypeScript als Sprache, Workflow fuer Zusammenarbeit definiert | Daniel |
 | 2026-04-10 | Kompletter Tech Stack definiert, Server-Setup-Anleitung erstellt, Deployment-Strategie dokumentiert | Daniel |
+| 2026-04-10 | App-Skeleton erstellt: Next.js, Prisma, NextAuth, Docker, Nginx, GitHub Actions, Login + Setup-Flow | Daniel |

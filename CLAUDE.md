@@ -37,7 +37,35 @@ Beide arbeiten via Claude Code am Repository. Diese Datei dient als zentrale Wis
 
 ## Projektstruktur
 
-> TODO: Ergaenzen sobald die erste Struktur steht.
+```
+via1-app/
+├── .github/workflows/deploy.yml   # Auto-Deploy bei Push auf main
+├── docs/server-setup.md           # Server-Einrichtungsanleitung
+├── nginx/nginx.conf               # Reverse Proxy Config
+├── prisma/
+│   ├── schema.prisma              # Datenbankschema
+│   └── seed.ts                    # Erstbenutzer (Alain, Yves)
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── auth/[...nextauth]/route.ts  # Auth-Endpunkt
+│   │   │   └── setup/route.ts               # Passwort-Setup-API
+│   │   ├── login/page.tsx         # Login-Seite
+│   │   ├── setup/[token]/page.tsx # Erstanmeldungs-Passwort-Setup
+│   │   ├── globals.css            # Tailwind Imports
+│   │   ├── layout.tsx             # Root Layout
+│   │   └── page.tsx               # Startseite
+│   ├── lib/
+│   │   ├── auth.ts                # NextAuth Konfiguration
+│   │   └── prisma.ts              # Prisma Client Singleton
+│   └── types/
+│       └── next-auth.d.ts         # NextAuth Type Extensions
+├── .env.example                   # Environment-Template
+├── docker-compose.yml             # Docker Services (db, app, nginx)
+├── Dockerfile                     # Multi-stage Next.js Build
+├── CLAUDE.md                      # Diese Datei
+└── requirements.md                # Anforderungen und Entscheide
+```
 
 ## Workflow / Zusammenarbeit
 
