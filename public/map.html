@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Via 1 – 3D Karte</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a1a; font-family: 'DM Sans', sans-serif; overflow: hidden; color: #e8e4df; }
+  #canvas-container { width: 100vw; height: 100vh; position: relative; }
+  canvas { display: block; }
+
+  #info-panel {
+    position: fixed; bottom: 12px; left: 12px; right: 12px;
+    background: rgba(10,10,8,0.94); backdrop-filter: blur(16px);
+    border: 1px solid rgba(184,240,104,0.12); border-radius: 12px;
+    max-width: 340px; z-index: 100;
+    transform: translateY(16px); opacity: 0;
+    transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+    pointer-events: none; overflow: hidden;
+  }
+  #info-panel.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  .ph { padding: 16px 18px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .ph h2 { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; color: #b8f068; }
+  .ph .tag { display: inline-block; font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: #ff6b2b; background: rgba(255,107,43,0.1); padding: 3px 8px; border-radius: 4px; font-family: 'Space Mono', monospace; }
+  .pb { padding: 10px 16px 14px; font-size: 12px; line-height: 1.6; color: #6a6560; }
+
+  #loading { position: fixed; inset: 0; background: #1a1a1a; display: flex; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.6s; }
+  #loading.out { opacity: 0; pointer-events: none; }
+  #loading h2 { font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #5a5550; animation: p 1.5s ease-in-out infinite; }
+  @keyframes p { 0%,100%{opacity:.4}50%{opacity:1} }
+</style>
+</head>
+<body>
+<div id="loading"><h2>Gelände wird aufgebaut...</h2></div>
+<div id="info-panel"><div class="ph"><h2 id="pt"></h2><span class="tag" id="pg"></span></div><div class="pb" id="pp"></div></div>
+<div id="canvas-container"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ============================================================
+// Coordinate system: 1 unit = ~1 meter
+// Origin = center of compound (from exported JSON center_px)
+// X+ = East, Z+ = South, Y+ = Up
+// Exported polygon data at 1:500, 1px ≈ 0.04m
+// ============================================================
+
+// === EXPORTED POLYGON DATA (pts_m from editor) ===
+const DATA = {
+  buildings: [
+    {id:'pyramide', name:'Glaspyramide', color:'#4a9aaa', tag:'Wintergarten',
+     desc:'Grosse Glaspyramide, direkt an Via 1 angebaut. Wintergarten mit Pflanzen.',
+     pts:[[3.3,-3.4],[6.9,-0.1],[9.9,2.4],[3.4,2.3]], height:12, type:'pyramid'},
+
+    {id:'via1', name:'Via 1 – Hauptgebäude', color:'#4a3028', tag:'Hauptgebäude',
+     desc:'Mehrstöckige Holzwohnbauten mit begrünten Dächern und Balkonen. Im Keller: Kulturspinnerei-Saal (ca. 300 Personen).',
+     pts:[[0.8,-6.4],[2.8,-8],[5.4,-8.6],[8.5,-8.9],[10.8,-8.2],[11.3,-8.8],[14.1,-6.8],[13.8,2.4],[14.5,6.6],[3.4,-3.5],[1.1,-6.1]],
+     height:12, type:'via1'},
+
+    {id:'sauna', name:'Sauna', color:'#cc5040', tag:'Wellness',
+     desc:'Holzsauna im Nordwesten des Geländes mit rotem Dach.',
+     pts:[[-18.3,-8.3],[-15.2,-7.6],[-15.6,-5.7],[-18.7,-6.5]], height:4, type:'simple'},
+
+    {id:'jurte', name:'Jurte', color:'#e8dcc8', tag:'Begegnungsort',
+     desc:'Runde Jurte, Treffpunkt für kleinere Veranstaltungen und Versammlungen.',
+     pts:[[-18.2,-4.2],[-17.3,-4],[-16.9,-3],[-17.3,-2.2],[-17.9,-1.6],[-18.7,-1.6],[-19.5,-1.9],[-19.7,-2.7],[-19.6,-3.5],[-19.2,-3.9]],
+     height:3.5, type:'jurte'},
+
+    {id:'gaeste', name:'Gästewohnwagen', color:'#8a7a50', tag:'Unterkunft',
+     desc:'Wohnwagen für Gäste, zwischen Jurte und Hauptgebäude.',
+     pts:[[-8.5,0.3],[-7.5,0.2],[-7.5,1.8],[-8.4,1.8]], height:3, type:'wagon'},
+
+    {id:'stussi', name:'Stussis Bauwagen', color:'#7a7a6a', tag:'Wohnen',
+     desc:'Bauwagen südlich des Hauptgebäudes.',
+     pts:[[-0.9,5.8],[1,8.6],[-1.8,10.5],[-3.8,7.7]], height:3.2, type:'wagon'},
+
+    {id:'zweuthoid', name:'Zweuthoid Bauwagen', color:'#7a5a4a', tag:'Wohnen',
+     desc:'Bauwagen im Südosten, am Rand des Geländes.',
+     pts:[[11.5,10.4],[15.1,8.9],[15.7,10],[11.9,11.5]], height:3.2, type:'wagon'},
+
+    {id:'biotop', name:'Biotop', color:'#3a8a9a', tag:'Natur',
+     desc:'Feuchtbiotop neben dem Hauptgebäude. Ökologisch wertvoller Lebensraum.',
+     pts:[[2.3,-3.7],[2.4,-1.9],[2.3,0.3],[2.3,2.4],[1.3,0.8],[0.3,-0.3],[-0.7,-2.7],[0.8,-4]], height:0, type:'water'},
+
+    {id:'gemuesegarten', name:'Gemüsegarten', color:'#6aaa50', tag:'Garten',
+     desc:'Gemüsegarten im mittleren Bereich, zwischen Via 1 und Maisfeld.',
+     pts:[[-13.1,-8],[-5.2,-6],[-5.9,-2.9],[-8.4,-3],[-14.1,-4.8]], height:0, type:'ground'},
+
+    {id:'maisfeld', name:'Maisfeld', color:'#aa7a3a', tag:'Landwirtschaft',
+     desc:'Grosse landwirtschaftliche Fläche im südlichen Teil des Geländes.',
+     pts:[[-20.7,2.4],[-6.7,9.9],[1.1,12.9],[15,13.1],[20.1,10.5],[24.9,4.8],[33.7,11.6],[33.9,16],[-28,15.8],[-24.5,6.2]],
+     height:0, type:'ground'},
+
+    {id:'parkplatz', name:'Parkplatz', color:'#5a5550', tag:'Zugang',
+     desc:'Parkplatz am Spinnereiweg, Zufahrt zum Gelände.',
+     pts:[[22.6,-3.6],[25.7,-2.5],[27.8,-5.1],[32.3,-3.6],[29.9,2.2],[22.4,-0.8],[21.6,-1.2]], height:0, type:'ground'},
+
+    {id:'holzunterstand', name:'Holzunterstand', color:'#6a5535', tag:'Infrastruktur',
+     desc:'Überdachter Holzunterstand neben der Sauna.',
+     pts:[[-19,-6],[-15.6,-5.4],[-15.8,-4.4],[-19,-4.9]], height:3, type:'simple'},
+  ],
+  trees: [
+    [-28,4.5],[-4.4,0],[-1.5,-7.6],[-1.8,-7],[7.6,7.4],[-19.9,-5.2],[-17.5,-10.2],
+    [-22.7,-0.1],[-18.7,-2.1],[-15.8,2.8],[2.2,5.8],[1.7,10.1],[-7.5,-14.9],[6.7,-11],
+    [20,4.3],[-4.9,-1.2],[12.5,-7.3],[9.7,-6.1],[8.5,-0.1],[6.1,1.9],[-15.5,-4.8],
+    [-10.1,4.7],[-14.4,-5.4],[-22.7,0.7],[-14.3,-7.7],[-6.3,4.7],[-4.3,5.9],[0.1,11.2],
+    [-4.6,3.1],[-3.2,2.5],[15.7,-8.1],[17.7,-4.1],[25,-5.4],[21.1,1.1],[13.7,-2.1],
+    [11.1,7.5],[-14.3,-19.3],[-10.3,-20.1],[9.5,7.7],[-26.3,-18.1]
+  ]
+};
+
+const W = window.innerWidth, H = window.innerHeight;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a1a);
+scene.fog = new THREE.FogExp2(0x1a1a1a, 0.003);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(W, H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+let frust = 110;
+const asp = W / H;
+const cam = new THREE.OrthographicCamera(-frust*asp/2, frust*asp/2, frust/2, -frust/2, 0.1, 600);
+cam.position.set(80, 80, 80);
+cam.lookAt(0, 0, 0);
+
+function updateCamFrustum() {
+  const a = innerWidth / innerHeight;
+  cam.left = -frust * a / 2;
+  cam.right = frust * a / 2;
+  cam.top = frust / 2;
+  cam.bottom = -frust / 2;
+  cam.updateProjectionMatrix();
+}
+
+// ============================================================
+// ORBIT CONTROLS (zoom = frustum resize for ortho camera)
+// ============================================================
+class Orbit {
+  constructor(c,e){
+    this.c=c;this.e=e;this.t=new THREE.Vector3();this.s=new THREE.Spherical();
+    this.rot=false;this.pan=false;this.sx=0;this.sy=0;this.td=0;
+    const o=new THREE.Vector3().copy(c.position).sub(this.t);
+    this.s.setFromVector3(o);this.r=this.s.radius;
+    e.addEventListener('mousedown',v=>{if(v.button===0)this.rot=true;if(v.button===2)this.pan=true;this.sx=v.clientX;this.sy=v.clientY;});
+    e.addEventListener('mousemove',v=>{const dx=v.clientX-this.sx,dy=v.clientY-this.sy;this.sx=v.clientX;this.sy=v.clientY;if(this.rot){this.s.theta-=dx*.007;this.s.phi-=dy*.007;this.s.phi=Math.max(.15,Math.min(1.4,this.s.phi));this.u();}if(this.pan)this.p(dx,dy);});
+    e.addEventListener('mouseup',()=>{this.rot=false;this.pan=false;});
+    e.addEventListener('wheel',v=>{
+      v.preventDefault();
+      const zf = v.deltaY > 0 ? 1.08 : 0.92;
+      frust = Math.max(15, Math.min(300, frust * zf));
+      updateCamFrustum();
+    },{passive:false});
+    e.addEventListener('contextmenu',v=>v.preventDefault());
+    e.addEventListener('touchstart',v=>{v.preventDefault();if(v.touches.length===1){this.rot=true;this.sx=v.touches[0].clientX;this.sy=v.touches[0].clientY;}else if(v.touches.length===2){this.rot=false;this.pan=true;const a=v.touches[0].clientX-v.touches[1].clientX,b=v.touches[0].clientY-v.touches[1].clientY;this.td=Math.sqrt(a*a+b*b);this.sx=(v.touches[0].clientX+v.touches[1].clientX)/2;this.sy=(v.touches[0].clientY+v.touches[1].clientY)/2;}},{passive:false});
+    e.addEventListener('touchmove',v=>{v.preventDefault();if(v.touches.length===1&&this.rot){const dx=v.touches[0].clientX-this.sx,dy=v.touches[0].clientY-this.sy;this.sx=v.touches[0].clientX;this.sy=v.touches[0].clientY;this.s.theta-=dx*.007;this.s.phi-=dy*.007;this.s.phi=Math.max(.15,Math.min(1.4,this.s.phi));this.u();}else if(v.touches.length===2){const a=v.touches[0].clientX-v.touches[1].clientX,b=v.touches[0].clientY-v.touches[1].clientY;const d=Math.sqrt(a*a+b*b);frust=Math.max(15,Math.min(300,frust*(this.td/d)));this.td=d;updateCamFrustum();const cx=(v.touches[0].clientX+v.touches[1].clientX)/2,cy=(v.touches[0].clientY+v.touches[1].clientY)/2;this.p(cx-this.sx,cy-this.sy);this.sx=cx;this.sy=cy;}},{passive:false});
+    e.addEventListener('touchend',()=>{this.rot=false;this.pan=false;});
+  }
+  p(dx,dy){const s=frust/innerHeight;const l=new THREE.Vector3();l.setFromMatrixColumn(this.c.matrix,0);l.multiplyScalar(-dx*s);const u=new THREE.Vector3();u.setFromMatrixColumn(this.c.matrix,1);u.multiplyScalar(dy*s);this.t.add(l).add(u);this.u();}
+  u(){this.s.radius=this.r;const o=new THREE.Vector3().setFromSpherical(this.s);this.c.position.copy(this.t).add(o);this.c.lookAt(this.t);}
+}
+new Orbit(cam, renderer.domElement);
+
+// ============================================================
+// LIGHTS
+// ============================================================
+scene.add(new THREE.AmbientLight(0xffeedd, 0.45));
+const dl = new THREE.DirectionalLight(0xfff5e6, 0.85);
+dl.position.set(50, 70, 35); dl.castShadow = true;
+dl.shadow.mapSize.set(2048, 2048);
+dl.shadow.camera.left=-90;dl.shadow.camera.right=90;dl.shadow.camera.top=90;dl.shadow.camera.bottom=-90;
+scene.add(dl);
+scene.add(new THREE.DirectionalLight(0xc4d8ff, 0.2).translateX(-40).translateY(50).translateZ(-30));
+const pyL = new THREE.PointLight(0xffe8b0, 0.4, 25);
+pyL.position.set(6, 8, -1); scene.add(pyL);
+
+// ============================================================
+// MATERIALS
+// ============================================================
+const M = {
+  grass: new THREE.MeshLambertMaterial({ color: 0x4a7a2e }),
+  field: new THREE.MeshLambertMaterial({ color: 0x8a6a3a }),
+  garden: new THREE.MeshLambertMaterial({ color: 0x5a8a40 }),
+  biotop: new THREE.MeshPhongMaterial({ color: 0x3a6a7a, transparent: true, opacity: 0.7, shininess: 60 }),
+  path: new THREE.MeshLambertMaterial({ color: 0x8a7e6e }),
+  road: new THREE.MeshLambertMaterial({ color: 0x5a554e }),
+  parking: new THREE.MeshLambertMaterial({ color: 0x4a4540 }),
+  via1Timber: new THREE.MeshLambertMaterial({ color: 0x4a3028 }),
+  via1TimberSide: new THREE.MeshLambertMaterial({ color: 0x5a3a30 }),
+  via1Glass: new THREE.MeshPhongMaterial({ color: 0x9adae8, transparent: true, opacity: 0.42, specular: 0xffffff, shininess: 80, emissive: 0x304850, emissiveIntensity: 0.12 }),
+  via1Frame: new THREE.MeshLambertMaterial({ color: 0x4a5a5a }),
+  via1GreenRoof: new THREE.MeshLambertMaterial({ color: 0x5a7a4a }),
+  via1Window: new THREE.MeshLambertMaterial({ color: 0xddc870, emissive: 0x887730, emissiveIntensity: 0.25 }),
+  via1Balcony: new THREE.MeshLambertMaterial({ color: 0x3a2820 }),
+  saunaWall: new THREE.MeshLambertMaterial({ color: 0x6a5545 }),
+  saunaRoof: new THREE.MeshLambertMaterial({ color: 0xaa4030 }),
+  jurteWall: new THREE.MeshLambertMaterial({ color: 0xe8e0d0 }),
+  jurteRoof: new THREE.MeshLambertMaterial({ color: 0xd8d0c0 }),
+  holzWall: new THREE.MeshLambertMaterial({ color: 0x6a5535 }),
+  holzRoof: new THREE.MeshLambertMaterial({ color: 0x5a4a2a }),
+  bwGaeste: new THREE.MeshLambertMaterial({ color: 0x7a6a4a }),
+  bwStussi: new THREE.MeshLambertMaterial({ color: 0x6a6a5a }),
+  bwZweuthoid: new THREE.MeshLambertMaterial({ color: 0x6a4a3a }),
+  bwRoof: new THREE.MeshLambertMaterial({ color: 0x4a4a40 }),
+  wheel: new THREE.MeshLambertMaterial({ color: 0x2a2a2a }),
+  trunk: new THREE.MeshLambertMaterial({ color: 0x5a4030 }),
+  tA: new THREE.MeshLambertMaterial({ color: 0x3a6a2a }),
+  tB: new THREE.MeshLambertMaterial({ color: 0x4a8a3a }),
+  tC: new THREE.MeshLambertMaterial({ color: 0x2e5520 }),
+  tD: new THREE.MeshLambertMaterial({ color: 0x558030 }),
+};
+
+// ============================================================
+// REGISTRY & HELPERS
+// ============================================================
+const CK = [], BD = {};
+function reg(m, id, d) {
+  (Array.isArray(m)?m:[m]).forEach(x => { x.userData={id}; CK.push(x); });
+  BD[id] = d;
+}
+
+// Extrude polygon to 3D shape
+function extrudePoly(pts, h, mat) {
+  const shape = new THREE.Shape();
+  shape.moveTo(pts[0][0], -pts[0][1]); // x, -z (flip Z for Three.js)
+  for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], -pts[i][1]);
+  shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false });
+  geo.rotateX(-Math.PI / 2);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  scene.add(mesh);
+  return mesh;
+}
+
+// Flat polygon on ground
+function groundPoly(pts, mat, y) {
+  const shape = new THREE.Shape();
+  shape.moveTo(pts[0][0], -pts[0][1]);
+  for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], -pts[i][1]);
+  shape.closePath();
+  const geo = new THREE.ShapeGeometry(shape);
+  geo.rotateX(-Math.PI / 2);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.y = y || 0.03;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  return mesh;
+}
+
+function centroid(pts) {
+  let x=0,z=0; pts.forEach(p=>{x+=p[0];z+=p[1]});
+  return [x/pts.length, z/pts.length];
+}
+
+function box(w,h,d,mat,x,y,z){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+  m.position.set(x,y+h/2,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;
+}
+
+function wheel(x,y,z){
+  const w=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,.2,8),M.wheel);
+  w.rotation.z=Math.PI/2;w.position.set(x,y,z);scene.add(w);
+}
+
+function tree(x, z, sc, variant) {
+  sc = sc || (0.6 + Math.random()*0.5);
+  const v = variant !== undefined ? variant : Math.floor(Math.random()*3);
+  const g = new THREE.Group();
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(.2*sc,.35*sc,2.2*sc,6), M.trunk);
+  t.position.y = 1.1*sc; t.castShadow = true; g.add(t);
+  const ms = [M.tA, M.tB, M.tC, M.tD];
+  if (v === 0) {
+    [[2.8,3.2],[2.2,4.5],[1.5,5.5]].forEach(([r,h],i)=>{
+      const c=new THREE.Mesh(new THREE.SphereGeometry(r*sc,7,5),ms[(i+Math.floor(Math.abs(x*7)))%4]);
+      c.position.set((Math.random()-.5)*.3,h*sc,(Math.random()-.5)*.3);c.castShadow=true;g.add(c);
+    });
+  } else if (v === 1) {
+    [[2,2.5],[2.5,4],[2,5.5],[1.2,7]].forEach(([r,h],i)=>{
+      const c=new THREE.Mesh(new THREE.SphereGeometry(r*sc,6,4),ms[(i+1)%4]);
+      c.position.set(0,h*sc,0);c.castShadow=true;g.add(c);
+    });
+  } else {
+    [[3.2,3],[2.8,4.2],[2,5.2]].forEach(([r,h],i)=>{
+      const c=new THREE.Mesh(new THREE.SphereGeometry(r*sc,7,5),ms[(i+2)%4]);
+      c.position.set((Math.random()-.5)*.8,h*sc,(Math.random()-.5)*.8);c.castShadow=true;g.add(c);
+    });
+  }
+  g.position.set(x, 0, z); scene.add(g);
+}
+
+function pathSeg(x1,z1,x2,z2,w){
+  w=w||1.2;
+  const s=new THREE.Vector3(x1,.04,z1),e=new THREE.Vector3(x2,.04,z2);
+  const d=e.clone().sub(s);const l=d.length();
+  const geo=new THREE.PlaneGeometry(w,l);geo.rotateX(-Math.PI/2);
+  const m=new THREE.Mesh(geo,M.path);
+  m.position.copy(s.clone().add(e).multiplyScalar(.5));
+  m.rotation.y=-Math.atan2(d.z,d.x)+Math.PI/2;
+  m.receiveShadow=true;scene.add(m);
+}
+
+function makeLabel(text, x, y, z, size) {
+  size=size||10;
+  const c = document.createElement('canvas');c.width=512;c.height=64;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle='#3a3530';ctx.fillRect(0,0,512,64);
+  ctx.font='600 28px monospace';ctx.fillStyle='#a09a90';ctx.textAlign='center';
+  ctx.fillText(text,256,42);
+  const tex=new THREE.CanvasTexture(c);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(size,size*64/512),new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:0.8}));
+  m.position.set(x,y,z);scene.add(m);return m;
+}
+
+// ============================================================
+// GROUND — circular platform
+// ============================================================
+const GND_R = 65; // radius in meters — fits all buildings + trees
+const gnd = new THREE.Mesh(
+  new THREE.CircleGeometry(GND_R, 64).rotateX(-Math.PI/2),
+  M.grass
+);
+gnd.position.y = -0.1; gnd.receiveShadow = true; scene.add(gnd);
+
+// Thick edge ring for depth
+const edgeGeo = new THREE.TorusGeometry(GND_R, 1.2, 8, 64);
+edgeGeo.rotateX(Math.PI/2);
+const edge = new THREE.Mesh(edgeGeo, new THREE.MeshLambertMaterial({ color: 0x3a5a22 }));
+edge.position.y = -1.2; scene.add(edge);
+
+// Side cylinder (earth below the grass disc)
+const sideGeo = new THREE.CylinderGeometry(GND_R, GND_R+0.5, 3, 64, 1, true);
+const side = new THREE.Mesh(sideGeo, new THREE.MeshLambertMaterial({ color: 0x5a4a30 }));
+side.position.y = -1.6; scene.add(side);
+
+// Bottom cap
+const botGeo = new THREE.CircleGeometry(GND_R+0.5, 64).rotateX(Math.PI/2);
+const bot = new THREE.Mesh(botGeo, new THREE.MeshLambertMaterial({ color: 0x4a3a28 }));
+bot.position.y = -3.1; scene.add(bot);
+
+// ============================================================
+// BUILD FROM EXPORTED DATA
+// ============================================================
+
+DATA.buildings.forEach(b => {
+  const c = centroid(b.pts);
+
+  if (b.type === 'via1') {
+    // Via 1 — complex building with wings, windows, balconies, green roof
+    // The polygon is complex (11 points). Build simplified box volumes.
+    const g = new THREE.Group();
+
+    // Compute bounding box of polygon
+    let minX=99,maxX=-99,minZ=99,maxZ=-99;
+    b.pts.forEach(p=>{minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minZ=Math.min(minZ,p[1]);maxZ=Math.max(maxZ,p[1])});
+    const cx=(minX+maxX)/2, cz=(minZ+maxZ)/2;
+    const bw=maxX-minX, bd=maxZ-minZ;
+
+    // Main building mass — 3 stories, timber
+    const main = new THREE.Mesh(new THREE.BoxGeometry(bw*0.8, 11, bd*0.6), M.via1Timber);
+    main.position.set(cx, 5.5, cz-bd*0.15); main.castShadow=true; main.receiveShadow=true;
+    g.add(main);
+
+    // Green roof on main
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(bw*0.82, 0.8, bd*0.62), M.via1GreenRoof);
+    roof.position.set(cx, 11.4, cz-bd*0.15); g.add(roof);
+
+    // Left wing
+    const lw = new THREE.Mesh(new THREE.BoxGeometry(4, 10, bd*0.7), M.via1TimberSide);
+    lw.position.set(minX+2, 5, cz); lw.castShadow=true; lw.receiveShadow=true; g.add(lw);
+    const lr = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.8, bd*0.72), M.via1GreenRoof);
+    lr.position.set(minX+2, 10.4, cz); g.add(lr);
+
+    // Right wing
+    const rw = new THREE.Mesh(new THREE.BoxGeometry(4, 10, bd*0.6), M.via1Timber);
+    rw.position.set(maxX-2, 5, cz-bd*0.1); rw.castShadow=true; rw.receiveShadow=true; g.add(rw);
+    const rr = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.8, bd*0.62), M.via1GreenRoof);
+    rr.position.set(maxX-2, 10.4, cz-bd*0.1); g.add(rr);
+
+    // Windows — front face (south-facing, towards pyramid)
+    const frontZ = cz + bd*0.15;
+    for (let row=0; row<3; row++) {
+      for (let col=0; col<6; col++) {
+        const wx = minX + 2 + col * (bw-4)/5;
+        const wy = 3 + row * 3;
+        const win = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), M.via1Window);
+        win.position.set(wx, wy, frontZ+0.01);
+        g.add(win);
+      }
+    }
+
+    // Balconies
+    for (let col=0; col<4; col++) {
+      const bx = minX + 3 + col * (bw-6)/3;
+      const balc = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.15, 1), M.via1Balcony);
+      balc.position.set(bx, 8.5, frontZ+0.5); g.add(balc);
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.7, 0.06), M.via1Balcony);
+      rail.position.set(bx, 8.9, frontZ+1); g.add(rail);
+    }
+
+    // Base plinth
+    const base = new THREE.Mesh(new THREE.BoxGeometry(bw+1, 1, bd+1), M.via1Timber);
+    base.position.set(cx, 0.5, cz); base.receiveShadow=true; g.add(base);
+
+    scene.add(g);
+    reg([main, lw, rw, base], b.id, { name: b.name, tag: b.tag, description: b.desc, color: b.color });
+
+  } else if (b.type === 'pyramid') {
+    // Glass pyramid — cone geometry, 4-sided
+    const pyrC = centroid(b.pts);
+    // Compute size from polygon
+    let minX=99,maxX=-99,minZ=99,maxZ=-99;
+    b.pts.forEach(p=>{minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minZ=Math.min(minZ,p[1]);maxZ=Math.max(maxZ,p[1])});
+    const radius = Math.max(maxX-minX, maxZ-minZ) / 2;
+
+    const pyrGeo = new THREE.ConeGeometry(radius+1, b.height, 4);
+    pyrGeo.rotateY(Math.PI / 4);
+    const pyr = new THREE.Mesh(pyrGeo, M.via1Glass);
+    pyr.position.set(pyrC[0], b.height/2, pyrC[1]);
+    pyr.castShadow = true;
+    scene.add(pyr);
+
+    // Wireframe
+    const pyrW = new THREE.Mesh(
+      new THREE.ConeGeometry(radius+1.15, b.height+0.15, 4),
+      new THREE.MeshBasicMaterial({ color: 0x5a7a7a, wireframe: true, transparent: true, opacity: 0.25 })
+    );
+    pyrW.rotateY(Math.PI / 4);
+    pyrW.position.set(pyrC[0], b.height/2, pyrC[1]);
+    scene.add(pyrW);
+
+    // Frame rings
+    [0.25, 0.5, 0.75].forEach(f => {
+      const y = b.height * f;
+      const r2 = (radius+1) * (1 - f);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(r2, 0.05, 4, 4), M.via1Frame);
+      ring.rotation.x = Math.PI/2; ring.rotation.z = Math.PI/4;
+      ring.position.set(pyrC[0], y, pyrC[1]);
+      scene.add(ring);
+    });
+
+    reg(pyr, b.id, { name: b.name, tag: b.tag, description: b.desc, color: b.color });
+
+  } else if (b.type === 'jurte') {
+    // Round building — cylinder + cone roof
+    const r = 2.2; // approximate from polygon
+    const jurte = new THREE.Mesh(new THREE.CylinderGeometry(r, r+0.3, 2.8, 16), M.jurteWall);
+    jurte.position.set(c[0], 1.4, c[1]); jurte.castShadow=true; scene.add(jurte);
+    const jR = new THREE.Mesh(new THREE.ConeGeometry(r+0.8, 2, 16), M.jurteRoof);
+    jR.position.set(c[0], 3.8, c[1]); jR.castShadow=true; scene.add(jR);
+    reg(jurte, b.id, { name: b.name, tag: b.tag, description: b.desc, color: b.color });
+
+  } else if (b.type === 'wagon') {
+    // Bauwagen — box + roof + wheels
+    let minX=99,maxX=-99,minZ=99,maxZ=-99;
+    b.pts.forEach(p=>{minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minZ=Math.min(minZ,p[1]);maxZ=Math.max(maxZ,p[1])});
+    const bw=maxX-minX, bd=maxZ-minZ;
+    const mat = b.id==='gaeste'?M.bwGaeste:b.id==='stussi'?M.bwStussi:M.bwZweuthoid;
+    const wg = box(bw, b.height, bd, mat, c[0], 0, c[1]);
+    box(bw+0.3, 0.3, bd+0.3, M.bwRoof, c[0], b.height, c[1]);
+    // Wheels at corners
+    wheel(minX+0.3, 0.4, minZ+0.3); wheel(minX+0.3, 0.4, maxZ-0.3);
+    wheel(maxX-0.3, 0.4, minZ+0.3); wheel(maxX-0.3, 0.4, maxZ-0.3);
+    reg(wg, b.id, { name: b.name, tag: b.tag, description: b.desc, color: b.color });
+
+  } else if (b.type === 'water') {
+    // Biotop — flat reflective polygon
+    const mesh = groundPoly(b.pts, M.biotop, 0.05);
+    // Reeds
+    b.pts.forEach((p,i) => {
+      if(i%2===0){
+        const reed = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.07, 1.2+Math.random()*0.5, 4), M.tA);
+        reed.position.set(p[0]+(Math.random()-.5), 0.6, p[1]+(Math.random()-.5));
+        scene.add(reed);
+      }
+    });
+    reg(mesh, b.id, { name: b.name, tag: b.tag, description: b.desc, color: b.color });
+
+  } else if (b.type === 'ground') {
+    // Ground zone — flat colored polygon
+    const mat = b.id==='maisfeld'?M.field:b.id==='gemuesegarten'?M.garden:M.parking;
+    const y = b.id==='parkplatz'?0.04:0.03;
+    const mesh = groundPoly(b.pts, mat, y);
+    // Parking lines
+    if (b.id==='parkplatz') {
+      const pc = centroid(b.pts);
+      for(let i=0;i<5;i++){
+        const ln = new THREE.Mesh(new THREE.PlaneGeometry(0.1,3).rotateX(-Math.PI/2), new THREE.MeshLambertMaterial({color:0x6a6560}));
+        ln.position.set(pc[0]-3+i*1.5, 0.06, pc[1]);
+        scene.add(ln);
+      }
+    }
+    reg(mesh, b.id, { name: b.name, tag: b.tag, description: b.desc, color: b.color });
+
+  } else if (b.type === 'simple') {
+    // Simple extruded polygon
+    const mat = b.id==='sauna'?M.saunaWall:M.holzWall;
+    const mesh = extrudePoly(b.pts, b.height, mat);
+    // Roof
+    let minX=99,maxX=-99,minZ=99,maxZ=-99;
+    b.pts.forEach(p=>{minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minZ=Math.min(minZ,p[1]);maxZ=Math.max(maxZ,p[1])});
+    const rMat = b.id==='sauna'?M.saunaRoof:M.holzRoof;
+    const rw=maxX-minX, rd=maxZ-minZ;
+    const roofS = new THREE.Shape();
+    roofS.moveTo(-rw/2,0);roofS.lineTo(0,1.5);roofS.lineTo(rw/2,0);roofS.closePath();
+    const roofG = new THREE.ExtrudeGeometry(roofS,{depth:rd+0.3,bevelEnabled:false});
+    roofG.rotateY(Math.PI/2);roofG.translate(rd/2+0.15,0,0);
+    const roof = new THREE.Mesh(roofG, rMat);
+    roof.position.set(c[0]-rd/2-0.15, b.height, c[1]-rw/2);
+    roof.castShadow=true; scene.add(roof);
+    reg(mesh, b.id, { name: b.name, tag: b.tag, description: b.desc, color: b.color });
+  }
+});
+
+// ============================================================
+// TREES — from exported positions
+// ============================================================
+DATA.trees.forEach(([x, z]) => {
+  tree(x, z);
+});
+
+// ============================================================
+// PATHS
+// ============================================================
+// Main path through compound (east-west)
+pathSeg(30, -5, 20, -3); pathSeg(20, -3, 10, -2); pathSeg(10, -2, 0, -1);
+pathSeg(0, -1, -8, -2); pathSeg(-8, -2, -15, -4); pathSeg(-15, -4, -20, -6);
+
+// Path to Jurte
+pathSeg(-18, -4, -18.5, -3);
+
+// Path to Sauna
+pathSeg(-17, -6, -17.5, -7);
+
+// Path south
+pathSeg(0, -1, 0, 5); pathSeg(0, 5, -1, 8);
+
+// Path to Zweuthoid
+pathSeg(10, -1, 12, 5); pathSeg(12, 5, 13, 10);
+
+// Spinnereiweg (east road)
+const spGeo = new THREE.PlaneGeometry(4, 55); spGeo.rotateX(-Math.PI/2);
+const sp = new THREE.Mesh(spGeo, M.road);
+sp.position.set(35, 0.02, -5); sp.rotation.y = 0.1; scene.add(sp);
+
+// Seftauweg (south/west road)
+const sfGeo = new THREE.PlaneGeometry(3, 50); sfGeo.rotateX(-Math.PI/2);
+const sf = new THREE.Mesh(sfGeo, M.road);
+sf.position.set(-28, 0.02, 10); sf.rotation.y = 0.3; scene.add(sf);
+
+// ============================================================
+// LABELS
+// ============================================================
+const labels = [];
+labels.push(makeLabel('SPINNEREIWEG', 38, 4, -5, 12));
+labels.push(makeLabel('SEFTAUWEG', -32, 4, 12, 10));
+
+// ============================================================
+// PINS (task markers) — via postMessage from parent React app
+// ============================================================
+const pinGroup = new THREE.Group();
+scene.add(pinGroup);
+const pinMeshes = [];
+
+function createPin(x, z, label, id) {
+  const g = new THREE.Group();
+  // Pole
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 3, 6),
+    new THREE.MeshBasicMaterial({ color: 0xff6b2b })
+  );
+  pole.position.y = 1.5; g.add(pole);
+  // Flag
+  const flag = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.5, 1.2),
+    new THREE.MeshBasicMaterial({ color: 0xff6b2b, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+  );
+  flag.position.set(1.25, 2.8, 0); g.add(flag);
+  // Label on flag
+  if (label) {
+    const c = document.createElement('canvas'); c.width = 256; c.height = 64;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#ff6b2b'; ctx.fillRect(0, 0, 256, 64);
+    ctx.font = '700 22px monospace'; ctx.fillStyle = '#0a0a0a'; ctx.textAlign = 'center';
+    ctx.fillText(label.substring(0, 18), 128, 42);
+    const tex = new THREE.CanvasTexture(c);
+    const lbl = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.5, 1.2),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })
+    );
+    lbl.position.set(1.25, 2.8, 0.01); g.add(lbl);
+  }
+  // Glow dot at base
+  const dot = new THREE.Mesh(
+    new THREE.SphereGeometry(0.3, 8, 6),
+    new THREE.MeshBasicMaterial({ color: 0xff6b2b, transparent: true, opacity: 0.6 })
+  );
+  dot.position.y = 0.2; g.add(dot);
+
+  g.position.set(x, 0, z);
+  g.userData = { pinId: id, label };
+  pinGroup.add(g);
+  pinMeshes.push(g);
+  return g;
+}
+
+function clearPins() {
+  while (pinGroup.children.length) pinGroup.remove(pinGroup.children[0]);
+  pinMeshes.length = 0;
+}
+
+// Listen for pin data from parent React app
+window.addEventListener('message', (e) => {
+  if (!e.data || e.data.type !== 'SET_PINS') return;
+  clearPins();
+  (e.data.pins || []).forEach(p => {
+    createPin(p.x, p.z, p.label, p.id);
+  });
+});
+
+// Send legend data to parent on load
+function sendLegend() {
+  const legend = DATA.buildings.map(b => ({ id: b.id, name: b.name.split('–')[0].trim(), color: b.color, tag: b.tag }));
+  window.parent.postMessage({ type: 'LEGEND', legend }, '*');
+}
+setTimeout(sendLegend, 800);
+
+// ============================================================
+// INTERACTION
+// ============================================================
+const ray = new THREE.Raycaster();
+const mp = new THREE.Vector2();
+let hov = null;
+const panel = document.getElementById('info-panel');
+
+function showInfo(id) {
+  const d = BD[id]; if(!d) return;
+  document.getElementById('pt').textContent = d.name;
+  document.getElementById('pg').textContent = d.tag;
+  document.getElementById('pp').textContent = d.description;
+  panel.classList.add('visible');
+}
+
+let ct = 0;
+renderer.domElement.addEventListener('mousedown', () => { ct = Date.now(); });
+renderer.domElement.addEventListener('mouseup', e => {
+  if(Date.now()-ct>250) return;
+  mp.x=(e.clientX/innerWidth)*2-1;mp.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(mp,cam);
+  const h=ray.intersectObjects(CK);
+  if(h.length>0)showInfo(h[0].object.userData.id);else panel.classList.remove('visible');
+});
+renderer.domElement.addEventListener('mousemove', e => {
+  mp.x=(e.clientX/innerWidth)*2-1;mp.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(mp,cam);
+  const h=ray.intersectObjects(CK);
+  if(h.length>0){
+    renderer.domElement.style.cursor='pointer';
+    const o=h[0].object;
+    if(hov&&hov!==o&&hov.material.emissive)hov.material.emissive.setHex(0);
+    if(o.material.emissive)o.material.emissive.setHex(0x1a1a10);
+    hov=o;
+  }else{
+    renderer.domElement.style.cursor='grab';
+    if(hov&&hov.material.emissive)hov.material.emissive.setHex(0);
+    hov=null;
+  }
+});
+
+// ============================================================
+// RENDER LOOP
+// ============================================================
+function animate() {
+  requestAnimationFrame(animate);
+  labels.forEach(l => l.lookAt(cam.position));
+  pinMeshes.forEach(g => {
+    g.children.forEach(c => { if (c.type === 'Mesh' && c.geometry.type === 'PlaneGeometry') c.lookAt(cam.position); });
+  });
+  renderer.render(scene, cam);
+}
+
+window.addEventListener('resize', () => {
+  updateCamFrustum();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+setTimeout(() => document.getElementById('loading').classList.add('out'), 600);
+animate();
+</script>
+</body>
+</html>

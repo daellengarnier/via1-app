@@ -1,0 +1,11 @@
+{
+  "name": "Via1",
+  "short_name": "Via1",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#1a1a1a",
+  "lang": "de",
+  "description": "Organisationsapp der Wohngemeinschaft Via 1",
+  "icons": []
+}
