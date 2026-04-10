@@ -139,7 +139,7 @@ Nach einem Merge auf `main` passiert automatisch:
 
 - **Vor jeder Aenderung:** `CLAUDE.md`, `requirements.md` und `ideenliste.md` lesen um den aktuellen Stand zu kennen
 - **Bei Fragen zu Ideen/Features:** GitHub Issues im Repo pruefen - Bewohner melden Ideen/Bugs ueber die App, die als Issues landen
-- **Nach relevanten Aenderungen:** Dokumentation aktualisieren (CLAUDE.md, requirements.md, ideenliste.md)
+- **Nach relevanten Aenderungen:** Dokumentation aktualisieren (CLAUDE.md, requirements.md, ideenliste.md, README.md)
 - **Bei Konflikten:** Immer den User fragen, nie stillschweigend eine Version bevorzugen
 - **Learnings und Sackgassen** dokumentieren, damit der andere davon profitiert
 - **Vor dem Merge auf main:** Pruefen ob der Code sinnvoll ist und keine offensichtlichen Fehler hat
