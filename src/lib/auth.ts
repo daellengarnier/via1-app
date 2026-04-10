@@ -34,8 +34,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Production mode: check against database
-        const { PrismaClient } = await import("@prisma/client");
-        const bcrypt = await import("bcryptjs");
+        const { PrismaClient } = require("@prisma/client");
+        const bcrypt = require("bcryptjs") as typeof import("bcryptjs");
         const prisma = new PrismaClient();
 
         try {
@@ -60,7 +60,7 @@ export const authOptions: NextAuthOptions = {
             id: user.id,
             name: user.name,
             email: user.email,
-            roles: user.roles,
+            roles: user.roles as string[],
           };
         } finally {
           await prisma.$disconnect();
