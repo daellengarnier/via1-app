@@ -69,8 +69,11 @@ export default function HomeScreen() {
 
   return (
     <div className="p-4 pb-20">
+      {/* Platz für die Pyramide im Hintergrundbild */}
+      <div className="h-28" />
+
       {/* Header */}
-      <header className="mb-5 pt-2 pr-12">
+      <header className="mb-5 pr-12">
         <p className="text-xs tracking-widest text-gray-500">Via 1</p>
         <h1 className="font-heading text-3xl text-white">
           {getGreeting()}, {userName}
