@@ -250,17 +250,6 @@ export default function FloorPlan() {
             rx={3}
           />
 
-          {/* Boden / Hangprofil */}
-          <line
-            x1={0}
-            y1={totalHeight - 35}
-            x2={410}
-            y2={totalHeight - 35}
-            stroke="#2a2a2a"
-            strokeWidth={1}
-            strokeDasharray="2 3"
-          />
-
           {/* Nord (links, einen halben Stock tiefer) — von oben: 2.OG, 1.OG, EG */}
           {nordWgs.map((wg, i) => (
             <WgBlock
