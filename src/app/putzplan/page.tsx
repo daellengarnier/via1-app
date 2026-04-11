@@ -1,79 +1,211 @@
-const wgs = [
-  "Nordwind",
-  "Ostblock",
-  "Dreiecksbar",
-  "Kleenex",
-  "Family-WG",
-  "Bonzen",
+"use client";
+
+import { useState, useEffect } from "react";
+
+interface PutzRunde {
+  wg: string;
+  completedAt: string | null;
+}
+
+const initialRotation: PutzRunde[] = [
+  { wg: "Nordwind", completedAt: "2026-02-15" },
+  { wg: "Ostblock", completedAt: "2026-02-28" },
+  { wg: "Dreiecksbar", completedAt: "2026-03-10" },
+  { wg: "Kleenex", completedAt: null },
+  { wg: "Family-WG", completedAt: null },
+  { wg: "Bonzen", completedAt: null },
 ];
 
-const months = [
-  "Januar",
-  "Februar",
-  "Maerz",
-  "April",
-  "Mai",
-  "Juni",
-  "Juli",
-  "August",
-  "September",
-  "Oktober",
-  "November",
-  "Dezember",
+const funnyMessages = [
+  "Das Treppenhaus versinkt im Dreck! 🧹",
+  "Hier wachsen bald Pilze im Gang... 🍄",
+  "Die Staubmäuse haben eigene WGs gegründet 🐭",
+  "Wann wurde hier zuletzt geputzt? Archäologen rätseln... 🏺",
+  "Die Waschküche hat sich selbständig gemacht 🧟",
+  "Houston, wir haben ein Hygiene-Problem 🚀",
+  "Sogar der Staubsauger hat aufgegeben 😤",
+  "Ein Putzfee wurde gesichtet – ach nein, doch nur eine Staubwolke ☁️",
 ];
 
-function getAssignment(monthIndex: number): string {
-  return wgs[monthIndex % wgs.length]!;
+function daysSince(dateStr: string): number {
+  const now = new Date();
+  const then = new Date(dateStr);
+  return Math.floor((now.getTime() - then.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function getRandomMessage(seed: number): string {
+  return funnyMessages[seed % funnyMessages.length]!;
 }
 
 export default function PutzplanPage() {
-  const currentMonth = 3; // April (0-indexed)
+  const [rotation, setRotation] = useState(initialRotation);
+  const [confirmed, setConfirmed] = useState(false);
+
+  const currentIndex = rotation.findIndex((r) => r.completedAt === null);
+  const currentWg = currentIndex >= 0 ? rotation[currentIndex]! : null;
+
+  const lastCompleted = [...rotation]
+    .filter((r) => r.completedAt !== null)
+    .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!));
+  const lastCompletedDate = lastCompleted[0]?.completedAt;
+  const daysSinceLastClean = lastCompletedDate
+    ? daysSince(lastCompletedDate)
+    : 999;
+  const overOneMonth = daysSinceLastClean > 30;
+
+  function handleComplete() {
+    if (!currentWg || confirmed) return;
+    setConfirmed(true);
+  }
+
+  useEffect(() => {
+    if (!confirmed || currentIndex < 0) return;
+    const timer = setTimeout(() => {
+      setRotation((prev) =>
+        prev.map((r, i) =>
+          i === currentIndex
+            ? { ...r, completedAt: new Date().toISOString().split("T")[0]! }
+            : r
+        )
+      );
+      setConfirmed(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [confirmed, currentIndex]);
 
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-6 font-mono text-2xl font-bold text-accent">
-        Putzplan
+      <h1 className="mb-6 font-display text-2xl font-bold text-accent">
+        Putzdienst
       </h1>
 
-      {/* Aktuell */}
-      <div className="mb-6 rounded-lg border-2 border-accent bg-accent/10 p-4">
-        <p className="font-mono text-xs uppercase tracking-wider text-accent">
-          Diesen Monat dran
-        </p>
-        <p className="mt-1 text-2xl font-bold text-white">
-          {getAssignment(currentMonth)}
-        </p>
-        <p className="mt-1 text-sm text-gray-400">
-          Treppenhaus + Waschkueche
-        </p>
-      </div>
+      {/* Aktuell dran */}
+      {currentWg && (
+        <div
+          className={`mb-6 rounded-lg border-2 p-5 ${
+            overOneMonth
+              ? "border-secondary bg-secondary/10"
+              : "border-accent bg-accent/10"
+          }`}
+        >
+          <p className="font-mono text-xs uppercase tracking-wider text-accent">
+            Gerade dran
+          </p>
+          <p className="mt-1 font-display text-3xl font-bold text-white">
+            {currentWg.wg}
+          </p>
+          <p className="mt-2 text-sm text-gray-400">
+            Treppenhaus + Waschküche
+          </p>
 
-      {/* Rotation */}
-      <h2 className="mb-3 font-mono text-sm font-bold uppercase tracking-wider text-accent">
-        Jahresuebersicht
+          {overOneMonth && (
+            <p className="mt-3 rounded-lg bg-secondary/20 p-3 text-sm text-secondary">
+              {getRandomMessage(daysSinceLastClean)}
+            </p>
+          )}
+
+          {lastCompletedDate && (
+            <p className="mt-2 text-xs text-gray-500">
+              Zuletzt geputzt: vor {daysSinceLastClean} Tagen (
+              {new Date(lastCompletedDate).toLocaleDateString("de-CH", {
+                day: "numeric",
+                month: "long",
+              })}
+              )
+            </p>
+          )}
+
+          <button
+            onClick={handleComplete}
+            disabled={confirmed}
+            className={`mt-4 w-full rounded-lg py-3 font-mono text-sm font-bold transition-all ${
+              confirmed
+                ? "bg-accent/20 text-accent"
+                : "bg-accent text-dark hover:brightness-110"
+            }`}
+          >
+            {confirmed ? "✓ Erledigt!" : "Als erledigt markieren"}
+          </button>
+          <p className="mt-1 text-center text-xs text-gray-600">
+            Nur Bewohner:innen der {currentWg.wg} können abkreuzen
+          </p>
+        </div>
+      )}
+
+      {!currentWg && (
+        <div className="mb-6 rounded-lg border border-accent bg-accent/10 p-5 text-center">
+          <p className="font-display text-xl font-bold text-accent">
+            Alle durch!
+          </p>
+          <p className="mt-1 text-sm text-gray-400">
+            Neue Runde startet automatisch
+          </p>
+        </div>
+      )}
+
+      {/* Tournus */}
+      <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
+        Tournus
       </h2>
       <div className="space-y-2">
-        {months.map((month, i) => {
-          const isCurrent = i === currentMonth;
+        {rotation.map((r, i) => {
+          const isCurrent = i === currentIndex;
+          const isDone = r.completedAt !== null;
+          const isPending = !isDone && !isCurrent;
+
           return (
             <div
-              key={month}
+              key={r.wg}
               className={`flex items-center justify-between rounded-lg border p-3 ${
                 isCurrent
                   ? "border-accent bg-accent/5"
-                  : "border-gray-800 bg-gray-900/40"
+                  : isDone
+                    ? "border-gray-800 bg-gray-900/40 opacity-60"
+                    : "border-gray-800 bg-gray-900/40"
               }`}
             >
-              <span
-                className={`text-sm ${isCurrent ? "font-bold text-white" : "text-gray-400"}`}
-              >
-                {month}
-              </span>
-              <span
-                className={`font-mono text-sm ${isCurrent ? "font-bold text-accent" : "text-gray-500"}`}
-              >
-                {getAssignment(i)}
-              </span>
+              <div className="flex items-center gap-3">
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                    isDone
+                      ? "bg-accent/20 text-accent"
+                      : isCurrent
+                        ? "bg-accent text-dark"
+                        : "bg-gray-800 text-gray-500"
+                  }`}
+                >
+                  {isDone ? "✓" : i + 1}
+                </span>
+                <span
+                  className={`text-sm ${
+                    isCurrent
+                      ? "font-bold text-white"
+                      : isDone
+                        ? "text-gray-500 line-through"
+                        : "text-gray-400"
+                  }`}
+                >
+                  {r.wg}
+                </span>
+              </div>
+              <div className="text-right">
+                {isDone && r.completedAt && (
+                  <span className="font-mono text-xs text-gray-600">
+                    {new Date(r.completedAt).toLocaleDateString("de-CH", {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </span>
+                )}
+                {isCurrent && (
+                  <span className="font-mono text-xs text-accent">dran</span>
+                )}
+                {isPending && (
+                  <span className="font-mono text-xs text-gray-600">
+                    wartet
+                  </span>
+                )}
+              </div>
             </div>
           );
         })}

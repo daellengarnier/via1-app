@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     description || "_Keine weitere Beschreibung._",
     "",
     "---",
-    `_Gemeldet ueber die via1-app von ${session.user.name} (${session.user.email})_`,
+    `_Gemeldet über die via1-app von ${session.user.name} (${session.user.email})_`,
   ].join("\n");
 
   const response = await fetch(

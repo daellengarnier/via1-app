@@ -21,7 +21,7 @@ export default function SetupPage() {
     }
 
     if (password !== confirmPassword) {
-      setError("Passwoerter stimmen nicht ueberein.");
+      setError("Passwörter stimmen nicht überein.");
       return;
     }
 
@@ -46,7 +46,7 @@ export default function SetupPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <h1 className="mb-8 font-mono text-2xl font-bold text-accent">
+        <h1 className="mb-8 font-display text-2xl font-bold text-accent">
           Passwort einrichten
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -72,7 +72,7 @@ export default function SetupPage() {
               htmlFor="confirmPassword"
               className="mb-1 block text-sm text-gray-400"
             >
-              Passwort bestaetigen
+              Passwort bestätigen
             </label>
             <input
               id="confirmPassword"

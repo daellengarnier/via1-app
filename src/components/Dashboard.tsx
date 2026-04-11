@@ -31,13 +31,13 @@ export default function Dashboard() {
   return (
     <div className="space-y-4 p-4 pb-20">
       <header className="mb-6">
-        <h1 className="font-mono text-2xl font-bold text-accent">via1</h1>
+        <h1 className="font-display text-2xl font-bold text-accent">via1</h1>
         <p className="text-sm text-gray-400">Spinnereiweg 17, Bern</p>
       </header>
 
-      {/* Naechste Sitzung */}
+      {/* Nächste Sitzung */}
       <Card>
-        <SectionTitle>Naechste Sitzung</SectionTitle>
+        <SectionTitle>Nächste Sitzung</SectionTitle>
         <Link href="/termine" className="block">
           <p className="text-lg font-medium text-white">Haussitzung</p>
           <p className="text-sm text-gray-400">
@@ -82,7 +82,7 @@ export default function Dashboard() {
           <li className="flex items-start gap-2">
             <span className="mt-0.5 text-secondary">●</span>
             <div>
-              <p className="text-sm text-white">Waschkueche reinigen</p>
+              <p className="text-sm text-white">Waschküche reinigen</p>
               <p className="text-xs text-gray-500">UG</p>
             </div>
           </li>
@@ -90,7 +90,7 @@ export default function Dashboard() {
             <span className="mt-0.5 text-accent">●</span>
             <div>
               <p className="text-sm text-white">Aprikosenbaum schneiden</p>
-              <p className="text-xs text-gray-500">Garten Sued</p>
+              <p className="text-xs text-gray-500">Garten Süd</p>
             </div>
           </li>
         </ul>
@@ -113,7 +113,7 @@ export default function Dashboard() {
           <SectionTitle>Wohnwagen</SectionTitle>
           <p className="font-mono text-lg font-bold text-accent">Frei</p>
           <p className="mt-1 text-xs text-gray-400">
-            Naechste Buchung: 21. Apr
+            Nächste Buchung: 21. Apr
           </p>
         </Card>
       </div>

@@ -51,10 +51,10 @@ export default function ProfilPage() {
         onClick={() => router.back()}
         className="mb-4 text-sm text-gray-500 hover:text-white"
       >
-        ← Zurueck
+        ← Zurück
       </button>
 
-      <h1 className="mb-6 font-mono text-2xl font-bold text-accent">
+      <h1 className="mb-6 font-display text-2xl font-bold text-accent">
         Mein Profil
       </h1>
 
@@ -111,14 +111,14 @@ export default function ProfilPage() {
       {/* Allergien */}
       <section className="mb-6">
         <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
-          Allergien / Unvertraeglichkeiten
+          Allergien / Unverträglichkeiten
         </h2>
         <textarea
           value={profile.allergies}
           onChange={(e) =>
             setProfile({ ...profile, allergies: e.target.value })
           }
-          placeholder="z.B. Laktose, Gluten, Nuesse..."
+          placeholder="z.B. Laktose, Gluten, Nüsse..."
           rows={2}
           className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
         />

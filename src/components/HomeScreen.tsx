@@ -10,12 +10,24 @@ interface Termin {
   type: "sitzung" | "essen" | "sonstige";
 }
 
+interface SpinnereiEvent {
+  title: string;
+  date: string;
+  url: string;
+}
+
 const nextTermin: Termin = {
   id: "1",
   title: "Haussitzung April",
   date: "2026-04-16T19:30",
   location: "Gemeinschaftsraum EG",
   type: "sitzung",
+};
+
+const nextSpinnereiEvent: SpinnereiEvent = {
+  title: "Soirée Tropicale",
+  date: "2026-04-25T21:00",
+  url: "https://kulturspinnerei.ch",
 };
 
 const typeLabels = {
@@ -40,34 +52,38 @@ function formatTime(iso: string): string {
 
 function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return "Guete Morge";
-  if (hour < 17) return "Guete Namittag";
-  return "Guete Abig";
+  if (hour < 12) return "Guten Morgen";
+  if (hour < 17) return "Guten Nachmittag";
+  return "Guten Abend";
 }
 
 export default function HomeScreen() {
   const router = useRouter();
+  // TODO: aus Session lesen
+  const userName = "Alain";
 
   return (
     <div className="p-4 pb-20">
       {/* VIA1 Header */}
       <header className="mb-6 pt-2">
-        <h1 className="font-mono text-5xl font-bold tracking-tight text-accent">
+        <h1 className="font-display text-5xl font-bold tracking-tight text-accent">
           VIA1
         </h1>
-        <p className="mt-1 text-lg text-gray-300">{getGreeting()}</p>
+        <p className="mt-1 text-lg text-gray-300">
+          {getGreeting()}, {userName}
+        </p>
         <p className="text-sm text-gray-500">Spinnereiweg 17, Bern</p>
       </header>
 
-      {/* Naechster Termin */}
+      {/* Nächster Termin */}
       <div
-        className="mb-4 cursor-pointer rounded-lg border border-accent/30 bg-accent/5 p-4 transition-colors hover:bg-accent/10"
+        className="mb-3 cursor-pointer rounded-lg border border-accent/30 bg-accent/5 p-4 transition-colors hover:bg-accent/10"
         onClick={() => router.push(`/termine/${nextTermin.id}`)}
       >
         <p className="font-mono text-xs uppercase tracking-wider text-accent">
-          Naechster Termin
+          Nächster Termin
         </p>
-        <h2 className="mt-1 text-lg font-medium text-white">
+        <h2 className="mt-1 font-display text-lg font-medium text-white">
           {nextTermin.title}
         </h2>
         <p className="mt-1 text-sm text-gray-400">
@@ -81,6 +97,28 @@ export default function HomeScreen() {
         </div>
       </div>
 
+      {/* Nächster Spinnerei-Anlass */}
+      <a
+        href={nextSpinnereiEvent.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mb-4 block rounded-lg border border-purple-500/30 bg-purple-500/5 p-4 transition-colors hover:bg-purple-500/10"
+      >
+        <p className="font-mono text-xs uppercase tracking-wider text-purple-400">
+          Kulturspinnerei
+        </p>
+        <h2 className="mt-1 font-display text-lg font-medium text-white">
+          {nextSpinnereiEvent.title}
+        </h2>
+        <p className="mt-1 text-sm text-gray-400">
+          {formatDate(nextSpinnereiEvent.date)} ·{" "}
+          {formatTime(nextSpinnereiEvent.date)}
+        </p>
+        <p className="mt-1 text-xs text-purple-400/60">
+          kulturspinnerei.ch →
+        </p>
+      </a>
+
       {/* Quick Widgets */}
       <div className="grid grid-cols-2 gap-3">
         {/* Sauna */}
@@ -91,7 +129,9 @@ export default function HomeScreen() {
           <p className="font-mono text-xs uppercase tracking-wider text-accent">
             Sauna
           </p>
-          <p className="mt-1 font-mono text-3xl font-bold text-accent">62°C</p>
+          <p className="mt-1 font-display text-3xl font-bold text-accent">
+            62°C
+          </p>
           <p className="mt-1 text-xs text-gray-500">Wird geheizt</p>
         </div>
 
@@ -103,7 +143,9 @@ export default function HomeScreen() {
           <p className="font-mono text-xs uppercase tracking-wider text-accent">
             Aufgaben
           </p>
-          <p className="mt-1 font-mono text-3xl font-bold text-secondary">3</p>
+          <p className="mt-1 font-display text-3xl font-bold text-secondary">
+            3
+          </p>
           <p className="mt-1 text-xs text-gray-500">offen</p>
         </div>
 
@@ -115,22 +157,24 @@ export default function HomeScreen() {
           <p className="font-mono text-xs uppercase tracking-wider text-accent">
             Putzdienst
           </p>
-          <p className="mt-1 font-mono text-lg font-bold text-accent">
+          <p className="mt-1 font-display text-lg font-bold text-accent">
             Dreiecksbar
           </p>
-          <p className="mt-1 text-xs text-gray-500">diesen Monat dran</p>
+          <p className="mt-1 text-xs text-gray-500">ist dran</p>
         </div>
 
-        {/* Gaesti */}
+        {/* Gästi */}
         <div
           className="cursor-pointer rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4 transition-colors hover:border-gray-700"
           onClick={() => router.push("/gaesti")}
         >
           <p className="font-mono text-xs uppercase tracking-wider text-accent">
-            Gaesti
+            Gästi
           </p>
-          <p className="mt-1 font-mono text-lg font-bold text-accent">Frei</p>
-          <p className="mt-1 text-xs text-gray-500">Naechste: 21. Apr</p>
+          <p className="mt-1 font-display text-lg font-bold text-accent">
+            Frei
+          </p>
+          <p className="mt-1 text-xs text-gray-500">Nächste: 21. Apr</p>
         </div>
       </div>
     </div>

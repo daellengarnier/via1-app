@@ -67,7 +67,7 @@ const mockTermine: Record<string, TerminDetail> = {
       },
       {
         id: "t2",
-        title: "Waschkueche-Regeln",
+        title: "Waschküche-Regeln",
         notes: "",
         createdBy: "Nina",
       },
@@ -87,7 +87,7 @@ const mockTermine: Record<string, TerminDetail> = {
   },
   "2": {
     id: "2",
-    title: "Hausessen Fruehling",
+    title: "Hausessen Frühling",
     date: "2026-04-25",
     time: "18:00",
     location: "Innenhof",
@@ -110,7 +110,7 @@ const mockTermine: Record<string, TerminDetail> = {
   },
   "3": {
     id: "3",
-    title: "Haussitzung Maerz",
+    title: "Haussitzung März",
     date: "2026-03-19",
     time: "19:30",
     location: "Gemeinschaftsraum EG",
@@ -119,7 +119,7 @@ const mockTermine: Record<string, TerminDetail> = {
     withDinner: false,
     dinnerTime: null,
     sitzungsleitung: "Marco",
-    protokoll: "Alle Punkte wurden besprochen. Naechste Sitzung im April.",
+    protokoll: "Alle Punkte wurden besprochen. Nächste Sitzung im April.",
     anwesend: [
       "Marco",
       "Lena",
@@ -136,25 +136,25 @@ const mockTermine: Record<string, TerminDetail> = {
       {
         id: "t4",
         title: "Budget 2026",
-        notes: "Budget wurde genehmigt. CHF 5000 fuer Gemeinschaftsraum.",
+        notes: "Budget wurde genehmigt. CHF 5000 für Gemeinschaftsraum.",
         createdBy: "Marco",
       },
       {
         id: "t5",
         title: "Neuer Putzplan",
         notes:
-          "Rotation bleibt gleich. Kontrolle wird eingefuehrt.",
+          "Rotation bleibt gleich. Kontrolle wird eingeführt.",
         createdBy: "Lena",
       },
       {
         id: "t6",
-        title: "Fahrradraum aufraumen",
-        notes: "Termin: 22. Maerz, 10 Uhr. Alle sind eingeladen.",
+        title: "Fahrradraum aufräumen",
+        notes: "Termin: 22. März, 10 Uhr. Alle sind eingeladen.",
         createdBy: "Sven",
       },
       {
         id: "t7",
-        title: "Gaestewohnwagen Saison",
+        title: "Gästewohnwagen Saison",
         notes: "Ab April buchbar. Preise bleiben gleich.",
         createdBy: "Felix",
       },
@@ -309,7 +309,7 @@ export default function TerminDetailPage() {
             {termin.organizer}
           </span>
         )}
-        <h1 className="mt-1 font-mono text-2xl font-bold text-white">
+        <h1 className="mt-1 font-display text-2xl font-bold text-white">
           {termin.title}
         </h1>
         <p className="mt-1 text-sm text-gray-400">
@@ -441,7 +441,7 @@ export default function TerminDetailPage() {
               onChange={(e) =>
                 setTermin({ ...termin, protokoll: e.target.value })
               }
-              placeholder="Allgemeine Notizen, Beschluesse, naechste Schritte..."
+              placeholder="Allgemeine Notizen, Beschlüsse, nächste Schritte..."
               rows={4}
               className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
             />
@@ -479,7 +479,7 @@ export default function TerminDetailPage() {
             >
               <div className="mb-2">
                 <label className="mb-1 block text-xs text-gray-400">
-                  Ernaehrung
+                  Ernährung
                 </label>
                 <div className="flex gap-2">
                   {["Fleisch", "Vegi", "Vegan"].map((d) => (
@@ -500,7 +500,7 @@ export default function TerminDetailPage() {
               </div>
               <div className="mb-3">
                 <label className="mb-1 block text-xs text-gray-400">
-                  Gaeste mitbringen
+                  Gäste mitbringen
                 </label>
                 <input
                   type="number"

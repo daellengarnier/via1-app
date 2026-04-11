@@ -127,7 +127,7 @@ const wgData: Record<string, WgDetail> = {
     issues: [
       {
         id: "4",
-        title: "Heizung macht Geraeusche",
+        title: "Heizung macht Geräusche",
         room: "O22",
         status: "offen",
         date: "2026-04-10",
@@ -200,7 +200,7 @@ export default function WgPage() {
       </button>
 
       <div className="mb-6">
-        <h1 className={`font-mono text-2xl font-bold ${accentColor}`}>
+        <h1 className={`font-display text-2xl font-bold ${accentColor}`}>
           {wg.name}
         </h1>
         <p className="text-sm text-gray-400">
@@ -209,7 +209,7 @@ export default function WgPage() {
       </div>
 
       {/* Zimmer */}
-      <h2 className={`mb-3 font-mono text-sm font-bold uppercase tracking-wider ${accentColor}`}>
+      <h2 className={`mb-3 font-display text-sm font-bold uppercase tracking-wider ${accentColor}`}>
         Zimmer
       </h2>
       <div className="mb-6 space-y-2">

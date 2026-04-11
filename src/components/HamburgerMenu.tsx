@@ -21,7 +21,7 @@ export function HamburgerMenu() {
       <button
         onClick={() => setOpen(true)}
         className="fixed right-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-dark/90 backdrop-blur-sm transition-colors hover:border-accent"
-        aria-label="Menu oeffnen"
+        aria-label="Menu öffnen"
       >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <path d="M3 5h14M3 10h14M3 15h14" stroke="#b8f068" strokeWidth="1.5" strokeLinecap="round" />

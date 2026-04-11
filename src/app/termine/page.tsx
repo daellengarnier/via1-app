@@ -73,7 +73,7 @@ const initialTermine: Termin[] = [
   },
   {
     id: "2",
-    title: "Hausessen Fruehling",
+    title: "Hausessen Frühling",
     date: "2026-04-25",
     time: "18:00",
     location: "Innenhof",
@@ -86,7 +86,7 @@ const initialTermine: Termin[] = [
   },
   {
     id: "3",
-    title: "Haussitzung Maerz",
+    title: "Haussitzung März",
     date: "2026-03-19",
     time: "19:30",
     location: "Gemeinschaftsraum EG",
@@ -159,7 +159,7 @@ export default function TerminePage() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-mono text-2xl font-bold text-accent">Termine</h1>
+        <h1 className="font-display text-2xl font-bold text-accent">Termine</h1>
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="rounded-full bg-accent px-4 py-1.5 font-mono text-xs font-bold text-dark"
@@ -230,7 +230,7 @@ export default function TerminePage() {
                 className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
                 required
               >
-                <option value="">WG waehlen...</option>
+                <option value="">WG wählen...</option>
                 {wgNames.map((wg) => (
                   <option key={wg} value={wg}>
                     {wg}

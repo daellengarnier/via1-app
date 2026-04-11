@@ -4,7 +4,7 @@ import { ConditionalNav } from "@/components/ConditionalNav";
 
 export const metadata: Metadata = {
   title: "via1-app",
-  description: "Organisations-App fuer die Wohngemeinschaft Via 1",
+  description: "Organisations-App für die Wohngemeinschaft Via 1",
 };
 
 export default function RootLayout({

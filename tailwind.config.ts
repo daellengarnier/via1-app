@@ -14,8 +14,9 @@ const config: Config = {
         dark: "#0a0a0a",
       },
       fontFamily: {
-        mono: ["Space Mono", "monospace"],
-        sans: ["DM Sans", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
+        sans: ["Inter", "sans-serif"],
+        display: ["Space Grotesk", "sans-serif"],
       },
     },
   },

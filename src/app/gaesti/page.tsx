@@ -13,7 +13,7 @@ interface Booking {
 const mockBookings: Booking[] = [
   {
     id: "1",
-    guest: "Anna Mueller",
+    guest: "Anna Müller",
     invitedBy: "Alain",
     from: "2026-04-21",
     to: "2026-04-23",
@@ -55,7 +55,7 @@ function formatDateShort(iso: string): string {
 const monthNames = [
   "Januar",
   "Februar",
-  "Maerz",
+  "März",
   "April",
   "Mai",
   "Juni",
@@ -107,7 +107,7 @@ export default function GaestiPage() {
     e.preventDefault();
     if (!newGuest || !newFrom || !newTo) return;
 
-    // Pruefen auf Doppelbuchung
+    // Prüfen auf Doppelbuchung
     const conflict = bookings.find(
       (b) =>
         (newFrom >= b.from && newFrom <= b.to) ||
@@ -138,7 +138,7 @@ export default function GaestiPage() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-mono text-2xl font-bold text-accent">Gaesti</h1>
+        <h1 className="font-display text-2xl font-bold text-accent">Gästi</h1>
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="rounded-full bg-accent px-4 py-1.5 font-mono text-xs font-bold text-dark"
@@ -146,7 +146,7 @@ export default function GaestiPage() {
           + Buchen
         </button>
       </div>
-      <p className="mb-4 text-sm text-gray-500">Gaestewohnwagen-Buchungen</p>
+      <p className="mb-4 text-sm text-gray-500">Gästewohnwagen-Buchungen</p>
 
       {/* Buchungs-Formular */}
       {showCreate && (

@@ -8,7 +8,7 @@ export default function SaunaPage() {
 
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-6 font-mono text-2xl font-bold text-accent">Sauna</h1>
+      <h1 className="mb-6 font-display text-2xl font-bold text-accent">Sauna</h1>
 
       {/* Temperatur */}
       <div className="mb-6 flex flex-col items-center rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-8">

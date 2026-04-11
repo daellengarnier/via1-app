@@ -46,7 +46,7 @@ export default function FeedbackPage() {
 
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-2 font-mono text-2xl font-bold text-accent">
+      <h1 className="mb-2 font-display text-2xl font-bold text-accent">
         Feedback
       </h1>
       <p className="mb-6 text-sm text-gray-400">
@@ -89,7 +89,7 @@ export default function FeedbackPage() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder={
               type === "bug"
-                ? "z.B. Login-Seite laedt nicht"
+                ? "z.B. Login-Seite lädt nicht"
                 : "z.B. Waschmaschinen-Reservation"
             }
             className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white placeholder-gray-600 focus:border-accent focus:outline-none"
