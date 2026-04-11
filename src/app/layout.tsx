@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ConditionalNav } from "@/components/ConditionalNav";
-import { AnimatedBackground } from "@/components/AnimatedBackground";
-
 export const metadata: Metadata = {
   title: "Via 1 – Hausgemeinschaft",
   description: "Organisations-App für die Wohngemeinschaft Via 1, Spinnereiweg 17, Bern",
@@ -33,8 +31,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="min-h-screen font-sans antialiased">
-        <AnimatedBackground />
-        <div className="relative z-10 mx-auto max-w-lg">{children}</div>
+        <div className="relative mx-auto max-w-lg">{children}</div>
         <ConditionalNav />
       </body>
     </html>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 const saunaSections = [
   {
@@ -123,7 +124,9 @@ export default function SaunaPage() {
     .join(" ");
 
   return (
-    <div className="p-4 pb-20">
+    <div className="relative p-4 pb-20">
+      <AnimatedBackground icon="/icon-sauna.webp" glowClass="glow-red" />
+      <div className="h-24" />
       <h1 className="mb-6 font-heading text-2xl text-white">Sauna</h1>
 
       {/* Temperatur */}

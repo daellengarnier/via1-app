@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatedBackground } from "./AnimatedBackground";
 
 interface PinnwandEintrag {
   id: string;
@@ -68,7 +69,8 @@ export default function HomeScreen() {
   }
 
   return (
-    <div className="p-4 pb-20">
+    <div className="relative p-4 pb-20">
+      <AnimatedBackground icon="/pyramid.webp" />
       {/* Platz für die Pyramide */}
       <div className="h-24" />
 

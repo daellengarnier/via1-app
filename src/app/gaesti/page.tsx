@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 interface Booking {
   id: string;
@@ -137,7 +138,9 @@ export default function GaestiPage() {
   }
 
   return (
-    <div className="p-4 pb-20">
+    <div className="relative p-4 pb-20">
+      <AnimatedBackground icon="/icon-gaesti.webp" glowClass="glow-cyan" />
+      <div className="h-24" />
       <h1 className="mb-1 font-heading text-2xl text-white">Gästewohnwagen</h1>
       <button
         onClick={() => setShowCreate(!showCreate)}

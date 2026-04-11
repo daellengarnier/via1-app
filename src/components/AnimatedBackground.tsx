@@ -3,23 +3,24 @@
 interface AnimatedBackgroundProps {
   icon?: string; // Pfad zum Icon (z.B. "/pyramid.webp", "/icon-sauna.webp")
   glowClass?: string; // CSS-Klasse für Glow-Farbe (z.B. "glow-orange")
-  glowColor?: string; // CSS-Farbe für die Glow-Spots
 }
 
 export function AnimatedBackground({
   icon = "/pyramid.webp",
   glowClass = "",
-  glowColor,
 }: AnimatedBackgroundProps) {
-  const glowStyle1 = glowColor
-    ? { background: glowColor.replace(")", ", 0.08)").replace("rgb", "rgba") }
-    : undefined;
-  const glowStyle2 = glowColor
-    ? { background: glowColor.replace(")", ", 0.06)").replace("rgb", "rgba") }
-    : undefined;
-  const glowStyle3 = glowColor
-    ? { background: glowColor.replace(")", ", 0.05)").replace("rgb", "rgba") }
-    : undefined;
+  const colorMap: Record<string, string> = {
+    "glow-orange": "255, 150, 50",
+    "glow-cyan": "50, 200, 255",
+    "glow-red": "255, 80, 50",
+    "glow-violet": "150, 100, 255",
+    "glow-amber": "255, 200, 50",
+  };
+  const rgb = glowClass ? colorMap[glowClass] : "0, 255, 100";
+  const c = rgb || "0, 255, 100";
+  const glowStyle1 = { background: `rgba(${c}, 0.08)` };
+  const glowStyle2 = { background: `rgba(${c}, 0.06)` };
+  const glowStyle3 = { background: `rgba(${c}, 0.05)` };
 
   return (
     <div className="via-bg" aria-hidden="true">

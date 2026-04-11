@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 type TerminType = "sitzung" | "essen" | "sonstige";
 
@@ -157,7 +158,9 @@ export default function TerminePage() {
 
 
   return (
-    <div className="p-4 pb-20">
+    <div className="relative p-4 pb-20">
+      <AnimatedBackground icon="/icon-termine.webp" glowClass="glow-orange" />
+      <div className="h-24" />
       <h1 className="mb-1 font-heading text-2xl text-white">Termine</h1>
       <button
         onClick={() => setShowCreate(!showCreate)}
