@@ -138,23 +138,13 @@ export default function GaestiPage() {
 
   return (
     <div className="p-4 pb-20">
-      <div className="mb-4 flex items-center justify-between pr-12">
-        <h1 className="text-2xl font-bold text-white">GÄSTI</h1>
-        <button
-          onClick={() => setShowCreate(!showCreate)}
-          className="rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
-        >
-          + Buchen
-        </button>
-      </div>
-      <p className="mb-4 text-sm text-gray-500">Gästewohnwagen-Buchungen</p>
-
-      {/* Schlüssel-Info */}
-      <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
-        <p className="text-sm text-yellow-200">
-          🔑 Schlüssel mindestens <strong>2 Tage im Voraus</strong> bei Mara & Nando anfragen und Übergabe vereinbaren.
-        </p>
-      </div>
+      <h1 className="mb-1 text-2xl font-bold text-white">Gästewohnwagen</h1>
+      <button
+        onClick={() => setShowCreate(!showCreate)}
+        className="mb-4 rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
+      >
+        Neue Buchung
+      </button>
 
       {/* Buchungs-Formular */}
       {showCreate && (
@@ -276,6 +266,19 @@ export default function GaestiPage() {
             );
           })}
         </div>
+      </div>
+
+      {/* Schlüssel-Info */}
+      <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
+        <p className="text-sm text-yellow-200">
+          🔑 Schlüssel mindestens <strong>2 Tage im Voraus</strong> bei Mara &amp; Nando anfragen.
+        </p>
+        <button
+          onClick={() => window.open("sms:?body=Hallo%20Mara%20und%20Nando%2C%20ich%20möchte%20den%20Schlüssel%20für%20den%20Gästewohnwagen%20abholen.", "_blank")}
+          className="mt-2 w-full rounded bg-yellow-500/20 py-2 text-xs font-bold text-yellow-200 transition-colors hover:bg-yellow-500/30"
+        >
+          Nachricht an Mara &amp; Nando senden
+        </button>
       </div>
 
       {/* Buchungsliste (ausklappbar) */}

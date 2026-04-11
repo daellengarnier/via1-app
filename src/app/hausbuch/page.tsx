@@ -114,9 +114,21 @@ const mockArtikel: Artikel[] = [
 ];
 
 export default function HausbuchPage() {
+  const allArticles: Artikel[] = [
+    ...mockArtikel,
+    {
+      id: "11",
+      title: "Gemeinschaftsladen",
+      content:
+        "Unser Quartierladen im EG funktioniert als Selbstbedienungsladen.\n\nÖffnungszeiten: rund um die Uhr (Vertrauensbasis)\n\nSortiment:\n- Grundnahrungsmittel (Mehl, Reis, Pasta, Öl)\n- Milchprodukte, Eier\n- Brot (Lieferung Di + Fr)\n- Snacks, Getränke\n- Hygieneartikel\n\nBezahlung: Twint oder Kässeli (Münz). Preise sind angeschrieben.\nBestellungen/Wünsche: Liste an der Pinnwand im Laden.\nAuffüllen: Wenn etwas leer ist, bitte im Gruppenchat melden.",
+      category: "Allgemein",
+      updatedBy: "Mia",
+      updatedAt: "2026-04-02",
+    },
+  ];
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Alle");
-  const [articles, setArticles] = useState(mockArtikel);
+  const [articles, setArticles] = useState(allArticles);
   const [showCreate, setShowCreate] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
@@ -153,15 +165,13 @@ export default function HausbuchPage() {
 
   return (
     <div className="p-4 pb-20">
-      <div className="mb-4 flex items-center justify-between pr-12">
-        <h1 className="text-2xl font-bold text-white">
-          Hausbuch
-        </h1>
+      <h1 className="mb-1 text-2xl font-bold text-white">Hausbuch</h1>
+      <div className="mb-4">
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
         >
-          + Neuer Eintrag
+          Neuer Eintrag
         </button>
       </div>
       <p className="mb-4 text-sm text-gray-500">

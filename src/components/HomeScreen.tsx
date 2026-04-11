@@ -3,14 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-interface Termin {
-  id: string;
-  title: string;
-  date: string;
-  location: string;
-  type: "sitzung" | "essen" | "sonstige";
-}
-
 interface SpinnereiEvent {
   title: string;
   date: string;
@@ -24,24 +16,10 @@ interface PinnwandEintrag {
   date: string;
 }
 
-const nextTermin: Termin = {
-  id: "1",
-  title: "Haussitzung April",
-  date: "2026-04-16T19:30",
-  location: "Gemeinschaftsraum EG",
-  type: "sitzung",
-};
-
 const nextSpinnereiEvent: SpinnereiEvent = {
   title: "Soirée Tropicale",
   date: "2026-04-25T21:00",
   url: "https://kulturspinnerei.ch",
-};
-
-const typeLabels = {
-  sitzung: "Sitzung",
-  essen: "Essen",
-  sonstige: "Sonstige",
 };
 
 const initialPinnwand: PinnwandEintrag[] = [
@@ -65,12 +43,12 @@ const initialPinnwand: PinnwandEintrag[] = [
   },
 ];
 
-function formatDate(iso: string): string {
+function formatDateShort(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString("de-CH", {
-    weekday: "long",
+    weekday: "short",
     day: "numeric",
-    month: "long",
+    month: "short",
   });
 }
 
@@ -81,14 +59,16 @@ function formatTime(iso: string): string {
 
 function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return "Guten Morgen";
-  if (hour < 17) return "Guten Nachmittag";
-  return "Guten Abend";
+  if (hour < 12) return "GUTEN MORGEN";
+  if (hour < 17) return "GUTEN NACHMITTAG";
+  return "GUTEN ABEND";
 }
 
 export default function HomeScreen() {
   const router = useRouter();
   const userName = "Alain";
+  const hasKaffeeAbo = true;
+  const currentKaffee = "Ethiopia Yirgacheffe";
   const [pinnwand, setPinnwand] = useState(initialPinnwand);
   const [newNote, setNewNote] = useState("");
   const [showNoteForm, setShowNoteForm] = useState(false);
@@ -116,34 +96,29 @@ export default function HomeScreen() {
   return (
     <div className="p-4 pb-20">
       {/* Header */}
-      <header className="mb-6 pt-2 pr-12">
-        <h1 className="text-5xl font-bold tracking-tight text-accent">
-          Via 1
+      <header className="mb-5 pt-2 pr-12">
+        <p className="text-sm text-gray-500">Via 1</p>
+        <h1 className="text-3xl font-bold tracking-tight text-white">
+          {getGreeting()}, {userName.toUpperCase()}
         </h1>
-        <p className="mt-1 text-lg text-gray-300">
-          {getGreeting()}, {userName}
-        </p>
       </header>
 
-      {/* Nächster Termin */}
+      {/* Nächster Termin — reduziert */}
       <div
-        className="mb-3 cursor-pointer rounded-lg border border-accent/30 bg-accent/5 p-4 transition-colors hover:bg-accent/10"
-        onClick={() => router.push(`/termine/${nextTermin.id}`)}
+        className="mb-3 flex cursor-pointer items-center justify-between rounded-lg border border-accent/30 bg-accent/5 p-3 transition-colors hover:bg-accent/10"
+        onClick={() => router.push("/termine/1")}
       >
-        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
-          NÄCHSTER TERMIN
-        </p>
-        <h2 className="mt-1 text-lg font-semibold text-white">
-          {nextTermin.title}
-        </h2>
-        <p className="mt-1 text-sm text-gray-400">
-          {formatDate(nextTermin.date)} · {formatTime(nextTermin.date)}
-        </p>
-        <div className="mt-1 flex items-center gap-2">
-          <span className="rounded-full bg-accent/20 px-2 py-0.5 font-mono text-xs text-accent">
-            {typeLabels[nextTermin.type]}
-          </span>
-          <span className="text-xs text-gray-500">{nextTermin.location}</span>
+        <div>
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+            NÄCHSTER TERMIN
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-white">
+            Haussitzung April
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="font-mono text-xs text-gray-400">Mi 16. Apr</p>
+          <p className="font-mono text-xs text-gray-500">19:30</p>
         </div>
       </div>
 
@@ -152,21 +127,27 @@ export default function HomeScreen() {
         href={nextSpinnereiEvent.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="mb-4 block rounded-lg border border-secondary/30 bg-secondary/5 p-4 transition-colors hover:bg-secondary/10"
+        className="mb-4 flex items-center justify-between rounded-lg border border-secondary/30 bg-secondary/5 p-3 transition-colors hover:bg-secondary/10"
       >
-        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-secondary">
-          NÄCHSTER SPINNEREI-ANLASS
-        </p>
-        <h2 className="mt-1 text-lg font-semibold text-white">
-          {nextSpinnereiEvent.title}
-        </h2>
-        <p className="mt-1 text-sm text-gray-400">
-          {formatDate(nextSpinnereiEvent.date)} ·{" "}
-          {formatTime(nextSpinnereiEvent.date)}
-        </p>
+        <div>
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-secondary">
+            SPINNEREI
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-white">
+            {nextSpinnereiEvent.title}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="font-mono text-xs text-gray-400">
+            {formatDateShort(nextSpinnereiEvent.date)}
+          </p>
+          <p className="font-mono text-xs text-gray-500">
+            {formatTime(nextSpinnereiEvent.date)}
+          </p>
+        </div>
       </a>
 
-      {/* Quick Widgets — Neon-Kacheln */}
+      {/* Quick Widgets — Neon */}
       <div className="mb-4 grid grid-cols-2 gap-3">
         <div
           className="cursor-pointer rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 transition-all hover:border-emerald-500/40 hover:bg-emerald-500/10"
@@ -210,8 +191,24 @@ export default function HomeScreen() {
         </div>
       </div>
 
+      {/* Kaffee-Widget (nur für Abo-Inhaber) */}
+      {hasKaffeeAbo && (
+        <div
+          className="mb-4 cursor-pointer rounded-lg border border-amber-600/20 bg-amber-600/5 p-3 transition-all hover:border-amber-600/40"
+          onClick={() => router.push("/kaffee")}
+        >
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-amber-500">
+            KAFFEE
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-amber-200">
+            {currentKaffee}
+          </p>
+          <p className="mt-0.5 text-xs text-gray-500">aktuell in der Mühle</p>
+        </div>
+      )}
+
       {/* Pinnwand */}
-      <div className="rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4">
+      <div className="rounded-lg border border-gray-800 bg-gray-900/30 p-4">
         <div className="mb-3 flex items-center justify-between">
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
             PINNWAND

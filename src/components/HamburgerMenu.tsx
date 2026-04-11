@@ -92,6 +92,17 @@ export function HamburgerMenu() {
               </div>
             </Link>
             <Link
+              href="/kaffee"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 p-3 transition-colors hover:border-accent"
+            >
+              <span className="text-lg">☕</span>
+              <div>
+                <p className="font-medium text-white">Kaffee</p>
+                <p className="text-xs text-gray-500">Abo & aktuelle Bohnen</p>
+              </div>
+            </Link>
+            <Link
               href="/flohmi"
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 p-3 transition-colors hover:border-accent"
