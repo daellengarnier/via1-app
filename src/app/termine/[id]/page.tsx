@@ -309,7 +309,7 @@ export default function TerminDetailPage() {
             {termin.organizer}
           </span>
         )}
-        <h1 className="mt-1 text-2xl font-bold text-white">
+        <h1 className="mt-1 font-heading text-2xl text-white">
           {termin.title}
         </h1>
         <p className="mt-1 text-sm text-gray-400">

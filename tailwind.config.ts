@@ -17,6 +17,7 @@ const config: Config = {
         mono: ["JetBrains Mono", "monospace"],
         sans: ["Inter", "sans-serif"],
         display: ["Orbitron", "sans-serif"],
+        heading: ["Playfair Display", "serif"],
       },
     },
   },

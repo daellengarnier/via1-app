@@ -11,92 +11,142 @@ const aboLabels: Record<AboType, string> = {
   kein: "Kein Abo",
 };
 
-interface KaffeeInfo {
-  currentBeans: string;
-  roaster: string;
-  changedBy: string;
-  changedAt: string;
+interface RastKaffee {
+  name: string;
+  herkunft: string;
+  duftnotizen: string;
+  fairtrade: boolean;
 }
 
-const initialKaffee: KaffeeInfo = {
-  currentBeans: "Ethiopia Yirgacheffe",
-  roaster: "Bertschi Kaffee, Bern",
-  changedBy: "Sophie",
-  changedAt: "2026-04-09",
-};
+const rastSortiment: RastKaffee[] = [
+  {
+    name: "Rast Espresso",
+    herkunft: "Brasilien, Kolumbien",
+    duftnotizen: "Schokolade, Nuss, Karamell",
+    fairtrade: true,
+  },
+  {
+    name: "Rast Crema",
+    herkunft: "Äthiopien, Guatemala",
+    duftnotizen: "Beeren, Zitrus, Honig",
+    fairtrade: true,
+  },
+  {
+    name: "Rast Decaf",
+    herkunft: "Mexiko",
+    duftnotizen: "Nougat, Mandel",
+    fairtrade: true,
+  },
+  {
+    name: "Ethiopia Yirgacheffe",
+    herkunft: "Äthiopien",
+    duftnotizen: "Jasmin, Bergamotte, Blaubeere",
+    fairtrade: false,
+  },
+  {
+    name: "Colombia Supremo",
+    herkunft: "Kolumbien",
+    duftnotizen: "Karamell, Orange, Walnuss",
+    fairtrade: true,
+  },
+  {
+    name: "Guatemala Antigua",
+    herkunft: "Guatemala",
+    duftnotizen: "Schokolade, Rauch, Gewürze",
+    fairtrade: true,
+  },
+];
 
 export default function KaffeePage() {
   const [abo, setAbo] = useState<AboType>("1-doppio");
-  const [kaffee, setKaffee] = useState(initialKaffee);
-  const [showChangeBeans, setShowChangeBeans] = useState(false);
-  const [newBeans, setNewBeans] = useState("");
+  const [currentBeans, setCurrentBeans] = useState("Ethiopia Yirgacheffe");
+  const [changedBy] = useState("Sophie");
+  const [changedAt] = useState("2026-04-09");
+  const [showSelect, setShowSelect] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showTab, setShowTab] = useState(true);
+
+  const currentInfo = rastSortiment.find((k) => k.name === currentBeans);
 
   function handleSaveAbo() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
 
-  function handleChangeBeans(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newBeans.trim()) return;
-    setKaffee({
-      ...kaffee,
-      currentBeans: newBeans,
-      changedBy: "Alain",
-      changedAt: new Date().toISOString().split("T")[0]!,
-    });
-    setNewBeans("");
-    setShowChangeBeans(false);
-  }
-
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-1 text-2xl font-bold text-white">Kaffee</h1>
+      <h1 className="mb-1 font-heading text-2xl text-white">Kaffee</h1>
       <p className="mb-6 text-sm text-gray-500">Hauseigene Kaffeemaschine</p>
 
       {/* Aktuelle Bohnen */}
-      <div className="mb-6 rounded-lg border border-amber-600/30 bg-amber-600/5 p-4">
+      <div className="mb-6 rounded-lg border border-amber-600/30 bg-gradient-to-b from-amber-600/10 to-transparent p-4">
         <p className="font-display text-[10px] font-bold uppercase tracking-widest text-amber-500">
           AKTUELL IN DER MÜHLE
         </p>
-        <p className="mt-1 text-xl font-bold text-amber-200">
-          {kaffee.currentBeans}
+        <p className="mt-1 text-xl font-semibold text-amber-200">
+          {currentBeans}
         </p>
-        <p className="mt-1 text-sm text-gray-400">{kaffee.roaster}</p>
-        <p className="mt-1 text-xs text-gray-600">
-          Eingefüllt von {kaffee.changedBy} ·{" "}
-          {new Date(kaffee.changedAt).toLocaleDateString("de-CH", {
+        {currentInfo && (
+          <div className="mt-2 space-y-1">
+            <p className="text-xs text-gray-400">
+              <span className="text-gray-600">Herkunft:</span>{" "}
+              {currentInfo.herkunft}
+            </p>
+            <p className="text-xs text-gray-400">
+              <span className="text-gray-600">Duftnotizen:</span>{" "}
+              {currentInfo.duftnotizen}
+            </p>
+            {currentInfo.fairtrade && (
+              <p className="text-xs text-emerald-500">Fair Trade</p>
+            )}
+          </div>
+        )}
+        <p className="mt-2 text-xs text-gray-600">
+          Eingefüllt von {changedBy} ·{" "}
+          {new Date(changedAt).toLocaleDateString("de-CH", {
             day: "numeric",
             month: "long",
           })}
         </p>
 
         <button
-          onClick={() => setShowChangeBeans(!showChangeBeans)}
+          onClick={() => setShowSelect(!showSelect)}
           className="mt-3 w-full rounded bg-amber-600/20 py-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-600/30"
         >
-          Bohnen aktualisieren
+          Bohnen wechseln
         </button>
 
-        {showChangeBeans && (
-          <form onSubmit={handleChangeBeans} className="mt-2 flex gap-2">
-            <input
-              type="text"
-              value={newBeans}
-              onChange={(e) => setNewBeans(e.target.value)}
-              placeholder="z.B. Colombia Supremo"
-              className="flex-1 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-amber-500 focus:outline-none"
-              autoFocus
-            />
-            <button
-              type="submit"
-              className="rounded bg-amber-600 px-3 py-2 text-xs font-bold text-white"
-            >
-              OK
-            </button>
-          </form>
+        {showSelect && (
+          <div className="mt-2 space-y-1">
+            {rastSortiment.map((k) => (
+              <button
+                key={k.name}
+                onClick={() => {
+                  setCurrentBeans(k.name);
+                  setShowSelect(false);
+                }}
+                className={`flex w-full items-start justify-between rounded-lg border p-3 text-left transition-colors ${
+                  currentBeans === k.name
+                    ? "border-amber-600/50 bg-amber-600/10"
+                    : "border-gray-800 bg-black/30 hover:border-gray-700"
+                }`}
+              >
+                <div>
+                  <p className="text-sm font-semibold text-white">{k.name}</p>
+                  <p className="text-xs text-gray-500">{k.duftnotizen}</p>
+                  <p className="text-xs text-gray-600">
+                    {k.herkunft}
+                    {k.fairtrade && (
+                      <span className="ml-1 text-emerald-600">· Fair Trade</span>
+                    )}
+                  </p>
+                </div>
+                {currentBeans === k.name && (
+                  <span className="text-xs text-amber-500">✓</span>
+                )}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
@@ -115,7 +165,7 @@ export default function KaffeePage() {
                   ? type === "kein"
                     ? "border-gray-600 bg-gray-800/50"
                     : "border-amber-600/50 bg-amber-600/10"
-                  : "border-gray-800 bg-gray-900/40 hover:border-gray-700"
+                  : "border-gray-800 bg-black/20 hover:border-gray-700"
               }`}
             >
               <span
@@ -148,13 +198,35 @@ export default function KaffeePage() {
         </button>
       </section>
 
+      {/* Bezahlung */}
+      <section className="mb-6">
+        <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+          BEZAHLUNG
+        </h2>
+        <div className="rounded-lg border border-gray-800 bg-black/20 p-4">
+          <p className="mb-2 text-sm text-gray-300">
+            Bitte einen <strong className="text-white">Dauerauftrag</strong> einrichten:
+          </p>
+          <div className="rounded bg-black/30 p-3 font-mono text-xs leading-relaxed text-gray-300">
+            <p className="text-amber-200">CH19 0079 0016 9408 2010 4</p>
+            <p className="mt-1">Verein Viva Via</p>
+            <p>Spinnereiweg 17</p>
+            <p>3004 Bern</p>
+          </div>
+          <p className="mt-3 text-xs text-gray-400">
+            Bitte <strong className="text-amber-200">&quot;Kafiabo &amp; Name&quot;</strong> vermerken,
+            damit wir die Zahlung zuordnen können.
+          </p>
+        </div>
+      </section>
+
       {/* Tab ausblenden */}
       <section className="mb-6">
-        <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+        <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-black/20 p-3">
           <div>
             <span className="text-sm text-white">Kaffee-Tab anzeigen</span>
             <p className="text-xs text-gray-600">
-              Ausblenden wenn du kein Kaffee-Abo hast
+              Ausblenden wenn du kein Abo hast
             </p>
           </div>
           <button
@@ -173,14 +245,14 @@ export default function KaffeePage() {
       </section>
 
       {/* Info */}
-      <div className="rounded-lg border border-gray-800 bg-gray-900/30 p-4">
+      <div className="rounded-lg border border-gray-800 bg-black/20 p-4">
         <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
           INFO
         </p>
         <p className="mt-2 text-sm text-gray-400">
           Das Kaffee-Abo deckt die Kosten für Bohnen und Unterhalt der
-          Kaffeemaschine. Die Abrechnung erfolgt halbjährlich. Anmeldung
-          und Fragen bei Alain oder Sophie.
+          Kaffeemaschine. Wir beziehen den Kaffee von Rast Kaffee (Bern).
+          Anmeldung und Fragen bei Alain oder Sophie.
         </p>
       </div>
     </div>
