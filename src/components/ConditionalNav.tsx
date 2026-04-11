@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
+import { HamburgerMenu } from "@/components/HamburgerMenu";
 
 const publicPaths = ["/login", "/setup"];
 
@@ -11,5 +12,10 @@ export function ConditionalNav() {
 
   if (isPublicPage) return null;
 
-  return <BottomNav />;
+  return (
+    <>
+      <HamburgerMenu />
+      <BottomNav />
+    </>
+  );
 }

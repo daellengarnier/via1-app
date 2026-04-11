@@ -8,7 +8,7 @@ const navItems = [
   { href: "/termine", label: "Termine", icon: "◉" },
   { href: "/aufgaben", label: "Aufgaben", icon: "✓" },
   { href: "/sauna", label: "Sauna", icon: "♨" },
-  { href: "/profil", label: "Profil", icon: "◎" },
+  { href: "/gaesti", label: "Gaesti", icon: "⛺" },
 ];
 
 export function BottomNav() {
