@@ -24,7 +24,7 @@ body {
   overflow: hidden;
   pointer-events: none;
   background:
-    url("/bg.jpg") center top / cover no-repeat,
+    url("/bg.png") center top / cover no-repeat,
     radial-gradient(ellipse 60% 40% at 30% 45%, rgba(0, 255, 100, 0.12) 0%, transparent 50%),
     radial-gradient(ellipse 70% 50% at 70% 65%, rgba(0, 200, 80, 0.08) 0%, transparent 50%),
     radial-gradient(ellipse 50% 30% at 50% 15%, rgba(0, 255, 120, 0.1) 0%, transparent 40%),
