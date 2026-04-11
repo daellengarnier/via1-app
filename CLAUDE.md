@@ -56,7 +56,7 @@ Das Projekt wurde auf Next.js 14+ migriert. Aktuell vorhanden:
 - **Bewohner:** ca. 25 Personen
 - **Gebaeude:** Dreieckiger/keilfoermiger Holzbau, 3 Stockwerke + UG
   - **Glaspyramide** (Wintergarten) im Zentrum, geht vom UG bis zum Dach durch
-  - **Nord-Fluegel:** Abgerundete Form (Faecher), linke Seite
+  - **Nord-Fluegel:** Abgerundete Form (Faecher), linke Seite. **Um einen halben Stock tiefer versetzt als Ost-Fluegel** (Splitlevel, wegen Hanglage)
   - **Ost-Fluegel:** Gerade Form, rechte Seite mit Balkonen
 - **6 Wohngemeinschaften:**
 
