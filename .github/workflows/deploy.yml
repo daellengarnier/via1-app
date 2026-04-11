@@ -14,9 +14,20 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
           script: |
+            set -e
             cd /opt/via1-app
-            git pull origin main
-            DOCKER_BUILDKIT=1 docker compose build --build-arg CACHEBUST=$(date +%s) app
+            echo "=== Git Status ==="
+            git status --short
+            echo "=== Pulling latest ==="
+            git fetch origin main
+            git reset --hard origin/main
+            echo "=== Current commit ==="
+            git log --oneline -1
+            echo "=== Building ==="
+            docker compose build --no-cache app
+            echo "=== Deploying ==="
             docker compose up -d
             docker compose restart nginx
+            echo "=== Done ==="
