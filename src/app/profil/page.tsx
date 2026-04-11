@@ -5,12 +5,25 @@ import { useRouter } from "next/navigation";
 
 type Diet = "fleisch" | "vegi" | "vegan";
 
+const wgOptions = [
+  { name: "Nordwind", rooms: ["N01", "N02", "N03", "N04", "N05"] },
+  { name: "Ostblock", rooms: ["O01", "O02", "O03", "O04", "O05"] },
+  { name: "Dreiecksbar", rooms: ["N11", "N12", "N13", "N14", "N15"] },
+  { name: "Kleenex", rooms: ["O11", "O12", "O13", "O14", "O15"] },
+  { name: "Family-WG", rooms: ["N21", "N22", "N23", "N24", "N25"] },
+  { name: "Bonzen", rooms: ["O21", "O22", "O23", "O24"] },
+];
+
 interface ProfileData {
-  name: string;
+  fullName: string;
+  displayName: string;
   email: string;
   birthday: string;
+  wg: string;
+  room: string;
   diet: Diet;
   allergies: string;
+  profileImage: string | null;
   notifications: {
     sauna: boolean;
     aufgaben: boolean;
@@ -28,11 +41,15 @@ export default function ProfilPage() {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
-    name: "Alain",
+    fullName: "Alain d'Allengarnier",
+    displayName: "Alain",
     email: "alain@via1.ch",
     birthday: "1990-06-15",
+    wg: "Dreiecksbar",
+    room: "N11",
     diet: "fleisch",
     allergies: "",
+    profileImage: null,
     notifications: {
       sauna: true,
       aufgaben: true,
@@ -40,9 +57,21 @@ export default function ProfilPage() {
     },
   });
 
+  const selectedWg = wgOptions.find((w) => w.name === profile.wg);
+
   function handleSave() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  }
+
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setProfile({ ...profile, profileImage: ev.target?.result as string });
+    };
+    reader.readAsDataURL(file);
   }
 
   return (
@@ -58,18 +87,128 @@ export default function ProfilPage() {
         Mein Profil
       </h1>
 
-      {/* Avatar & Name */}
+      {/* Profilbild & Name */}
       <div className="mb-6 rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/20 font-mono text-xl font-bold text-accent">
-            {profile.name.charAt(0)}
-          </div>
+          <label className="group relative cursor-pointer">
+            {profile.profileImage ? (
+              <img
+                src={profile.profileImage}
+                alt="Profil"
+                className="h-16 w-16 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/20 font-display text-2xl font-bold text-accent">
+                {profile.displayName.charAt(0)}
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="text-xs text-white">Foto</span>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+          </label>
           <div>
-            <p className="text-lg font-medium text-white">{profile.name}</p>
+            <p className="text-lg font-medium text-white">
+              {profile.displayName}
+            </p>
             <p className="text-sm text-gray-400">{profile.email}</p>
+            {profile.wg && (
+              <p className="font-mono text-xs text-accent">
+                {profile.wg} · {profile.room}
+              </p>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Vollständiger Name */}
+      <section className="mb-6">
+        <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
+          Vollständiger Name
+        </h2>
+        <input
+          type="text"
+          value={profile.fullName}
+          onChange={(e) =>
+            setProfile({ ...profile, fullName: e.target.value })
+          }
+          placeholder="Vor- und Nachname"
+          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          required
+        />
+      </section>
+
+      {/* Anzeigename */}
+      <section className="mb-6">
+        <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
+          Anzeigename
+        </h2>
+        <input
+          type="text"
+          value={profile.displayName}
+          onChange={(e) =>
+            setProfile({ ...profile, displayName: e.target.value })
+          }
+          placeholder="Wie möchtest du angezeigt werden?"
+          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+        />
+        <p className="mt-1 text-xs text-gray-600">
+          So sehen dich die anderen Bewohner:innen
+        </p>
+      </section>
+
+      {/* WG-Zuordnung */}
+      <section className="mb-6">
+        <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
+          Wohngemeinschaft
+        </h2>
+        <select
+          value={profile.wg}
+          onChange={(e) =>
+            setProfile({ ...profile, wg: e.target.value, room: "" })
+          }
+          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+        >
+          <option value="">WG wählen...</option>
+          {wgOptions.map((wg) => (
+            <option key={wg.name} value={wg.name}>
+              {wg.name}
+            </option>
+          ))}
+        </select>
+      </section>
+
+      {/* Zimmer-Zuordnung */}
+      {selectedWg && (
+        <section className="mb-6">
+          <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
+            Zimmer
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {selectedWg.rooms.map((room) => (
+              <button
+                key={room}
+                onClick={() => setProfile({ ...profile, room })}
+                className={`rounded-lg px-4 py-2 font-mono text-sm font-bold transition-colors ${
+                  profile.room === room
+                    ? "bg-accent text-dark"
+                    : "border border-gray-700 text-gray-400 hover:text-white"
+                }`}
+              >
+                {room}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-gray-600">
+            Mehrere Personen können sich dem gleichen Zimmer zuordnen
+          </p>
+        </section>
+      )}
 
       {/* Geburtstag */}
       <section className="mb-6">

@@ -2,17 +2,32 @@
 
 import { useState } from "react";
 
+const saunaReglement = [
+  "Sauna nur barfuss betreten",
+  "Eigenes Tuch unterlegen",
+  "Nach Benutzung lüften (Tür offen lassen)",
+  "Holzofen: nur vorgesehenes Holz verwenden",
+  "Asche regelmässig entsorgen",
+  "Letzter löscht das Licht und schliesst die Tür",
+  "Kinder nur in Begleitung von Erwachsenen",
+  "Bitte leise nach 22 Uhr",
+  "Bei Problemen: Hauswart kontaktieren",
+];
+
 export default function SaunaPage() {
   const [heating, setHeating] = useState(true);
   const [temperature] = useState(62);
+  const [showReglement, setShowReglement] = useState(false);
 
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-6 font-display text-2xl font-bold text-accent">Sauna</h1>
+      <h1 className="mb-6 font-display text-2xl font-bold text-accent">
+        Sauna
+      </h1>
 
       {/* Temperatur */}
       <div className="mb-6 flex flex-col items-center rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-8">
-        <p className="font-mono text-6xl font-bold text-accent">
+        <p className="font-display text-6xl font-bold text-accent">
           {temperature}°C
         </p>
         <p className="mt-2 text-sm text-gray-400">Aktuelle Temperatur</p>
@@ -39,9 +54,9 @@ export default function SaunaPage() {
         </p>
       )}
 
-      {/* Temperaturverlauf Platzhalter */}
+      {/* Temperaturverlauf */}
       <div className="mt-8">
-        <h2 className="mb-3 font-mono text-sm font-bold uppercase tracking-wider text-accent">
+        <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
           Temperaturverlauf
         </h2>
         <div className="flex h-32 items-end gap-1 rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4">
@@ -57,6 +72,33 @@ export default function SaunaPage() {
           <span>Start</span>
           <span>Jetzt</span>
         </div>
+      </div>
+
+      {/* Sauna-Reglement */}
+      <div className="mt-8">
+        <button
+          onClick={() => setShowReglement(!showReglement)}
+          className="mb-3 flex w-full items-center justify-between font-mono text-xs font-bold uppercase tracking-wider text-accent"
+        >
+          <span>Sauna-Reglement</span>
+          <span className="text-gray-500">
+            {showReglement ? "▲" : "▼"}
+          </span>
+        </button>
+        {showReglement && (
+          <div className="rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4">
+            <ol className="space-y-2">
+              {saunaReglement.map((regel, i) => (
+                <li key={i} className="flex gap-2 text-sm text-gray-300">
+                  <span className="font-mono text-xs text-accent">
+                    {i + 1}.
+                  </span>
+                  <span>{regel}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
       </div>
     </div>
   );

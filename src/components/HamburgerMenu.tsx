@@ -60,7 +60,7 @@ export function HamburgerMenu() {
             onClick={() => setOpen(false)}
             className="mb-6 flex items-center gap-3 rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4 transition-colors hover:border-accent"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 font-mono text-lg font-bold text-accent">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 font-display text-lg font-bold text-accent">
               A
             </div>
             <div>
@@ -73,7 +73,7 @@ export function HamburgerMenu() {
           <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
             Wohngemeinschaften & Bewohner:innen
           </h2>
-          <div className="space-y-2">
+          <div className="mb-6 space-y-2">
             {wgs.map((wg) => (
               <Link
                 key={wg.slug}
@@ -92,11 +92,40 @@ export function HamburgerMenu() {
             ))}
           </div>
 
+          {/* Hausbuch & Flohmi */}
+          <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
+            Mehr
+          </h2>
+          <div className="mb-6 space-y-2">
+            <Link
+              href="/hausbuch"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 p-3 transition-colors hover:border-accent"
+            >
+              <span className="text-lg">📖</span>
+              <div>
+                <p className="font-medium text-white">Hausbuch</p>
+                <p className="text-xs text-gray-500">Wissen & Infos rund ums Haus</p>
+              </div>
+            </Link>
+            <Link
+              href="/flohmi"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 p-3 transition-colors hover:border-accent"
+            >
+              <span className="text-lg">🛍️</span>
+              <div>
+                <p className="font-medium text-white">Flohmi</p>
+                <p className="text-xs text-gray-500">Dinge zum Weitergeben</p>
+              </div>
+            </Link>
+          </div>
+
           {/* Feedback */}
           <Link
             href="/feedback"
             onClick={() => setOpen(false)}
-            className="mt-6 block rounded-lg border border-accent/30 bg-accent/5 py-3 text-center font-mono text-sm text-accent transition-colors hover:bg-accent/10"
+            className="block rounded-lg border border-accent/30 bg-accent/5 py-3 text-center font-mono text-sm text-accent transition-colors hover:bg-accent/10"
           >
             Idee oder Bug melden
           </Link>

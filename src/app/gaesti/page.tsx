@@ -148,6 +148,13 @@ export default function GaestiPage() {
       </div>
       <p className="mb-4 text-sm text-gray-500">Gästewohnwagen-Buchungen</p>
 
+      {/* Schlüssel-Info */}
+      <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
+        <p className="text-sm text-yellow-200">
+          🔑 Schlüssel mindestens <strong>2 Tage im Voraus</strong> bei Mara & Nando anfragen und Übergabe vereinbaren.
+        </p>
+      </div>
+
       {/* Buchungs-Formular */}
       {showCreate && (
         <form
