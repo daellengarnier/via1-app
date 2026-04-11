@@ -54,13 +54,24 @@ Das Projekt wurde auf Next.js 14+ migriert. Aktuell vorhanden:
 
 - **Adresse:** Spinnereiweg 17, 3004 Bern (Spinnerei / Via Felsenau)
 - **Bewohner:** ca. 25 Personen
+- **Gebaeude:** Dreieckiger/keilfoermiger Holzbau, 3 Stockwerke + UG
+  - **Glaspyramide** (Wintergarten) im Zentrum, geht vom UG bis zum Dach durch
+  - **Nord-Fluegel:** Abgerundete Form (Faecher), linke Seite. **Um einen halben Stock tiefer versetzt als Ost-Fluegel** (Splitlevel, wegen Hanglage)
+  - **Ost-Fluegel:** Gerade Form, rechte Seite mit Balkonen
 - **6 Wohngemeinschaften:**
-  - EG Nord: Nordwind
-  - EG Ost: Ostblock
-  - 1. OG Nord: Dreiecksbar
-  - 1. OG Ost: Kleenex
-  - 2. OG Nord: Family-WG
-  - 2. OG Ost: Bonzen
+
+  | Ebene | Nord (abgerundet) | Ost (gerade) |
+  |-------|-------------------|-------------|
+  | 2. OG | Family-WG (5 Zi) | Bonzen (4 Zi) |
+  | 1. OG | Dreiecksbar (5 Zi) | Kleenex (5 Zi) |
+  | EG | Nordwind (5 Zi) | Ostblock (5 Zi) |
+
+- **Gemeinschaftsraeume (UG/EG):**
+  - Pyramiden-Wintergarten (Zentrum)
+  - Grotte (unter der Pyramide)
+  - Saal (Gemeinschaftsraum)
+  - Bar
+  - Amphitheater
 - **Rollen:** Admin (1 pro WG), Member (Standard-Bewohner)
 
 ## Projektstruktur
@@ -174,6 +185,9 @@ Nach einem Merge auf `main` passiert automatisch:
 
 - Alain hat bereits einen funktionierenden Prototyp erstellt bevor Yves dazukam. Immer zuerst `main` pruefen ob schon Code existiert.
 - npm-Pfad auf Alains Mac: `/opt/homebrew/bin/npm` (PATH-Issue)
+- **PostgreSQL Enum-Werte:** Neue Enum-Werte (`ALTER TYPE ... ADD VALUE`) muessen in einer separaten Migration committed werden, BEVOR sie in Tabellen verwendet werden. Sonst Fehler `55P04 unsafe use of new value`. Also: Migration 1 = Enum erweitern, Migration 2 = Enum verwenden.
+- **Docker Build Cache:** `--no-cache` dauert 4-5 Min. Besser: `CACHEBUST` Build-Arg im Dockerfile um nur ab `COPY . .` neu zu bauen.
+- **Fehlgeschlagene Prisma-Migration:** Manuell aus `_prisma_migrations` loeschen: `DELETE FROM _prisma_migrations WHERE migration_name = '...';`
 
 ## Sackgassen / Was nicht funktioniert hat
 
