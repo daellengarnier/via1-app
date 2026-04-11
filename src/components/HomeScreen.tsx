@@ -107,10 +107,10 @@ export default function HomeScreen() {
         </p>
       </a>
 
-      {/* Kacheln mit Gradient grün→rot */}
+      {/* Glasige Neon-Kacheln */}
       <div className="mb-4 grid grid-cols-2 gap-3">
         <div
-          className="cursor-pointer rounded-lg border border-white/5 bg-gradient-to-b from-emerald-600/15 to-red-600/10 p-4 transition-all hover:from-emerald-600/25 hover:to-red-600/15"
+          className="cursor-pointer rounded-xl border border-emerald-500/15 bg-black/40 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-md transition-all hover:border-emerald-500/30 hover:shadow-[0_0_20px_rgba(0,255,100,0.1)]"
           onClick={() => router.push("/sauna")}
         >
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-emerald-400">
@@ -120,7 +120,7 @@ export default function HomeScreen() {
           <p className="mt-1 text-xs text-gray-500">Wird geheizt</p>
         </div>
         <div
-          className="cursor-pointer rounded-lg border border-white/5 bg-gradient-to-b from-emerald-600/15 to-red-600/10 p-4 transition-all hover:from-emerald-600/25 hover:to-red-600/15"
+          className="cursor-pointer rounded-xl border border-orange-500/15 bg-black/40 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-md transition-all hover:border-orange-500/30 hover:shadow-[0_0_20px_rgba(255,150,50,0.1)]"
           onClick={() => router.push("/aufgaben")}
         >
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-orange-400">
@@ -130,7 +130,7 @@ export default function HomeScreen() {
           <p className="mt-1 text-xs text-gray-500">offen</p>
         </div>
         <div
-          className="cursor-pointer rounded-lg border border-white/5 bg-gradient-to-b from-emerald-600/15 to-red-600/10 p-4 transition-all hover:from-emerald-600/25 hover:to-red-600/15"
+          className="cursor-pointer rounded-xl border border-violet-500/15 bg-black/40 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-md transition-all hover:border-violet-500/30 hover:shadow-[0_0_20px_rgba(150,100,255,0.1)]"
           onClick={() => router.push("/putzplan")}
         >
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-violet-400">
@@ -140,7 +140,7 @@ export default function HomeScreen() {
           <p className="mt-1 text-xs text-gray-500">ist dran</p>
         </div>
         <div
-          className="cursor-pointer rounded-lg border border-white/5 bg-gradient-to-b from-emerald-600/15 to-red-600/10 p-4 transition-all hover:from-emerald-600/25 hover:to-red-600/15"
+          className="cursor-pointer rounded-xl border border-cyan-500/15 bg-black/40 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-md transition-all hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(50,200,255,0.1)]"
           onClick={() => router.push("/gaesti")}
         >
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-cyan-400">
