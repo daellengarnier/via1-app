@@ -166,46 +166,46 @@ export default function HomeScreen() {
         </p>
       </a>
 
-      {/* Quick Widgets */}
+      {/* Quick Widgets — Neon-Kacheln */}
       <div className="mb-4 grid grid-cols-2 gap-3">
         <div
-          className="cursor-pointer rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4 transition-colors hover:border-gray-700"
+          className="cursor-pointer rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 transition-all hover:border-emerald-500/40 hover:bg-emerald-500/10"
           onClick={() => router.push("/sauna")}
         >
-          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-emerald-400">
             SAUNA
           </p>
-          <p className="mt-1 font-mono text-3xl font-bold text-accent">62°C</p>
+          <p className="mt-1 font-mono text-3xl font-bold text-emerald-300">62°C</p>
           <p className="mt-1 text-xs text-gray-500">Wird geheizt</p>
         </div>
         <div
-          className="cursor-pointer rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4 transition-colors hover:border-gray-700"
+          className="cursor-pointer rounded-lg border border-orange-500/20 bg-orange-500/5 p-4 transition-all hover:border-orange-500/40 hover:bg-orange-500/10"
           onClick={() => router.push("/aufgaben")}
         >
-          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-orange-400">
             AUFGABEN
           </p>
-          <p className="mt-1 font-mono text-3xl font-bold text-secondary">3</p>
+          <p className="mt-1 font-mono text-3xl font-bold text-orange-300">3</p>
           <p className="mt-1 text-xs text-gray-500">offen</p>
         </div>
         <div
-          className="cursor-pointer rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4 transition-colors hover:border-gray-700"
+          className="cursor-pointer rounded-lg border border-violet-500/20 bg-violet-500/5 p-4 transition-all hover:border-violet-500/40 hover:bg-violet-500/10"
           onClick={() => router.push("/putzplan")}
         >
-          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-violet-400">
             PUTZDIENST
           </p>
-          <p className="mt-1 text-lg font-bold text-accent">Dreiecksbar</p>
+          <p className="mt-1 text-lg font-bold text-violet-300">Dreiecksbar</p>
           <p className="mt-1 text-xs text-gray-500">ist dran</p>
         </div>
         <div
-          className="cursor-pointer rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4 transition-colors hover:border-gray-700"
+          className="cursor-pointer rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-4 transition-all hover:border-cyan-500/40 hover:bg-cyan-500/10"
           onClick={() => router.push("/gaesti")}
         >
-          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-cyan-400">
             GÄSTI
           </p>
-          <p className="mt-1 text-lg font-bold text-accent">Frei</p>
+          <p className="mt-1 text-lg font-bold text-cyan-300">Frei</p>
           <p className="mt-1 text-xs text-gray-500">Nächste: 21. Apr</p>
         </div>
       </div>

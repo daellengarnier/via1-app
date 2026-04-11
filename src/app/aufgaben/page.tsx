@@ -17,9 +17,9 @@ interface Aufgabe {
   pin: Pin | null;
 }
 
-// Spinnereiweg 17, 3004 Bern
-const MAP_CENTER: [number, number] = [46.9635, 7.4295];
-const MAP_ZOOM = 19;
+// Spinnereiweg 17, 3004 Bern (Felsenau)
+const MAP_CENTER: [number, number] = [46.9694, 7.4421];
+const MAP_ZOOM = 18;
 
 const mockAufgaben: Aufgabe[] = [
   {
@@ -29,7 +29,7 @@ const mockAufgaben: Aufgabe[] = [
     location: "Aussenbereich",
     done: false,
     assignee: null,
-    pin: { lat: 46.9637, lng: 7.4292 },
+    pin: { lat: 46.9696, lng: 7.4418 },
   },
   {
     id: "2",
@@ -47,7 +47,7 @@ const mockAufgaben: Aufgabe[] = [
     location: "Garten Süd",
     done: false,
     assignee: null,
-    pin: { lat: 46.9632, lng: 7.4298 },
+    pin: { lat: 46.9691, lng: 7.4425 },
   },
   {
     id: "4",
@@ -65,7 +65,7 @@ const mockAufgaben: Aufgabe[] = [
     location: "Sauna",
     done: false,
     assignee: null,
-    pin: { lat: 46.9634, lng: 7.4289 },
+    pin: { lat: 46.9693, lng: 7.4415 },
   },
 ];
 
@@ -180,7 +180,7 @@ function LeafletMap({
 
   return (
     <div className="mb-4 overflow-hidden rounded-lg border border-gray-800">
-      <div ref={mapRef} className="h-56 w-full" />
+      <div ref={mapRef} className="relative z-0 h-56 w-full" />
       {placingPin && (
         <div className="bg-accent/10 px-3 py-1.5 text-center text-xs text-accent">
           Tippe auf die Karte um den Pin zu setzen
