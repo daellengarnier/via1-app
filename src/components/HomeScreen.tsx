@@ -109,17 +109,20 @@ export default function HomeScreen() {
     setShowNoteForm(false);
   }
 
+  function dismissNote(id: string) {
+    setPinnwand((prev) => prev.filter((p) => p.id !== id));
+  }
+
   return (
     <div className="p-4 pb-20">
-      {/* VIA1 Header */}
+      {/* Header */}
       <header className="mb-6 pt-2 pr-12">
         <h1 className="text-5xl font-bold tracking-tight text-accent">
-          VIA1
+          Via 1
         </h1>
         <p className="mt-1 text-lg text-gray-300">
           {getGreeting()}, {userName}
         </p>
-        <p className="text-sm text-gray-500">Spinnereiweg 17, Bern</p>
       </header>
 
       {/* Nächster Termin */}
@@ -149,10 +152,10 @@ export default function HomeScreen() {
         href={nextSpinnereiEvent.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="mb-4 block rounded-lg border border-purple-500/30 bg-purple-500/5 p-4 transition-colors hover:bg-purple-500/10"
+        className="mb-4 block rounded-lg border border-secondary/30 bg-secondary/5 p-4 transition-colors hover:bg-secondary/10"
       >
-        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-purple-400">
-          SPINNEREI
+        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-secondary">
+          NÄCHSTER SPINNEREI-ANLASS
         </p>
         <h2 className="mt-1 text-lg font-semibold text-white">
           {nextSpinnereiEvent.title}
@@ -207,7 +210,7 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Pinnwand als Kachel */}
+      {/* Pinnwand */}
       <div className="rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4">
         <div className="mb-3 flex items-center justify-between">
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
@@ -240,13 +243,19 @@ export default function HomeScreen() {
           </form>
         )}
 
-        {/* Horizontaler Scroll */}
         <div className="flex gap-3 overflow-x-auto pb-1">
           {pinnwand.map((p) => (
             <div
               key={p.id}
-              className="w-56 shrink-0 rounded-lg border border-gray-700 bg-gray-900/60 p-3"
+              className="relative w-56 shrink-0 rounded-lg border border-gray-700 bg-gray-900/60 p-3 pr-7"
             >
+              <button
+                onClick={() => dismissNote(p.id)}
+                className="absolute right-1.5 top-1.5 text-gray-600 hover:text-gray-300"
+                aria-label="Schliessen"
+              >
+                ×
+              </button>
               <p className="text-sm text-gray-300">{p.text}</p>
               <p className="mt-2 text-xs text-gray-600">
                 {p.author} ·{" "}

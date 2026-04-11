@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Pin {
-  x: number;
-  y: number;
+  lat: number;
+  lng: number;
 }
 
 interface Aufgabe {
@@ -17,6 +17,10 @@ interface Aufgabe {
   pin: Pin | null;
 }
 
+// Spinnereiweg 17, 3004 Bern
+const MAP_CENTER: [number, number] = [46.9635, 7.4295];
+const MAP_ZOOM = 19;
+
 const mockAufgaben: Aufgabe[] = [
   {
     id: "1",
@@ -25,7 +29,7 @@ const mockAufgaben: Aufgabe[] = [
     location: "Aussenbereich",
     done: false,
     assignee: null,
-    pin: { x: 30, y: 75 },
+    pin: { lat: 46.9637, lng: 7.4292 },
   },
   {
     id: "2",
@@ -43,7 +47,7 @@ const mockAufgaben: Aufgabe[] = [
     location: "Garten Süd",
     done: false,
     assignee: null,
-    pin: { x: 60, y: 85 },
+    pin: { lat: 46.9632, lng: 7.4298 },
   },
   {
     id: "4",
@@ -61,16 +65,14 @@ const mockAufgaben: Aufgabe[] = [
     location: "Sauna",
     done: false,
     assignee: null,
-    pin: { x: 78, y: 42 },
+    pin: { lat: 46.9634, lng: 7.4289 },
   },
 ];
 
 type Filter = "offen" | "erledigt" | "alle";
 
-// Spinnereiweg 17 Gelände-Karte (OpenStreetMap Embed — frei zoombar, kein API-Key)
-const OSM_EMBED = "https://www.openstreetmap.org/export/embed.html?bbox=7.4275%2C46.9625%2C7.4315%2C46.9645&layer=mapnik";
-
-function GelaendeMap({
+// Leaflet-Karte als eigene Komponente (dynamisch geladen wegen SSR)
+function LeafletMap({
   aufgaben,
   placingPin,
   onPlacePin,
@@ -79,64 +81,111 @@ function GelaendeMap({
   placingPin: boolean;
   onPlacePin: (pin: Pin) => void;
 }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<unknown>(null);
+  const markersRef = useRef<unknown[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
   const openPins = aufgaben.filter((a) => !a.done && a.pin);
 
-  function handleClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (!placingPin) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    onPlacePin({ x, y });
-  }
+  useEffect(() => {
+    if (!mapRef.current || mapInstanceRef.current) return;
+
+    // Dynamisch Leaflet laden (SSR-safe)
+    Promise.all([
+      import("leaflet"),
+    ]).then(([L]) => {
+      const map = L.map(mapRef.current!, {
+        center: MAP_CENTER,
+        zoom: MAP_ZOOM,
+        zoomControl: true,
+        attributionControl: false,
+      });
+
+      // Esri Satellitenbild
+      L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        { maxZoom: 22 }
+      ).addTo(map);
+
+      // Strassen-Labels als Overlay
+      L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",
+        { maxZoom: 22, opacity: 0.6 }
+      ).addTo(map);
+
+      mapInstanceRef.current = map;
+      setLoaded(true);
+
+      // Click-Handler für Pin-Setzen
+      map.on("click", (e: L.LeafletMouseEvent) => {
+        if (placingPin) {
+          onPlacePin({ lat: e.latlng.lat, lng: e.latlng.lng });
+        }
+      });
+    });
+
+    return () => {
+      if (mapInstanceRef.current) {
+        (mapInstanceRef.current as L.Map).remove();
+        mapInstanceRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Click-Handler updaten wenn placingPin sich ändert
+  useEffect(() => {
+    const map = mapInstanceRef.current as L.Map | null;
+    if (!map) return;
+
+    map.off("click");
+    if (placingPin) {
+      map.on("click", (e: L.LeafletMouseEvent) => {
+        onPlacePin({ lat: e.latlng.lat, lng: e.latlng.lng });
+      });
+      map.getContainer().style.cursor = "crosshair";
+    } else {
+      map.getContainer().style.cursor = "";
+    }
+  }, [placingPin, onPlacePin]);
+
+  // Marker updaten
+  useEffect(() => {
+    if (!loaded) return;
+    const L = require("leaflet") as typeof import("leaflet");
+    const map = mapInstanceRef.current as L.Map;
+
+    // Alte Marker entfernen
+    markersRef.current.forEach((m) => (m as L.Marker).remove());
+    markersRef.current = [];
+
+    // Neue Marker setzen
+    openPins.forEach((a) => {
+      const icon = L.divIcon({
+        className: "",
+        html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translateY(-100%)">
+          <div style="background:rgba(255,107,43,0.9);color:white;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.5)">${a.title}</div>
+          <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid rgba(255,107,43,0.9)"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:#ff6b2b;border:1.5px solid white;margin-top:-2px;box-shadow:0 1px 4px rgba(0,0,0,0.5)"></div>
+        </div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+      });
+
+      const marker = L.marker([a.pin!.lat, a.pin!.lng], { icon }).addTo(map);
+      markersRef.current.push(marker);
+    });
+  }, [openPins, loaded]);
 
   return (
     <div className="mb-4 overflow-hidden rounded-lg border border-gray-800">
-      <div className="relative h-56 w-full">
-        {/* OpenStreetMap iframe — zoombar, verschiebbar */}
-        <iframe
-          src={OSM_EMBED}
-          className="h-full w-full border-0"
-          style={{ filter: "invert(90%) hue-rotate(180deg) saturate(0.3)" }}
-          title="Gelände Spinnereiweg 17"
-        />
-
-        {/* Pin-Overlay (über der Karte) */}
-        <div
-          className={`absolute inset-0 ${placingPin ? "cursor-crosshair" : "pointer-events-none"}`}
-          onClick={handleClick}
-        >
-          {/* Pins mit Beschriftung */}
-          {openPins.map((a) => (
-            <div
-              key={a.id}
-              className="pointer-events-none absolute"
-              style={{
-                left: `${a.pin!.x}%`,
-                top: `${a.pin!.y}%`,
-                transform: "translate(-50%, -100%)",
-              }}
-            >
-              <div className="flex flex-col items-center">
-                <div className="max-w-[130px] truncate rounded bg-secondary/90 px-2 py-0.5 text-[10px] font-bold text-white shadow-lg">
-                  {a.title}
-                </div>
-                <div className="h-0 w-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-secondary/90" />
-                <div className="mt-[-2px] h-2.5 w-2.5 rounded-full border border-white bg-secondary shadow-lg" />
-              </div>
-            </div>
-          ))}
-
-          {placingPin && (
-            <div className="absolute inset-x-0 bottom-2 text-center">
-              <span className="rounded-full bg-accent/90 px-3 py-1 text-xs font-bold text-dark shadow-lg">
-                Tippe auf die Karte um den Pin zu setzen
-              </span>
-            </div>
-          )}
+      <div ref={mapRef} className="h-56 w-full" />
+      {placingPin && (
+        <div className="bg-accent/10 px-3 py-1.5 text-center text-xs text-accent">
+          Tippe auf die Karte um den Pin zu setzen
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -189,9 +238,7 @@ export default function AufgabenPage() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-4 flex items-center justify-between pr-12">
-        <h1 className="text-2xl font-bold text-white">
-          Aufgaben
-        </h1>
+        <h1 className="text-2xl font-bold text-white">Aufgaben</h1>
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
@@ -200,8 +247,8 @@ export default function AufgabenPage() {
         </button>
       </div>
 
-      {/* Gelände-Karte */}
-      <GelaendeMap
+      {/* Satellitenkarte */}
+      <LeafletMap
         aufgaben={aufgaben}
         placingPin={placingPin}
         onPlacePin={(pin) => {
@@ -210,7 +257,7 @@ export default function AufgabenPage() {
         }}
       />
 
-      {/* Erstellen-Formular */}
+      {/* Erstellen */}
       {showCreate && (
         <form
           onSubmit={handleCreate}
@@ -228,9 +275,7 @@ export default function AufgabenPage() {
             />
           </div>
           <div className="mb-3">
-            <label className="mb-1 block text-xs text-gray-400">
-              Beschreibung
-            </label>
+            <label className="mb-1 block text-xs text-gray-400">Beschreibung</label>
             <input
               type="text"
               value={newDesc}
