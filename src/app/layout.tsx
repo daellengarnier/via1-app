@@ -31,7 +31,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className="min-h-screen bg-dark font-sans antialiased">
+      <body className="min-h-screen font-sans antialiased">
         <div className="mx-auto max-w-lg">{children}</div>
         <ConditionalNav />
       </body>
