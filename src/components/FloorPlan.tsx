@@ -197,17 +197,20 @@ function WgBlock({
 export default function FloorPlan() {
   const router = useRouter();
 
-  // Layout: Nord links, Ost rechts, halbes Stockwerk versetzt
+  // Layout: Nord links, Ost rechts.
+  // Nord-Fluegel ist einen halben Stock TIEFER versetzt als Ost (Hanglage).
+  // Reihenfolge von unten nach oben:
+  // Nordwind, Ostblock, Dreiecksbar, Kleenex, Family-WG, Bonzen
   const nordX = 10;
   const ostX = 215;
   const blockW = 185;
   const floorH = 145;
-  const ostOffset = floorH / 2; // halbes Stockwerk versetzt
+  const nordOffset = floorH / 2; // Nord einen halben Stock tiefer
 
   const nordWgs = wgs.filter((w) => w.side === "nord");
   const ostWgs = wgs.filter((w) => w.side === "ost");
 
-  const totalHeight = 3 * floorH + ostOffset + 60;
+  const totalHeight = 3 * floorH + nordOffset + 60;
 
   return (
     <div className="pb-20">
@@ -235,7 +238,7 @@ export default function FloorPlan() {
             }
           `}</style>
 
-          {/* Treppenhaus */}
+          {/* Treppenhaus / Pyramide Platzhalter */}
           <rect
             x={blockW + 14}
             y={5}
@@ -247,25 +250,36 @@ export default function FloorPlan() {
             rx={3}
           />
 
-          {/* Nord (links) — von oben: 2.OG, 1.OG, EG */}
+          {/* Boden / Hangprofil */}
+          <line
+            x1={0}
+            y1={totalHeight - 35}
+            x2={410}
+            y2={totalHeight - 35}
+            stroke="#2a2a2a"
+            strokeWidth={1}
+            strokeDasharray="2 3"
+          />
+
+          {/* Nord (links, einen halben Stock tiefer) — von oben: 2.OG, 1.OG, EG */}
           {nordWgs.map((wg, i) => (
             <WgBlock
               key={wg.slug}
               wg={wg}
               x={nordX}
-              y={10 + i * floorH}
+              y={10 + nordOffset + i * floorH}
               width={blockW}
               onClick={() => router.push(`/wg/${wg.slug}`)}
             />
           ))}
 
-          {/* Ost (rechts, versetzt) — von oben: 2.OG, 1.OG, EG */}
+          {/* Ost (rechts, hoeher) — von oben: 2.OG, 1.OG, EG */}
           {ostWgs.map((wg, i) => (
             <WgBlock
               key={wg.slug}
               wg={wg}
               x={ostX}
-              y={10 + ostOffset + i * floorH}
+              y={10 + i * floorH}
               width={blockW}
               onClick={() => router.push(`/wg/${wg.slug}`)}
             />
