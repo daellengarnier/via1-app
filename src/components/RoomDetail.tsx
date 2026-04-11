@@ -42,7 +42,7 @@ export function RoomDetail({
               <p className="font-mono text-xs uppercase tracking-wider text-gray-500">
                 {wgName} · {roomTypeLabels[room.type]}
               </p>
-              <h2 className="mt-1 flex items-center gap-2 font-display text-xl font-bold text-accent">
+              <h2 className="mt-1 flex items-center gap-2 text-xl font-bold text-accent">
                 <span>{roomTypeIcons[room.type]}</span>
                 <span>{room.label}</span>
               </h2>
@@ -814,7 +814,7 @@ function ModalShell({
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center">
       <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-gray-800 bg-dark p-5 sm:rounded-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-display text-lg font-bold text-accent">{title}</h3>
+          <h3 className="text-lg font-bold text-accent">{title}</h3>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-white"

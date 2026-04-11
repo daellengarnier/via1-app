@@ -200,7 +200,7 @@ export default function WgPage() {
       </button>
 
       <div className="mb-6">
-        <h1 className={`font-display text-2xl font-bold ${accentColor}`}>
+        <h1 className={`text-2xl font-bold ${accentColor}`}>
           {wg.name}
         </h1>
         <p className="text-sm text-gray-400">
@@ -209,7 +209,7 @@ export default function WgPage() {
       </div>
 
       {/* Zimmer */}
-      <h2 className={`mb-3 font-display text-sm font-bold uppercase tracking-wider ${accentColor}`}>
+      <h2 className={`mb-3 font-mono text-sm font-bold uppercase tracking-wider ${accentColor}`}>
         Zimmer
       </h2>
       <div className="mb-6 space-y-2">

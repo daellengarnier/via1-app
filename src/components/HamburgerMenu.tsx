@@ -51,7 +51,7 @@ export function HamburgerMenu() {
             onClick={() => setOpen(false)}
             className="mb-6 flex items-center gap-3 rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4 transition-colors hover:border-accent"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 font-display text-lg font-bold text-accent">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-lg font-bold text-accent">
               A
             </div>
             <div>

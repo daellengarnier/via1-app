@@ -98,7 +98,7 @@ export default function ProfilPage() {
                 className="h-16 w-16 rounded-full object-cover"
               />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/20 font-display text-2xl font-bold text-accent">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/20 text-2xl font-bold text-accent">
                 {profile.displayName.charAt(0)}
               </div>
             )}

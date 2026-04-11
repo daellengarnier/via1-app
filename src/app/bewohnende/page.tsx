@@ -30,7 +30,7 @@ export default function BewohnendePage() {
 
   return (
     <div className="p-4 pb-24">
-      <h1 className="mb-1 font-display text-2xl font-bold text-accent">
+      <h1 className="mb-1 text-2xl font-bold text-white">
         Bewohnende
       </h1>
       <p className="mb-5 text-sm text-gray-400">
@@ -69,7 +69,7 @@ export default function BewohnendePage() {
       <div className="mb-4 rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="font-display text-xl font-bold text-white">
+            <h2 className="text-xl font-bold text-white">
               {selectedWg.name}
             </h2>
             <p className="text-xs text-gray-500">{selectedWg.floor}</p>
