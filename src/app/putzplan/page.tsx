@@ -75,7 +75,7 @@ export default function PutzplanPage() {
 
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-6 font-display text-2xl font-bold text-accent">
+      <h1 className="mb-6 text-2xl font-bold text-white">
         Putzdienst
       </h1>
 
@@ -91,7 +91,7 @@ export default function PutzplanPage() {
           <p className="font-mono text-xs uppercase tracking-wider text-accent">
             Gerade dran
           </p>
-          <p className="mt-1 font-display text-3xl font-bold text-white">
+          <p className="mt-1 text-3xl font-bold text-white">
             {currentWg.wg}
           </p>
           <p className="mt-2 text-sm text-gray-400">
@@ -134,7 +134,7 @@ export default function PutzplanPage() {
 
       {!currentWg && (
         <div className="mb-6 rounded-lg border border-accent bg-accent/10 p-5 text-center">
-          <p className="font-display text-xl font-bold text-accent">
+          <p className="text-xl font-bold text-accent">
             Alle durch!
           </p>
           <p className="mt-1 text-sm text-gray-400">

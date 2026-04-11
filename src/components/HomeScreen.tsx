@@ -57,6 +57,12 @@ const initialPinnwand: PinnwandEintrag[] = [
     author: "Lena",
     date: "2026-04-08",
   },
+  {
+    id: "3",
+    text: "Nächsten Samstag Gartenputzete! Wer kann mithelfen bitte bei Sven melden.",
+    author: "Sven",
+    date: "2026-04-06",
+  },
 ];
 
 function formatDate(iso: string): string {
@@ -107,7 +113,7 @@ export default function HomeScreen() {
     <div className="p-4 pb-20">
       {/* VIA1 Header */}
       <header className="mb-6 pt-2 pr-12">
-        <h1 className="font-display text-5xl font-bold tracking-tight text-accent">
+        <h1 className="text-5xl font-bold tracking-tight text-accent">
           VIA1
         </h1>
         <p className="mt-1 text-lg text-gray-300">
@@ -124,7 +130,7 @@ export default function HomeScreen() {
         <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
           NÄCHSTER TERMIN
         </p>
-        <h2 className="mt-1 font-display text-lg font-medium text-white">
+        <h2 className="mt-1 text-lg font-semibold text-white">
           {nextTermin.title}
         </h2>
         <p className="mt-1 text-sm text-gray-400">
@@ -148,7 +154,7 @@ export default function HomeScreen() {
         <p className="font-display text-[10px] font-bold uppercase tracking-widest text-purple-400">
           SPINNEREI
         </p>
-        <h2 className="mt-1 font-display text-lg font-medium text-white">
+        <h2 className="mt-1 text-lg font-semibold text-white">
           {nextSpinnereiEvent.title}
         </h2>
         <p className="mt-1 text-sm text-gray-400">
@@ -166,9 +172,7 @@ export default function HomeScreen() {
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
             SAUNA
           </p>
-          <p className="mt-1 font-display text-3xl font-bold text-accent">
-            62°C
-          </p>
+          <p className="mt-1 font-mono text-3xl font-bold text-accent">62°C</p>
           <p className="mt-1 text-xs text-gray-500">Wird geheizt</p>
         </div>
         <div
@@ -178,9 +182,7 @@ export default function HomeScreen() {
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
             AUFGABEN
           </p>
-          <p className="mt-1 font-display text-3xl font-bold text-secondary">
-            3
-          </p>
+          <p className="mt-1 font-mono text-3xl font-bold text-secondary">3</p>
           <p className="mt-1 text-xs text-gray-500">offen</p>
         </div>
         <div
@@ -190,9 +192,7 @@ export default function HomeScreen() {
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
             PUTZDIENST
           </p>
-          <p className="mt-1 font-display text-lg font-bold text-accent">
-            Dreiecksbar
-          </p>
+          <p className="mt-1 text-lg font-bold text-accent">Dreiecksbar</p>
           <p className="mt-1 text-xs text-gray-500">ist dran</p>
         </div>
         <div
@@ -202,19 +202,17 @@ export default function HomeScreen() {
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
             GÄSTI
           </p>
-          <p className="mt-1 font-display text-lg font-bold text-accent">
-            Frei
-          </p>
+          <p className="mt-1 text-lg font-bold text-accent">Frei</p>
           <p className="mt-1 text-xs text-gray-500">Nächste: 21. Apr</p>
         </div>
       </div>
 
-      {/* Pinnwand */}
-      <div className="mt-2">
+      {/* Pinnwand als Kachel */}
+      <div className="rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
             PINNWAND
-          </h2>
+          </p>
           <button
             onClick={() => setShowNoteForm(!showNoteForm)}
             className="font-display text-[10px] font-bold uppercase tracking-wider text-gray-500 hover:text-accent"
@@ -230,26 +228,27 @@ export default function HomeScreen() {
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
               placeholder="Nachricht an alle..."
-              className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+              className="flex-1 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
               autoFocus
             />
             <button
               type="submit"
-              className="rounded-lg bg-accent px-3 py-2 font-display text-[10px] font-bold text-dark"
+              className="rounded bg-accent px-3 py-2 font-display text-[10px] font-bold text-dark"
             >
               OK
             </button>
           </form>
         )}
 
-        <div className="space-y-2">
+        {/* Horizontaler Scroll */}
+        <div className="flex gap-3 overflow-x-auto pb-1">
           {pinnwand.map((p) => (
             <div
               key={p.id}
-              className="rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-3"
+              className="w-56 shrink-0 rounded-lg border border-gray-700 bg-gray-900/60 p-3"
             >
               <p className="text-sm text-gray-300">{p.text}</p>
-              <p className="mt-1 text-xs text-gray-600">
+              <p className="mt-2 text-xs text-gray-600">
                 {p.author} ·{" "}
                 {new Date(p.date).toLocaleDateString("de-CH", {
                   day: "numeric",

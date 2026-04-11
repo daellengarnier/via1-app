@@ -111,8 +111,8 @@ export default function FlohmiPage() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-4 flex items-center justify-between pr-12">
-        <h1 className="font-display text-2xl font-bold uppercase text-accent">
-          FLOHMI
+        <h1 className="text-2xl font-bold text-white">
+          Flohmi
         </h1>
         <button
           onClick={() => setShowCreate(!showCreate)}

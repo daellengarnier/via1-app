@@ -67,10 +67,8 @@ const mockAufgaben: Aufgabe[] = [
 
 type Filter = "offen" | "erledigt" | "alle";
 
-// Spinnereiweg 17 Gelände-Karte
-const MAP_CENTER_LAT = 46.9635;
-const MAP_CENTER_LNG = 7.4295;
-const MAP_IMG = `https://maps.googleapis.com/maps/api/staticmap?center=${MAP_CENTER_LAT},${MAP_CENTER_LNG}&zoom=19&size=600x300&maptype=satellite&style=feature:all|element:labels|visibility:off&key=`;
+// Spinnereiweg 17 Gelände-Karte (OpenStreetMap Embed — frei zoombar, kein API-Key)
+const OSM_EMBED = "https://www.openstreetmap.org/export/embed.html?bbox=7.4275%2C46.9625%2C7.4315%2C46.9645&layer=mapnik";
 
 function GelaendeMap({
   aufgaben,
@@ -85,6 +83,8 @@ function GelaendeMap({
 
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     if (!placingPin) return;
+    e.preventDefault();
+    e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -93,52 +93,49 @@ function GelaendeMap({
 
   return (
     <div className="mb-4 overflow-hidden rounded-lg border border-gray-800">
-      <div
-        className={`relative h-48 w-full ${placingPin ? "cursor-crosshair" : ""}`}
-        onClick={handleClick}
-        style={{
-          backgroundImage: `url('${MAP_IMG}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundColor: "#1a2a10",
-        }}
-      >
-        {/* Fallback wenn kein API key */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-dark/30" />
+      <div className="relative h-56 w-full">
+        {/* OpenStreetMap iframe — zoombar, verschiebbar */}
+        <iframe
+          src={OSM_EMBED}
+          className="h-full w-full border-0"
+          style={{ filter: "invert(90%) hue-rotate(180deg) saturate(0.3)" }}
+          title="Gelände Spinnereiweg 17"
+        />
 
-        {/* Gelände-Label */}
-        <div className="absolute left-2 top-2 rounded bg-dark/70 px-2 py-0.5 font-display text-[8px] font-bold uppercase tracking-widest text-accent backdrop-blur-sm">
-          SPINNEREIWEG 17
-        </div>
-
-        {/* Pins mit Beschriftung */}
-        {openPins.map((a) => (
-          <div
-            key={a.id}
-            className="absolute"
-            style={{
-              left: `${a.pin!.x}%`,
-              top: `${a.pin!.y}%`,
-              transform: "translate(-50%, -100%)",
-            }}
-          >
-            <div className="flex flex-col items-center">
-              <div className="max-w-[120px] truncate rounded bg-secondary/90 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-lg">
-                {a.title}
+        {/* Pin-Overlay (über der Karte) */}
+        <div
+          className={`absolute inset-0 ${placingPin ? "cursor-crosshair" : "pointer-events-none"}`}
+          onClick={handleClick}
+        >
+          {/* Pins mit Beschriftung */}
+          {openPins.map((a) => (
+            <div
+              key={a.id}
+              className="pointer-events-none absolute"
+              style={{
+                left: `${a.pin!.x}%`,
+                top: `${a.pin!.y}%`,
+                transform: "translate(-50%, -100%)",
+              }}
+            >
+              <div className="flex flex-col items-center">
+                <div className="max-w-[130px] truncate rounded bg-secondary/90 px-2 py-0.5 text-[10px] font-bold text-white shadow-lg">
+                  {a.title}
+                </div>
+                <div className="h-0 w-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-secondary/90" />
+                <div className="mt-[-2px] h-2.5 w-2.5 rounded-full border border-white bg-secondary shadow-lg" />
               </div>
-              <div className="h-0 w-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-secondary/90" />
-              <div className="mt-[-2px] h-2 w-2 rounded-full bg-secondary shadow-lg" />
             </div>
-          </div>
-        ))}
+          ))}
 
-        {placingPin && (
-          <div className="absolute inset-x-0 bottom-2 text-center">
-            <span className="rounded-full bg-accent/90 px-3 py-1 text-xs font-bold text-dark">
-              Tippe auf die Karte um den Pin zu setzen
-            </span>
-          </div>
-        )}
+          {placingPin && (
+            <div className="absolute inset-x-0 bottom-2 text-center">
+              <span className="rounded-full bg-accent/90 px-3 py-1 text-xs font-bold text-dark shadow-lg">
+                Tippe auf die Karte um den Pin zu setzen
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -192,8 +189,8 @@ export default function AufgabenPage() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-4 flex items-center justify-between pr-12">
-        <h1 className="font-display text-2xl font-bold uppercase text-accent">
-          AUFGABEN
+        <h1 className="text-2xl font-bold text-white">
+          Aufgaben
         </h1>
         <button
           onClick={() => setShowCreate(!showCreate)}
