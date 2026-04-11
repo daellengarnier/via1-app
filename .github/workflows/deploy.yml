@@ -14,18 +14,15 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          command_timeout: 15m
+          command_timeout: 10m
           script: |
             set -e
             cd /opt/via1-app
-            echo "=== Pulling latest ==="
             git fetch origin main
             git reset --hard origin/main
-            echo "=== Current commit ==="
-            git log --oneline -1
-            echo "=== Building ==="
-            DOCKER_BUILDKIT=1 docker compose build --build-arg CACHEBUST=$(date +%s) app
-            echo "=== Deploying ==="
+            echo "Commit: $(git log --oneline -1)"
+            docker compose down app || true
+            docker compose build app
             docker compose up -d
             docker compose restart nginx
-            echo "=== Done ==="
+            echo "Done"
