@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 interface Pin {
-  lat: number;
-  lng: number;
+  x: number; // 0-100 percent on map
+  y: number;
 }
 
 interface Aufgabe {
@@ -17,9 +17,6 @@ interface Aufgabe {
   pin: Pin | null;
 }
 
-// Zentrum des Geländes: Spinnereiweg 17, 3004 Bern
-const MAP_CENTER = { lat: 46.9635, lng: 7.4295 };
-
 const mockAufgaben: Aufgabe[] = [
   {
     id: "1",
@@ -28,7 +25,7 @@ const mockAufgaben: Aufgabe[] = [
     location: "Aussenbereich",
     done: false,
     assignee: null,
-    pin: { lat: 46.9637, lng: 7.4292 },
+    pin: { x: 25, y: 70 },
   },
   {
     id: "2",
@@ -46,7 +43,7 @@ const mockAufgaben: Aufgabe[] = [
     location: "Garten Süd",
     done: false,
     assignee: null,
-    pin: { lat: 46.9633, lng: 7.4298 },
+    pin: { x: 65, y: 85 },
   },
   {
     id: "4",
@@ -64,71 +61,107 @@ const mockAufgaben: Aufgabe[] = [
     location: "Sauna",
     done: false,
     assignee: null,
-    pin: { lat: 46.9632, lng: 7.4290 },
+    pin: { x: 80, y: 45 },
   },
 ];
 
 type Filter = "offen" | "erledigt" | "alle";
 
-function MapView({
+function GelaendeMap({
   aufgaben,
-  showCreate,
+  placingPin,
+  onPlacePin,
 }: {
   aufgaben: Aufgabe[];
-  showCreate: boolean;
+  placingPin: boolean;
+  onPlacePin: (pin: Pin) => void;
 }) {
   const openPins = aufgaben.filter((a) => !a.done && a.pin);
 
+  function handleClick(e: React.MouseEvent<SVGSVGElement>) {
+    if (!placingPin) return;
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    onPlacePin({ x, y });
+  }
+
   return (
-    <div className="relative mb-4 overflow-hidden rounded-lg border border-gray-800">
-      {/* Google Maps Embed */}
-      <div className="relative h-48 w-full">
-        <iframe
-          src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d500!2d${MAP_CENTER.lng}!3d${MAP_CENTER.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x478e39bf12aa tried2b%3A0x0!2sSpinnereiweg+17%2C+3004+Bern!5e1!3m2!1sde!2sch!4v1`}
-          width="100%"
-          height="100%"
-          style={{ border: 0, filter: "invert(90%) hue-rotate(180deg)" }}
-          allowFullScreen={false}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          title="Gelände Spinnereiweg 17"
+    <div className="mb-4 overflow-hidden rounded-lg border border-gray-800">
+      <svg
+        viewBox="0 0 400 250"
+        className={`w-full ${placingPin ? "cursor-crosshair" : ""}`}
+        onClick={handleClick}
+      >
+        {/* Hintergrund */}
+        <rect width="400" height="250" fill="#0f1a08" />
+
+        {/* Gelände-Umriss */}
+        <path
+          d="M50,30 L350,30 L380,60 L380,220 L300,230 L50,230 L20,200 L20,60 Z"
+          fill="#141e0a"
+          stroke="#2a3a1a"
+          strokeWidth="1"
         />
 
-        {/* Pin-Overlay */}
-        <div className="pointer-events-none absolute inset-0">
-          {openPins.map((a) => {
-            // Einfache Projektion relativ zum Kartenzentrum
-            const dx = (a.pin!.lng - MAP_CENTER.lng) * 50000;
-            const dy = (MAP_CENTER.lat - a.pin!.lat) * 50000;
-            const x = 50 + dx;
-            const y = 50 + dy;
-            if (x < 5 || x > 95 || y < 5 || y > 95) return null;
-            return (
-              <div
-                key={a.id}
-                className="absolute"
-                style={{ left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -100%)" }}
-              >
-                <div className="flex flex-col items-center">
-                  <div className="rounded bg-secondary/90 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-lg">
-                    {a.title.slice(0, 15)}
-                  </div>
-                  <svg width="12" height="16" viewBox="0 0 12 16" className="text-secondary">
-                    <path d="M6 0C2.7 0 0 2.7 0 6c0 4.5 6 10 6 10s6-5.5 6-10c0-3.3-2.7-6-6-6z" fill="currentColor" />
-                    <circle cx="6" cy="6" r="2.5" fill="white" />
-                  </svg>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+        {/* Hauptgebäude (Dreieck/Keil) */}
+        <path
+          d="M120,70 L280,70 L300,90 L300,170 L200,180 L100,170 L100,90 Z"
+          fill="#1a2a10"
+          stroke="#3a5a20"
+          strokeWidth="1.5"
+        />
 
-      {showCreate && (
-        <p className="bg-accent/10 px-3 py-1.5 text-center text-xs text-accent">
-          Tippe auf die Karte um einen Pin zu setzen (optional)
-        </p>
-      )}
+        {/* Glaspyramide Mitte */}
+        <polygon
+          points="200,90 220,130 200,170 180,130"
+          fill="#1e3012"
+          stroke="#4a6a30"
+          strokeWidth="1"
+        />
+
+        {/* Nord-Flügel (links) */}
+        <rect x="110" y="80" width="80" height="80" rx="3" fill="#162210" stroke="#3a5a20" strokeWidth="1" />
+        <text x="150" y="125" textAnchor="middle" fill="#3a5a20" fontSize="8" fontFamily="Orbitron">NORD</text>
+
+        {/* Ost-Flügel (rechts) */}
+        <rect x="210" y="80" width="80" height="80" rx="3" fill="#162210" stroke="#3a5a20" strokeWidth="1" />
+        <text x="250" y="125" textAnchor="middle" fill="#3a5a20" fontSize="8" fontFamily="Orbitron">OST</text>
+
+        {/* Sauna */}
+        <rect x="320" y="100" width="40" height="30" rx="3" fill="#1a1a0a" stroke="#5a5a20" strokeWidth="1" />
+        <text x="340" y="119" textAnchor="middle" fill="#5a5a20" fontSize="6" fontFamily="Orbitron">SAUNA</text>
+
+        {/* Garten Süd */}
+        <ellipse cx="200" cy="210" rx="80" ry="20" fill="#0f1a08" stroke="#2a3a1a" strokeWidth="0.5" strokeDasharray="3,3" />
+        <text x="200" y="214" textAnchor="middle" fill="#2a3a1a" fontSize="7" fontFamily="Orbitron">GARTEN</text>
+
+        {/* Wege */}
+        <path d="M60,130 L110,130" stroke="#2a3a1a" strokeWidth="2" strokeDasharray="4,3" />
+        <path d="M290,130 L340,130" stroke="#2a3a1a" strokeWidth="2" strokeDasharray="4,3" />
+        <path d="M200,180 L200,230" stroke="#2a3a1a" strokeWidth="2" strokeDasharray="4,3" />
+
+        {/* Gästewohnwagen */}
+        <rect x="30" y="180" width="50" height="25" rx="5" fill="#1a1a0a" stroke="#5a5a20" strokeWidth="1" />
+        <text x="55" y="196" textAnchor="middle" fill="#5a5a20" fontSize="5" fontFamily="Orbitron">GÄSTI</text>
+
+        {/* Aufgaben-Pins */}
+        {openPins.map((a) => (
+          <g key={a.id} transform={`translate(${a.pin!.x * 4}, ${a.pin!.y * 2.5})`}>
+            <circle r="8" fill="#ff6b2b" opacity="0.3" />
+            <circle r="4" fill="#ff6b2b" />
+            <circle r="1.5" fill="white" />
+          </g>
+        ))}
+
+        {/* Placing-Hint */}
+        {placingPin && (
+          <text x="200" y="20" textAnchor="middle" fill="#b8f068" fontSize="9" fontFamily="Inter">
+            Tippe auf die Karte um den Pin zu setzen
+          </text>
+        )}
+      </svg>
     </div>
   );
 }
@@ -141,6 +174,7 @@ export default function AufgabenPage() {
   const [newDesc, setNewDesc] = useState("");
   const [newLocation, setNewLocation] = useState("");
   const [pendingPin, setPendingPin] = useState<Pin | null>(null);
+  const [placingPin, setPlacingPin] = useState(false);
 
   const filtered = aufgaben.filter((a) => {
     if (filter === "offen") return !a.done;
@@ -173,27 +207,32 @@ export default function AufgabenPage() {
     setNewDesc("");
     setNewLocation("");
     setPendingPin(null);
+    setPlacingPin(false);
     setShowCreate(false);
   }
 
   return (
     <div className="p-4 pb-20">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-accent">
-          Aufgaben
+        <h1 className="font-display text-2xl font-bold uppercase text-accent">
+          AUFGABEN
         </h1>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="rounded-full bg-accent px-4 py-1.5 font-mono text-xs font-bold text-dark"
+          className="rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
         >
-          + Neue Aufgabe
+          + NEU
         </button>
       </div>
 
-      {/* Karte */}
-      <MapView
+      {/* Gelände-Karte */}
+      <GelaendeMap
         aufgaben={aufgaben}
-        showCreate={showCreate}
+        placingPin={placingPin}
+        onPlacePin={(pin) => {
+          setPendingPin(pin);
+          setPlacingPin(false);
+        }}
       />
 
       {/* Erstellen-Formular */}
@@ -235,18 +274,41 @@ export default function AufgabenPage() {
               className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
             />
           </div>
+
+          {/* Pin setzen */}
+          <div className="mb-3">
+            <button
+              type="button"
+              onClick={() => setPlacingPin(!placingPin)}
+              className={`w-full rounded-lg py-2 font-mono text-xs font-bold transition-colors ${
+                placingPin
+                  ? "bg-secondary text-white"
+                  : pendingPin
+                    ? "border border-accent bg-accent/10 text-accent"
+                    : "border border-gray-700 text-gray-400 hover:text-white"
+              }`}
+            >
+              {placingPin
+                ? "📍 Tippe auf die Karte oben..."
+                : pendingPin
+                  ? "📍 Pin gesetzt — nochmal klicken zum Ändern"
+                  : "📍 Pin auf Karte setzen (optional)"}
+            </button>
+          </div>
+
           <div className="flex gap-2">
             <button
               type="submit"
-              className="rounded bg-accent px-4 py-2 font-mono text-xs font-bold text-dark"
+              className="rounded bg-accent px-4 py-2 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
             >
-              Erstellen
+              ERSTELLEN
             </button>
             <button
               type="button"
               onClick={() => {
                 setShowCreate(false);
                 setPendingPin(null);
+                setPlacingPin(false);
               }}
               className="rounded px-4 py-2 text-xs text-gray-400 hover:text-white"
             >
@@ -262,7 +324,7 @@ export default function AufgabenPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`rounded-full px-3 py-1 font-mono text-xs capitalize transition-colors ${
+            className={`rounded-full px-3 py-1 font-display text-[10px] font-bold uppercase tracking-wider transition-colors ${
               filter === f
                 ? "bg-accent text-dark"
                 : "border border-gray-700 text-gray-400 hover:text-white"
@@ -301,9 +363,7 @@ export default function AufgabenPage() {
                 </h3>
                 <p className="mt-0.5 text-sm text-gray-500">{a.description}</p>
                 <div className="mt-2 flex items-center gap-3 text-xs text-gray-600">
-                  {a.pin && (
-                    <span className="text-secondary">📍</span>
-                  )}
+                  {a.pin && <span className="text-secondary">📍</span>}
                   <span>{a.location}</span>
                   {a.assignee && (
                     <span className="text-accent">→ {a.assignee}</span>

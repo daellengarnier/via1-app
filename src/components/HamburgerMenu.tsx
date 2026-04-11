@@ -3,15 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 
-const wgs = [
-  { slug: "nordwind", name: "Nordwind", floor: "EG Nord", residents: 4 },
-  { slug: "ostblock", name: "Ostblock", floor: "EG Ost", residents: 5 },
-  { slug: "dreiecksbar", name: "Dreiecksbar", floor: "1. OG Nord", residents: 5 },
-  { slug: "kleenex", name: "Kleenex", floor: "1. OG Ost", residents: 5 },
-  { slug: "family-wg", name: "Family-WG", floor: "2. OG Nord", residents: 5 },
-  { slug: "bonzen", name: "Bonzen", floor: "2. OG Ost", residents: 3 },
-];
-
 export function HamburgerMenu() {
   const [open, setOpen] = useState(false);
 
@@ -69,43 +60,25 @@ export function HamburgerMenu() {
             </div>
           </Link>
 
-          {/* WGs & Bewohner:innen */}
-          <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
-            Wohngemeinschaften & Bewohner:innen
+          {/* Bewohnende */}
+          <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+            BEWOHNENDE
           </h2>
           <Link
             href="/bewohnende"
             onClick={() => setOpen(false)}
-            className="mb-2 flex items-center justify-between rounded-lg border border-accent/30 bg-accent/5 p-3 transition-colors hover:border-accent"
+            className="mb-6 flex items-center justify-between rounded-lg border border-accent/30 bg-accent/5 p-3 transition-colors hover:border-accent"
           >
             <div>
               <p className="font-medium text-accent">Alle Bewohnenden</p>
-              <p className="text-xs text-gray-500">Zimmer, Schlüssel, Historie</p>
+              <p className="text-xs text-gray-500">WGs, Zimmer, Schlüssel, Historie</p>
             </div>
             <span className="text-gray-500">›</span>
           </Link>
-          <div className="mb-6 space-y-2">
-            {wgs.map((wg) => (
-              <Link
-                key={wg.slug}
-                href={`/wg/${wg.slug}`}
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 p-3 transition-colors hover:border-accent"
-              >
-                <div>
-                  <p className="font-medium text-white">{wg.name}</p>
-                  <p className="text-xs text-gray-500">{wg.floor}</p>
-                </div>
-                <span className="font-mono text-xs text-gray-500">
-                  {wg.residents}
-                </span>
-              </Link>
-            ))}
-          </div>
 
-          {/* Hausbuch & Flohmi */}
-          <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
-            Mehr
+          {/* Mehr */}
+          <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+            MEHR
           </h2>
           <div className="mb-6 space-y-2">
             <Link
@@ -136,14 +109,14 @@ export function HamburgerMenu() {
           <Link
             href="/feedback"
             onClick={() => setOpen(false)}
-            className="block rounded-lg border border-accent/30 bg-accent/5 py-3 text-center font-mono text-sm text-accent transition-colors hover:bg-accent/10"
+            className="block rounded-lg border border-accent/30 bg-accent/5 py-3 text-center font-display text-[10px] font-bold uppercase tracking-widest text-accent transition-colors hover:bg-accent/10"
           >
-            Idee oder Bug melden
+            IDEE ODER BUG MELDEN
           </Link>
 
           {/* Abmelden */}
-          <button className="mt-3 w-full rounded-lg border border-gray-700 py-2 font-mono text-sm text-gray-400 transition-colors hover:border-red-500 hover:text-red-400">
-            Abmelden
+          <button className="mt-3 w-full rounded-lg border border-gray-700 py-2 font-display text-[10px] font-bold uppercase tracking-widest text-gray-400 transition-colors hover:border-red-500 hover:text-red-400">
+            ABMELDEN
           </button>
         </div>
       </div>

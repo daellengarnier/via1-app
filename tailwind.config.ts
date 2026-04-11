@@ -16,7 +16,7 @@ const config: Config = {
       fontFamily: {
         mono: ["JetBrains Mono", "monospace"],
         sans: ["Inter", "sans-serif"],
-        display: ["Space Grotesk", "sans-serif"],
+        display: ["Orbitron", "sans-serif"],
       },
     },
   },
