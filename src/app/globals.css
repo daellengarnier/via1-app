@@ -16,7 +16,7 @@ body {
 
 /* ===== Background: Pyramide oben + grüner Glow unten ===== */
 .via-bg {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: -1;
   overflow: hidden;
@@ -26,11 +26,11 @@ body {
 /* Pyramide (ausgeschnitten, 18KB WebP) */
 .via-pyramid-img {
   position: absolute;
-  top: 0;
+  top: -20px;
   left: 50%;
   transform: translateX(-50%);
-  width: 100%;
-  max-width: 500px;
+  width: 60%;
+  max-width: 280px;
   height: auto;
   opacity: 0.85;
 }

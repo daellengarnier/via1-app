@@ -69,8 +69,8 @@ export default function HomeScreen() {
 
   return (
     <div className="p-4 pb-20">
-      {/* Platz für die Pyramide im Hintergrundbild */}
-      <div className="h-28" />
+      {/* Platz für die Pyramide */}
+      <div className="h-16" />
 
       {/* Header */}
       <header className="mb-5 pr-12">
