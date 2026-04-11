@@ -76,6 +76,7 @@ export default function GaestiPage() {
   const [newGuest, setNewGuest] = useState("");
   const [newFrom, setNewFrom] = useState("");
   const [newTo, setNewTo] = useState("");
+  const [showBookings, setShowBookings] = useState(false);
 
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfWeek(year, month);
@@ -137,11 +138,11 @@ export default function GaestiPage() {
 
   return (
     <div className="p-4 pb-20">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-accent">Gästi</h1>
+      <div className="mb-4 flex items-center justify-between pr-12">
+        <h1 className="font-display text-2xl font-bold uppercase text-accent">GÄSTI</h1>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="rounded-full bg-accent px-4 py-1.5 font-mono text-xs font-bold text-dark"
+          className="rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
         >
           + Buchen
         </button>
@@ -277,11 +278,17 @@ export default function GaestiPage() {
         </div>
       </div>
 
-      {/* Buchungsliste */}
-      <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
-        Kommende Buchungen
-      </h2>
-      <div className="space-y-2">
+      {/* Buchungsliste (ausklappbar) */}
+      <button
+        onClick={() => setShowBookings(!showBookings)}
+        className="mb-3 flex w-full items-center justify-between"
+      >
+        <h2 className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+          KOMMENDE BUCHUNGEN
+        </h2>
+        <span className="text-gray-500">{showBookings ? "▲" : "▼"}</span>
+      </button>
+      {showBookings && <div className="space-y-2">
         {bookings
           .filter((b) => b.to >= today)
           .sort((a, b) => a.from.localeCompare(b.from))
@@ -314,7 +321,7 @@ export default function GaestiPage() {
             Keine kommenden Buchungen
           </p>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

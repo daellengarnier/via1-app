@@ -110,15 +110,15 @@ export default function FlohmiPage() {
 
   return (
     <div className="p-4 pb-20">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-accent">
-          Flohmi
+      <div className="mb-4 flex items-center justify-between pr-12">
+        <h1 className="font-display text-2xl font-bold uppercase text-accent">
+          FLOHMI
         </h1>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="rounded-full bg-accent px-4 py-1.5 font-mono text-xs font-bold text-dark"
+          className="rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
         >
-          + Inserieren
+          + INSERIEREN
         </button>
       </div>
       <p className="mb-4 text-sm text-gray-500">

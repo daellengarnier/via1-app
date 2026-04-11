@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 interface Pin {
-  x: number; // 0-100 percent on map
+  x: number;
   y: number;
 }
 
@@ -25,7 +25,7 @@ const mockAufgaben: Aufgabe[] = [
     location: "Aussenbereich",
     done: false,
     assignee: null,
-    pin: { x: 25, y: 70 },
+    pin: { x: 30, y: 75 },
   },
   {
     id: "2",
@@ -43,7 +43,7 @@ const mockAufgaben: Aufgabe[] = [
     location: "Garten Süd",
     done: false,
     assignee: null,
-    pin: { x: 65, y: 85 },
+    pin: { x: 60, y: 85 },
   },
   {
     id: "4",
@@ -61,11 +61,16 @@ const mockAufgaben: Aufgabe[] = [
     location: "Sauna",
     done: false,
     assignee: null,
-    pin: { x: 80, y: 45 },
+    pin: { x: 78, y: 42 },
   },
 ];
 
 type Filter = "offen" | "erledigt" | "alle";
+
+// Spinnereiweg 17 Gelände-Karte
+const MAP_CENTER_LAT = 46.9635;
+const MAP_CENTER_LNG = 7.4295;
+const MAP_IMG = `https://maps.googleapis.com/maps/api/staticmap?center=${MAP_CENTER_LAT},${MAP_CENTER_LNG}&zoom=19&size=600x300&maptype=satellite&style=feature:all|element:labels|visibility:off&key=`;
 
 function GelaendeMap({
   aufgaben,
@@ -78,10 +83,9 @@ function GelaendeMap({
 }) {
   const openPins = aufgaben.filter((a) => !a.done && a.pin);
 
-  function handleClick(e: React.MouseEvent<SVGSVGElement>) {
+  function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     if (!placingPin) return;
-    const svg = e.currentTarget;
-    const rect = svg.getBoundingClientRect();
+    const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     onPlacePin({ x, y });
@@ -89,79 +93,53 @@ function GelaendeMap({
 
   return (
     <div className="mb-4 overflow-hidden rounded-lg border border-gray-800">
-      <svg
-        viewBox="0 0 400 250"
-        className={`w-full ${placingPin ? "cursor-crosshair" : ""}`}
+      <div
+        className={`relative h-48 w-full ${placingPin ? "cursor-crosshair" : ""}`}
         onClick={handleClick}
+        style={{
+          backgroundImage: `url('${MAP_IMG}')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundColor: "#1a2a10",
+        }}
       >
-        {/* Hintergrund */}
-        <rect width="400" height="250" fill="#0f1a08" />
+        {/* Fallback wenn kein API key */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-dark/30" />
 
-        {/* Gelände-Umriss */}
-        <path
-          d="M50,30 L350,30 L380,60 L380,220 L300,230 L50,230 L20,200 L20,60 Z"
-          fill="#141e0a"
-          stroke="#2a3a1a"
-          strokeWidth="1"
-        />
+        {/* Gelände-Label */}
+        <div className="absolute left-2 top-2 rounded bg-dark/70 px-2 py-0.5 font-display text-[8px] font-bold uppercase tracking-widest text-accent backdrop-blur-sm">
+          SPINNEREIWEG 17
+        </div>
 
-        {/* Hauptgebäude (Dreieck/Keil) */}
-        <path
-          d="M120,70 L280,70 L300,90 L300,170 L200,180 L100,170 L100,90 Z"
-          fill="#1a2a10"
-          stroke="#3a5a20"
-          strokeWidth="1.5"
-        />
-
-        {/* Glaspyramide Mitte */}
-        <polygon
-          points="200,90 220,130 200,170 180,130"
-          fill="#1e3012"
-          stroke="#4a6a30"
-          strokeWidth="1"
-        />
-
-        {/* Nord-Flügel (links) */}
-        <rect x="110" y="80" width="80" height="80" rx="3" fill="#162210" stroke="#3a5a20" strokeWidth="1" />
-        <text x="150" y="125" textAnchor="middle" fill="#3a5a20" fontSize="8" fontFamily="Orbitron">NORD</text>
-
-        {/* Ost-Flügel (rechts) */}
-        <rect x="210" y="80" width="80" height="80" rx="3" fill="#162210" stroke="#3a5a20" strokeWidth="1" />
-        <text x="250" y="125" textAnchor="middle" fill="#3a5a20" fontSize="8" fontFamily="Orbitron">OST</text>
-
-        {/* Sauna */}
-        <rect x="320" y="100" width="40" height="30" rx="3" fill="#1a1a0a" stroke="#5a5a20" strokeWidth="1" />
-        <text x="340" y="119" textAnchor="middle" fill="#5a5a20" fontSize="6" fontFamily="Orbitron">SAUNA</text>
-
-        {/* Garten Süd */}
-        <ellipse cx="200" cy="210" rx="80" ry="20" fill="#0f1a08" stroke="#2a3a1a" strokeWidth="0.5" strokeDasharray="3,3" />
-        <text x="200" y="214" textAnchor="middle" fill="#2a3a1a" fontSize="7" fontFamily="Orbitron">GARTEN</text>
-
-        {/* Wege */}
-        <path d="M60,130 L110,130" stroke="#2a3a1a" strokeWidth="2" strokeDasharray="4,3" />
-        <path d="M290,130 L340,130" stroke="#2a3a1a" strokeWidth="2" strokeDasharray="4,3" />
-        <path d="M200,180 L200,230" stroke="#2a3a1a" strokeWidth="2" strokeDasharray="4,3" />
-
-        {/* Gästewohnwagen */}
-        <rect x="30" y="180" width="50" height="25" rx="5" fill="#1a1a0a" stroke="#5a5a20" strokeWidth="1" />
-        <text x="55" y="196" textAnchor="middle" fill="#5a5a20" fontSize="5" fontFamily="Orbitron">GÄSTI</text>
-
-        {/* Aufgaben-Pins */}
+        {/* Pins mit Beschriftung */}
         {openPins.map((a) => (
-          <g key={a.id} transform={`translate(${a.pin!.x * 4}, ${a.pin!.y * 2.5})`}>
-            <circle r="8" fill="#ff6b2b" opacity="0.3" />
-            <circle r="4" fill="#ff6b2b" />
-            <circle r="1.5" fill="white" />
-          </g>
+          <div
+            key={a.id}
+            className="absolute"
+            style={{
+              left: `${a.pin!.x}%`,
+              top: `${a.pin!.y}%`,
+              transform: "translate(-50%, -100%)",
+            }}
+          >
+            <div className="flex flex-col items-center">
+              <div className="max-w-[120px] truncate rounded bg-secondary/90 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-lg">
+                {a.title}
+              </div>
+              <div className="h-0 w-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-secondary/90" />
+              <div className="mt-[-2px] h-2 w-2 rounded-full bg-secondary shadow-lg" />
+            </div>
+          </div>
         ))}
 
-        {/* Placing-Hint */}
         {placingPin && (
-          <text x="200" y="20" textAnchor="middle" fill="#b8f068" fontSize="9" fontFamily="Inter">
-            Tippe auf die Karte um den Pin zu setzen
-          </text>
+          <div className="absolute inset-x-0 bottom-2 text-center">
+            <span className="rounded-full bg-accent/90 px-3 py-1 text-xs font-bold text-dark">
+              Tippe auf die Karte um den Pin zu setzen
+            </span>
+          </div>
         )}
-      </svg>
+      </div>
     </div>
   );
 }
@@ -213,7 +191,7 @@ export default function AufgabenPage() {
 
   return (
     <div className="p-4 pb-20">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between pr-12">
         <h1 className="font-display text-2xl font-bold uppercase text-accent">
           AUFGABEN
         </h1>
@@ -274,8 +252,6 @@ export default function AufgabenPage() {
               className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
             />
           </div>
-
-          {/* Pin setzen */}
           <div className="mb-3">
             <button
               type="button"
@@ -295,7 +271,6 @@ export default function AufgabenPage() {
                   : "📍 Pin auf Karte setzen (optional)"}
             </button>
           </div>
-
           <div className="flex gap-2">
             <button
               type="submit"

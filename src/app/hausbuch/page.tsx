@@ -23,57 +23,93 @@ const categories = [
 const mockArtikel: Artikel[] = [
   {
     id: "1",
-    title: "Hauptwasserhahn",
+    title: "WLAN",
     content:
-      "Der Hauptwasserhahn befindet sich im UG, im Technikraum hinter der Waschküche. Roter Hebel an der Wand links.",
+      "Netzwerk: The Force\nPasswort: maythefurzbewithyou!\n\nRepeater im 2. OG: gleicher Name, gleiches Passwort.",
     category: "Technik",
-    updatedBy: "Marco",
-    updatedAt: "2026-03-15",
+    updatedBy: "Yves",
+    updatedAt: "2026-01-10",
   },
   {
     id: "2",
-    title: "Müllabfuhr-Termine",
+    title: "Entsorgung",
     content:
-      "Kehricht: jeden Montag bis 7 Uhr.\nGrüngut: Dienstag, alle 2 Wochen (gerade KW).\nPapier/Karton: erster Mittwoch im Monat.\nSperrgut: auf Abruf, Marke bei der Gemeinde kaufen.",
+      "Kehricht: jeden Montag bis 7 Uhr rausstellen.\nGrüngut: Dienstag, alle 2 Wochen (gerade KW).\nPapier/Karton: erster Mittwoch im Monat.\nGlas: Container beim Migros Felsenau.\nSperrgut: auf Abruf bei der Stadt Bern (Marke kaufen).\nElektroschrott: Sammelstelle beim Wankdorf.",
     category: "Allgemein",
     updatedBy: "Lena",
     updatedAt: "2026-04-01",
   },
   {
     id: "3",
-    title: "WLAN-Passwort",
+    title: "Geschichte der Via",
     content:
-      "Netzwerk: Spinnerei-5G\nPasswort: ViaFelsenau2024!\n\nRepeater im 2. OG: Spinnerei-2OG (gleiches Passwort)",
-    category: "Technik",
-    updatedBy: "Yves",
-    updatedAt: "2026-01-10",
+      "Die Via Felsenau (Spinnereiweg 17) wurde in den 1990er-Jahren als genossenschaftliches Wohnprojekt gegründet. Das Gebäude ist ein Holzbau mit keilförmigem Grundriss, 3 Stockwerke plus Untergeschoss. Charakteristisch ist die Glaspyramide (Wintergarten) im Zentrum, die vom UG bis zum Dach reicht. Der Nord-Flügel hat eine abgerundete Form und ist um einen halben Stock tiefer versetzt als der Ost-Flügel (Hanglage).\n\nAktuell leben ca. 25 Personen in 6 Wohngemeinschaften zusammen.",
+    category: "Allgemein",
+    updatedBy: "Alain",
+    updatedAt: "2026-03-01",
   },
   {
     id: "4",
-    title: "Gartengeräte",
+    title: "Beiträge",
     content:
-      "Rasenmäher, Heckenschere, Schubkarre: im Geräteschuppen hinter dem Haus.\nSchlüssel hängt an der Pinnwand im Eingang.\nBitte nach Gebrauch reinigen und zurückstellen.",
+      "Monatliche Beiträge an die Gemeinschaftskasse:\n- Hausgeld: gemäss Reglement\n- Zusätzliche Beiträge für Gemeinschaftsprojekte werden an der Haussitzung beschlossen\n\nKonto-Infos bei der Verwaltung.",
+    category: "Allgemein",
+    updatedBy: "Marco",
+    updatedAt: "2026-02-15",
+  },
+  {
+    id: "5",
+    title: "Kaffee-Abo",
+    content:
+      "Gemeinsames Kaffee-Abo für die Bar/Gemeinschaftsküche.\nJede:r der:die mitmacht zahlt monatlich einen Beitrag.\nAnmeldung bei Alain oder Sophie.\nAktuell: Bertschi Kaffee, Bern.",
+    category: "Allgemein",
+    updatedBy: "Sophie",
+    updatedAt: "2026-03-10",
+  },
+  {
+    id: "6",
+    title: "Unser Biotop",
+    content:
+      "Das Biotop befindet sich südlich vom Hauptgebäude. Es ist ein kleiner Naturteich mit einheimischen Pflanzen.\n\nRegeln:\n- Kein Baden\n- Keine Fische einsetzen\n- Uferbepflanzung nicht entfernen\n- Laub im Herbst abfischen",
     category: "Garten",
     updatedBy: "Sven",
     updatedAt: "2026-03-20",
   },
   {
-    id: "5",
-    title: "Saal reservieren",
+    id: "7",
+    title: "Unsere Verwaltung",
     content:
-      "Der Saal kann für private Anlässe reserviert werden.\nAnfrage an die Hausverwaltung (Alain oder Marco).\nMax. 40 Personen. Aufräumen am gleichen Abend.",
-    category: "Räume",
-    updatedBy: "Alain",
-    updatedAt: "2026-02-28",
+      "Die Via wird genossenschaftlich verwaltet.\n\nVorstand:\n- Präsident: Marco\n- Finanzen: Lena\n- Hauswart: Alain\n\nHaussitzungen: monatlich (siehe Termine)\nBeschlüsse werden im Protokoll festgehalten.",
+    category: "Kontakte",
+    updatedBy: "Marco",
+    updatedAt: "2026-04-05",
   },
   {
-    id: "6",
-    title: "Hauswart-Kontakt",
+    id: "8",
+    title: "Maschinenpark",
     content:
-      "Bei Notfällen (Wasser, Strom, Heizung):\nAlain: 079 123 45 67\nMarco: 079 234 56 78\n\nNicht dringend? Ticket in der App erstellen.",
-    category: "Kontakte",
+      "Rasenmäher (Benzin): Geräteschuppen\nHeckenschere (Akku): Geräteschuppen\nKettensäge: nur mit Bewilligung, bei Alain\nBohrmaschine + Werkzeugkoffer: Werkraum UG\nHochdruckreiniger: Geräteschuppen\n\nBitte nach Gebrauch reinigen und zurückstellen.",
+    category: "Technik",
     updatedBy: "Alain",
-    updatedAt: "2026-04-05",
+    updatedAt: "2026-03-25",
+  },
+  {
+    id: "9",
+    title: "Gemüsegarten",
+    content:
+      "Parzellen hinter dem Haus. Jede WG hat ein Beet.\nGemeinsam: Kräuterbeet, Beerensträucher.\n\nRegeln:\n- Eigenes Beet selber pflegen\n- Gemeinschaftsbeete nach Absprache\n- Kompost: nur Gartenabfälle, keine Essensreste\n- Wasser: Regentonne nutzen wenn möglich",
+    category: "Garten",
+    updatedBy: "Ruth",
+    updatedAt: "2026-03-15",
+  },
+  {
+    id: "10",
+    title: "Baupläne",
+    content:
+      "Die originalen Baupläne des Hauses sind bei der Verwaltung einsehbar.\nDigitale Kopien auf Anfrage bei Marco.\n\nWichtige Infos:\n- Tragende Wände: NICHT verändern ohne Bewilligung\n- Brandschutzwände: rot markiert in den Plänen\n- Leitungsplan (Wasser/Strom): im Technikraum UG",
+    category: "Technik",
+    updatedBy: "Marco",
+    updatedAt: "2026-01-20",
   },
 ];
 
@@ -117,13 +153,13 @@ export default function HausbuchPage() {
 
   return (
     <div className="p-4 pb-20">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-accent">
-          Hausbuch
+      <div className="mb-4 flex items-center justify-between pr-12">
+        <h1 className="font-display text-2xl font-bold uppercase text-accent">
+          HAUSBUCH
         </h1>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="rounded-full bg-accent px-4 py-1.5 font-mono text-xs font-bold text-dark"
+          className="rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
         >
           + Neuer Eintrag
         </button>

@@ -56,7 +56,6 @@ export function HamburgerMenu() {
             </div>
             <div>
               <p className="font-medium text-white">Mein Profil</p>
-              <p className="text-xs text-gray-500">alain@via1.ch</p>
             </div>
           </Link>
 
