@@ -73,6 +73,17 @@ export function HamburgerMenu() {
           <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
             Wohngemeinschaften & Bewohner:innen
           </h2>
+          <Link
+            href="/bewohnende"
+            onClick={() => setOpen(false)}
+            className="mb-2 flex items-center justify-between rounded-lg border border-accent/30 bg-accent/5 p-3 transition-colors hover:border-accent"
+          >
+            <div>
+              <p className="font-medium text-accent">Alle Bewohnenden</p>
+              <p className="text-xs text-gray-500">Zimmer, Schluessel, Historie</p>
+            </div>
+            <span className="text-gray-500">›</span>
+          </Link>
           <div className="space-y-2">
             {wgs.map((wg) => (
               <Link
