@@ -4,10 +4,6 @@ on:
   push:
     branches: [main]
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: daellengarnier/via1-app
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,6 +29,8 @@ jobs:
           tags: |
             ghcr.io/daellengarnier/via1-app:latest
             ghcr.io/daellengarnier/via1-app:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     needs: build
@@ -44,26 +42,12 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          command_timeout: 5m
+          command_timeout: 8m
           script: |
-            set -e
             cd /opt/via1-app
-
-            # Pull latest code (for docker-compose.yml, nginx config, .env)
-            git fetch origin main
-            git reset --hard origin/main
-
-            # Stop old container first
-            docker compose down app || true
-
-            # Pull the pre-built image
-            docker pull ghcr.io/daellengarnier/via1-app:latest
-
-            # Start with new image
-            docker compose up -d
-            docker compose restart nginx
-
-            # Cleanup old images
+            git fetch origin main && git reset --hard origin/main
+            docker pull ghcr.io/daellengarnier/via1-app:latest && \
+            docker compose up -d && \
+            docker compose restart nginx && \
             docker image prune -f
-
             echo "Deploy done"
