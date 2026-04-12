@@ -68,8 +68,9 @@ const mockAufgaben: Aufgabe[] = [
 
 type Filter = "offen" | "erledigt" | "alle";
 
-// Statisches Satellitenbild vom Gelände
-const SAT_IMG = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=7.4405,46.9685,7.4440,46.9705&size=600,400&f=image&format=jpg";
+// OpenStreetMap Embed vom Gelände (Spinnereiweg 17, Bern Felsenau)
+const OSM_EMBED =
+  "https://www.openstreetmap.org/export/embed.html?bbox=7.4400%2C46.9680%2C7.4450%2C46.9710&layer=mapnik";
 
 function GelaendeMap({
   aufgaben,
@@ -92,16 +93,19 @@ function GelaendeMap({
 
   return (
     <div className="mb-4 overflow-hidden rounded-lg border border-gray-800">
-      <div
-        className={`relative h-48 w-full ${placingPin ? "cursor-crosshair" : ""}`}
-        onClick={handleClick}
-        style={{
-          backgroundImage: `url('${SAT_IMG}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundColor: "#111",
-        }}
-      >
+      <div className="relative h-56 w-full">
+        {/* OpenStreetMap iframe */}
+        <iframe
+          src={OSM_EMBED}
+          className="absolute inset-0 h-full w-full border-0"
+          style={{ filter: "invert(90%) hue-rotate(180deg) saturate(0.4)" }}
+          title="Gelände Spinnereiweg 17"
+        />
+        {/* Pin-Overlay */}
+        <div
+          className={`absolute inset-0 ${placingPin ? "cursor-crosshair" : "pointer-events-none"}`}
+          onClick={handleClick}
+        >
         {/* Pins */}
         {openPins.map((a) => (
           <div
@@ -130,6 +134,7 @@ function GelaendeMap({
             </span>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
@@ -183,12 +188,14 @@ export default function AufgabenPage() {
   return (
     <div className="relative p-4 pb-20">
       <TabHeader title="Aufgaben" icon="/icon-aufgaben.webp" color="yellow" />
-      <button
-        onClick={() => setShowCreate(!showCreate)}
-        className="mb-4 rounded-full bg-yellow-400 px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-black"
-      >
-        Neue Aufgabe
-      </button>
+      <div className="mb-4 flex justify-center">
+        <button
+          onClick={() => setShowCreate(!showCreate)}
+          className="rounded-full bg-yellow-400 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-black"
+        >
+          + Neue Aufgabe
+        </button>
+      </div>
 
       {/* Satellitenkarte */}
       <GelaendeMap

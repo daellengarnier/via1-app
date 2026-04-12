@@ -140,12 +140,14 @@ export default function GaestiPage() {
   return (
     <div className="relative p-4 pb-20">
       <TabHeader title="Gästewohnwagen" icon="/icon-gaesti.webp" color="blue" />
-      <button
-        onClick={() => setShowCreate(!showCreate)}
-        className="mb-4 rounded-full bg-blue-400 px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-black"
-      >
-        Neue Buchung
-      </button>
+      <div className="mb-4 flex justify-center">
+        <button
+          onClick={() => setShowCreate(!showCreate)}
+          className="rounded-full bg-blue-400 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-black"
+        >
+          + Neue Buchung
+        </button>
+      </div>
 
       {/* Buchungs-Formular */}
       {showCreate && (

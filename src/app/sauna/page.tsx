@@ -162,16 +162,18 @@ export default function SaunaPage() {
       </div>
 
       {/* Heizen Toggle */}
-      <button
-        onClick={() => setHeating(!heating)}
-        className={`w-full rounded-lg py-3 font-mono font-bold transition-colors ${
-          heating
-            ? "bg-secondary text-white hover:bg-secondary/80"
-            : "bg-red-500 text-white hover:brightness-110"
-        }`}
-      >
-        {heating ? "Heizung stoppen" : "Sauna einheizen"}
-      </button>
+      <div className="flex justify-center">
+        <button
+          onClick={() => setHeating(!heating)}
+          className={`rounded-full px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider transition-colors ${
+            heating
+              ? "bg-gray-700 text-white hover:bg-gray-600"
+              : "bg-red-500 text-white hover:brightness-110"
+          }`}
+        >
+          {heating ? "× Heizung stoppen" : "+ Sauna einheizen"}
+        </button>
+      </div>
 
       {heating && (
         <p className="mt-2 text-center text-xs text-gray-500">

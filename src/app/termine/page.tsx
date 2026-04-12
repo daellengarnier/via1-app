@@ -160,12 +160,14 @@ export default function TerminePage() {
   return (
     <div className="relative p-4 pb-20">
       <TabHeader title="Termine" icon="/icon-termine.webp" color="orange" />
-      <button
-        onClick={() => setShowCreate(!showCreate)}
-        className="mb-4 rounded-full bg-orange-400 px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-black"
-      >
-        Neuer Termin
-      </button>
+      <div className="mb-4 flex justify-center">
+        <button
+          onClick={() => setShowCreate(!showCreate)}
+          className="rounded-full bg-orange-400 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-black"
+        >
+          + Neuer Termin
+        </button>
+      </div>
 
       {/* Create Form */}
       {showCreate && (

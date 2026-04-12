@@ -111,12 +111,14 @@ export default function FlohmiPage() {
   return (
     <div className="p-4 pb-20">
       <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">Flohmi</h1>
-      <button
-        onClick={() => setShowCreate(!showCreate)}
-        className="mb-4 rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
-      >
-        Neues Inserat
-      </button>
+      <div className="mb-4 flex justify-center">
+        <button
+          onClick={() => setShowCreate(!showCreate)}
+          className="rounded-full bg-accent px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
+        >
+          + Neues Inserat
+        </button>
+      </div>
 
       {/* Erstellen */}
       {showCreate && (

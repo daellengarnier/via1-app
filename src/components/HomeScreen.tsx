@@ -339,11 +339,17 @@ export default function HomeScreen() {
                 <p className={`pt-2 text-xs leading-relaxed ${style.text}`}>
                   {p.text}
                 </p>
-                <p
-                  className={`absolute bottom-1.5 right-2 font-mono text-[9px] ${style.meta}`}
+                <div
+                  className={`absolute bottom-1.5 left-2 right-2 flex items-end justify-between font-mono text-[9px] ${style.meta}`}
                 >
-                  — {p.author}
-                </p>
+                  <span>
+                    {new Date(p.date).toLocaleDateString("de-CH", {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </span>
+                  <span>— {p.author}</span>
+                </div>
               </div>
             );
           })}
