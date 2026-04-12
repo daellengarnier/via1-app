@@ -78,6 +78,7 @@ export default function GaestiPage() {
   const [newFrom, setNewFrom] = useState("");
   const [newTo, setNewTo] = useState("");
   const [showBookings, setShowBookings] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfWeek(year, month);
@@ -251,25 +252,77 @@ export default function GaestiPage() {
             const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
             const booking = getBookingForDate(dateStr);
             const isToday = dateStr === today;
+            const isSelected = dateStr === selectedDate;
 
             return (
-              <div
+              <button
                 key={day}
-                className={`relative flex h-9 items-center justify-center rounded text-xs ${
-                  booking
-                    ? "bg-secondary/30 text-secondary"
-                    : isToday
-                      ? "border border-blue-400 text-blue-300"
-                      : "text-gray-400"
+                onClick={() =>
+                  setSelectedDate(isSelected ? null : dateStr)
+                }
+                className={`relative flex h-9 items-center justify-center rounded text-xs transition-colors ${
+                  isSelected
+                    ? "bg-blue-500/50 text-white ring-2 ring-blue-400"
+                    : booking
+                      ? "bg-secondary/30 text-secondary hover:bg-secondary/40"
+                      : isToday
+                        ? "border border-blue-400 text-blue-300 hover:bg-blue-500/10"
+                        : "text-gray-400 hover:bg-white/5"
                 }`}
-                title={booking ? `${booking.guest} (${booking.invitedBy})` : "Frei"}
               >
                 {day}
-              </div>
+              </button>
             );
           })}
         </div>
       </div>
+
+      {/* Tagesinfo für ausgewählten Tag */}
+      {selectedDate && (() => {
+        const booking = getBookingForDate(selectedDate);
+        const formatted = new Date(selectedDate).toLocaleDateString("de-CH", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+        return (
+          <div className="mb-4 rounded-lg border border-blue-500/30 bg-blue-500/5 p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="font-display text-[10px] font-bold uppercase tracking-widest text-blue-300">
+                {formatted}
+              </p>
+              <button
+                onClick={() => setSelectedDate(null)}
+                className="text-xs text-gray-500 hover:text-white"
+              >
+                ×
+              </button>
+            </div>
+            {booking ? (
+              <div>
+                <p className="text-base font-semibold text-white">
+                  {booking.guest}
+                </p>
+                <p className="mt-0.5 text-xs text-gray-400">
+                  Eingeladen von{" "}
+                  <span className="text-blue-300">{booking.invitedBy}</span>
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {formatDateShort(booking.from)} – {formatDateShort(booking.to)}
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-base font-semibold text-blue-300">Frei</p>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  An diesem Tag ist der Gästewohnwagen verfügbar.
+                </p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Schlüssel-Info */}
       <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
