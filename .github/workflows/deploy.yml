@@ -52,13 +52,18 @@ jobs:
             # Pull latest code (for docker-compose.yml, nginx config, .env)
             git fetch origin main
             git reset --hard origin/main
-            echo "Commit: $(git log --oneline -1)"
 
-            # Pull the pre-built image (public, no login needed)
+            # Stop old container first
+            docker compose down app || true
+
+            # Pull the pre-built image
             docker pull ghcr.io/daellengarnier/via1-app:latest
 
-            # Restart with the new image
+            # Start with new image
             docker compose up -d
             docker compose restart nginx
+
+            # Cleanup old images
+            docker image prune -f
 
             echo "Deploy done"
