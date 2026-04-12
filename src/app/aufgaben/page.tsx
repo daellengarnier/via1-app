@@ -68,9 +68,10 @@ const mockAufgaben: Aufgabe[] = [
 
 type Filter = "offen" | "erledigt" | "alle";
 
-// OpenStreetMap Embed vom Gelände (Spinnereiweg 17, Bern Felsenau)
-const OSM_EMBED =
-  "https://www.openstreetmap.org/export/embed.html?bbox=7.4400%2C46.9680%2C7.4450%2C46.9710&layer=mapnik";
+// Esri World Imagery Export — Satellitenbild vom Gelände
+// Spinnereiweg 17, Bern Felsenau
+const SAT_IMG =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=828950,5935270,829250,5935470&bboxSR=3857&imageSR=3857&size=600,400&format=jpg&f=image";
 
 function GelaendeMap({
   aufgaben,
@@ -93,19 +94,20 @@ function GelaendeMap({
 
   return (
     <div className="mb-4 overflow-hidden rounded-lg border border-gray-800">
-      <div className="relative h-56 w-full">
-        {/* OpenStreetMap iframe */}
-        <iframe
-          src={OSM_EMBED}
-          className="absolute inset-0 h-full w-full border-0"
-          style={{ filter: "invert(90%) hue-rotate(180deg) saturate(0.4)" }}
-          title="Gelände Spinnereiweg 17"
-        />
-        {/* Pin-Overlay */}
-        <div
-          className={`absolute inset-0 ${placingPin ? "cursor-crosshair" : "pointer-events-none"}`}
-          onClick={handleClick}
-        >
+      <div
+        className={`relative h-56 w-full ${placingPin ? "cursor-crosshair" : ""}`}
+        onClick={handleClick}
+        style={{
+          backgroundImage: `url('${SAT_IMG}')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundColor: "#1a2a10",
+        }}
+      >
+        {/* Label oben */}
+        <div className="absolute left-2 top-2 rounded bg-black/70 px-2 py-0.5 font-display text-[8px] font-bold uppercase tracking-widest text-yellow-300 backdrop-blur-sm">
+          SPINNEREIWEG 17
+        </div>
         {/* Pins */}
         {openPins.map((a) => (
           <div
@@ -134,7 +136,6 @@ function GelaendeMap({
             </span>
           </div>
         )}
-        </div>
       </div>
     </div>
   );

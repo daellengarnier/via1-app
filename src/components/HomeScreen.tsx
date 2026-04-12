@@ -281,39 +281,43 @@ export default function HomeScreen() {
           </form>
         )}
 
-        {/* Sticky Notes Grid */}
+        {/* Glassy Sticky Notes Grid */}
         <div className="grid grid-cols-2 gap-3">
           {pinnwand.map((p, i) => {
-            // Verschiedene Post-it-Farben
             const styles = [
               {
-                bg: "bg-yellow-200",
-                text: "text-yellow-900",
-                meta: "text-yellow-700",
+                grad: "from-yellow-400/30 to-yellow-600/10",
+                border: "border-yellow-400/30",
+                text: "text-yellow-100",
+                meta: "text-yellow-300/70",
                 rot: "-rotate-1",
               },
               {
-                bg: "bg-pink-200",
-                text: "text-pink-900",
-                meta: "text-pink-700",
+                grad: "from-pink-400/30 to-pink-600/10",
+                border: "border-pink-400/30",
+                text: "text-pink-100",
+                meta: "text-pink-300/70",
                 rot: "rotate-1",
               },
               {
-                bg: "bg-cyan-200",
-                text: "text-cyan-900",
-                meta: "text-cyan-700",
+                grad: "from-cyan-400/30 to-cyan-600/10",
+                border: "border-cyan-400/30",
+                text: "text-cyan-100",
+                meta: "text-cyan-300/70",
                 rot: "-rotate-2",
               },
               {
-                bg: "bg-lime-200",
-                text: "text-lime-900",
-                meta: "text-lime-700",
+                grad: "from-lime-400/30 to-lime-600/10",
+                border: "border-lime-400/30",
+                text: "text-lime-100",
+                meta: "text-lime-300/70",
                 rot: "rotate-2",
               },
               {
-                bg: "bg-orange-200",
-                text: "text-orange-900",
-                meta: "text-orange-700",
+                grad: "from-orange-400/30 to-orange-600/10",
+                border: "border-orange-400/30",
+                text: "text-orange-100",
+                meta: "text-orange-300/70",
                 rot: "-rotate-1",
               },
             ];
@@ -321,26 +325,29 @@ export default function HomeScreen() {
             return (
               <div
                 key={p.id}
-                className={`relative ${style.bg} ${style.rot} rounded-sm p-3 pb-6 shadow-lg transition-transform hover:rotate-0 hover:scale-105`}
+                className={`relative overflow-hidden rounded-2xl border ${style.border} bg-gradient-to-br ${style.grad} ${style.rot} p-3 pb-7 shadow-lg backdrop-blur-md transition-transform hover:rotate-0 hover:scale-105`}
                 style={{
                   boxShadow:
-                    "0 4px 12px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3)",
+                    "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
                 }}
               >
-                {/* Fake pin / tape */}
-                <div className="absolute -top-1.5 left-1/2 h-3 w-8 -translate-x-1/2 rounded-sm bg-white/30 shadow-sm" />
+                {/* Glassy highlight */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
+
                 <button
                   onClick={() => dismissNote(p.id)}
-                  className={`absolute right-1 top-1 ${style.meta} opacity-50 hover:opacity-100`}
+                  className={`absolute right-1.5 top-1 ${style.meta} opacity-60 hover:opacity-100`}
                   aria-label="Schliessen"
                 >
                   ×
                 </button>
-                <p className={`pt-2 text-xs leading-relaxed ${style.text}`}>
+                <p
+                  className={`relative pt-1 text-xs leading-relaxed ${style.text}`}
+                >
                   {p.text}
                 </p>
                 <div
-                  className={`absolute bottom-1.5 left-2 right-2 flex items-end justify-between font-mono text-[9px] ${style.meta}`}
+                  className={`absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[9px] ${style.meta}`}
                 >
                   <span>
                     {new Date(p.date).toLocaleDateString("de-CH", {
