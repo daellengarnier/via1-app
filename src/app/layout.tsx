@@ -5,6 +5,15 @@ export const metadata: Metadata = {
   title: "Via 1 – Hausgemeinschaft",
   description: "Organisations-App für die Wohngemeinschaft Via 1, Spinnereiweg 17, Bern",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-48.png", sizes: "48x48", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -27,9 +36,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de">
-      <head>
-        <link rel="apple-touch-icon" href="/icon-192.png" />
-      </head>
       <body className="min-h-screen font-sans antialiased">
         <div className="relative mx-auto max-w-lg">{children}</div>
         <ConditionalNav />
