@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { TabHeader } from "@/components/TabHeader";
 
 type TerminType = "sitzung" | "essen" | "sonstige";
 
@@ -37,13 +37,13 @@ const typeLabels: Record<TerminType, string> = {
 };
 
 const typeColors: Record<TerminType, string> = {
-  sitzung: "text-accent",
+  sitzung: "text-orange-300",
   essen: "text-secondary",
   sonstige: "text-gray-400",
 };
 
 const typeBg: Record<TerminType, string> = {
-  sitzung: "bg-accent",
+  sitzung: "bg-orange-400",
   essen: "bg-secondary",
   sonstige: "bg-gray-600",
 };
@@ -159,12 +159,10 @@ export default function TerminePage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <AnimatedBackground icon="/icon-termine.webp" glowClass="glow-orange" />
-      <div className="h-24" />
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-orange-300">Termine</h1>
+      <TabHeader title="Termine" icon="/icon-termine.webp" color="orange" />
       <button
         onClick={() => setShowCreate(!showCreate)}
-        className="mb-4 rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
+        className="mb-4 rounded-full bg-orange-400 px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-black"
       >
         Neuer Termin
       </button>
@@ -173,7 +171,7 @@ export default function TerminePage() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="mb-4 rounded-lg border border-accent/30 bg-accent/5 p-4"
+          className="mb-4 rounded-lg border border-orange-500/30 bg-orange-500/5 p-4"
         >
           {/* Kategorie */}
           <div className="mb-3">
@@ -214,7 +212,7 @@ export default function TerminePage() {
                     ? "z.B. Sommeressen"
                     : "z.B. Putzaktion"
               }
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
               required
             />
           </div>
@@ -228,7 +226,7 @@ export default function TerminePage() {
               <select
                 value={newOrganizer}
                 onChange={(e) => setNewOrganizer(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
                 required
               >
                 <option value="">WG wählen...</option>
@@ -249,7 +247,7 @@ export default function TerminePage() {
                 type="date"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
                 required
               />
             </div>
@@ -259,7 +257,7 @@ export default function TerminePage() {
                 type="time"
                 value={newTime}
                 onChange={(e) => setNewTime(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
                 required
               />
             </div>
@@ -273,7 +271,7 @@ export default function TerminePage() {
               value={newLocation}
               onChange={(e) => setNewLocation(e.target.value)}
               placeholder="z.B. Gemeinschaftsraum EG"
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
             />
           </div>
 
@@ -286,7 +284,7 @@ export default function TerminePage() {
                   type="button"
                   onClick={() => setNewWithDinner(!newWithDinner)}
                   className={`relative h-6 w-11 rounded-full transition-colors ${
-                    newWithDinner ? "bg-accent" : "bg-gray-700"
+                    newWithDinner ? "bg-orange-400" : "bg-gray-700"
                   }`}
                 >
                   <span
@@ -305,7 +303,7 @@ export default function TerminePage() {
                     type="time"
                     value={newDinnerTime}
                     onChange={(e) => setNewDinnerTime(e.target.value)}
-                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
                   />
                 </div>
               )}
@@ -316,7 +314,7 @@ export default function TerminePage() {
           <div className="flex gap-2">
             <button
               type="submit"
-              className="rounded bg-accent px-4 py-2 font-mono text-xs font-bold text-dark"
+              className="rounded bg-orange-400 px-4 py-2 font-mono text-xs font-bold text-dark"
             >
               Erstellen
             </button>
@@ -342,7 +340,7 @@ export default function TerminePage() {
             onClick={() => setFilter(f)}
             className={`rounded-full px-3 py-1 font-mono text-xs transition-colors ${
               filter === f
-                ? "bg-accent text-dark"
+                ? "bg-orange-400 text-black"
                 : "border border-gray-700 text-gray-400 hover:text-white"
             }`}
           >

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { TabHeader } from "@/components/TabHeader";
 
 interface Pin {
   x: number;
@@ -125,7 +125,7 @@ function GelaendeMap({
 
         {placingPin && (
           <div className="absolute inset-x-0 bottom-2 text-center">
-            <span className="rounded-full bg-accent/90 px-3 py-1 text-xs font-bold text-dark shadow-lg">
+            <span className="rounded-full bg-yellow-400/90 px-3 py-1 text-xs font-bold text-dark shadow-lg">
               Tippe auf die Karte um den Pin zu setzen
             </span>
           </div>
@@ -182,12 +182,10 @@ export default function AufgabenPage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <AnimatedBackground icon="/icon-aufgaben.webp" glowClass="glow-yellow" />
-      <div className="h-24" />
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-yellow-300">Aufgaben</h1>
+      <TabHeader title="Aufgaben" icon="/icon-aufgaben.webp" color="yellow" />
       <button
         onClick={() => setShowCreate(!showCreate)}
-        className="mb-4 rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
+        className="mb-4 rounded-full bg-yellow-400 px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-black"
       >
         Neue Aufgabe
       </button>
@@ -206,7 +204,7 @@ export default function AufgabenPage() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="mb-4 rounded-lg border border-accent/30 bg-accent/5 p-4"
+          className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-4"
         >
           <div className="mb-3">
             <label className="mb-1 block text-xs text-gray-400">Titel</label>
@@ -215,7 +213,7 @@ export default function AufgabenPage() {
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Was muss gemacht werden?"
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none"
               required
             />
           </div>
@@ -226,7 +224,7 @@ export default function AufgabenPage() {
               value={newDesc}
               onChange={(e) => setNewDesc(e.target.value)}
               placeholder="Details..."
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none"
             />
           </div>
           <div className="mb-3">
@@ -236,7 +234,7 @@ export default function AufgabenPage() {
               value={newLocation}
               onChange={(e) => setNewLocation(e.target.value)}
               placeholder="z.B. Garten Süd, UG, Treppenhaus..."
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none"
             />
           </div>
           <div className="mb-3">
@@ -247,7 +245,7 @@ export default function AufgabenPage() {
                 placingPin
                   ? "bg-secondary text-white"
                   : pendingPin
-                    ? "border border-accent bg-accent/10 text-accent"
+                    ? "border border-yellow-400 bg-yellow-500/10 text-yellow-300"
                     : "border border-gray-700 text-gray-400 hover:text-white"
               }`}
             >
@@ -261,7 +259,7 @@ export default function AufgabenPage() {
           <div className="flex gap-2">
             <button
               type="submit"
-              className="rounded bg-accent px-4 py-2 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
+              className="rounded bg-yellow-400 px-4 py-2 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
             >
               ERSTELLEN
             </button>
@@ -288,7 +286,7 @@ export default function AufgabenPage() {
             onClick={() => setFilter(f)}
             className={`rounded-full px-3 py-1 font-display text-[10px] font-bold uppercase tracking-wider transition-colors ${
               filter === f
-                ? "bg-accent text-dark"
+                ? "bg-yellow-400 text-black"
                 : "border border-gray-700 text-gray-400 hover:text-white"
             }`}
           >
@@ -311,8 +309,8 @@ export default function AufgabenPage() {
                 onClick={() => toggleDone(a.id)}
                 className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
                   a.done
-                    ? "border-accent bg-accent text-dark"
-                    : "border-gray-600 hover:border-accent"
+                    ? "border-yellow-400 bg-yellow-400 text-black"
+                    : "border-gray-600 hover:border-yellow-400"
                 }`}
               >
                 {a.done && "✓"}
@@ -328,7 +326,7 @@ export default function AufgabenPage() {
                   {a.pin && <span className="text-secondary">📍</span>}
                   <span>{a.location}</span>
                   {a.assignee && (
-                    <span className="text-accent">→ {a.assignee}</span>
+                    <span className="text-yellow-300">→ {a.assignee}</span>
                   )}
                 </div>
               </div>

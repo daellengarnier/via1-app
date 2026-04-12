@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { TabHeader } from "@/components/TabHeader";
 
 const saunaSections = [
   {
@@ -125,13 +125,11 @@ export default function SaunaPage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <AnimatedBackground icon="/icon-sauna.webp" glowClass="glow-red" />
-      <div className="h-24" />
-      <h1 className="mb-6 text-center font-cinzel text-3xl text-red-400">Sauna</h1>
+      <TabHeader title="Sauna" icon="/icon-sauna.webp" color="red" />
 
       {/* Temperatur */}
       <div className="mb-6 flex flex-col items-center rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-6">
-        <p className="font-mono text-6xl font-bold text-accent">
+        <p className="font-mono text-6xl font-bold text-red-400">
           {temperature}°C
         </p>
         <p className="mt-2 text-sm text-gray-400">Aktuelle Temperatur</p>
@@ -169,7 +167,7 @@ export default function SaunaPage() {
         className={`w-full rounded-lg py-3 font-mono font-bold transition-colors ${
           heating
             ? "bg-secondary text-white hover:bg-secondary/80"
-            : "bg-accent text-dark hover:brightness-110"
+            : "bg-red-500 text-white hover:brightness-110"
         }`}
       >
         {heating ? "Heizung stoppen" : "Sauna einheizen"}
@@ -187,7 +185,7 @@ export default function SaunaPage() {
           onClick={() => setShowReglement(!showReglement)}
           className="flex w-full items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 p-3"
         >
-          <span className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+          <span className="font-display text-[10px] font-bold uppercase tracking-widest text-red-400">
             SAUNA-REGLEMENT
           </span>
           <span className="text-gray-500">{showReglement ? "▲" : "▼"}</span>
@@ -209,7 +207,7 @@ export default function SaunaPage() {
                       key={i}
                       className="flex gap-2 text-xs leading-relaxed text-gray-400"
                     >
-                      <span className="mt-0.5 shrink-0 text-accent">•</span>
+                      <span className="mt-0.5 shrink-0 text-red-400">•</span>
                       <span>{item}</span>
                     </li>
                   ))}

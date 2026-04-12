@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { TabHeader } from "@/components/TabHeader";
 
 interface Booking {
   id: string;
@@ -139,12 +139,10 @@ export default function GaestiPage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <AnimatedBackground icon="/icon-gaesti.webp" glowClass="glow-blue" />
-      <div className="h-24" />
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-blue-300">Gästewohnwagen</h1>
+      <TabHeader title="Gästewohnwagen" icon="/icon-gaesti.webp" color="blue" />
       <button
         onClick={() => setShowCreate(!showCreate)}
-        className="mb-4 rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"
+        className="mb-4 rounded-full bg-blue-400 px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-black"
       >
         Neue Buchung
       </button>
@@ -153,7 +151,7 @@ export default function GaestiPage() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="mb-4 rounded-lg border border-accent/30 bg-accent/5 p-4"
+          className="mb-4 rounded-lg border border-blue-500/30 bg-blue-500/5 p-4"
         >
           <div className="mb-3">
             <label className="mb-1 block text-xs text-gray-400">
@@ -164,7 +162,7 @@ export default function GaestiPage() {
               value={newGuest}
               onChange={(e) => setNewGuest(e.target.value)}
               placeholder="z.B. Max Muster"
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
               required
             />
           </div>
@@ -175,7 +173,7 @@ export default function GaestiPage() {
                 type="date"
                 value={newFrom}
                 onChange={(e) => setNewFrom(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
                 required
               />
             </div>
@@ -185,7 +183,7 @@ export default function GaestiPage() {
                 type="date"
                 value={newTo}
                 onChange={(e) => setNewTo(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
                 required
               />
             </div>
@@ -193,7 +191,7 @@ export default function GaestiPage() {
           <div className="flex gap-2">
             <button
               type="submit"
-              className="rounded bg-accent px-4 py-2 font-mono text-xs font-bold text-dark"
+              className="rounded bg-blue-400 px-4 py-2 font-mono text-xs font-bold text-dark"
             >
               Buchen
             </button>
@@ -259,7 +257,7 @@ export default function GaestiPage() {
                   booking
                     ? "bg-secondary/30 text-secondary"
                     : isToday
-                      ? "border border-accent text-accent"
+                      ? "border border-blue-400 text-blue-300"
                       : "text-gray-400"
                 }`}
                 title={booking ? `${booking.guest} (${booking.invitedBy})` : "Frei"}
@@ -289,7 +287,7 @@ export default function GaestiPage() {
         onClick={() => setShowBookings(!showBookings)}
         className="mb-3 flex w-full items-center justify-between"
       >
-        <h2 className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+        <h2 className="font-display text-[10px] font-bold uppercase tracking-widest text-blue-300">
           KOMMENDE BUCHUNGEN
         </h2>
         <span className="text-gray-500">{showBookings ? "▲" : "▼"}</span>

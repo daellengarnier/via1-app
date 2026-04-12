@@ -25,11 +25,11 @@ body {
 /* Tab-Icon oben (einheitliche Grösse & Position für alle Tabs) */
 .via-tab-icon {
   position: absolute;
-  top: 0;
+  top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  width: 240px;
-  height: 240px;
+  width: 160px;
+  height: 160px;
   object-fit: contain;
   opacity: 0.9;
   animation: icon-glow 4s ease-in-out infinite alternate;
