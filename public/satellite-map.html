@@ -30,6 +30,13 @@
     .leaflet-bar a:hover {
       background: rgba(255,255,255,0.1) !important;
     }
+    .pending-marker {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
   </style>
 </head>
 <body>
@@ -52,30 +59,66 @@
       }
     ).addTo(map);
 
-    // Pins von Parent empfangen
+    function makePinIcon(title, isPending) {
+      const color = isPending ? '#10b981' : '#fbbf24';
+      const labelBg = isPending ? 'rgba(16,185,129,0.95)' : 'rgba(255,220,50,0.95)';
+      const labelColor = isPending ? '#fff' : '#000';
+      const cls = isPending ? 'pending-marker' : '';
+      return L.divIcon({
+        className: '',
+        html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)" class="${cls}">
+          <div style="background:${labelBg};color:${labelColor};font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.6)">${title}</div>
+          <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:4px solid ${labelBg}"></div>
+          <div style="width:10px;height:10px;border-radius:50%;background:${color};border:2px solid #000;margin-top:-1px;box-shadow:0 0 8px ${color}"></div>
+        </div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+      });
+    }
+
+    // Existing pins (from tasks)
     let markers = [];
+    // Draggable pending pin (when creating a task)
+    let pendingMarker = null;
+
     window.addEventListener('message', (event) => {
       if (event.data.type === 'setPins') {
         markers.forEach(m => m.remove());
         markers = [];
         event.data.pins.forEach(pin => {
-          const icon = L.divIcon({
-            className: '',
-            html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
-              <div style="background:rgba(255,220,50,0.95);color:#000;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.6)">${pin.title}</div>
-              <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:4px solid rgba(255,220,50,0.95)"></div>
-              <div style="width:8px;height:8px;border-radius:50%;background:#fbbf24;border:1.5px solid #000;margin-top:-1px;box-shadow:0 1px 3px rgba(0,0,0,0.6)"></div>
-            </div>`,
-            iconSize: [0, 0],
-            iconAnchor: [0, 0],
-          });
-          const marker = L.marker([pin.lat, pin.lng], { icon }).addTo(map);
+          const marker = L.marker([pin.lat, pin.lng], {
+            icon: makePinIcon(pin.title, false),
+          }).addTo(map);
           markers.push(marker);
         });
+      } else if (event.data.type === 'setPendingPin') {
+        if (pendingMarker) {
+          pendingMarker.remove();
+          pendingMarker = null;
+        }
+        if (event.data.pin) {
+          pendingMarker = L.marker([event.data.pin.lat, event.data.pin.lng], {
+            icon: makePinIcon('Neu', true),
+            draggable: true,
+          }).addTo(map);
+          pendingMarker.on('dragend', (e) => {
+            const pos = e.target.getLatLng();
+            window.parent.postMessage({
+              type: 'pinMoved',
+              lat: pos.lat,
+              lng: pos.lng,
+            }, '*');
+          });
+        }
+      } else if (event.data.type === 'clearPendingPin') {
+        if (pendingMarker) {
+          pendingMarker.remove();
+          pendingMarker = null;
+        }
       }
     });
 
-    // Klicks auf die Karte an Parent weiterleiten (für Pin-Setzen)
+    // Klicks auf die Karte an Parent weiterleiten
     map.on('click', (e) => {
       window.parent.postMessage({
         type: 'mapClick',

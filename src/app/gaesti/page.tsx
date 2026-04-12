@@ -209,7 +209,7 @@ export default function GaestiPage() {
       )}
 
       {/* Kalender */}
-      <div className="mb-4 rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4">
+      <div className="mb-4 rounded-lg border border-gray-800 bg-white/5 p-4">
         {/* Monat Navigation */}
         <div className="mb-3 flex items-center justify-between">
           <button
@@ -301,7 +301,7 @@ export default function GaestiPage() {
           .map((b) => (
             <div
               key={b.id}
-              className="rounded-lg border border-gray-800 bg-gray-900/40 p-3"
+              className="rounded-lg border border-gray-800 bg-white/5 p-3"
             >
               <div className="flex items-center justify-between">
                 <div>

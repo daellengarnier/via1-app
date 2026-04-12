@@ -280,7 +280,7 @@ export default function TerminePage() {
           {/* Mit Abendessen (bei Sitzung) */}
           {(newType === "sitzung") && (
             <div className="mb-3">
-              <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+              <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-white/5 p-3">
                 <span className="text-sm text-white">Mit Abendessen</span>
                 <button
                   type="button"
@@ -358,7 +358,7 @@ export default function TerminePage() {
           return (
             <div
               key={t.id}
-              className="rounded-lg border border-gray-800 bg-black/20 p-3 transition-colors hover:border-gray-700"
+              className="rounded-lg border border-gray-800 bg-white/5 p-3 transition-colors hover:border-gray-700"
             >
               <Link href={`/termine/${t.id}`} className="block">
                 <div className="flex items-start justify-between gap-2">

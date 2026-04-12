@@ -420,7 +420,7 @@ export default function TerminDetailPage() {
 
           {/* Anwesend / Abgemeldet */}
           <div className="mb-4 grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+            <div className="rounded-lg border border-gray-800 bg-white/5 p-3">
               <p className="mb-1 font-mono text-xs text-accent">
                 Anwesend ({termin.anwesend.length})
               </p>
@@ -428,7 +428,7 @@ export default function TerminDetailPage() {
                 {termin.anwesend.join(", ") || "–"}
               </p>
             </div>
-            <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+            <div className="rounded-lg border border-gray-800 bg-white/5 p-3">
               <p className="mb-1 font-mono text-xs text-secondary">
                 Abgemeldet ({termin.abgemeldet.length})
               </p>
@@ -447,7 +447,7 @@ export default function TerminDetailPage() {
               {termin.traktanden.map((t, i) => (
                 <div
                   key={t.id}
-                  className="rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-3"
+                  className="rounded-lg border border-gray-800 bg-white/5 p-3"
                 >
                   <div className="flex items-start gap-2">
                     <span className="mt-0.5 font-mono text-xs font-bold text-accent">
@@ -587,7 +587,7 @@ export default function TerminDetailPage() {
               {signupGuestDetails.map((g, i) => (
                 <div
                   key={i}
-                  className="mb-2 rounded border border-secondary/20 bg-black/20 p-2"
+                  className="mb-2 rounded border border-secondary/20 bg-white/5 p-2"
                 >
                   <div className="mb-1.5 flex items-center justify-between">
                     <span className="text-[10px] text-gray-500">
@@ -643,7 +643,7 @@ export default function TerminDetailPage() {
             {termin.mealSignups.map((s, i) => (
               <div
                 key={i}
-                className="rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2"
+                className="rounded-lg border border-gray-800 bg-white/5 px-3 py-2"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-white">{s.name}</span>

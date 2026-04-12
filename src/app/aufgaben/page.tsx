@@ -83,11 +83,15 @@ type Filter = "offen" | "erledigt" | "alle";
 function GelaendeMap({
   aufgaben,
   placingPin,
+  pendingPin,
   onPlacePin,
+  onMovePin,
 }: {
   aufgaben: Aufgabe[];
   placingPin: boolean;
+  pendingPin: Pin | null;
   onPlacePin: (pin: Pin) => void;
+  onMovePin: (pin: Pin) => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [mapReady, setMapReady] = useState(false);
@@ -100,11 +104,13 @@ function GelaendeMap({
         setMapReady(true);
       } else if (e.data?.type === "mapClick" && placingPin) {
         onPlacePin({ lat: e.data.lat, lng: e.data.lng });
+      } else if (e.data?.type === "pinMoved") {
+        onMovePin({ lat: e.data.lat, lng: e.data.lng });
       }
     }
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [placingPin, onPlacePin]);
+  }, [placingPin, onPlacePin, onMovePin]);
 
   // Pins an iframe senden
   useEffect(() => {
@@ -122,6 +128,15 @@ function GelaendeMap({
     );
   }, [mapReady, openPins]);
 
+  // Pending pin an iframe senden
+  useEffect(() => {
+    if (!mapReady || !iframeRef.current?.contentWindow) return;
+    iframeRef.current.contentWindow.postMessage(
+      { type: "setPendingPin", pin: pendingPin },
+      "*"
+    );
+  }, [mapReady, pendingPin]);
+
   return (
     <div className="mb-4 overflow-hidden rounded-lg border border-gray-800">
       <iframe
@@ -133,6 +148,11 @@ function GelaendeMap({
       {placingPin && (
         <div className="bg-yellow-400/10 px-3 py-1.5 text-center text-xs text-yellow-300">
           Tippe auf die Karte um den Pin zu setzen
+        </div>
+      )}
+      {pendingPin && !placingPin && (
+        <div className="bg-emerald-500/10 px-3 py-1.5 text-center text-xs text-emerald-300">
+          📍 Pin gesetzt — Pin auf der Karte verschieben zum Anpassen
         </div>
       )}
     </div>
@@ -202,10 +222,12 @@ export default function AufgabenPage() {
       <GelaendeMap
         aufgaben={aufgaben}
         placingPin={placingPin}
+        pendingPin={showCreate ? pendingPin : null}
         onPlacePin={(pin) => {
           setPendingPin(pin);
           setPlacingPin(false);
         }}
+        onMovePin={(pin) => setPendingPin(pin)}
       />
 
       {/* Erstellen */}
@@ -310,7 +332,7 @@ export default function AufgabenPage() {
         {filtered.map((a) => (
           <div
             key={a.id}
-            className={`rounded-lg border border-gray-800 bg-black/20 p-3 ${
+            className={`rounded-lg border border-gray-800 bg-white/5 p-3 ${
               a.done ? "opacity-50" : ""
             }`}
           >

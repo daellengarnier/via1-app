@@ -2,13 +2,69 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 
-const navItems = [
-  { href: "/", label: "HOME", icon: "⌂" },
-  { href: "/termine", label: "TERMINE", icon: "◉" },
-  { href: "/aufgaben", label: "AUFGABEN", icon: "✓" },
-  { href: "/sauna", label: "SAUNA", icon: "♨" },
-  { href: "/gaesti", label: "GÄSTI", icon: "◈" },
+// Monochrom Line-Art SVG Icons — passend zum Text-Style
+function HomeIcon() {
+  return <span className="text-lg leading-none">⌂</span>;
+}
+
+function CheckIcon() {
+  return <span className="text-lg leading-none">✓</span>;
+}
+
+function SaunaIcon() {
+  return <span className="text-lg leading-none">♨</span>;
+}
+
+function KalenderIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18" />
+      <path d="M8 3v4" />
+      <path d="M16 3v4" />
+    </svg>
+  );
+}
+
+function WohnwagenIcon() {
+  return (
+    <svg
+      width="20"
+      height="18"
+      viewBox="0 0 24 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="2" y="5" width="16" height="10" rx="2" />
+      <path d="M18 9h3v4h-3" />
+      <circle cx="7" cy="17" r="2" />
+      <circle cx="15" cy="17" r="2" />
+      <path d="M5 8h4" />
+      <path d="M11 8h4" />
+    </svg>
+  );
+}
+
+const navItems: { href: string; label: string; icon: ReactNode }[] = [
+  { href: "/", label: "HOME", icon: <HomeIcon /> },
+  { href: "/termine", label: "TERMINE", icon: <KalenderIcon /> },
+  { href: "/aufgaben", label: "AUFGABEN", icon: <CheckIcon /> },
+  { href: "/sauna", label: "SAUNA", icon: <SaunaIcon /> },
+  { href: "/gaesti", label: "GÄSTI", icon: <WohnwagenIcon /> },
 ];
 
 export function BottomNav() {
@@ -32,7 +88,7 @@ export function BottomNav() {
                   : "text-gray-500 hover:text-gray-300"
               }`}
             >
-              <span className="text-lg leading-none">{item.icon}</span>
+              <span className="flex h-[18px] items-center">{item.icon}</span>
               <span className="font-display text-[9px] font-bold tracking-wider">
                 {item.label}
               </span>

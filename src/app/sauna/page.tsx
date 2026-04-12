@@ -142,7 +142,7 @@ export default function SaunaPage() {
       </div>
 
       {/* Temperatur */}
-      <div className="mb-6 flex flex-col items-center rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-5">
+      <div className="mb-6 flex flex-col items-center rounded-lg border border-gray-800 bg-white/5 p-5">
         <p className="font-mono text-4xl font-bold text-red-400">
           {temperature}°C
         </p>
@@ -179,7 +179,7 @@ export default function SaunaPage() {
       <div className="mt-8">
         <button
           onClick={() => setShowReglement(!showReglement)}
-          className="flex w-full items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 p-3"
+          className="flex w-full items-center justify-between rounded-lg border border-gray-800 bg-white/5 p-3"
         >
           <span className="font-display text-[10px] font-bold uppercase tracking-widest text-red-400">
             SAUNA-REGLEMENT
@@ -188,7 +188,7 @@ export default function SaunaPage() {
         </button>
 
         {showReglement && (
-          <div className="mt-2 space-y-4 rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4">
+          <div className="mt-2 space-y-4 rounded-lg border border-gray-800 bg-white/5 p-4">
             <p className="text-center font-mono text-[10px] text-gray-600">
               Sauna Via 1 · 03/2026
             </p>
