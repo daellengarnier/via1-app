@@ -10,10 +10,16 @@ interface Traktandum {
   createdBy: string;
 }
 
+interface Guest {
+  diet: string;
+  allergies: string;
+}
+
 interface MealSignup {
   name: string;
   diet: string;
-  guests: number;
+  allergies: string;
+  guestDetails: Guest[];
 }
 
 interface TerminDetail {
@@ -79,10 +85,15 @@ const mockTermine: Record<string, TerminDetail> = {
       },
     ],
     mealSignups: [
-      { name: "Alain", diet: "Fleisch", guests: 0 },
-      { name: "Sophie", diet: "Vegi", guests: 1 },
-      { name: "Marco", diet: "Fleisch", guests: 0 },
-      { name: "Nina", diet: "Vegan", guests: 0 },
+      { name: "Alain", diet: "Fleisch", allergies: "", guestDetails: [] },
+      {
+        name: "Sophie",
+        diet: "Vegi",
+        allergies: "",
+        guestDetails: [{ diet: "Fleisch", allergies: "Laktose" }],
+      },
+      { name: "Marco", diet: "Fleisch", allergies: "", guestDetails: [] },
+      { name: "Nina", diet: "Vegan", allergies: "Nüsse", guestDetails: [] },
     ],
   },
   "2": {
@@ -101,11 +112,24 @@ const mockTermine: Record<string, TerminDetail> = {
     abgemeldet: [],
     traktanden: [],
     mealSignups: [
-      { name: "Alain", diet: "Fleisch", guests: 0 },
-      { name: "Yves", diet: "Fleisch", guests: 2 },
-      { name: "Sophie", diet: "Vegi", guests: 0 },
-      { name: "Lena", diet: "Vegan", guests: 0 },
-      { name: "Felix", diet: "Fleisch", guests: 1 },
+      { name: "Alain", diet: "Fleisch", allergies: "", guestDetails: [] },
+      {
+        name: "Yves",
+        diet: "Fleisch",
+        allergies: "",
+        guestDetails: [
+          { diet: "Vegi", allergies: "" },
+          { diet: "Vegan", allergies: "Gluten" },
+        ],
+      },
+      { name: "Sophie", diet: "Vegi", allergies: "", guestDetails: [] },
+      { name: "Lena", diet: "Vegan", allergies: "", guestDetails: [] },
+      {
+        name: "Felix",
+        diet: "Fleisch",
+        allergies: "",
+        guestDetails: [{ diet: "Fleisch", allergies: "" }],
+      },
     ],
   },
   "3": {
@@ -189,7 +213,8 @@ export default function TerminDetailPage() {
   const [newTraktandum, setNewTraktandum] = useState("");
   const [showSignup, setShowSignup] = useState(false);
   const [signupDiet, setSignupDiet] = useState("Fleisch");
-  const [signupGuests, setSignupGuests] = useState(0);
+  const [signupAllergies, setSignupAllergies] = useState("");
+  const [signupGuestDetails, setSignupGuestDetails] = useState<Guest[]>([]);
 
   if (!termin) {
     return (
@@ -202,7 +227,7 @@ export default function TerminDetailPage() {
   const isSitzung = termin.type === "sitzung";
   const hasEssen = termin.type === "essen" || termin.withDinner;
   const totalGuests = termin.mealSignups.reduce(
-    (sum, s) => sum + 1 + s.guests,
+    (sum, s) => sum + 1 + s.guestDetails.length,
     0
   );
 
@@ -241,11 +266,34 @@ export default function TerminDetailPage() {
       ...termin,
       mealSignups: [
         ...termin.mealSignups,
-        { name: "Alain", diet: signupDiet, guests: signupGuests },
+        {
+          name: "Alain",
+          diet: signupDiet,
+          allergies: signupAllergies,
+          guestDetails: signupGuestDetails,
+        },
       ],
     });
     setShowSignup(false);
-    setSignupGuests(0);
+    setSignupAllergies("");
+    setSignupGuestDetails([]);
+  }
+
+  function addGuest() {
+    setSignupGuestDetails((prev) => [
+      ...prev,
+      { diet: "Fleisch", allergies: "" },
+    ]);
+  }
+
+  function removeGuest(index: number) {
+    setSignupGuestDetails((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateGuest(index: number, field: keyof Guest, value: string) {
+    setSignupGuestDetails((prev) =>
+      prev.map((g, i) => (i === index ? { ...g, [field]: value } : g))
+    );
   }
 
   function exportPdf() {
@@ -477,9 +525,13 @@ export default function TerminDetailPage() {
               onSubmit={handleMealSignup}
               className="mb-3 rounded-lg border border-secondary/30 bg-secondary/5 p-3"
             >
+              {/* Eigene Anmeldung */}
+              <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-wider text-secondary">
+                Ich selbst
+              </p>
               <div className="mb-2">
                 <label className="mb-1 block text-xs text-gray-400">
-                  Ernährung
+                  Meine Ernährung
                 </label>
                 <div className="flex gap-2">
                   {["Fleisch", "Vegi", "Vegan"].map((d) => (
@@ -500,20 +552,79 @@ export default function TerminDetailPage() {
               </div>
               <div className="mb-3">
                 <label className="mb-1 block text-xs text-gray-400">
-                  Gäste mitbringen
+                  Meine Allergien / Unverträglichkeiten
                 </label>
                 <input
-                  type="number"
-                  min={0}
-                  max={10}
-                  value={signupGuests}
-                  onChange={(e) => setSignupGuests(Number(e.target.value))}
-                  className="w-20 rounded border border-gray-700 bg-gray-900 px-3 py-1 text-sm text-white focus:border-secondary focus:outline-none"
+                  type="text"
+                  value={signupAllergies}
+                  onChange={(e) => setSignupAllergies(e.target.value)}
+                  placeholder="z.B. Laktose, Nüsse..."
+                  className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm text-white focus:border-secondary focus:outline-none"
                 />
               </div>
+
+              {/* Gäste */}
+              <div className="mb-3 flex items-center justify-between border-t border-secondary/20 pt-3">
+                <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-secondary">
+                  Gäste ({signupGuestDetails.length})
+                </p>
+                <button
+                  type="button"
+                  onClick={addGuest}
+                  className="rounded bg-secondary/20 px-2 py-1 text-xs text-secondary hover:bg-secondary/30"
+                >
+                  + Gast
+                </button>
+              </div>
+
+              {signupGuestDetails.map((g, i) => (
+                <div
+                  key={i}
+                  className="mb-2 rounded border border-secondary/20 bg-black/20 p-2"
+                >
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <span className="text-[10px] text-gray-500">
+                      Gast {i + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeGuest(i)}
+                      className="text-xs text-gray-500 hover:text-red-400"
+                    >
+                      entfernen
+                    </button>
+                  </div>
+                  <div className="mb-1.5 flex gap-1.5">
+                    {["Fleisch", "Vegi", "Vegan"].map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => updateGuest(i, "diet", d)}
+                        className={`flex-1 rounded py-1 font-mono text-[10px] transition-colors ${
+                          g.diet === d
+                            ? "bg-secondary text-white"
+                            : "border border-gray-700 text-gray-400"
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    value={g.allergies}
+                    onChange={(e) =>
+                      updateGuest(i, "allergies", e.target.value)
+                    }
+                    placeholder="Allergien (optional)"
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white placeholder-gray-600 focus:border-secondary focus:outline-none"
+                  />
+                </div>
+              ))}
+
               <button
                 type="submit"
-                className="rounded bg-secondary px-4 py-2 font-mono text-xs font-bold text-white"
+                className="mt-2 rounded bg-secondary px-4 py-2 font-mono text-xs font-bold text-white"
               >
                 Anmelden
               </button>
@@ -525,20 +636,31 @@ export default function TerminDetailPage() {
             {termin.mealSignups.map((s, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2"
+                className="rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2"
               >
-                <span className="text-sm text-white">
-                  {s.name}
-                  {s.guests > 0 && (
-                    <span className="text-xs text-gray-500">
-                      {" "}
-                      +{s.guests}
-                    </span>
-                  )}
-                </span>
-                <span className="font-mono text-xs text-gray-500">
-                  {s.diet}
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-white">{s.name}</span>
+                  <span className="font-mono text-xs text-gray-500">
+                    {s.diet}
+                    {s.allergies && ` · ${s.allergies}`}
+                  </span>
+                </div>
+                {s.guestDetails.length > 0 && (
+                  <div className="mt-1 space-y-0.5 border-t border-gray-800 pt-1">
+                    {s.guestDetails.map((g, gi) => (
+                      <div
+                        key={gi}
+                        className="flex items-center justify-between text-xs text-gray-400"
+                      >
+                        <span>+ Gast {gi + 1}</span>
+                        <span className="font-mono text-gray-600">
+                          {g.diet}
+                          {g.allergies && ` · ${g.allergies}`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

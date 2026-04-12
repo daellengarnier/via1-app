@@ -128,11 +128,11 @@ export default function SaunaPage() {
       <TabHeader title="Sauna" icon="/icon-sauna.webp" color="red" />
 
       {/* Temperatur */}
-      <div className="mb-6 flex flex-col items-center rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-6">
-        <p className="font-mono text-6xl font-bold text-red-400">
+      <div className="mb-6 flex flex-col items-center rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-5">
+        <p className="font-mono text-4xl font-bold text-red-400">
           {temperature}°C
         </p>
-        <p className="mt-2 text-sm text-gray-400">Aktuelle Temperatur</p>
+        <p className="mt-1 text-xs text-gray-400">Aktuelle Temperatur</p>
         {heating && (
           <p className="mt-1 text-sm text-secondary">🔥 Wird geheizt</p>
         )}
