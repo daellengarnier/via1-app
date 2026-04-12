@@ -75,7 +75,7 @@ export default function PutzplanPage() {
 
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-6 font-heading text-2xl text-white">
+      <h1 className="mb-6 text-center font-cinzel text-3xl text-accent">
         Putzdienst
       </h1>
 

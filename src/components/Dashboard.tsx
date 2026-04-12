@@ -31,7 +31,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-4 p-4 pb-20">
       <header className="mb-6">
-        <h1 className="font-heading text-2xl text-white">via1</h1>
+        <h1 className="text-center font-cinzel text-3xl text-accent">via1</h1>
         <p className="text-sm text-gray-400">Spinnereiweg 17, Bern</p>
       </header>
 

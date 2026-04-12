@@ -46,7 +46,7 @@ export default function FeedbackPage() {
 
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-2 font-heading text-2xl text-white">
+      <h1 className="mb-2 text-center font-cinzel text-3xl text-accent">
         Feedback
       </h1>
       <p className="mb-6 text-sm text-gray-400">

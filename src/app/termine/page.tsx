@@ -161,7 +161,7 @@ export default function TerminePage() {
     <div className="relative p-4 pb-20">
       <AnimatedBackground icon="/icon-termine.webp" glowClass="glow-orange" />
       <div className="h-24" />
-      <h1 className="mb-1 font-heading text-2xl text-white">Termine</h1>
+      <h1 className="mb-1 text-center font-cinzel text-3xl text-orange-300">Termine</h1>
       <button
         onClick={() => setShowCreate(!showCreate)}
         className="mb-4 rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"

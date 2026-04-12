@@ -216,7 +216,7 @@ export default function FloorPlan() {
     <div className="pb-20">
       {/* Header */}
       <div className="px-4 pt-4 pb-2">
-        <h1 className="font-heading text-2xl text-white">via1</h1>
+        <h1 className="text-center font-cinzel text-3xl text-accent">via1</h1>
         <p className="text-sm text-gray-400">Spinnereiweg 17, Bern</p>
       </div>
 

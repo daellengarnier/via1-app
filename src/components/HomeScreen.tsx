@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatedBackground } from "./AnimatedBackground";
 
@@ -9,6 +9,12 @@ interface PinnwandEintrag {
   text: string;
   author: string;
   date: string;
+}
+
+interface WeatherData {
+  temp: number;
+  code: number;
+  summary: string;
 }
 
 const initialPinnwand: PinnwandEintrag[] = [
@@ -39,6 +45,25 @@ function getGreeting(): string {
   return "Guten Abend";
 }
 
+// WMO Weather Codes zu Text + Emoji
+function weatherSummary(code: number, willRainTonight: boolean): string {
+  let day = "";
+  if (code === 0) day = "☀️ Sonnig";
+  else if (code <= 2) day = "🌤️ Überwiegend sonnig";
+  else if (code === 3) day = "☁️ Bewölkt";
+  else if (code <= 48) day = "🌫️ Neblig";
+  else if (code <= 57) day = "🌦️ Nieselregen";
+  else if (code <= 67) day = "🌧️ Regen";
+  else if (code <= 77) day = "❄️ Schnee";
+  else if (code <= 82) day = "🌧️ Regenschauer";
+  else if (code <= 86) day = "🌨️ Schneeschauer";
+  else if (code >= 95) day = "⛈️ Gewitter";
+  else day = "Wetter";
+
+  if (willRainTonight) day += " · 🌙 Regen in der Nacht";
+  return day;
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const userName = "Alain";
@@ -47,6 +72,40 @@ export default function HomeScreen() {
   const [pinnwand, setPinnwand] = useState(initialPinnwand);
   const [newNote, setNewNote] = useState("");
   const [showNoteForm, setShowNoteForm] = useState(false);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+
+  // Wetter laden (Open-Meteo, kein API Key)
+  useEffect(() => {
+    const url =
+      "https://api.open-meteo.com/v1/forecast?latitude=46.9480&longitude=7.4474&current=temperature_2m,weather_code&hourly=precipitation&forecast_days=1&timezone=Europe%2FZurich";
+    fetch(url)
+      .then((r) => r.json())
+      .then((data: {
+        current?: { temperature_2m: number; weather_code: number };
+        hourly?: { time: string[]; precipitation: number[] };
+      }) => {
+        if (!data.current) return;
+        const now = new Date();
+        const currentHour = now.getHours();
+        // Nacht = 20:00 bis 06:00 Uhr
+        let willRainTonight = false;
+        if (data.hourly) {
+          data.hourly.time.forEach((t, i) => {
+            const d = new Date(t);
+            const h = d.getHours();
+            if ((h >= 20 || h < 6) && h >= currentHour && data.hourly!.precipitation[i]! > 0.2) {
+              willRainTonight = true;
+            }
+          });
+        }
+        setWeather({
+          temp: Math.round(data.current.temperature_2m),
+          code: data.current.weather_code,
+          summary: weatherSummary(data.current.weather_code, willRainTonight),
+        });
+      })
+      .catch(() => {});
+  }, []);
 
   function addNote(e: React.FormEvent) {
     e.preventDefault();
@@ -71,49 +130,59 @@ export default function HomeScreen() {
   return (
     <div className="relative p-4 pb-20">
       <AnimatedBackground icon="/pyramid.webp" />
+
       {/* Platz für die Pyramide */}
-      <div className="h-24" />
+      <div className="h-56" />
 
-      {/* Header */}
-      <header className="mb-5 pr-12">
-        <p className="text-xs tracking-widest text-gray-500">Via 1</p>
-        <h1 className="font-heading text-3xl text-white">
-          {getGreeting()}, {userName}
-        </h1>
-      </header>
+      {/* Titel (unter Icon) */}
+      <h1 className="mb-1 text-center font-cinzel text-3xl text-emerald-300">
+        {getGreeting()}, {userName}
+      </h1>
 
-      {/* Nächster Termin — einzeilig */}
-      <div
-        className="mb-3 cursor-pointer rounded-lg border border-accent/20 bg-gradient-to-r from-accent/8 to-transparent p-3 transition-colors hover:bg-accent/10"
-        onClick={() => router.push("/termine/1")}
-      >
-        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
-          NÄCHSTER TERMIN
+      {/* Wetter */}
+      {weather && (
+        <p className="mb-6 text-center text-sm text-gray-400">
+          {weather.summary} · {weather.temp}°C
         </p>
-        <p className="mt-0.5 text-sm text-white">
-          Haussitzung April{" "}
-          <span className="text-gray-500">· Mi 16. Apr · 19:30</span>
-        </p>
+      )}
+      {!weather && <div className="mb-6 h-5" />}
+
+      {/* Nächster Termin + Spinnerei — rund & nebeneinander */}
+      <div className="mb-4 grid grid-cols-2 gap-3">
+        <div
+          className="cursor-pointer rounded-full border border-accent/30 bg-accent/5 px-4 py-3 text-center transition-colors hover:bg-accent/10"
+          onClick={() => router.push("/termine/1")}
+        >
+          <p className="font-display text-[9px] font-bold uppercase tracking-widest text-accent">
+            TERMIN
+          </p>
+          <p className="mt-0.5 truncate text-xs font-medium text-white">
+            Haussitzung
+          </p>
+          <p className="font-mono text-[10px] text-gray-500">
+            Mi 16. Apr · 19:30
+          </p>
+        </div>
+        <a
+          href="https://kulturspinnerei.ch"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="cursor-pointer rounded-full border border-secondary/30 bg-secondary/5 px-4 py-3 text-center transition-colors hover:bg-secondary/10"
+        >
+          <p className="font-display text-[9px] font-bold uppercase tracking-widest text-secondary">
+            SPINNEREI
+          </p>
+          <p className="mt-0.5 truncate text-xs font-medium text-white">
+            Soirée Tropicale
+          </p>
+          <p className="font-mono text-[10px] text-gray-500">
+            Fr 25. Apr · 21:00
+          </p>
+        </a>
       </div>
 
-      {/* Spinnerei — einzeilig */}
-      <a
-        href="https://kulturspinnerei.ch"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mb-4 block rounded-lg border border-secondary/20 bg-gradient-to-r from-secondary/8 to-transparent p-3 transition-colors hover:bg-secondary/10"
-      >
-        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-secondary">
-          SPINNEREI
-        </p>
-        <p className="mt-0.5 text-sm text-white">
-          Soirée Tropicale{" "}
-          <span className="text-gray-500">· Fr 25. Apr · 21:00</span>
-        </p>
-      </a>
-
-      {/* Glasige Neon-Kacheln */}
-      <div className="mb-4 grid grid-cols-2 gap-3">
+      {/* Glasige Neon-Kacheln — ohne Gästi */}
+      <div className="mb-4 grid grid-cols-3 gap-3">
         <div
           className="cursor-pointer rounded-xl border border-red-500/15 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-red-500/30 hover:shadow-[0_0_20px_rgba(255,50,50,0.1)]"
           onClick={() => router.push("/sauna")}
@@ -121,8 +190,8 @@ export default function HomeScreen() {
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-red-400">
             SAUNA
           </p>
-          <p className="mt-1 font-mono text-3xl font-bold text-white">62°C</p>
-          <p className="mt-1 text-xs text-gray-500">Wird geheizt</p>
+          <p className="mt-1 font-mono text-2xl font-bold text-white">62°C</p>
+          <p className="mt-1 text-[10px] text-gray-500">geheizt</p>
         </div>
         <div
           className="cursor-pointer rounded-xl border border-yellow-400/15 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-yellow-400/30 hover:shadow-[0_0_20px_rgba(255,220,50,0.1)]"
@@ -131,28 +200,17 @@ export default function HomeScreen() {
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-yellow-300">
             AUFGABEN
           </p>
-          <p className="mt-1 font-mono text-3xl font-bold text-white">3</p>
-          <p className="mt-1 text-xs text-gray-500">offen</p>
+          <p className="mt-1 font-mono text-2xl font-bold text-white">3</p>
+          <p className="mt-1 text-[10px] text-gray-500">offen</p>
         </div>
         <div
           className="cursor-pointer rounded-xl border border-violet-500/15 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-violet-500/30 hover:shadow-[0_0_20px_rgba(150,100,255,0.1)]"
           onClick={() => router.push("/putzplan")}
         >
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-violet-400">
-            PUTZDIENST
+            PUTZEN
           </p>
-          <p className="mt-1 text-lg font-semibold text-white">Dreiecksbar</p>
-          <p className="mt-1 text-xs text-gray-500">ist dran</p>
-        </div>
-        <div
-          className="cursor-pointer rounded-xl border border-blue-500/15 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-blue-500/30 hover:shadow-[0_0_20px_rgba(50,150,255,0.1)]"
-          onClick={() => router.push("/gaesti")}
-        >
-          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-blue-400">
-            GÄSTI
-          </p>
-          <p className="mt-1 text-lg font-semibold text-white">Frei</p>
-          <p className="mt-1 text-xs text-gray-500">Nächste: 21. Apr</p>
+          <p className="mt-1 text-sm font-semibold text-white">Dreiecks-<br/>bar</p>
         </div>
       </div>
 

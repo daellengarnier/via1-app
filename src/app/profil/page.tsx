@@ -83,7 +83,7 @@ export default function ProfilPage() {
         ← Zurück
       </button>
 
-      <h1 className="mb-6 font-heading text-2xl text-white">
+      <h1 className="mb-6 text-center font-cinzel text-3xl text-accent">
         Mein Profil
       </h1>
 

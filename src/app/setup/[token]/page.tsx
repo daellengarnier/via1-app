@@ -46,7 +46,7 @@ export default function SetupPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <h1 className="mb-8 font-heading text-2xl text-white">
+        <h1 className="mb-8 text-center font-cinzel text-3xl text-accent">
           Passwort einrichten
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -30,7 +30,7 @@ export default function BewohnendePage() {
 
   return (
     <div className="p-4 pb-24">
-      <h1 className="mb-1 font-heading text-2xl text-white">
+      <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">
         Bewohnende
       </h1>
       <p className="mb-5 text-sm text-gray-400">

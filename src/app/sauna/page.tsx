@@ -127,7 +127,7 @@ export default function SaunaPage() {
     <div className="relative p-4 pb-20">
       <AnimatedBackground icon="/icon-sauna.webp" glowClass="glow-red" />
       <div className="h-24" />
-      <h1 className="mb-6 font-heading text-2xl text-white">Sauna</h1>
+      <h1 className="mb-6 text-center font-cinzel text-3xl text-red-400">Sauna</h1>
 
       {/* Temperatur */}
       <div className="mb-6 flex flex-col items-center rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-6">

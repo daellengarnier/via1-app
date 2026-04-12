@@ -18,6 +18,7 @@ const config: Config = {
         sans: ["Inter", "sans-serif"],
         display: ["Orbitron", "sans-serif"],
         heading: ["Playfair Display", "serif"],
+        cinzel: ["Cinzel", "serif"],
       },
     },
   },

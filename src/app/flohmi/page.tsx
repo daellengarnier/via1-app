@@ -110,7 +110,7 @@ export default function FlohmiPage() {
 
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-1 font-heading text-2xl text-white">Flohmi</h1>
+      <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">Flohmi</h1>
       <button
         onClick={() => setShowCreate(!showCreate)}
         className="mb-4 rounded-full bg-accent px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-dark"

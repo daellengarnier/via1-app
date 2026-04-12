@@ -75,7 +75,7 @@ export default function KaffeePage() {
 
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-1 font-heading text-2xl text-white">Kaffee</h1>
+      <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">Kaffee</h1>
       <p className="mb-6 text-sm text-gray-500">Hauseigene Kaffeemaschine</p>
 
       {/* Aktuelle Bohnen */}

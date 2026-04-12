@@ -165,7 +165,7 @@ export default function HausbuchPage() {
 
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-1 font-heading text-2xl text-white">Hausbuch</h1>
+      <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">Hausbuch</h1>
       <div className="mb-4">
         <button
           onClick={() => setShowCreate(!showCreate)}
