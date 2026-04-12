@@ -68,10 +68,9 @@ const mockAufgaben: Aufgabe[] = [
 
 type Filter = "offen" | "erledigt" | "alle";
 
-// Esri World Imagery Export — Satellitenbild vom Gelände
-// Spinnereiweg 17, Bern Felsenau
+// Esri World Imagery — Satellitenbild vom Spinnereiweg 17, Bern Felsenau
 const SAT_IMG =
-  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=828950,5935270,829250,5935470&bboxSR=3857&imageSR=3857&size=600,400&format=jpg&f=image";
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=7.4398,46.9687,7.4428,46.9703&bboxSR=4326&imageSR=3857&size=600,400&format=jpg&f=image";
 
 function GelaendeMap({
   aufgaben,
@@ -188,7 +187,7 @@ export default function AufgabenPage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <TabHeader title="Aufgaben" icon="/icon-aufgaben.webp" color="yellow" />
+      <TabHeader icon="/icon-aufgaben.webp" color="yellow" />
       <div className="mb-4 flex justify-center">
         <button
           onClick={() => setShowCreate(!showCreate)}

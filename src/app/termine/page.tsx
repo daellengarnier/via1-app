@@ -159,7 +159,7 @@ export default function TerminePage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <TabHeader title="Termine" icon="/icon-termine.webp" color="orange" />
+      <TabHeader icon="/icon-termine.webp" color="orange" />
       <div className="mb-4 flex justify-center">
         <button
           onClick={() => setShowCreate(!showCreate)}

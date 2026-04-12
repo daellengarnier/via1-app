@@ -139,7 +139,7 @@ export default function GaestiPage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <TabHeader title="Gästewohnwagen" icon="/icon-gaesti.webp" color="blue" />
+      <TabHeader icon="/icon-gaesti.webp" color="blue" />
       <div className="mb-4 flex justify-center">
         <button
           onClick={() => setShowCreate(!showCreate)}

@@ -125,7 +125,7 @@ export default function SaunaPage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <TabHeader title="Sauna" icon="/icon-sauna.webp" color="red" />
+      <TabHeader icon="/icon-sauna.webp" color="red" />
 
       {/* Temperatur */}
       <div className="mb-6 flex flex-col items-center rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-5">

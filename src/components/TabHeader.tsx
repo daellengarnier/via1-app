@@ -5,7 +5,7 @@ import { AnimatedBackground } from "./AnimatedBackground";
 export type TabColor = "green" | "orange" | "yellow" | "red" | "blue";
 
 interface TabHeaderProps {
-  title: string;
+  title?: string;
   icon: string;
   color: TabColor;
 }
@@ -23,11 +23,13 @@ export function TabHeader({ title, icon, color }: TabHeaderProps) {
   return (
     <>
       <AnimatedBackground icon={icon} glowClass={glowClass} />
-      {/* Einheitlicher Abstand für alle Tabs — Icon bis Titel */}
+      {/* Einheitlicher Abstand für alle Tabs — Icon bis Content */}
       <div className="h-44" />
-      <h1 className={`mb-6 text-center font-cinzel text-3xl ${text}`}>
-        {title}
-      </h1>
+      {title && (
+        <h1 className={`mb-6 text-center font-cinzel text-3xl ${text}`}>
+          {title}
+        </h1>
+      )}
     </>
   );
 }
