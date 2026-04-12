@@ -16,7 +16,7 @@ body {
 /* ===== Background ===== */
 .via-bg {
   position: absolute;
-  inset: -50px 0 0 0;
+  inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;

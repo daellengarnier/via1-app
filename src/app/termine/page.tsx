@@ -105,6 +105,10 @@ export default function TerminePage() {
   const [termine, setTermine] = useState(initialTermine);
   const [showCreate, setShowCreate] = useState(false);
 
+  // Signup state (inline, per termin)
+  const [signupOpen, setSignupOpen] = useState<string | null>(null);
+  const [signupGuests, setSignupGuests] = useState(0);
+
   // Create form state
   const [newType, setNewType] = useState<TerminType>("sitzung");
   const [newTitle, setNewTitle] = useState("");
@@ -402,22 +406,83 @@ export default function TerminePage() {
               </Link>
 
               {/* Direkt anmelden Button bei Essen */}
-              {hasEssen && (
+              {hasEssen && signupOpen !== t.id && (
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    setTermine((prev) =>
-                      prev.map((x) =>
-                        x.id === t.id
-                          ? { ...x, mealSignups: x.mealSignups + 1 }
-                          : x
-                      )
-                    );
+                    setSignupOpen(t.id);
+                    setSignupGuests(0);
                   }}
                   className="mt-2 w-full rounded-full bg-secondary/20 py-1.5 text-[10px] font-bold uppercase tracking-wider text-secondary transition-colors hover:bg-secondary/30"
                 >
                   + Fürs Essen anmelden
                 </button>
+              )}
+
+              {/* Inline-Form für Essens-Anmeldung */}
+              {hasEssen && signupOpen === t.id && (
+                <div className="mt-2 rounded-lg border border-secondary/30 bg-secondary/5 p-2.5">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="font-display text-[10px] font-bold uppercase tracking-wider text-secondary">
+                      Anmeldung
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setSignupOpen(null);
+                      }}
+                      className="text-xs text-gray-500 hover:text-white"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs text-gray-300">Gäste mitbringen</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setSignupGuests((g) => Math.max(0, g - 1));
+                        }}
+                        className="flex h-6 w-6 items-center justify-center rounded-full border border-secondary/40 text-secondary hover:bg-secondary/10"
+                      >
+                        −
+                      </button>
+                      <span className="w-5 text-center font-mono text-sm text-white">
+                        {signupGuests}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setSignupGuests((g) => g + 1);
+                        }}
+                        className="flex h-6 w-6 items-center justify-center rounded-full border border-secondary/40 text-secondary hover:bg-secondary/10"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setTermine((prev) =>
+                        prev.map((x) =>
+                          x.id === t.id
+                            ? {
+                                ...x,
+                                mealSignups: x.mealSignups + 1 + signupGuests,
+                              }
+                            : x
+                        )
+                      );
+                      setSignupOpen(null);
+                      setSignupGuests(0);
+                    }}
+                    className="w-full rounded-full bg-secondary py-1.5 text-[10px] font-bold uppercase tracking-wider text-white"
+                  >
+                    Anmelden {signupGuests > 0 && `(+${signupGuests})`}
+                  </button>
+                </div>
               )}
             </div>
           );
