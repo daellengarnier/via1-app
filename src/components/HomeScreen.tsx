@@ -215,34 +215,26 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Kaffee (nur für Abo) — runde Kachel ausführlich */}
+      {/* Kaffee (nur für Abo) — kompakte runde Pille */}
       {hasKaffeeAbo && (
         <div
-          className="mb-6 cursor-pointer rounded-3xl border border-amber-600/30 bg-gradient-to-br from-amber-700/15 to-amber-900/5 p-5 transition-all hover:border-amber-500/50 hover:shadow-[0_0_30px_rgba(255,180,50,0.15)]"
+          className="mb-5 cursor-pointer rounded-full border border-amber-600/30 bg-gradient-to-r from-amber-700/10 to-transparent px-4 py-2.5 transition-all hover:border-amber-500/50"
           onClick={() => router.push("/kaffee")}
         >
-          <div className="flex items-start gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-700/30 text-2xl">
-              ☕
-            </div>
-            <div className="flex-1">
-              <p className="font-display text-[10px] font-bold uppercase tracking-widest text-amber-500">
-                AKTUELL IN DER MÜHLE
-              </p>
-              <p className="mt-1 text-base font-semibold text-amber-200">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">☕</span>
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-sm font-semibold text-amber-200">
                 {currentKaffee.name}
-              </p>
-              <p className="mt-0.5 text-xs text-amber-300/80">
-                {currentKaffee.duftnotizen}
-              </p>
-              <div className="mt-1.5 flex items-center gap-2 text-[10px] text-gray-500">
-                <span>{currentKaffee.herkunft}</span>
                 {currentKaffee.fairtrade && (
-                  <span className="rounded-full bg-emerald-600/20 px-1.5 py-0.5 text-emerald-400">
-                    Fair Trade
+                  <span className="ml-1 text-[9px] text-emerald-400">
+                    ● Fair Trade
                   </span>
                 )}
-              </div>
+              </p>
+              <p className="truncate text-[10px] text-gray-500">
+                {currentKaffee.duftnotizen} · {currentKaffee.herkunft}
+              </p>
             </div>
           </div>
         </div>

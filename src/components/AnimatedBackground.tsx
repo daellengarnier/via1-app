@@ -37,6 +37,7 @@ export function AnimatedBackground({
       <div className="via-glow via-glow-1" />
       <div className="via-glow via-glow-2" />
       <div className="via-glow via-glow-3" />
+      <div className="via-glow via-glow-4" />
     </div>
   );
 }

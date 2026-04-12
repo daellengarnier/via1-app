@@ -26,7 +26,7 @@ export function TabHeader({ title, icon, color }: TabHeaderProps) {
       {/* Einheitlicher Abstand für alle Tabs — Icon bis Content */}
       <div className="h-44" />
       {title && (
-        <h1 className={`mb-6 text-center font-cinzel text-3xl ${text}`}>
+        <h1 className={`mb-6 text-center font-cinzel text-2xl ${text}`}>
           {title}
         </h1>
       )}

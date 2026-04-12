@@ -120,6 +120,24 @@ export function HamburgerMenu() {
             <span className="text-gray-500">›</span>
           </Link>
 
+          {/* Meine Abos */}
+          <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+            MEINE ABOS
+          </h2>
+          <div className="mb-6 space-y-2">
+            <Link
+              href="/kaffee"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-lg border border-amber-600/30 bg-amber-700/10 p-3 transition-colors hover:border-amber-500"
+            >
+              <span className="text-lg">☕</span>
+              <div>
+                <p className="font-medium text-amber-200">Kaffee-Abo</p>
+                <p className="text-xs text-gray-500">1 Doppio / Tag · Bohnen</p>
+              </div>
+            </Link>
+          </div>
+
           {/* Mehr */}
           <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
             MEHR
@@ -134,17 +152,6 @@ export function HamburgerMenu() {
               <div>
                 <p className="font-medium text-white">Hausbuch</p>
                 <p className="text-xs text-gray-500">Wissen & Infos rund ums Haus</p>
-              </div>
-            </Link>
-            <Link
-              href="/kaffee"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 p-3 transition-colors hover:border-accent"
-            >
-              <span className="text-lg">☕</span>
-              <div>
-                <p className="font-medium text-white">Kaffee</p>
-                <p className="text-xs text-gray-500">Abo & aktuelle Bohnen</p>
               </div>
             </Link>
             <Link

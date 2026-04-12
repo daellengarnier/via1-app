@@ -16,7 +16,7 @@ body {
 /* ===== Background ===== */
 .via-bg {
   position: absolute;
-  inset: 0;
+  inset: -50px 0 0 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
@@ -96,8 +96,8 @@ body {
   height: 420px;
   background: rgba(var(--glow-rgb, 0, 255, 100), 0.13);
   filter: blur(90px);
-  top: 28%;
-  left: -12%;
+  top: 2%;
+  left: -15%;
   animation: drift-1 18s ease-in-out infinite alternate;
 }
 
@@ -112,13 +112,23 @@ body {
 }
 
 .via-glow-3 {
+  width: 340px;
+  height: 340px;
+  background: rgba(var(--glow-rgb, 0, 255, 100), 0.09);
+  filter: blur(85px);
+  top: 8%;
+  right: -10%;
+  animation: drift-3 16s ease-in-out infinite alternate;
+}
+
+.via-glow-4 {
   width: 300px;
   height: 300px;
-  background: rgba(var(--glow-rgb, 0, 255, 100), 0.08);
-  filter: blur(85px);
-  top: 55%;
-  left: 28%;
-  animation: drift-3 16s ease-in-out infinite alternate;
+  background: rgba(var(--glow-rgb, 0, 255, 100), 0.07);
+  filter: blur(90px);
+  top: 45%;
+  left: 30%;
+  animation: drift-1 20s ease-in-out infinite alternate;
 }
 
 @keyframes drift-1 {

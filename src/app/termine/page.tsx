@@ -335,7 +335,7 @@ export default function TerminePage() {
       )}
 
       {/* Filter */}
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex justify-center gap-2">
         {(["alle", "sitzung", "essen", "sonstige"] as const).map((f) => (
           <button
             key={f}
@@ -351,52 +351,77 @@ export default function TerminePage() {
         ))}
       </div>
 
-      {/* Liste */}
-      <div className="space-y-3">
-        {sorted.map((t) => (
-          <Link
-            key={t.id}
-            href={`/termine/${t.id}`}
-            className="block rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4 transition-colors hover:border-gray-700"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <span
-                  className={`font-mono text-xs uppercase ${typeColors[t.type]}`}
-                >
-                  {typeLabels[t.type]}
-                </span>
-                {t.organizer && (
-                  <span className="ml-2 text-xs text-gray-600">
-                    {t.organizer}
-                  </span>
+      {/* Liste — kompakt */}
+      <div className="space-y-2">
+        {sorted.map((t) => {
+          const hasEssen = t.type === "essen" || t.withDinner;
+          return (
+            <div
+              key={t.id}
+              className="rounded-lg border border-gray-800 bg-black/20 p-3 transition-colors hover:border-gray-700"
+            >
+              <Link href={`/termine/${t.id}`} className="block">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`font-mono text-[10px] uppercase ${typeColors[t.type]}`}
+                      >
+                        {typeLabels[t.type]}
+                      </span>
+                      {t.organizer && (
+                        <span className="text-[10px] text-gray-600">
+                          · {t.organizer}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="truncate text-sm font-medium text-white">
+                      {t.title}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      {formatDate(t.date)} · {t.time}
+                      {t.location && ` · ${t.location}`}
+                    </p>
+                  </div>
+                </div>
+                {(t.agendaCount > 0 || hasEssen) && (
+                  <div className="mt-1.5 flex items-center gap-3 text-[10px]">
+                    {t.agendaCount > 0 && (
+                      <span className="text-gray-600">
+                        {t.agendaCount} Traktanden
+                      </span>
+                    )}
+                    {hasEssen && (
+                      <span className="text-secondary">
+                        🍽 {t.mealSignups} angemeldet
+                        {t.dinnerTime && ` · ${t.dinnerTime}`}
+                      </span>
+                    )}
+                  </div>
                 )}
-                <h3 className="mt-1 text-lg font-medium text-white">
-                  {t.title}
-                </h3>
-              </div>
-            </div>
-            <p className="mt-2 text-sm text-gray-400">
-              {formatDate(t.date)} · {t.time}
-            </p>
-            {t.location && (
-              <p className="text-sm text-gray-500">{t.location}</p>
-            )}
-            <div className="mt-2 flex items-center gap-3">
-              {t.agendaCount > 0 && (
-                <span className="text-xs text-gray-600">
-                  {t.agendaCount} Traktanden
-                </span>
-              )}
-              {(t.withDinner || t.type === "essen") && (
-                <span className="text-xs text-secondary">
-                  {t.mealSignups} angemeldet
-                  {t.dinnerTime && ` · Essen ${t.dinnerTime}`}
-                </span>
+              </Link>
+
+              {/* Direkt anmelden Button bei Essen */}
+              {hasEssen && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setTermine((prev) =>
+                      prev.map((x) =>
+                        x.id === t.id
+                          ? { ...x, mealSignups: x.mealSignups + 1 }
+                          : x
+                      )
+                    );
+                  }}
+                  className="mt-2 w-full rounded-full bg-secondary/20 py-1.5 text-[10px] font-bold uppercase tracking-wider text-secondary transition-colors hover:bg-secondary/30"
+                >
+                  + Fürs Essen anmelden
+                </button>
               )}
             </div>
-          </Link>
-        ))}
+          );
+        })}
       </div>
 
       {sorted.length === 0 && (

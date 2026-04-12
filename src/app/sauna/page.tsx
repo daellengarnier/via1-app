@@ -127,6 +127,20 @@ export default function SaunaPage() {
     <div className="relative p-4 pb-20">
       <TabHeader icon="/icon-sauna.webp" color="red" />
 
+      {/* Heizen Toggle — oberhalb der Temperatur */}
+      <div className="mb-4 flex justify-center">
+        <button
+          onClick={() => setHeating(!heating)}
+          className={`rounded-full px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider transition-colors ${
+            heating
+              ? "bg-gray-700 text-white hover:bg-gray-600"
+              : "bg-red-500 text-white hover:brightness-110"
+          }`}
+        >
+          {heating ? "× Heizung stoppen" : "+ Sauna einheizen"}
+        </button>
+      </div>
+
       {/* Temperatur */}
       <div className="mb-6 flex flex-col items-center rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-5">
         <p className="font-mono text-4xl font-bold text-red-400">
@@ -134,7 +148,7 @@ export default function SaunaPage() {
         </p>
         <p className="mt-1 text-xs text-gray-400">Aktuelle Temperatur</p>
         {heating && (
-          <p className="mt-1 text-sm text-secondary">🔥 Wird geheizt</p>
+          <p className="mt-1 text-sm text-secondary">🔥 Wird geheizt · Gestartet von Alain vor 45 Min.</p>
         )}
 
         {/* Temperaturverlauf als dezente Linie */}
@@ -160,26 +174,6 @@ export default function SaunaPage() {
           </div>
         </div>
       </div>
-
-      {/* Heizen Toggle */}
-      <div className="flex justify-center">
-        <button
-          onClick={() => setHeating(!heating)}
-          className={`rounded-full px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider transition-colors ${
-            heating
-              ? "bg-gray-700 text-white hover:bg-gray-600"
-              : "bg-red-500 text-white hover:brightness-110"
-          }`}
-        >
-          {heating ? "× Heizung stoppen" : "+ Sauna einheizen"}
-        </button>
-      </div>
-
-      {heating && (
-        <p className="mt-2 text-center text-xs text-gray-500">
-          Gestartet von Alain · vor 45 Min.
-        </p>
-      )}
 
       {/* Sauna-Reglement */}
       <div className="mt-8">
