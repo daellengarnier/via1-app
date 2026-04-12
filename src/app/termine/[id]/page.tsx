@@ -212,9 +212,11 @@ export default function TerminDetailPage() {
   const [termin, setTermin] = useState<TerminDetail | null>(initial ?? null);
   const [newTraktandum, setNewTraktandum] = useState("");
   const [showSignup, setShowSignup] = useState(false);
-  const [signupDiet, setSignupDiet] = useState("Fleisch");
-  const [signupAllergies, setSignupAllergies] = useState("");
   const [signupGuestDetails, setSignupGuestDetails] = useState<Guest[]>([]);
+
+  // Aus Profil (Mock)
+  const myDiet = "Fleisch";
+  const myAllergies = "";
 
   if (!termin) {
     return (
@@ -230,6 +232,19 @@ export default function TerminDetailPage() {
     (sum, s) => sum + 1 + s.guestDetails.length,
     0
   );
+
+  // Diät-Zusammenfassung
+  const dietCounts = { Fleisch: 0, Vegi: 0, Vegan: 0, Andere: 0 };
+  termin.mealSignups.forEach((s) => {
+    const add = (d: string) => {
+      if (d === "Fleisch") dietCounts.Fleisch++;
+      else if (d === "Vegi") dietCounts.Vegi++;
+      else if (d === "Vegan") dietCounts.Vegan++;
+      else dietCounts.Andere++;
+    };
+    add(s.diet);
+    s.guestDetails.forEach((g) => add(g.diet));
+  });
 
   function addTraktandum(e: React.FormEvent) {
     e.preventDefault();
@@ -268,14 +283,13 @@ export default function TerminDetailPage() {
         ...termin.mealSignups,
         {
           name: "Alain",
-          diet: signupDiet,
-          allergies: signupAllergies,
+          diet: myDiet,
+          allergies: myAllergies,
           guestDetails: signupGuestDetails,
         },
       ],
     });
     setShowSignup(false);
-    setSignupAllergies("");
     setSignupGuestDetails([]);
   }
 
@@ -520,53 +534,46 @@ export default function TerminDetailPage() {
             </button>
           </div>
 
+          {/* Diät-Zusammenfassung */}
+          {totalGuests > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {dietCounts.Fleisch > 0 && (
+                <span className="rounded-full bg-red-500/15 px-3 py-1 text-xs text-red-300">
+                  🍖 {dietCounts.Fleisch} Fleisch
+                </span>
+              )}
+              {dietCounts.Vegi > 0 && (
+                <span className="rounded-full bg-lime-500/15 px-3 py-1 text-xs text-lime-300">
+                  🥗 {dietCounts.Vegi} Vegi
+                </span>
+              )}
+              {dietCounts.Vegan > 0 && (
+                <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs text-emerald-300">
+                  🌱 {dietCounts.Vegan} Vegan
+                </span>
+              )}
+              {dietCounts.Andere > 0 && (
+                <span className="rounded-full bg-gray-500/15 px-3 py-1 text-xs text-gray-300">
+                  {dietCounts.Andere} Andere
+                </span>
+              )}
+            </div>
+          )}
+
           {showSignup && (
             <form
               onSubmit={handleMealSignup}
               className="mb-3 rounded-lg border border-secondary/30 bg-secondary/5 p-3"
             >
-              {/* Eigene Anmeldung */}
-              <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-wider text-secondary">
-                Ich selbst
+              <p className="mb-3 text-xs text-gray-400">
+                Deine Ernährung ({myDiet}) wird automatisch aus deinem Profil
+                übernommen.
               </p>
-              <div className="mb-2">
-                <label className="mb-1 block text-xs text-gray-400">
-                  Meine Ernährung
-                </label>
-                <div className="flex gap-2">
-                  {["Fleisch", "Vegi", "Vegan"].map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setSignupDiet(d)}
-                      className={`flex-1 rounded py-1.5 font-mono text-xs transition-colors ${
-                        signupDiet === d
-                          ? "bg-secondary text-white"
-                          : "border border-gray-700 text-gray-400"
-                      }`}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="mb-3">
-                <label className="mb-1 block text-xs text-gray-400">
-                  Meine Allergien / Unverträglichkeiten
-                </label>
-                <input
-                  type="text"
-                  value={signupAllergies}
-                  onChange={(e) => setSignupAllergies(e.target.value)}
-                  placeholder="z.B. Laktose, Nüsse..."
-                  className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm text-white focus:border-secondary focus:outline-none"
-                />
-              </div>
 
               {/* Gäste */}
-              <div className="mb-3 flex items-center justify-between border-t border-secondary/20 pt-3">
+              <div className="mb-3 flex items-center justify-between">
                 <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-secondary">
-                  Gäste ({signupGuestDetails.length})
+                  Gäste mitbringen ({signupGuestDetails.length})
                 </p>
                 <button
                   type="button"

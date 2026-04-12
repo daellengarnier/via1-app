@@ -18,61 +18,91 @@ interface RastKaffee {
   fairtrade: boolean;
 }
 
-// Sortiment Rast Kaffee (Ebikon) — manuell gepflegt, keine Live-API
+// Sortiment Rast Kaffee (Ebikon) — manuell gepflegt nach rastshop.ch
 const rastSortiment: RastKaffee[] = [
   {
-    name: "Crema No. 1",
-    herkunft: "Brasilien, Honduras, Äthiopien",
-    duftnotizen: "Schokolade, Mandel, milde Säure",
-    fairtrade: true,
-  },
-  {
-    name: "Espresso No. 3",
-    herkunft: "Brasilien, Indien, Guatemala",
-    duftnotizen: "Dunkle Schokolade, Karamell, Haselnuss",
-    fairtrade: true,
-  },
-  {
-    name: "Espresso Forte",
-    herkunft: "Brasilien, Robusta",
-    duftnotizen: "Kräftig, würzig, lange Crema",
+    name: "Milano",
+    herkunft: "Guatemala, Costa Rica, Brasilien, Java",
+    duftnotizen: "Kräftig, schokoladig, voller Körper",
     fairtrade: false,
   },
   {
-    name: "Espresso Decaffeinato",
-    herkunft: "Mexiko, Honduras",
-    duftnotizen: "Nougat, Kakao, Vanille (entkoffeiniert)",
+    name: "Bologna Bio Fairtrade",
+    herkunft: "Bio Arabica Blend",
+    duftnotizen: "Klassisch italienisch, modern & frisch",
     fairtrade: true,
   },
   {
-    name: "Äthiopien Sidamo",
-    herkunft: "Äthiopien",
-    duftnotizen: "Jasmin, Zitrusfrucht, Blaubeere",
+    name: "Como Bio Fairtrade",
+    herkunft: "Bio Arabica",
+    duftnotizen: "Bittermandel, Schokolade, feine Zitrusnote",
     fairtrade: true,
   },
   {
-    name: "Kolumbien Supremo",
-    herkunft: "Kolumbien",
-    duftnotizen: "Karamell, Orange, Walnuss",
+    name: "Bio Espresso",
+    herkunft: "Brasilien, Indonesien (Bio)",
+    duftnotizen: "Beeren, dunkle Nussschokolade",
     fairtrade: true,
   },
   {
-    name: "Guatemala Antigua",
-    herkunft: "Guatemala",
-    duftnotizen: "Schokolade, Gewürze, feine Rauchnote",
+    name: "Yirga Cheffe Bio",
+    herkunft: "Äthiopien (1500-2200m)",
+    duftnotizen: "Jasmin, Bergamotte, Blumen",
     fairtrade: true,
   },
   {
-    name: "Peru Bio",
-    herkunft: "Peru",
-    duftnotizen: "Milchschokolade, Rohrzucker, sanft",
+    name: "Barista Espresso",
+    herkunft: "Kenia, Guatemala, Indonesien, Indien, Brasilien",
+    duftnotizen: "Komplex, intensiv, lange Crema",
+    fairtrade: false,
+  },
+  {
+    name: "Eldorado",
+    herkunft: "Indien, Guatemala, Brasilien, Costa Rica",
+    duftnotizen: "Ausgewogen, süsslich, Karamell",
+    fairtrade: false,
+  },
+  {
+    name: "Premium",
+    herkunft: "Indonesien, Guatemala, Brasilien, Indien",
+    duftnotizen: "Vollmundig, nussig, wenig Säure",
+    fairtrade: false,
+  },
+  {
+    name: "Wiener",
+    herkunft: "Guatemala, Costa Rica, Brasilien, Indonesien",
+    duftnotizen: "Traditionell, weich, nussig",
+    fairtrade: false,
+  },
+  {
+    name: "Festival",
+    herkunft: "Kenia, Guatemala, Brasilien, Costa Rica",
+    duftnotizen: "Fruchtig, lebendig, feine Säure",
+    fairtrade: false,
+  },
+  {
+    name: "Jubiläums-Edition",
+    herkunft: "Papua-Neuguinea, Costa Rica, Guatemala, Kolumbien, Brasilien",
+    duftnotizen: "Komplex, festlich, ausgewogen",
+    fairtrade: false,
+  },
+  {
+    name: "Home-Office",
+    herkunft: "Blend",
+    duftnotizen: "Mild, ausgewogen, für jede Tageszeit",
+    fairtrade: false,
+  },
+  {
+    name: "Koffeinfrei Bio Fairtrade",
+    herkunft: "Bio Arabica",
+    duftnotizen: "Mild, rund, Schokolade",
     fairtrade: true,
   },
 ];
 
 export default function KaffeePage() {
   const [abo, setAbo] = useState<AboType>("1-doppio");
-  const [currentBeans, setCurrentBeans] = useState("Äthiopien Sidamo");
+  const [currentBeans, setCurrentBeans] = useState("Bologna Bio Fairtrade");
   const [changedBy] = useState("Sophie");
   const [changedAt] = useState("2026-04-09");
   const [showSelect, setShowSelect] = useState(false);

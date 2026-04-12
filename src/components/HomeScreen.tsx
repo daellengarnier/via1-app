@@ -68,7 +68,12 @@ export default function HomeScreen() {
   const router = useRouter();
   const userName = "Alain";
   const hasKaffeeAbo = true;
-  const currentKaffee = "Äthiopien Sidamo";
+  const currentKaffee = {
+    name: "Bologna Bio Fairtrade",
+    herkunft: "Bio Arabica Blend",
+    duftnotizen: "Klassisch italienisch, modern & frisch",
+    fairtrade: true,
+  };
   const [pinnwand, setPinnwand] = useState(initialPinnwand);
   const [newNote, setNewNote] = useState("");
   const [showNoteForm, setShowNoteForm] = useState(false);
@@ -210,19 +215,36 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Kaffee (nur für Abo) */}
+      {/* Kaffee (nur für Abo) — runde Kachel ausführlich */}
       {hasKaffeeAbo && (
         <div
-          className="mb-4 cursor-pointer rounded-lg border border-white/5 bg-gradient-to-r from-amber-600/10 to-transparent p-3 transition-all hover:from-amber-600/15"
+          className="mb-6 cursor-pointer rounded-3xl border border-amber-600/30 bg-gradient-to-br from-amber-700/15 to-amber-900/5 p-5 transition-all hover:border-amber-500/50 hover:shadow-[0_0_30px_rgba(255,180,50,0.15)]"
           onClick={() => router.push("/kaffee")}
         >
-          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-amber-500">
-            KAFFEE
-          </p>
-          <p className="mt-0.5 text-sm text-amber-200">
-            {currentKaffee}{" "}
-            <span className="text-gray-500">· in der Mühle</span>
-          </p>
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-700/30 text-2xl">
+              ☕
+            </div>
+            <div className="flex-1">
+              <p className="font-display text-[10px] font-bold uppercase tracking-widest text-amber-500">
+                AKTUELL IN DER MÜHLE
+              </p>
+              <p className="mt-1 text-base font-semibold text-amber-200">
+                {currentKaffee.name}
+              </p>
+              <p className="mt-0.5 text-xs text-amber-300/80">
+                {currentKaffee.duftnotizen}
+              </p>
+              <div className="mt-1.5 flex items-center gap-2 text-[10px] text-gray-500">
+                <span>{currentKaffee.herkunft}</span>
+                {currentKaffee.fairtrade && (
+                  <span className="rounded-full bg-emerald-600/20 px-1.5 py-0.5 text-emerald-400">
+                    Fair Trade
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
