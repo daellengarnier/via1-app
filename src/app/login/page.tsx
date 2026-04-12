@@ -34,19 +34,46 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <h1 className="mb-2 font-mono text-3xl font-bold text-accent">
-          via1
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4">
+      {/* Animated background glow */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        aria-hidden="true"
+        style={
+          {
+            "--glow-rgb": "0, 255, 100",
+          } as React.CSSProperties
+        }
+      >
+        <div className="via-glow via-glow-1" />
+        <div className="via-glow via-glow-2" />
+        <div className="via-glow via-glow-3" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-sm">
+        {/* Pyramide Logo */}
+        <div className="mb-4 flex justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/pyramid.webp"
+            alt="Via 1"
+            className="h-36 w-36 object-contain"
+            style={{
+              filter:
+                "drop-shadow(0 0 15px rgba(0,255,100,0.5)) drop-shadow(0 0 30px rgba(0,200,80,0.3))",
+              animation: "icon-glow 4s ease-in-out infinite alternate",
+            }}
+          />
+        </div>
+
+        <h1 className="mb-1 text-center font-cinzel text-4xl text-emerald-300">
+          Via 1
         </h1>
-        <p className="mb-8 text-sm text-gray-400">Anmelden</p>
+        <p className="mb-8 text-center text-sm text-gray-500">Anmelden</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm text-gray-400"
-            >
+            <label htmlFor="email" className="mb-1 block text-xs text-gray-400">
               E-Mail
             </label>
             <input
@@ -54,7 +81,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
               required
             />
           </div>
@@ -62,7 +89,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="password"
-              className="mb-1 block text-sm text-gray-400"
+              className="mb-1 block text-xs text-gray-400"
             >
               Passwort
             </label>
@@ -71,7 +98,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
               required
             />
           </div>
@@ -81,7 +108,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded bg-accent py-2 font-mono font-bold text-dark transition hover:brightness-110 disabled:opacity-50"
+            className="w-full rounded-lg bg-accent py-2.5 font-display text-[11px] font-bold uppercase tracking-wider text-dark transition hover:brightness-110 disabled:opacity-50"
           >
             {loading ? "Anmelden..." : "Anmelden"}
           </button>
