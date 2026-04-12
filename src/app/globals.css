@@ -22,75 +22,66 @@ body {
   pointer-events: none;
 }
 
-/* Tab-Icon oben (Pyramide auf Home, andere Icons auf anderen Tabs) */
+/* Tab-Icon oben (einheitliche Grösse & Position für alle Tabs) */
 .via-tab-icon {
   position: absolute;
-  top: -10px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 50%;
-  max-width: 220px;
-  height: auto;
-  opacity: 0.8;
+  width: 240px;
+  height: 240px;
+  object-fit: contain;
+  opacity: 0.9;
   animation: icon-glow 4s ease-in-out infinite alternate;
 }
 
 @keyframes icon-glow {
   0% {
-    filter: drop-shadow(0 0 8px rgba(0, 255, 100, 0.3)) brightness(0.95);
+    filter: drop-shadow(0 0 10px rgba(0, 255, 100, 0.4)) brightness(0.95);
   }
   50% {
-    filter: drop-shadow(0 0 20px rgba(0, 255, 100, 0.6)) brightness(1.1);
+    filter: drop-shadow(0 0 25px rgba(0, 255, 100, 0.7)) brightness(1.15);
   }
   100% {
-    filter: drop-shadow(0 0 12px rgba(0, 255, 100, 0.4)) brightness(1.0);
+    filter: drop-shadow(0 0 15px rgba(0, 255, 100, 0.5)) brightness(1.0);
   }
 }
 
-/* Farbvarianten für andere Tabs */
+/* Farbvarianten */
 .via-tab-icon.glow-orange {
   animation-name: icon-glow-orange;
 }
 @keyframes icon-glow-orange {
-  0% { filter: drop-shadow(0 0 8px rgba(255, 150, 50, 0.3)) brightness(0.95); }
-  50% { filter: drop-shadow(0 0 20px rgba(255, 150, 50, 0.6)) brightness(1.1); }
-  100% { filter: drop-shadow(0 0 12px rgba(255, 150, 50, 0.4)) brightness(1.0); }
+  0% { filter: drop-shadow(0 0 10px rgba(255, 140, 30, 0.4)) brightness(0.95); }
+  50% { filter: drop-shadow(0 0 25px rgba(255, 140, 30, 0.7)) brightness(1.15); }
+  100% { filter: drop-shadow(0 0 15px rgba(255, 140, 30, 0.5)) brightness(1.0); }
 }
 
-.via-tab-icon.glow-cyan {
-  animation-name: icon-glow-cyan;
+.via-tab-icon.glow-blue {
+  animation-name: icon-glow-blue;
 }
-@keyframes icon-glow-cyan {
-  0% { filter: drop-shadow(0 0 8px rgba(50, 200, 255, 0.3)) brightness(0.95); }
-  50% { filter: drop-shadow(0 0 20px rgba(50, 200, 255, 0.6)) brightness(1.1); }
-  100% { filter: drop-shadow(0 0 12px rgba(50, 200, 255, 0.4)) brightness(1.0); }
+@keyframes icon-glow-blue {
+  0% { filter: drop-shadow(0 0 10px rgba(50, 150, 255, 0.4)) brightness(0.95); }
+  50% { filter: drop-shadow(0 0 25px rgba(50, 150, 255, 0.7)) brightness(1.15); }
+  100% { filter: drop-shadow(0 0 15px rgba(50, 150, 255, 0.5)) brightness(1.0); }
 }
 
 .via-tab-icon.glow-red {
   animation-name: icon-glow-red;
 }
 @keyframes icon-glow-red {
-  0% { filter: drop-shadow(0 0 8px rgba(255, 80, 50, 0.3)) brightness(0.95); }
-  50% { filter: drop-shadow(0 0 20px rgba(255, 80, 50, 0.6)) brightness(1.1); }
-  100% { filter: drop-shadow(0 0 12px rgba(255, 80, 50, 0.4)) brightness(1.0); }
+  0% { filter: drop-shadow(0 0 10px rgba(255, 50, 50, 0.4)) brightness(0.95); }
+  50% { filter: drop-shadow(0 0 25px rgba(255, 50, 50, 0.7)) brightness(1.15); }
+  100% { filter: drop-shadow(0 0 15px rgba(255, 50, 50, 0.5)) brightness(1.0); }
 }
 
-.via-tab-icon.glow-violet {
-  animation-name: icon-glow-violet;
+.via-tab-icon.glow-yellow {
+  animation-name: icon-glow-yellow;
 }
-@keyframes icon-glow-violet {
-  0% { filter: drop-shadow(0 0 8px rgba(150, 100, 255, 0.3)) brightness(0.95); }
-  50% { filter: drop-shadow(0 0 20px rgba(150, 100, 255, 0.6)) brightness(1.1); }
-  100% { filter: drop-shadow(0 0 12px rgba(150, 100, 255, 0.4)) brightness(1.0); }
-}
-
-.via-tab-icon.glow-amber {
-  animation-name: icon-glow-amber;
-}
-@keyframes icon-glow-amber {
-  0% { filter: drop-shadow(0 0 8px rgba(255, 180, 50, 0.3)) brightness(0.95); }
-  50% { filter: drop-shadow(0 0 20px rgba(255, 180, 50, 0.6)) brightness(1.1); }
-  100% { filter: drop-shadow(0 0 12px rgba(255, 180, 50, 0.4)) brightness(1.0); }
+@keyframes icon-glow-yellow {
+  0% { filter: drop-shadow(0 0 10px rgba(255, 220, 50, 0.4)) brightness(0.95); }
+  50% { filter: drop-shadow(0 0 25px rgba(255, 220, 50, 0.7)) brightness(1.15); }
+  100% { filter: drop-shadow(0 0 15px rgba(255, 220, 50, 0.5)) brightness(1.0); }
 }
 
 /* Glow-Spots */

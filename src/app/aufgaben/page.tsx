@@ -182,7 +182,7 @@ export default function AufgabenPage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <AnimatedBackground icon="/icon-aufgaben.webp" glowClass="glow-amber" />
+      <AnimatedBackground icon="/icon-aufgaben.webp" glowClass="glow-yellow" />
       <div className="h-24" />
       <h1 className="mb-1 font-heading text-2xl text-white">Aufgaben</h1>
       <button

@@ -1,8 +1,8 @@
 "use client";
 
 interface AnimatedBackgroundProps {
-  icon?: string; // Pfad zum Icon (z.B. "/pyramid.webp", "/icon-sauna.webp")
-  glowClass?: string; // CSS-Klasse für Glow-Farbe (z.B. "glow-orange")
+  icon?: string;
+  glowClass?: string;
 }
 
 export function AnimatedBackground({
@@ -10,11 +10,10 @@ export function AnimatedBackground({
   glowClass = "",
 }: AnimatedBackgroundProps) {
   const colorMap: Record<string, string> = {
-    "glow-orange": "255, 150, 50",
-    "glow-cyan": "50, 200, 255",
-    "glow-red": "255, 80, 50",
-    "glow-violet": "150, 100, 255",
-    "glow-amber": "255, 200, 50",
+    "glow-orange": "255, 140, 30",
+    "glow-blue": "50, 150, 255",
+    "glow-red": "255, 50, 50",
+    "glow-yellow": "255, 220, 50",
   };
   const rgb = glowClass ? colorMap[glowClass] : "0, 255, 100";
   const c = rgb || "0, 255, 100";
@@ -24,7 +23,6 @@ export function AnimatedBackground({
 
   return (
     <div className="via-bg" aria-hidden="true">
-      {/* Tab-Icon */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={icon}
@@ -32,8 +30,6 @@ export function AnimatedBackground({
         className={`via-tab-icon ${glowClass}`}
         loading="eager"
       />
-
-      {/* Glow-Spots */}
       <div className="via-glow via-glow-1" style={glowStyle1} />
       <div className="via-glow via-glow-2" style={glowStyle2} />
       <div className="via-glow via-glow-3" style={glowStyle3} />
