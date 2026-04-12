@@ -18,33 +18,40 @@ interface RastKaffee {
   fairtrade: boolean;
 }
 
+// Sortiment Rast Kaffee (Ebikon) — manuell gepflegt, keine Live-API
 const rastSortiment: RastKaffee[] = [
   {
-    name: "Rast Espresso",
-    herkunft: "Brasilien, Kolumbien",
-    duftnotizen: "Schokolade, Nuss, Karamell",
+    name: "Crema No. 1",
+    herkunft: "Brasilien, Honduras, Äthiopien",
+    duftnotizen: "Schokolade, Mandel, milde Säure",
     fairtrade: true,
   },
   {
-    name: "Rast Crema",
-    herkunft: "Äthiopien, Guatemala",
-    duftnotizen: "Beeren, Zitrus, Honig",
+    name: "Espresso No. 3",
+    herkunft: "Brasilien, Indien, Guatemala",
+    duftnotizen: "Dunkle Schokolade, Karamell, Haselnuss",
     fairtrade: true,
   },
   {
-    name: "Rast Decaf",
-    herkunft: "Mexiko",
-    duftnotizen: "Nougat, Mandel",
-    fairtrade: true,
-  },
-  {
-    name: "Ethiopia Yirgacheffe",
-    herkunft: "Äthiopien",
-    duftnotizen: "Jasmin, Bergamotte, Blaubeere",
+    name: "Espresso Forte",
+    herkunft: "Brasilien, Robusta",
+    duftnotizen: "Kräftig, würzig, lange Crema",
     fairtrade: false,
   },
   {
-    name: "Colombia Supremo",
+    name: "Espresso Decaffeinato",
+    herkunft: "Mexiko, Honduras",
+    duftnotizen: "Nougat, Kakao, Vanille (entkoffeiniert)",
+    fairtrade: true,
+  },
+  {
+    name: "Äthiopien Sidamo",
+    herkunft: "Äthiopien",
+    duftnotizen: "Jasmin, Zitrusfrucht, Blaubeere",
+    fairtrade: true,
+  },
+  {
+    name: "Kolumbien Supremo",
     herkunft: "Kolumbien",
     duftnotizen: "Karamell, Orange, Walnuss",
     fairtrade: true,
@@ -52,14 +59,20 @@ const rastSortiment: RastKaffee[] = [
   {
     name: "Guatemala Antigua",
     herkunft: "Guatemala",
-    duftnotizen: "Schokolade, Rauch, Gewürze",
+    duftnotizen: "Schokolade, Gewürze, feine Rauchnote",
+    fairtrade: true,
+  },
+  {
+    name: "Peru Bio",
+    herkunft: "Peru",
+    duftnotizen: "Milchschokolade, Rohrzucker, sanft",
     fairtrade: true,
   },
 ];
 
 export default function KaffeePage() {
   const [abo, setAbo] = useState<AboType>("1-doppio");
-  const [currentBeans, setCurrentBeans] = useState("Ethiopia Yirgacheffe");
+  const [currentBeans, setCurrentBeans] = useState("Äthiopien Sidamo");
   const [changedBy] = useState("Sophie");
   const [changedAt] = useState("2026-04-09");
   const [showSelect, setShowSelect] = useState(false);

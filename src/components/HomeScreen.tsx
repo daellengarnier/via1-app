@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatedBackground } from "./AnimatedBackground";
+import { TabHeader } from "./TabHeader";
 
 interface PinnwandEintrag {
   id: string;
@@ -68,7 +68,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const userName = "Alain";
   const hasKaffeeAbo = true;
-  const currentKaffee = "Ethiopia Yirgacheffe";
+  const currentKaffee = "Äthiopien Sidamo";
   const [pinnwand, setPinnwand] = useState(initialPinnwand);
   const [newNote, setNewNote] = useState("");
   const [showNoteForm, setShowNoteForm] = useState(false);
@@ -129,23 +129,19 @@ export default function HomeScreen() {
 
   return (
     <div className="relative p-4 pb-20">
-      <AnimatedBackground icon="/pyramid.webp" />
-
-      {/* Platz für die Pyramide */}
-      <div className="h-56" />
-
-      {/* Titel (unter Icon) */}
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-emerald-300">
-        {getGreeting()}, {userName}
-      </h1>
+      <TabHeader
+        title={`${getGreeting()}, ${userName}`}
+        icon="/pyramid.webp"
+        color="green"
+      />
 
       {/* Wetter */}
       {weather && (
-        <p className="mb-6 text-center text-sm text-gray-400">
+        <p className="-mt-4 mb-6 text-center text-sm text-gray-400">
           {weather.summary} · {weather.temp}°C
         </p>
       )}
-      {!weather && <div className="mb-6 h-5" />}
+      {!weather && <div className="-mt-4 mb-6 h-5" />}
 
       {/* Nächster Termin + Spinnerei — rund & nebeneinander */}
       <div className="mb-4 grid grid-cols-2 gap-3">
@@ -230,8 +226,8 @@ export default function HomeScreen() {
         </div>
       )}
 
-      {/* Pinnwand */}
-      <div className="rounded-lg border border-white/5 bg-gradient-to-b from-white/3 to-transparent p-4">
+      {/* Pinnwand als Sticky Notes */}
+      <div className="relative">
         <div className="mb-3 flex items-center justify-between">
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
             PINNWAND
@@ -245,7 +241,7 @@ export default function HomeScreen() {
         </div>
 
         {showNoteForm && (
-          <form onSubmit={addNote} className="mb-3 flex gap-2">
+          <form onSubmit={addNote} className="mb-4 flex gap-2">
             <input
               type="text"
               value={newNote}
@@ -263,30 +259,79 @@ export default function HomeScreen() {
           </form>
         )}
 
-        <div className="flex gap-3 overflow-x-auto pb-1">
-          {pinnwand.map((p) => (
-            <div
-              key={p.id}
-              className="relative w-52 shrink-0 rounded-lg border border-white/5 bg-white/3 p-3 pr-7"
-            >
-              <button
-                onClick={() => dismissNote(p.id)}
-                className="absolute right-1.5 top-1.5 text-gray-600 hover:text-gray-300"
-                aria-label="Schliessen"
+        {/* Sticky Notes Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {pinnwand.map((p, i) => {
+            // Verschiedene Post-it-Farben
+            const styles = [
+              {
+                bg: "bg-yellow-200",
+                text: "text-yellow-900",
+                meta: "text-yellow-700",
+                rot: "-rotate-1",
+              },
+              {
+                bg: "bg-pink-200",
+                text: "text-pink-900",
+                meta: "text-pink-700",
+                rot: "rotate-1",
+              },
+              {
+                bg: "bg-cyan-200",
+                text: "text-cyan-900",
+                meta: "text-cyan-700",
+                rot: "-rotate-2",
+              },
+              {
+                bg: "bg-lime-200",
+                text: "text-lime-900",
+                meta: "text-lime-700",
+                rot: "rotate-2",
+              },
+              {
+                bg: "bg-orange-200",
+                text: "text-orange-900",
+                meta: "text-orange-700",
+                rot: "-rotate-1",
+              },
+            ];
+            const style = styles[i % styles.length]!;
+            return (
+              <div
+                key={p.id}
+                className={`relative ${style.bg} ${style.rot} rounded-sm p-3 pb-6 shadow-lg transition-transform hover:rotate-0 hover:scale-105`}
+                style={{
+                  boxShadow:
+                    "0 4px 12px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3)",
+                }}
               >
-                ×
-              </button>
-              <p className="text-xs leading-relaxed text-gray-300">{p.text}</p>
-              <p className="mt-2 text-[10px] text-gray-600">
-                {p.author} ·{" "}
-                {new Date(p.date).toLocaleDateString("de-CH", {
-                  day: "numeric",
-                  month: "short",
-                })}
-              </p>
-            </div>
-          ))}
+                {/* Fake pin / tape */}
+                <div className="absolute -top-1.5 left-1/2 h-3 w-8 -translate-x-1/2 rounded-sm bg-white/30 shadow-sm" />
+                <button
+                  onClick={() => dismissNote(p.id)}
+                  className={`absolute right-1 top-1 ${style.meta} opacity-50 hover:opacity-100`}
+                  aria-label="Schliessen"
+                >
+                  ×
+                </button>
+                <p className={`pt-2 text-xs leading-relaxed ${style.text}`}>
+                  {p.text}
+                </p>
+                <p
+                  className={`absolute bottom-1.5 right-2 font-mono text-[9px] ${style.meta}`}
+                >
+                  — {p.author}
+                </p>
+              </div>
+            );
+          })}
         </div>
+
+        {pinnwand.length === 0 && (
+          <p className="text-center text-sm text-gray-600">
+            Keine Nachrichten
+          </p>
+        )}
       </div>
     </div>
   );

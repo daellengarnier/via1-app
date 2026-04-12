@@ -92,33 +92,33 @@ body {
 }
 
 .via-glow-1 {
-  width: 400px;
-  height: 400px;
-  background: rgba(0, 255, 100, 0.08);
-  filter: blur(100px);
-  top: 25%;
-  left: -10%;
-  animation: drift-1 20s ease-in-out infinite alternate;
+  width: 420px;
+  height: 420px;
+  background: rgba(var(--glow-rgb, 0, 255, 100), 0.13);
+  filter: blur(90px);
+  top: 28%;
+  left: -12%;
+  animation: drift-1 18s ease-in-out infinite alternate;
 }
 
 .via-glow-2 {
-  width: 350px;
-  height: 350px;
-  background: rgba(0, 200, 80, 0.06);
+  width: 360px;
+  height: 360px;
+  background: rgba(var(--glow-rgb, 0, 255, 100), 0.1);
   filter: blur(80px);
-  bottom: 5%;
+  bottom: 8%;
   right: -15%;
-  animation: drift-2 25s ease-in-out infinite alternate;
+  animation: drift-2 22s ease-in-out infinite alternate;
 }
 
 .via-glow-3 {
   width: 300px;
   height: 300px;
-  background: rgba(0, 220, 90, 0.05);
-  filter: blur(90px);
-  top: 50%;
-  left: 30%;
-  animation: drift-3 18s ease-in-out infinite alternate;
+  background: rgba(var(--glow-rgb, 0, 255, 100), 0.08);
+  filter: blur(85px);
+  top: 55%;
+  left: 28%;
+  animation: drift-3 16s ease-in-out infinite alternate;
 }
 
 @keyframes drift-1 {
