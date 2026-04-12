@@ -78,7 +78,7 @@ export default function ProfilPage() {
     <div className="p-4 pb-20">
       <button
         onClick={() => router.back()}
-        className="mb-4 text-sm text-gray-500 hover:text-white"
+        className="mb-4 ml-14 text-sm text-gray-500 hover:text-white"
       >
         ← Zurück
       </button>

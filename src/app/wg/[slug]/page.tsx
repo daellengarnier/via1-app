@@ -194,7 +194,7 @@ export default function WgPage() {
       {/* Header */}
       <button
         onClick={() => router.push("/")}
-        className="mb-4 text-sm text-gray-500 hover:text-white"
+        className="mb-4 ml-14 text-sm text-gray-500 hover:text-white"
       >
         ← Stockwerkplan
       </button>

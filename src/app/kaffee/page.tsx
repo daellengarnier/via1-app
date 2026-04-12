@@ -107,7 +107,7 @@ export default function KaffeePage() {
   const [changedAt] = useState("2026-04-09");
   const [showSelect, setShowSelect] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [showTab, setShowTab] = useState(true);
+
 
   const currentInfo = rastSortiment.find((k) => k.name === currentBeans);
 
@@ -260,30 +260,6 @@ export default function KaffeePage() {
             Bitte <strong className="text-amber-200">&quot;Kafiabo &amp; Name&quot;</strong> vermerken,
             damit wir die Zahlung zuordnen können.
           </p>
-        </div>
-      </section>
-
-      {/* Tab ausblenden */}
-      <section className="mb-6">
-        <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-black/20 p-3">
-          <div>
-            <span className="text-sm text-white">Kaffee-Tab anzeigen</span>
-            <p className="text-xs text-gray-600">
-              Ausblenden wenn du kein Abo hast
-            </p>
-          </div>
-          <button
-            onClick={() => setShowTab(!showTab)}
-            className={`relative h-6 w-11 rounded-full transition-colors ${
-              showTab ? "bg-accent" : "bg-gray-700"
-            }`}
-          >
-            <span
-              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                showTab ? "translate-x-5" : ""
-              }`}
-            />
-          </button>
         </div>
       </section>
 
