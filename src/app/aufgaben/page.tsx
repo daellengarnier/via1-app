@@ -644,7 +644,7 @@ export default function AufgabenPage() {
                       }}
                       className="w-full rounded-full bg-yellow-400/15 py-1 text-[9px] font-bold uppercase tracking-wider text-yellow-300 hover:bg-yellow-400/25"
                     >
-                      🏃 Ich mache mich an die Aufgabe
+                      🏃 Ich packs an
                     </button>
                   ) : (
                     <>

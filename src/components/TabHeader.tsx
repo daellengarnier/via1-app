@@ -35,8 +35,8 @@ export function TabHeader({
         glowClass={glowClass}
         showIcon={showIcon}
       />
-      {/* Einheitlicher Abstand: gross mit Icon, klein ohne */}
-      <div className={showIcon ? "h-36" : "h-10"} />
+      {/* Einheitlicher Abstand: gross mit Icon, minimal ohne */}
+      {showIcon && <div className="h-36" />}
       {title && (
         <h1 className={`mb-5 text-center font-cinzel text-2xl ${text}`}>
           {title}
