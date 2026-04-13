@@ -57,16 +57,16 @@ export default function LoginPage() {
           <img
             src="/pyramid.webp"
             alt="Via 1"
-            className="h-36 w-36 object-contain"
+            className="h-40 w-40 object-contain"
             style={{
               filter:
-                "drop-shadow(0 0 15px rgba(0,255,100,0.5)) drop-shadow(0 0 30px rgba(0,200,80,0.3))",
+                "drop-shadow(0 0 20px rgba(184,240,104,0.65)) drop-shadow(0 0 40px rgba(184,240,104,0.35))",
               animation: "icon-glow 4s ease-in-out infinite alternate",
             }}
           />
         </div>
 
-        <h1 className="mb-1 text-center font-cinzel text-4xl text-emerald-300">
+        <h1 className="mb-1 text-center font-cinzel text-4xl text-accent">
           Via 1
         </h1>
         <p className="mb-8 text-center text-sm text-gray-500">Anmelden</p>
@@ -108,9 +108,25 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-accent py-2.5 font-display text-[11px] font-bold uppercase tracking-wider text-dark transition hover:brightness-110 disabled:opacity-50"
+            className="w-full rounded-lg bg-accent py-2.5 font-display text-[11px] font-bold uppercase tracking-wider text-dark shadow-[0_0_20px_rgba(184,240,104,0.35)] transition hover:brightness-110 disabled:opacity-50"
           >
             {loading ? "Anmelden..." : "Anmelden"}
+          </button>
+
+          <div className="flex items-center gap-3 py-1">
+            <div className="h-px flex-1 bg-gray-800" />
+            <span className="font-mono text-[10px] uppercase text-gray-600">
+              oder
+            </span>
+            <div className="h-px flex-1 bg-gray-800" />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => router.push("/registrieren")}
+            className="w-full rounded-lg border border-accent/50 bg-accent/5 py-2.5 font-display text-[11px] font-bold uppercase tracking-wider text-accent transition hover:bg-accent/10"
+          >
+            Registrieren
           </button>
         </form>
       </div>

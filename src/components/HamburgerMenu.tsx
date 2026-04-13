@@ -1,13 +1,86 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+
+interface MehrItem {
+  id: string;
+  href: string;
+  icon: string;
+  title: string;
+  subtitle: string;
+}
+
+const MEHR_ITEMS: MehrItem[] = [
+  {
+    id: "hausbuch",
+    href: "/hausbuch",
+    icon: "📖",
+    title: "Hausbuch",
+    subtitle: "Wissen & Infos rund ums Haus",
+  },
+  {
+    id: "flohmi",
+    href: "/flohmi",
+    icon: "🛍️",
+    title: "Flohmi",
+    subtitle: "Dinge zum Weitergeben",
+  },
+  {
+    id: "bilder",
+    href: "/bilder",
+    icon: "📷",
+    title: "Bilder",
+    subtitle: "Fotos aus dem Hausleben",
+  },
+  {
+    id: "modell",
+    href: "/modell",
+    icon: "🏠",
+    title: "3D Modell Via1",
+    subtitle: "Das Haus interaktiv erkunden",
+  },
+];
+
+const PINS_KEY = "via1-mehr-pins";
 
 export function HamburgerMenu() {
   const [open, setOpen] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [pinned, setPinned] = useState<string[]>([]);
   const notifCount = 3;
+
+  // Pins aus localStorage laden
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = localStorage.getItem(PINS_KEY);
+      if (stored) setPinned(JSON.parse(stored));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  function togglePin(id: string) {
+    setPinned((prev) => {
+      const next = prev.includes(id)
+        ? prev.filter((p) => p !== id)
+        : [...prev, id];
+      if (typeof window !== "undefined") {
+        localStorage.setItem(PINS_KEY, JSON.stringify(next));
+      }
+      return next;
+    });
+  }
+
+  // Sortierung: Angeheftete zuerst (in Pin-Reihenfolge), dann Rest
+  const sortedMehr = [
+    ...pinned
+      .map((id) => MEHR_ITEMS.find((i) => i.id === id))
+      .filter((i): i is MehrItem => !!i),
+    ...MEHR_ITEMS.filter((i) => !pinned.includes(i.id)),
+  ];
 
   const notifications = [
     { id: "1", text: "Sauna wird eingeheizt 🔥", time: "vor 10 Min." },
@@ -140,32 +213,56 @@ export function HamburgerMenu() {
           </div>
 
           {/* Mehr */}
-          <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
-            MEHR
-          </h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+              MEHR
+            </h2>
+            <span className="font-mono text-[9px] text-gray-600">
+              📌 zum Anheften
+            </span>
+          </div>
           <div className="mb-6 space-y-2">
-            <Link
-              href="/hausbuch"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 p-3 transition-colors hover:border-accent"
-            >
-              <span className="text-lg">📖</span>
-              <div>
-                <p className="font-medium text-white">Hausbuch</p>
-                <p className="text-xs text-gray-500">Wissen & Infos rund ums Haus</p>
-              </div>
-            </Link>
-            <Link
-              href="/flohmi"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 p-3 transition-colors hover:border-accent"
-            >
-              <span className="text-lg">🛍️</span>
-              <div>
-                <p className="font-medium text-white">Flohmi</p>
-                <p className="text-xs text-gray-500">Dinge zum Weitergeben</p>
-              </div>
-            </Link>
+            {sortedMehr.map((item) => {
+              const isPinned = pinned.includes(item.id);
+              return (
+                <div
+                  key={item.id}
+                  className={`flex items-center gap-2 rounded-lg border p-3 transition-colors ${
+                    isPinned
+                      ? "border-accent/40 bg-accent/5"
+                      : "border-gray-800 bg-gray-900/40 hover:border-accent"
+                  }`}
+                >
+                  <Link
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="flex flex-1 items-center gap-3"
+                  >
+                    <span className="text-lg">{item.icon}</span>
+                    <div className="flex-1">
+                      <p className="font-medium text-white">{item.title}</p>
+                      <p className="text-xs text-gray-500">{item.subtitle}</p>
+                    </div>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      togglePin(item.id);
+                    }}
+                    className={`rounded p-1.5 text-sm transition-colors ${
+                      isPinned
+                        ? "text-accent"
+                        : "text-gray-600 hover:text-accent"
+                    }`}
+                    aria-label={isPinned ? "Abheften" : "Anheften"}
+                  >
+                    {isPinned ? "📌" : "📍"}
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           {/* Feedback */}

@@ -11,6 +11,6 @@ export const config = {
      * - /_next (Next.js internals)
      * - /favicon.ico, /manifest.webmanifest, etc.
      */
-    "/((?!login|setup|api/auth|api/setup|_next|favicon\\.ico|manifest).*)",
+    "/((?!login|registrieren|setup|api/auth|api/setup|_next|favicon\\.ico|manifest).*)",
   ],
 };
