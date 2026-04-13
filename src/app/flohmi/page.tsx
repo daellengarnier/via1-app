@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface Comment {
   id: string;
   author: string;
+  authorId: string;
   text: string;
   date: string;
 }
@@ -15,70 +16,17 @@ interface Inserat {
   description: string;
   image: string | null;
   createdBy: string;
+  createdById: string;
   createdAt: string;
   takenBy: string | null;
+  takenById: string | null;
   takenAt: string | null;
   comments: Comment[];
 }
 
-const mockInserate: Inserat[] = [
-  {
-    id: "1",
-    title: "Winterjacke Gr. M",
-    description: "Blau, kaum getragen. Steht im Treppenhaus EG Nord.",
-    image: null,
-    createdBy: "Sophie",
-    createdAt: "2026-04-08",
-    takenBy: null,
-    takenAt: null,
-    comments: [
-      {
-        id: "c1",
-        author: "Lena",
-        text: "Ist sie wirklich warm genug für -10°C?",
-        date: "2026-04-09",
-      },
-      {
-        id: "c2",
-        author: "Sophie",
-        text: "Ja, absolut! Hatte sie letzten Winter an.",
-        date: "2026-04-09",
-      },
-    ],
-  },
-  {
-    id: "2",
-    title: "Bücherregal IKEA Billy",
-    description: "Weiss, guter Zustand. Muss selber abgeholt werden, 1. OG Ost.",
-    image: null,
-    createdBy: "Jan",
-    createdAt: "2026-04-07",
-    takenBy: null,
-    takenAt: null,
-    comments: [],
-  },
-  {
-    id: "3",
-    title: "Laufschuhe Gr. 42",
-    description: "Nike, leicht abgenutzt.",
-    image: null,
-    createdBy: "Felix",
-    createdAt: "2026-04-05",
-    takenBy: "Dario",
-    takenAt: "2026-04-09",
-    comments: [],
-  },
-];
-
-function daysBetween(a: string, b: string): number {
-  return Math.floor(
-    (new Date(b).getTime() - new Date(a).getTime()) / (1000 * 60 * 60 * 24)
-  );
-}
-
 export default function FlohmiPage() {
-  const today = new Date().toISOString().split("T")[0]!;
-  const [inserate, setInserate] = useState(mockInserate);
+  const [inserate, setInserate] = useState<Inserat[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -88,52 +36,90 @@ export default function FlohmiPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
 
-  // Inserate die noch sichtbar sind
-  const visible = inserate.filter((ins) => {
-    if (!ins.takenAt) return true;
-    return daysBetween(ins.takenAt, today) < 2;
-  });
+  const loadInserate = useCallback(async () => {
+    try {
+      const res = await fetch("/api/flohmi");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as Inserat[];
+      setInserate(data);
+    } catch (err) {
+      console.error("Flohmi laden", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInserate();
+  }, [loadInserate]);
+
+  // Server filtert bereits zu alte Inserate — wir zeigen einfach alles
+  const visible = inserate;
 
   const selected = selectedId
     ? inserate.find((i) => i.id === selectedId) ?? null
     : null;
 
-  function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!newTitle.trim()) return;
-    setInserate((prev) => [
-      {
-        id: String(Date.now()),
-        title: newTitle,
-        description: newDesc,
-        image: newImage,
-        createdBy: "Alain",
-        createdAt: today,
-        takenBy: null,
-        takenAt: null,
-        comments: [],
-      },
-      ...prev,
-    ]);
-    setNewTitle("");
-    setNewDesc("");
-    setNewImage(null);
-    setShowCreate(false);
+    try {
+      const res = await fetch("/api/flohmi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTitle,
+          description: newDesc,
+          image: newImage,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = (await res.json()) as Inserat;
+      setInserate((prev) => [created, ...prev]);
+      setNewTitle("");
+      setNewDesc("");
+      setNewImage(null);
+      setShowCreate(false);
+    } catch (err) {
+      console.error("Inserat erstellen", err);
+      alert("Konnte Inserat nicht erstellen (ev. Bild zu gross?)");
+    }
   }
 
-  function handleTake(id: string) {
-    setInserate((prev) =>
-      prev.map((ins) =>
-        ins.id === id
-          ? { ...ins, takenBy: "Alain", takenAt: today }
-          : ins
-      )
-    );
+  async function handleTake(id: string) {
+    try {
+      const res = await fetch(`/api/flohmi/${id}/take`, { method: "POST" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as {
+        takenBy: string | null;
+        takenById: string | null;
+        takenAt: string | null;
+      };
+      setInserate((prev) =>
+        prev.map((ins) =>
+          ins.id === id
+            ? {
+                ...ins,
+                takenBy: data.takenBy,
+                takenById: data.takenById,
+                takenAt: data.takenAt,
+              }
+            : ins
+        )
+      );
+    } catch (err) {
+      console.error("Nehmen", err);
+      alert("Konnte nicht als genommen markieren.");
+    }
   }
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 600_000) {
+      alert("Bild zu gross (max ~600 KB). Bitte komprimieren.");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (ev) => {
       setNewImage(ev.target?.result as string);
@@ -141,28 +127,30 @@ export default function FlohmiPage() {
     reader.readAsDataURL(file);
   }
 
-  function handleAddComment(e: React.FormEvent) {
+  async function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
-    if (!newComment.trim() || !selectedId) return;
-    setInserate((prev) =>
-      prev.map((ins) =>
-        ins.id === selectedId
-          ? {
-              ...ins,
-              comments: [
-                ...ins.comments,
-                {
-                  id: String(Date.now()),
-                  author: "Alain",
-                  text: newComment,
-                  date: today,
-                },
-              ],
-            }
-          : ins
-      )
-    );
-    setNewComment("");
+    const text = newComment.trim();
+    if (!text || !selectedId) return;
+    try {
+      const res = await fetch(`/api/flohmi/${selectedId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = (await res.json()) as Comment;
+      setInserate((prev) =>
+        prev.map((ins) =>
+          ins.id === selectedId
+            ? { ...ins, comments: [...ins.comments, created] }
+            : ins
+        )
+      );
+      setNewComment("");
+    } catch (err) {
+      console.error("Kommentar", err);
+      alert("Kommentar konnte nicht gespeichert werden.");
+    }
   }
 
   return (
@@ -303,7 +291,10 @@ export default function FlohmiPage() {
         })}
       </div>
 
-      {visible.length === 0 && (
+      {loading && visible.length === 0 && (
+        <p className="mt-8 text-center text-gray-600">Lade …</p>
+      )}
+      {!loading && visible.length === 0 && (
         <p className="mt-8 text-center text-gray-600">
           Keine Inserate vorhanden. Hast du etwas zum Weggeben?
         </p>
