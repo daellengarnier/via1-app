@@ -18,12 +18,15 @@ interface Termin {
   dinnerTime: string | null;
   dinnerLocation: string | null;
   dinnerOrganizer: string | null;
+  dinnerMenu: string | null;
   withAttendance: boolean;
+  createdBy: string;
   myAttendance: "going" | "not-going" | null;
   myMealSignup: "going" | "not-going" | null;
   myMealGuestsCount: number;
   agendaCount: number;
   mealSignupCount: number;
+  commentCount: number;
 }
 
 const wgNames = [
@@ -54,14 +57,19 @@ const typeBg: Record<TerminType, string> = {
   sonstige: "bg-gray-600",
 };
 
-function formatDate(iso: string): string {
+function formatDateUpper(iso: string): string {
+  // "DO. 30. APRIL 2026"
   const d = new Date(iso);
-  return d.toLocaleDateString("de-CH", {
-    weekday: "short",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const wd = d
+    .toLocaleDateString("de-CH", { weekday: "short" })
+    .replace(/\.$/, "")
+    .toUpperCase();
+  const day = d.getDate();
+  const month = d
+    .toLocaleDateString("de-CH", { month: "long" })
+    .toUpperCase();
+  const year = d.getFullYear();
+  return `${wd}. ${day}. ${month} ${year}`;
 }
 
 // Termine werden vom API geladen
@@ -150,6 +158,7 @@ export default function TerminePage() {
   const [newDinnerTime, setNewDinnerTime] = useState("18:30");
   const [newDinnerLocation, setNewDinnerLocation] = useState("");
   const [newDinnerOrganizer, setNewDinnerOrganizer] = useState("");
+  const [newDinnerMenu, setNewDinnerMenu] = useState("");
   const [newWithAttendance, setNewWithAttendance] = useState(false);
 
   const WG_LOCATIONS = [
@@ -194,6 +203,8 @@ export default function TerminePage() {
           dinnerTime: newWithDinner ? newDinnerTime : null,
           dinnerLocation: newWithDinner ? newDinnerLocation : null,
           dinnerOrganizer: newWithDinner ? newDinnerOrganizer : null,
+          dinnerMenu:
+            newWithDinner || newType === "essen" ? newDinnerMenu : null,
           withAttendance:
             newType === "sitzung"
               ? true
@@ -247,6 +258,7 @@ export default function TerminePage() {
     setNewDinnerTime("18:30");
     setNewDinnerLocation("");
     setNewDinnerOrganizer("");
+    setNewDinnerMenu("");
     setNewWithAttendance(false);
     setNewType("sitzung");
   }
@@ -516,8 +528,36 @@ export default function TerminePage() {
                       className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-orange-400 focus:outline-none"
                     />
                   </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">
+                      Was gibt&apos;s zu essen?{" "}
+                      <span className="text-gray-600">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newDinnerMenu}
+                      onChange={(e) => setNewDinnerMenu(e.target.value)}
+                      placeholder="z.B. Lasagne mit Salat"
+                      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-orange-400 focus:outline-none"
+                    />
+                  </div>
                 </div>
               )}
+            </div>
+          )}
+          {newType === "essen" && (
+            <div className="mb-3">
+              <label className="mb-1 block text-xs text-gray-400">
+                Was gibt&apos;s zu essen?{" "}
+                <span className="text-gray-600">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={newDinnerMenu}
+                onChange={(e) => setNewDinnerMenu(e.target.value)}
+                placeholder="z.B. Lasagne mit Salat"
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-orange-400 focus:outline-none"
+              />
             </div>
           )}
 
@@ -572,44 +612,55 @@ export default function TerminePage() {
               <Link href={`/termine/${t.id}`} className="block">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`font-mono text-[10px] uppercase ${typeColors[t.type]}`}
-                      >
-                        {typeLabels[t.type]}
-                      </span>
-                    </div>
-                    <h3 className="truncate text-sm font-medium text-white">
+                    <p
+                      className={`font-mono text-[10px] font-bold uppercase tracking-wider ${typeColors[t.type]}`}
+                    >
+                      {formatDateUpper(t.date)}
+                    </p>
+                    <h3 className="text-sm font-medium text-white">
                       {t.title}
                       {t.type === "sitzung" && t.withDinner && (
-                        <span className="ml-1 text-[10px] font-normal text-secondary">
-                          · inkl. Nachtessen
+                        <> inkl. Nachtessen</>
+                      )}
+                      {t.organizer && (
+                        <span className="text-gray-500">
+                          {" "}(organisiert von {t.organizer})
                         </span>
                       )}
                     </h3>
-                    <p className="text-xs text-gray-500">
-                      {formatDate(t.date)}
-                    </p>
-                    {t.type === "sitzung" && t.withDinner && t.dinnerTime ? (
-                      <>
-                        <p className="mt-0.5 text-xs text-secondary">
-                          Essen {t.dinnerTime}
-                          {t.dinnerLocation && ` · ${t.dinnerLocation}`}
-                          {t.dinnerOrganizer &&
-                            ` · organisiert von ${t.dinnerOrganizer}`}
-                        </p>
-                        <p className="text-xs text-accent">
-                          Sitzung {t.time}
-                          {t.location && ` · ${t.location}`}
-                          {t.organizer &&
-                            ` · organisiert von ${t.organizer}`}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="mt-0.5 text-xs text-gray-500">
+                    {/* Zeiten */}
+                    {t.type === "sitzung" && t.withDinner && t.dinnerTime && (
+                      <p className="mt-0.5 text-xs text-gray-400">
+                        Essen: {t.dinnerTime}
+                        {t.dinnerLocation && ` (${t.dinnerLocation})`}
+                      </p>
+                    )}
+                    {t.type === "sitzung" && (
+                      <p className="text-xs text-gray-400">
+                        Sitzung: {t.time}
+                        {t.location && ` (${t.location})`}
+                      </p>
+                    )}
+                    {t.type === "essen" && (
+                      <p className="mt-0.5 text-xs text-gray-400">
+                        Essen: {t.time}
+                        {t.location && ` (${t.location})`}
+                      </p>
+                    )}
+                    {t.type === "sonstige" && (
+                      <p className="mt-0.5 text-xs text-gray-400">
                         {t.time}
-                        {t.location && ` · ${t.location}`}
-                        {t.organizer && ` · organisiert von ${t.organizer}`}
+                        {t.location && ` (${t.location})`}
+                      </p>
+                    )}
+                    {t.dinnerMenu && (
+                      <p className="mt-0.5 text-xs italic text-gray-500">
+                        🍽 {t.dinnerMenu}
+                      </p>
+                    )}
+                    {t.type === "sonstige" && t.createdBy && (
+                      <p className="mt-0.5 text-[10px] text-gray-600">
+                        erstellt von {t.createdBy}
                       </p>
                     )}
                   </div>
@@ -625,7 +676,7 @@ export default function TerminePage() {
                     📅 Export
                   </button>
                 </div>
-                {(t.agendaCount > 0 || hasEssen) && (
+                {(t.agendaCount > 0 || hasEssen || t.commentCount > 0) && (
                   <div className="mt-1.5 flex items-center gap-3 text-[10px]">
                     {t.agendaCount > 0 && (
                       <span className="text-gray-600">
@@ -642,6 +693,11 @@ export default function TerminePage() {
                       >
                         🍽 {t.mealSignupCount} angemeldet
                         {t.myMealSignup === "going" && " · du bist dabei"}
+                      </span>
+                    )}
+                    {t.commentCount > 0 && (
+                      <span className="text-gray-600">
+                        💬 {t.commentCount}
                       </span>
                     )}
                   </div>

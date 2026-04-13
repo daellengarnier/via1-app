@@ -8,6 +8,7 @@ import {
 } from "@/lib/termine-serialize";
 
 const terminDetailInclude = {
+  createdBy: true,
   traktanden: {
     include: { createdBy: true },
     orderBy: [{ order: "asc" as const }, { createdAt: "asc" as const }],
@@ -15,6 +16,10 @@ const terminDetailInclude = {
   attendances: { include: { user: true } },
   mealSignups: {
     include: { user: true, guests: true },
+    orderBy: { createdAt: "asc" as const },
+  },
+  comments: {
+    include: { author: true },
     orderBy: { createdAt: "asc" as const },
   },
 };
@@ -87,6 +92,12 @@ export async function PATCH(
         ? body.dinnerOrganizer.trim()
         : null;
   }
+  if (typeof body.dinnerMenu === "string" || body.dinnerMenu === null) {
+    data.dinnerMenu =
+      typeof body.dinnerMenu === "string" && body.dinnerMenu.trim() !== ""
+        ? body.dinnerMenu.trim()
+        : null;
+  }
   if (typeof body.withAttendance === "boolean") {
     data.withAttendance = body.withAttendance;
   }
@@ -104,17 +115,7 @@ export async function PATCH(
   const termin = await prisma.termin.update({
     where: { id: params.id },
     data,
-    include: {
-      traktanden: {
-        include: { createdBy: true },
-        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-      },
-      attendances: { include: { user: true } },
-      mealSignups: {
-        include: { user: true, guests: true },
-        orderBy: { createdAt: "asc" },
-      },
-    },
+    include: terminDetailInclude,
   });
   return NextResponse.json(serializeTerminDetail(termin, session.user.id));
 }

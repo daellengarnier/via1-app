@@ -4,6 +4,7 @@ import type {
   Attendance,
   MealSignup,
   MealSignupGuest,
+  TerminComment as TerminCommentRow,
   User,
   TerminType,
   AttendanceStatus,
@@ -23,7 +24,9 @@ export interface TerminListDTO {
   dinnerTime: string | null;
   dinnerLocation: string | null;
   dinnerOrganizer: string | null;
+  dinnerMenu: string | null;
   withAttendance: boolean;
+  createdBy: string;
   myAttendance: "going" | "not-going" | null;
   // "going" = ich komme selbst, "not-going" = explizit abgemeldet,
   // null = noch keine Entscheidung
@@ -31,6 +34,15 @@ export interface TerminListDTO {
   myMealGuestsCount: number;
   agendaCount: number;
   mealSignupCount: number;
+  commentCount: number;
+}
+
+export interface TerminCommentDTO {
+  id: string;
+  author: string;
+  authorId: string;
+  text: string;
+  date: string;
 }
 
 export interface TraktandumDTO {
@@ -63,6 +75,7 @@ export interface TerminDetailDTO extends TerminListDTO {
   abgemeldet: { id: string; name: string }[];
   traktanden: TraktandumDTO[];
   mealSignups: MealSignupDTO[];
+  comments: TerminCommentDTO[];
 }
 
 const typeMap: Record<TerminType, "sitzung" | "essen" | "sonstige"> = {
@@ -125,6 +138,7 @@ export interface TerminListExtras {
   mealSignupCount: number;
   myMealSignup: "going" | "not-going" | null;
   myMealGuestsCount: number;
+  commentCount: number;
 }
 
 export function serializeTerminList(
@@ -134,6 +148,8 @@ export function serializeTerminList(
   } & {
     dinnerLocation?: string | null;
     dinnerOrganizer?: string | null;
+    dinnerMenu?: string | null;
+    createdBy?: { name: string };
   },
   currentUserId: string | null,
   attendances: { status: AttendanceStatus; userId: string }[],
@@ -162,23 +178,28 @@ export function serializeTerminList(
     dinnerTime: termin.dinnerTime,
     dinnerLocation: termin.dinnerLocation ?? null,
     dinnerOrganizer: termin.dinnerOrganizer ?? null,
+    dinnerMenu: termin.dinnerMenu ?? null,
     withAttendance: termin.withAttendance,
+    createdBy: termin.createdBy?.name ?? "",
     myAttendance,
     myMealSignup: extras.myMealSignup,
     myMealGuestsCount: extras.myMealGuestsCount,
     agendaCount,
     mealSignupCount: extras.mealSignupCount,
+    commentCount: extras.commentCount,
   };
 }
 
 export function serializeTerminDetail(
   termin: Termin & {
+    createdBy: User;
     traktanden: (Traktandum & { createdBy: User })[];
     attendances: (Attendance & { user: User })[];
     mealSignups: (MealSignup & {
       user: User;
       guests: MealSignupGuest[];
     })[];
+    comments: (TerminCommentRow & { author: User })[];
   },
   currentUserId: string | null
 ): TerminDetailDTO {
@@ -208,8 +229,20 @@ export function serializeTerminDetail(
       mealSignupCount,
       myMealSignup,
       myMealGuestsCount,
+      commentCount: termin.comments.length,
     }
   );
+
+  const comments: TerminCommentDTO[] = termin.comments
+    .slice()
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+    .map((c) => ({
+      id: c.id,
+      author: c.author.name,
+      authorId: c.author.id,
+      text: c.text,
+      date: c.createdAt.toISOString().split("T")[0]!,
+    }));
 
   const anwesend = termin.attendances
     .filter((a) => a.status === "GOING")
@@ -249,6 +282,7 @@ export function serializeTerminDetail(
     abgemeldet,
     traktanden,
     mealSignups,
+    comments,
   };
 }
 

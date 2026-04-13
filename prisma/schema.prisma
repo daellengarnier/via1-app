@@ -53,6 +53,7 @@ model User {
   pinnwandNotes        PinnwandNote[]
   createdTermine       Termin[]              @relation("TerminCreator")
   createdTraktanden    Traktandum[]          @relation("TraktandumCreator")
+  terminComments       TerminComment[]       @relation("TerminCommentAuthor")
   attendances          Attendance[]
   mealSignups          MealSignup[]
   createdAufgaben      Aufgabe[]             @relation("AufgabeCreator")
@@ -77,31 +78,46 @@ model PinnwandNote {
 }
 
 model Termin {
-  id                String       @id @default(cuid())
+  id                String           @id @default(cuid())
   title             String
   // date = Start-Datum mit Uhrzeit, als UTC gespeichert
   date              DateTime
-  location          String       @default("")
+  location          String           @default("")
   type              TerminType
   organizer         String?
-  withDinner        Boolean      @default(false)
+  withDinner        Boolean          @default(false)
   dinnerTime        String?
-  // Fuer Sitzung+Essen: optional separater Ort / Organisator des Essens
+  // Fuer Sitzung+Essen: optional separater Ort / Organisator / Menu
   dinnerLocation    String?
   dinnerOrganizer   String?
-  withAttendance    Boolean      @default(false)
-  sitzungsleitung   String       @default("")
-  protokollfuehrung String       @default("")
-  createdBy         User         @relation("TerminCreator", fields: [createdById], references: [id])
+  dinnerMenu        String?
+  withAttendance    Boolean          @default(false)
+  sitzungsleitung   String           @default("")
+  protokollfuehrung String           @default("")
+  createdBy         User             @relation("TerminCreator", fields: [createdById], references: [id])
   createdById       String
   traktanden        Traktandum[]
   attendances       Attendance[]
   mealSignups       MealSignup[]
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  comments          TerminComment[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@index([date])
   @@map("termine")
+}
+
+model TerminComment {
+  id        String   @id @default(cuid())
+  termin    Termin   @relation(fields: [terminId], references: [id], onDelete: Cascade)
+  terminId  String
+  author    User     @relation("TerminCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([terminId])
+  @@map("termin_comments")
 }
 
 model Traktandum {

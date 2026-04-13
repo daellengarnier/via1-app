@@ -18,7 +18,8 @@ export async function GET() {
   const termine = await prisma.termin.findMany({
     orderBy: { date: "desc" },
     include: {
-      _count: { select: { traktanden: true } },
+      _count: { select: { traktanden: true, comments: true } },
+      createdBy: { select: { name: true } },
       attendances: {
         where: { userId: session.user.id },
         select: { status: true, userId: true },
@@ -48,6 +49,7 @@ export async function GET() {
         mealSignupCount,
         myMealSignup,
         myMealGuestsCount,
+        commentCount: t._count.comments,
       });
     })
   );
@@ -71,6 +73,7 @@ export async function POST(req: Request) {
     dinnerTime?: unknown;
     dinnerLocation?: unknown;
     dinnerOrganizer?: unknown;
+    dinnerMenu?: unknown;
     withAttendance?: unknown;
   };
 
@@ -109,6 +112,10 @@ export async function POST(req: Request) {
     withDinner && typeof body.dinnerOrganizer === "string" && body.dinnerOrganizer.trim() !== ""
       ? body.dinnerOrganizer.trim()
       : null;
+  const dinnerMenu =
+    (withDinner || type === "ESSEN") && typeof body.dinnerMenu === "string" && body.dinnerMenu.trim() !== ""
+      ? body.dinnerMenu.trim()
+      : null;
   const withAttendance = body.withAttendance === true || type === "SITZUNG";
 
   const termin = await prisma.termin.create({
@@ -122,11 +129,13 @@ export async function POST(req: Request) {
       dinnerTime,
       dinnerLocation,
       dinnerOrganizer,
+      dinnerMenu,
       withAttendance,
       createdById: session.user.id,
     },
     include: {
-      _count: { select: { traktanden: true } },
+      _count: { select: { traktanden: true, comments: true } },
+      createdBy: { select: { name: true } },
       attendances: {
         where: { userId: session.user.id },
         select: { status: true, userId: true },
@@ -139,6 +148,7 @@ export async function POST(req: Request) {
       mealSignupCount: 0,
       myMealSignup: null,
       myMealGuestsCount: 0,
+      commentCount: 0,
     })
   );
 }

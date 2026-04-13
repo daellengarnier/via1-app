@@ -33,6 +33,14 @@ interface PersonRef {
   name: string;
 }
 
+interface TerminComment {
+  id: string;
+  author: string;
+  authorId: string;
+  text: string;
+  date: string;
+}
+
 interface TerminDetail {
   id: string;
   title: string;
@@ -45,13 +53,16 @@ interface TerminDetail {
   dinnerTime: string | null;
   dinnerLocation: string | null;
   dinnerOrganizer: string | null;
+  dinnerMenu: string | null;
   withAttendance: boolean;
+  createdBy: string;
   sitzungsleitung: string;
   protokollfuehrung: string;
   anwesend: PersonRef[];
   abgemeldet: PersonRef[];
   traktanden: Traktandum[];
   mealSignups: MealSignup[];
+  comments: TerminComment[];
 }
 
 
@@ -86,6 +97,7 @@ export default function TerminDetailPage() {
     null
   );
   const [locationMode, setLocationMode] = useState<"wg" | "custom">("wg");
+  const [newComment, setNewComment] = useState("");
 
   // Aus Profil (Mock — bis wir ein echtes Profil haben)
   const myDiet = "Fleisch";
@@ -224,6 +236,42 @@ export default function TerminDetailPage() {
     } catch (err) {
       console.error("Essens-Anmeldung", err);
       alert("Anmeldung fehlgeschlagen.");
+    }
+  }
+
+  async function addComment(e: React.FormEvent) {
+    e.preventDefault();
+    const text = newComment.trim();
+    if (!text || !termin) return;
+    try {
+      const res = await fetch(`/api/termine/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = (await res.json()) as TerminComment;
+      setTermin({ ...termin, comments: [...termin.comments, created] });
+      setNewComment("");
+    } catch (err) {
+      console.error("Kommentar", err);
+      alert("Kommentar konnte nicht gespeichert werden.");
+    }
+  }
+
+  async function deleteComment(cid: string) {
+    if (!termin) return;
+    try {
+      const res = await fetch(`/api/termine/${id}/comments/${cid}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setTermin({
+        ...termin,
+        comments: termin.comments.filter((c) => c.id !== cid),
+      });
+    } catch (err) {
+      console.error("Kommentar loeschen", err);
     }
   }
 
@@ -476,33 +524,61 @@ export default function TerminDetailPage() {
       </button>
 
       <div className="mb-6">
-        <span
-          className={`font-mono text-xs uppercase ${
-            isSitzung ? "text-accent" : termin.type === "essen" ? "text-secondary" : "text-gray-400"
+        <p
+          className={`font-mono text-[11px] font-bold uppercase tracking-wider ${
+            isSitzung
+              ? "text-orange-300"
+              : termin.type === "essen"
+                ? "text-secondary"
+                : "text-gray-400"
           }`}
         >
-          {isSitzung ? "Sitzung" : termin.type === "essen" ? "Essen" : "Sonstige"}
-        </span>
-        {termin.organizer && (
-          <span className="ml-2 text-xs text-gray-600">
-            {termin.organizer}
-          </span>
-        )}
-        <h1 className="mt-1 text-lg font-medium text-white">
+          {formatDate(termin.date).toUpperCase()}
+        </p>
+        <h1 className="mt-0.5 text-lg font-medium text-white">
           {termin.title}
           {termin.type === "sitzung" && termin.withDinner && (
-            <span className="ml-1 text-xs font-normal text-secondary">
-              · inkl. Nachtessen
+            <> inkl. Nachtessen</>
+          )}
+          {termin.organizer && (
+            <span className="text-gray-500">
+              {" "}(organisiert von {termin.organizer})
             </span>
           )}
         </h1>
-        <p className="mt-1 text-sm text-gray-400">
-          {formatDate(termin.date)} · {termin.time}
-        </p>
-        <p className="text-sm text-gray-500">{termin.location}</p>
-        {termin.withDinner && termin.dinnerTime && (
-          <p className="mt-1 text-sm text-secondary">
-            Abendessen um {termin.dinnerTime}
+        {/* Zeiten */}
+        {termin.type === "sitzung" && termin.withDinner && termin.dinnerTime && (
+          <p className="mt-1 text-sm text-gray-400">
+            Essen: {termin.dinnerTime}
+            {termin.dinnerLocation && ` (${termin.dinnerLocation})`}
+          </p>
+        )}
+        {termin.type === "sitzung" && (
+          <p className="text-sm text-gray-400">
+            Sitzung: {termin.time}
+            {termin.location && ` (${termin.location})`}
+          </p>
+        )}
+        {termin.type === "essen" && (
+          <p className="mt-1 text-sm text-gray-400">
+            Essen: {termin.time}
+            {termin.location && ` (${termin.location})`}
+          </p>
+        )}
+        {termin.type === "sonstige" && (
+          <p className="mt-1 text-sm text-gray-400">
+            {termin.time}
+            {termin.location && ` (${termin.location})`}
+          </p>
+        )}
+        {termin.dinnerMenu && (
+          <p className="mt-1 text-sm italic text-gray-500">
+            🍽 {termin.dinnerMenu}
+          </p>
+        )}
+        {termin.type === "sonstige" && termin.createdBy && (
+          <p className="mt-1 text-xs text-gray-600">
+            erstellt von {termin.createdBy}
           </p>
         )}
       </div>
@@ -908,6 +984,62 @@ export default function TerminDetailPage() {
           </div>
         </section>
       )}
+
+      {/* Kommentare (fuer alle Termine) */}
+      <section className="mb-6">
+        <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
+          Kommentare ({termin.comments.length})
+        </h2>
+        <div className="space-y-1.5">
+          {termin.comments.map((c) => {
+            const isOwn = c.authorId === currentUserId;
+            return (
+              <div
+                key={c.id}
+                className="rounded border-l-2 border-accent/40 bg-white/5 py-1.5 pl-2 pr-2"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs text-gray-300">{c.text}</p>
+                  {isOwn && (
+                    <button
+                      onClick={() => deleteComment(c.id)}
+                      className="text-[10px] text-gray-600 hover:text-red-400"
+                      aria-label="Kommentar loeschen"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+                <p className="mt-0.5 text-[9px] text-gray-600">
+                  — {c.author} ·{" "}
+                  {new Date(c.date).toLocaleDateString("de-CH", {
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </p>
+              </div>
+            );
+          })}
+          {termin.comments.length === 0 && (
+            <p className="text-xs text-gray-600">Noch keine Kommentare</p>
+          )}
+        </div>
+        <form onSubmit={addComment} className="mt-2 flex gap-2">
+          <input
+            type="text"
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Kommentar oder Frage..."
+            className="flex-1 rounded border border-gray-800 bg-white/5 px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+          />
+          <button
+            type="submit"
+            className="rounded bg-accent px-3 py-1.5 text-[10px] font-bold text-dark"
+          >
+            OK
+          </button>
+        </form>
+      </section>
 
       {/* Anwesenheits-Modal */}
       {attendanceMode && (
