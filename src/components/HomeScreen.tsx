@@ -414,28 +414,27 @@ export default function HomeScreen() {
                 {/* Glassy highlight */}
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
 
-                <div
-                  className={`absolute right-1 top-0.5 flex items-center gap-0.5 ${style.meta}`}
-                >
-                  {isOwn && !isEditing && (
-                    <button
-                      onClick={() => startEditNote(p.id, p.text)}
-                      className="text-[10px] opacity-60 hover:opacity-100"
-                      aria-label="Bearbeiten"
-                    >
-                      ✎
-                    </button>
-                  )}
-                  {canDelete && (
-                    <button
-                      onClick={() => dismissNote(p.id)}
-                      className="opacity-60 hover:opacity-100"
-                      aria-label="Schliessen"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
+                {/* Edit-Button oben links (nur fuer eigene Eintraege) */}
+                {isOwn && !isEditing && (
+                  <button
+                    onClick={() => startEditNote(p.id, p.text)}
+                    className={`absolute left-1 top-0.5 text-[11px] ${style.meta} opacity-80 hover:opacity-100`}
+                    aria-label="Bearbeiten"
+                  >
+                    ✎
+                  </button>
+                )}
+
+                {/* Loeschen-Button oben rechts */}
+                {canDelete && !isEditing && (
+                  <button
+                    onClick={() => dismissNote(p.id)}
+                    className={`absolute right-1 top-0.5 ${style.meta} opacity-80 hover:opacity-100`}
+                    aria-label="Schliessen"
+                  >
+                    ×
+                  </button>
+                )}
 
                 {isEditing ? (
                   <div className="relative pt-1">
