@@ -524,15 +524,7 @@ export default function TerminDetailPage() {
       </button>
 
       <div className="mb-6">
-        <p
-          className={`font-mono text-[11px] font-bold uppercase tracking-wider ${
-            isSitzung
-              ? "text-orange-300"
-              : termin.type === "essen"
-                ? "text-secondary"
-                : "text-gray-400"
-          }`}
-        >
+        <p className="font-mono text-[11px] font-bold uppercase tracking-wider text-orange-300">
           {formatDate(termin.date).toUpperCase()}
         </p>
         <h1 className="mt-0.5 text-lg font-medium text-white">

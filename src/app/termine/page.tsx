@@ -45,12 +45,6 @@ const typeLabels: Record<TerminType, string> = {
   sonstige: "Sonstige",
 };
 
-const typeColors: Record<TerminType, string> = {
-  sitzung: "text-orange-300",
-  essen: "text-secondary",
-  sonstige: "text-gray-400",
-};
-
 const typeBg: Record<TerminType, string> = {
   sitzung: "bg-orange-400",
   essen: "bg-secondary",
@@ -157,7 +151,9 @@ export default function TerminePage() {
   const [newWithDinner, setNewWithDinner] = useState(false);
   const [newDinnerTime, setNewDinnerTime] = useState("18:30");
   const [newDinnerLocation, setNewDinnerLocation] = useState("");
-  const [newDinnerOrganizer, setNewDinnerOrganizer] = useState("");
+  const [newDinnerLocationMode, setNewDinnerLocationMode] = useState<
+    "wg" | "custom"
+  >("wg");
   const [newDinnerMenu, setNewDinnerMenu] = useState("");
   const [newWithAttendance, setNewWithAttendance] = useState(false);
 
@@ -202,7 +198,7 @@ export default function TerminePage() {
           withDinner: newWithDinner,
           dinnerTime: newWithDinner ? newDinnerTime : null,
           dinnerLocation: newWithDinner ? newDinnerLocation : null,
-          dinnerOrganizer: newWithDinner ? newDinnerOrganizer : null,
+          dinnerOrganizer: null,
           dinnerMenu:
             newWithDinner || newType === "essen" ? newDinnerMenu : null,
           withAttendance:
@@ -257,7 +253,7 @@ export default function TerminePage() {
     setNewWithDinner(false);
     setNewDinnerTime("18:30");
     setNewDinnerLocation("");
-    setNewDinnerOrganizer("");
+    setNewDinnerLocationMode("wg");
     setNewDinnerMenu("");
     setNewWithAttendance(false);
     setNewType("sitzung");
@@ -467,11 +463,11 @@ export default function TerminePage() {
             </div>
           )}
 
-          {/* Mit Abendessen (bei Sitzung) */}
-          {(newType === "sitzung") && (
+          {/* Mit Essen (bei Sitzung) */}
+          {newType === "sitzung" && (
             <div className="mb-3">
               <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-white/5 p-3">
-                <span className="text-sm text-white">Mit Abendessen</span>
+                <span className="text-sm text-white">Mit Essen</span>
                 <button
                   type="button"
                   onClick={() => setNewWithDinner(!newWithDinner)}
@@ -487,7 +483,7 @@ export default function TerminePage() {
                 </button>
               </div>
               {newWithDinner && (
-                <div className="mt-2 space-y-2">
+                <div className="mt-2 space-y-3">
                   <div>
                     <label className="mb-1 block text-xs text-gray-400">
                       Essenszeit
@@ -500,33 +496,61 @@ export default function TerminePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-gray-400">
-                      Essen wird organisiert von
-                    </label>
-                    <select
-                      value={newDinnerOrganizer}
-                      onChange={(e) => setNewDinnerOrganizer(e.target.value)}
-                      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
-                    >
-                      <option value="">– keine Angabe –</option>
-                      {WG_LOCATIONS.map((wg) => (
-                        <option key={wg} value={wg}>
-                          {wg}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-400">
-                      Ort des Essens
-                    </label>
-                    <input
-                      type="text"
-                      value={newDinnerLocation}
-                      onChange={(e) => setNewDinnerLocation(e.target.value)}
-                      placeholder="z.B. Pyramide, oder leer lassen falls wie Sitzungsort"
-                      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-orange-400 focus:outline-none"
-                    />
+                    <div className="mb-1 flex items-center justify-between">
+                      <label className="block text-xs text-gray-400">
+                        Ort des Essens
+                      </label>
+                      <div className="flex gap-1 text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => setNewDinnerLocationMode("wg")}
+                          className={`rounded px-2 py-0.5 font-mono uppercase ${
+                            newDinnerLocationMode === "wg"
+                              ? "bg-orange-400 text-black"
+                              : "border border-gray-700 text-gray-500"
+                          }`}
+                        >
+                          WG
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewDinnerLocationMode("custom")}
+                          className={`rounded px-2 py-0.5 font-mono uppercase ${
+                            newDinnerLocationMode === "custom"
+                              ? "bg-orange-400 text-black"
+                              : "border border-gray-700 text-gray-500"
+                          }`}
+                        >
+                          Anderer Ort
+                        </button>
+                      </div>
+                    </div>
+                    {newDinnerLocationMode === "wg" ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {WG_LOCATIONS.map((wg) => (
+                          <button
+                            key={wg}
+                            type="button"
+                            onClick={() => setNewDinnerLocation(wg)}
+                            className={`rounded border px-2 py-2 text-xs transition-colors ${
+                              newDinnerLocation === wg
+                                ? "border-orange-400 bg-orange-400/10 text-orange-200"
+                                : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
+                            }`}
+                          >
+                            {wg}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={newDinnerLocation}
+                        onChange={(e) => setNewDinnerLocation(e.target.value)}
+                        placeholder="z.B. Pyramide, Innenhof, …"
+                        className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-orange-400 focus:outline-none"
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="mb-1 block text-xs text-gray-400">
@@ -613,7 +637,7 @@ export default function TerminePage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p
-                      className={`font-mono text-[10px] font-bold uppercase tracking-wider ${typeColors[t.type]}`}
+                      className="font-mono text-[10px] font-bold uppercase tracking-wider text-orange-300"
                     >
                       {formatDateUpper(t.date)}
                     </p>
