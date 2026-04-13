@@ -84,12 +84,14 @@ function GelaendeMap({
   aufgaben,
   placingPin,
   pendingPin,
+  selectedId,
   onPlacePin,
   onMovePin,
 }: {
   aufgaben: Aufgabe[];
   placingPin: boolean;
   pendingPin: Pin | null;
+  selectedId: string | null;
   onPlacePin: (pin: Pin) => void;
   onMovePin: (pin: Pin) => void;
 }) {
@@ -119,6 +121,7 @@ function GelaendeMap({
       {
         type: "setPins",
         pins: openPins.map((a) => ({
+          id: a.id,
           lat: a.pin!.lat,
           lng: a.pin!.lng,
           title: a.title,
@@ -127,6 +130,15 @@ function GelaendeMap({
       "*"
     );
   }, [mapReady, openPins]);
+
+  // Selected pin an iframe senden
+  useEffect(() => {
+    if (!mapReady || !iframeRef.current?.contentWindow) return;
+    iframeRef.current.contentWindow.postMessage(
+      { type: "setSelectedPin", id: selectedId },
+      "*"
+    );
+  }, [mapReady, selectedId]);
 
   // Pending pin an iframe senden
   useEffect(() => {
@@ -168,6 +180,7 @@ export default function AufgabenPage() {
   const [newLocation, setNewLocation] = useState("");
   const [pendingPin, setPendingPin] = useState<Pin | null>(null);
   const [placingPin, setPlacingPin] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = aufgaben.filter((a) => {
     if (filter === "offen") return !a.done;
@@ -223,6 +236,7 @@ export default function AufgabenPage() {
         aufgaben={aufgaben}
         placingPin={placingPin}
         pendingPin={showCreate ? pendingPin : null}
+        selectedId={selectedId}
         onPlacePin={(pin) => {
           setPendingPin(pin);
           setPlacingPin(false);
@@ -329,55 +343,77 @@ export default function AufgabenPage() {
 
       {/* Liste — 2 Spalten */}
       <div className="grid grid-cols-2 gap-2">
-        {filtered.map((a) => (
-          <div
-            key={a.id}
-            className={`rounded-lg border border-gray-800 bg-white/5 p-3 ${
-              a.done ? "opacity-50" : ""
-            }`}
-          >
-            <div className="flex items-start gap-2">
-              <button
-                onClick={() => toggleDone(a.id)}
-                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
-                  a.done
-                    ? "border-yellow-400 bg-yellow-400 text-black"
-                    : "border-gray-600 hover:border-yellow-400"
-                }`}
-              >
-                {a.done && "✓"}
-              </button>
-              <div className="min-w-0 flex-1">
-                <h3
-                  className={`text-xs font-medium leading-tight ${
-                    a.done ? "text-gray-500 line-through" : "text-white"
+        {filtered.map((a) => {
+          const isSelected = selectedId === a.id;
+          return (
+            <div
+              key={a.id}
+              onClick={() => {
+                if (!a.pin) return;
+                setSelectedId(isSelected ? null : a.id);
+              }}
+              className={`cursor-pointer rounded-lg border p-3 transition-colors ${
+                a.done ? "opacity-50" : ""
+              } ${
+                isSelected
+                  ? "border-yellow-400 bg-yellow-400/10 shadow-[0_0_20px_rgba(251,191,36,0.2)]"
+                  : "border-gray-800 bg-white/5 hover:border-gray-700"
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleDone(a.id);
+                  }}
+                  className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
+                    a.done
+                      ? "border-yellow-400 bg-yellow-400 text-black"
+                      : "border-gray-600 hover:border-yellow-400"
                   }`}
                 >
-                  {a.title}
-                </h3>
-                <p className="mt-0.5 line-clamp-2 text-[10px] text-gray-500">
-                  {a.description}
-                </p>
-                <div className="mt-1.5 flex items-center gap-1.5 text-[9px] text-gray-600">
-                  {a.pin && <span className="text-yellow-400">📍</span>}
-                  <span className="truncate">{a.location}</span>
-                </div>
-                <p className="mt-1 text-[9px] text-gray-600">
-                  {a.createdBy} ·{" "}
-                  {new Date(a.createdAt).toLocaleDateString("de-CH", {
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </p>
-                {a.assignee && (
-                  <p className="mt-0.5 text-[9px] text-yellow-400">
-                    → {a.assignee}
+                  {a.done && "✓"}
+                </button>
+                <div className="min-w-0 flex-1">
+                  <h3
+                    className={`text-xs font-medium leading-tight ${
+                      a.done ? "text-gray-500 line-through" : "text-white"
+                    }`}
+                  >
+                    {a.title}
+                  </h3>
+                  <p className="mt-0.5 line-clamp-2 text-[10px] text-gray-500">
+                    {a.description}
                   </p>
-                )}
+                  <div className="mt-1.5 flex items-center gap-1.5 text-[9px] text-gray-600">
+                    {a.pin && (
+                      <span
+                        className={
+                          isSelected ? "text-yellow-300" : "text-yellow-400"
+                        }
+                      >
+                        📍
+                      </span>
+                    )}
+                    <span className="truncate">{a.location}</span>
+                  </div>
+                  <p className="mt-1 text-[9px] text-gray-600">
+                    {a.createdBy} ·{" "}
+                    {new Date(a.createdAt).toLocaleDateString("de-CH", {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </p>
+                  {a.assignee && (
+                    <p className="mt-0.5 text-[9px] text-yellow-400">
+                      → {a.assignee}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {filtered.length === 0 && (

@@ -359,36 +359,142 @@ export default function TerminDetailPage() {
 
   function exportPdf() {
     if (!termin) return;
-    const lines: string[] = [];
-    lines.push(`SITZUNGSPROTOKOLL`);
-    lines.push(`==================`);
-    lines.push(``);
-    lines.push(`${termin.title}`);
-    lines.push(`Datum: ${formatDate(termin.date)}, ${termin.time}`);
-    lines.push(`Ort: ${termin.location}`);
-    if (termin.organizer) lines.push(`Organisiert von: ${termin.organizer}`);
-    if (termin.sitzungsleitung)
-      lines.push(`Sitzungsleitung: ${termin.sitzungsleitung}`);
-    if (termin.protokollfuehrung)
-      lines.push(`Protokollführung: ${termin.protokollfuehrung}`);
-    lines.push(``);
-    lines.push(`Anwesend: ${termin.anwesend.join(", ") || "–"}`);
-    lines.push(`Abgemeldet: ${termin.abgemeldet.join(", ") || "–"}`);
-    lines.push(``);
-    lines.push(`TRAKTANDEN`);
-    lines.push(`----------`);
-    termin.traktanden.forEach((t, i) => {
-      lines.push(`${i + 1}. ${t.title}`);
-      if (t.notes) lines.push(`   ${t.notes}`);
-      lines.push(``);
-    });
-    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${termin.title.replace(/\s+/g, "_")}_Protokoll.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+
+    const esc = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    const traktandenHtml = termin.traktanden
+      .map(
+        (t, i) => `
+        <div class="traktandum">
+          <h3>${i + 1}. ${esc(t.title)}</h3>
+          ${t.notes ? `<p>${esc(t.notes).replace(/\n/g, "<br>")}</p>` : `<p class="empty">— keine Notizen —</p>`}
+        </div>`
+      )
+      .join("");
+
+    const html = `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>${esc(termin.title)} — Protokoll</title>
+<style>
+  @page { size: A4; margin: 2cm; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #111;
+    line-height: 1.5;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  h1 {
+    font-size: 22pt;
+    margin: 0 0 4px;
+    color: #1a1a1a;
+  }
+  .subtitle {
+    color: #666;
+    font-size: 11pt;
+    margin-bottom: 20px;
+  }
+  .meta {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 4px 12px;
+    margin: 18px 0;
+    font-size: 10pt;
+  }
+  .meta dt { color: #666; }
+  .meta dd { margin: 0; color: #111; }
+  h2 {
+    font-size: 13pt;
+    margin: 24px 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #ddd;
+    color: #1a1a1a;
+  }
+  .traktandum {
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    background: #f6f6f6;
+    border-left: 3px solid #8bc34a;
+    border-radius: 2px;
+    page-break-inside: avoid;
+  }
+  .traktandum h3 {
+    margin: 0 0 6px;
+    font-size: 11pt;
+    color: #222;
+  }
+  .traktandum p {
+    margin: 0;
+    font-size: 10pt;
+    color: #444;
+  }
+  .empty { color: #aaa; font-style: italic; }
+  .footer {
+    margin-top: 40px;
+    padding-top: 12px;
+    border-top: 1px solid #eee;
+    font-size: 8pt;
+    color: #999;
+    text-align: center;
+  }
+  @media print {
+    body { padding: 0; }
+    .no-print { display: none; }
+  }
+  .print-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #8bc34a;
+    color: #000;
+    border: 0;
+    padding: 10px 18px;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11pt;
+  }
+</style>
+</head>
+<body>
+  <button class="print-btn no-print" onclick="window.print()">PDF speichern / Drucken</button>
+  <h1>${esc(termin.title)}</h1>
+  <p class="subtitle">Sitzungsprotokoll</p>
+
+  <dl class="meta">
+    <dt>Datum</dt><dd>${esc(formatDate(termin.date))}, ${esc(termin.time)}</dd>
+    <dt>Ort</dt><dd>${esc(termin.location)}</dd>
+    ${termin.organizer ? `<dt>Organisiert von</dt><dd>${esc(termin.organizer)}</dd>` : ""}
+    ${termin.sitzungsleitung ? `<dt>Sitzungsleitung</dt><dd>${esc(termin.sitzungsleitung)}</dd>` : ""}
+    ${termin.protokollfuehrung ? `<dt>Protokollführung</dt><dd>${esc(termin.protokollfuehrung)}</dd>` : ""}
+    <dt>Anwesend (${termin.anwesend.length})</dt><dd>${esc(termin.anwesend.join(", ") || "–")}</dd>
+    <dt>Abgemeldet (${termin.abgemeldet.length})</dt><dd>${esc(termin.abgemeldet.join(", ") || "–")}</dd>
+  </dl>
+
+  <h2>Traktanden</h2>
+  ${traktandenHtml || '<p class="empty">Keine Traktanden.</p>'}
+
+  <div class="footer">
+    Via 1 — Spinnereiweg 17, 3004 Bern · Erstellt am ${new Date().toLocaleDateString("de-CH", { day: "numeric", month: "long", year: "numeric" })}
+  </div>
+  <script>
+    // Print-Dialog automatisch öffnen
+    setTimeout(() => window.print(), 300);
+  </script>
+</body>
+</html>`;
+
+    const win = window.open("", "_blank");
+    if (!win) {
+      alert("Bitte Pop-up-Blocker deaktivieren, um das PDF zu erstellen.");
+      return;
+    }
+    win.document.write(html);
+    win.document.close();
   }
 
   return (

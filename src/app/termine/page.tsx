@@ -106,8 +106,9 @@ export default function TerminePage() {
   const [showCreate, setShowCreate] = useState(false);
 
   // Signup state (inline, per termin)
+  type GuestDiet = "Fleisch" | "Vegi" | "Vegan";
   const [signupOpen, setSignupOpen] = useState<string | null>(null);
-  const [signupGuests, setSignupGuests] = useState(0);
+  const [signupGuests, setSignupGuests] = useState<GuestDiet[]>([]);
 
   // Create form state
   const [newType, setNewType] = useState<TerminType>("sitzung");
@@ -411,7 +412,7 @@ export default function TerminePage() {
                   onClick={(e) => {
                     e.preventDefault();
                     setSignupOpen(t.id);
-                    setSignupGuests(0);
+                    setSignupGuests([]);
                   }}
                   className="mt-2 w-full rounded-full bg-secondary/20 py-1.5 text-[10px] font-bold uppercase tracking-wider text-secondary transition-colors hover:bg-secondary/30"
                 >
@@ -430,38 +431,77 @@ export default function TerminePage() {
                       onClick={(e) => {
                         e.preventDefault();
                         setSignupOpen(null);
+                        setSignupGuests([]);
                       }}
                       className="text-xs text-gray-500 hover:text-white"
                     >
                       ×
                     </button>
                   </div>
+
+                  <p className="mb-2 text-[10px] text-gray-500">
+                    Deine Ernährung wird aus dem Profil übernommen.
+                  </p>
+
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs text-gray-300">Gäste mitbringen</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSignupGuests((g) => Math.max(0, g - 1));
-                        }}
-                        className="flex h-6 w-6 items-center justify-center rounded-full border border-secondary/40 text-secondary hover:bg-secondary/10"
-                      >
-                        −
-                      </button>
-                      <span className="w-5 text-center font-mono text-sm text-white">
-                        {signupGuests}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSignupGuests((g) => g + 1);
-                        }}
-                        className="flex h-6 w-6 items-center justify-center rounded-full border border-secondary/40 text-secondary hover:bg-secondary/10"
-                      >
-                        +
-                      </button>
-                    </div>
+                    <span className="text-xs text-gray-300">
+                      Gäste ({signupGuests.length})
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setSignupGuests((g) => [...g, "Fleisch"]);
+                      }}
+                      className="rounded-full bg-secondary/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-secondary hover:bg-secondary/30"
+                    >
+                      + Gast
+                    </button>
                   </div>
+
+                  {signupGuests.map((g, gi) => (
+                    <div
+                      key={gi}
+                      className="mb-1.5 rounded border border-secondary/20 bg-white/5 p-1.5"
+                    >
+                      <div className="mb-1 flex items-center justify-between">
+                        <span className="text-[10px] text-gray-500">
+                          Gast {gi + 1}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSignupGuests((prev) =>
+                              prev.filter((_, i) => i !== gi)
+                            );
+                          }}
+                          className="text-[10px] text-gray-500 hover:text-red-400"
+                        >
+                          entfernen
+                        </button>
+                      </div>
+                      <div className="flex gap-1">
+                        {(["Fleisch", "Vegi", "Vegan"] as GuestDiet[]).map((d) => (
+                          <button
+                            key={d}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setSignupGuests((prev) =>
+                                prev.map((x, i) => (i === gi ? d : x))
+                              );
+                            }}
+                            className={`flex-1 rounded py-1 font-mono text-[10px] transition-colors ${
+                              g === d
+                                ? "bg-secondary text-white"
+                                : "border border-gray-700 text-gray-400 hover:text-white"
+                            }`}
+                          >
+                            {d}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -470,17 +510,19 @@ export default function TerminePage() {
                           x.id === t.id
                             ? {
                                 ...x,
-                                mealSignups: x.mealSignups + 1 + signupGuests,
+                                mealSignups:
+                                  x.mealSignups + 1 + signupGuests.length,
                               }
                             : x
                         )
                       );
                       setSignupOpen(null);
-                      setSignupGuests(0);
+                      setSignupGuests([]);
                     }}
-                    className="w-full rounded-full bg-secondary py-1.5 text-[10px] font-bold uppercase tracking-wider text-white"
+                    className="mt-1 w-full rounded-full bg-secondary py-1.5 text-[10px] font-bold uppercase tracking-wider text-white"
                   >
-                    Anmelden {signupGuests > 0 && `(+${signupGuests})`}
+                    Anmelden
+                    {signupGuests.length > 0 && ` (+${signupGuests.length})`}
                   </button>
                 </div>
               )}
