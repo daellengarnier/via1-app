@@ -21,9 +21,14 @@ export interface TerminListDTO {
   organizer: string | null;
   withDinner: boolean;
   dinnerTime: string | null;
+  dinnerLocation: string | null;
+  dinnerOrganizer: string | null;
   withAttendance: boolean;
   myAttendance: "going" | "not-going" | null;
-  myMealSignup: boolean;
+  // "going" = ich komme selbst, "not-going" = explizit abgemeldet,
+  // null = noch keine Entscheidung
+  myMealSignup: "going" | "not-going" | null;
+  myMealGuestsCount: number;
   agendaCount: number;
   mealSignupCount: number;
 }
@@ -45,6 +50,7 @@ export interface MealSignupDTO {
   id: string;
   userId: string;
   name: string;
+  goingSelf: boolean;
   diet: "Fleisch" | "Vegi" | "Vegan";
   allergies: string;
   guestDetails: GuestDTO[];
@@ -115,34 +121,35 @@ export function combineDateTime(date: string, time: string): Date {
   return new Date(`${date}T${time}:00.000Z`);
 }
 
+export interface TerminListExtras {
+  mealSignupCount: number;
+  myMealSignup: "going" | "not-going" | null;
+  myMealGuestsCount: number;
+}
+
 export function serializeTerminList(
   termin: Termin & {
-    _count?: { traktanden?: number; mealSignups?: number };
+    _count?: { traktanden?: number };
     traktanden?: Traktandum[];
-    mealSignups?: MealSignup[];
-    attendances?: Attendance[];
+  } & {
+    dinnerLocation?: string | null;
+    dinnerOrganizer?: string | null;
   },
   currentUserId: string | null,
-  myMealSignupFlag?: boolean
+  attendances: { status: AttendanceStatus; userId: string }[],
+  extras: TerminListExtras
 ): TerminListDTO {
   const { date, time } = splitDate(termin.date);
   const agendaCount =
     termin._count?.traktanden ?? termin.traktanden?.length ?? 0;
-  const mealSignupCount =
-    termin._count?.mealSignups ?? termin.mealSignups?.length ?? 0;
   const myAttendanceRec = currentUserId
-    ? termin.attendances?.find((a) => a.userId === currentUserId)
+    ? attendances.find((a) => a.userId === currentUserId)
     : null;
   const myAttendance: "going" | "not-going" | null = myAttendanceRec
     ? myAttendanceRec.status === "GOING"
       ? "going"
       : "not-going"
     : null;
-  const myMealSignup =
-    myMealSignupFlag ??
-    (currentUserId
-      ? termin.mealSignups?.some((s) => s.userId === currentUserId) ?? false
-      : false);
   return {
     id: termin.id,
     title: termin.title,
@@ -153,11 +160,14 @@ export function serializeTerminList(
     organizer: termin.organizer,
     withDinner: termin.withDinner,
     dinnerTime: termin.dinnerTime,
+    dinnerLocation: termin.dinnerLocation ?? null,
+    dinnerOrganizer: termin.dinnerOrganizer ?? null,
     withAttendance: termin.withAttendance,
     myAttendance,
-    myMealSignup,
+    myMealSignup: extras.myMealSignup,
+    myMealGuestsCount: extras.myMealGuestsCount,
     agendaCount,
-    mealSignupCount,
+    mealSignupCount: extras.mealSignupCount,
   };
 }
 
@@ -172,15 +182,33 @@ export function serializeTerminDetail(
   },
   currentUserId: string | null
 ): TerminDetailDTO {
+  // mealSignupCount = goingSelf (1 falls true) + guests.length, summiert ueber alle signups
+  const mealSignupCount = termin.mealSignups.reduce(
+    (sum, s) => sum + (s.goingSelf ? 1 : 0) + s.guests.length,
+    0
+  );
+  const mySignup = currentUserId
+    ? termin.mealSignups.find((s) => s.userId === currentUserId)
+    : undefined;
+  const myMealSignup: "going" | "not-going" | null = mySignup
+    ? mySignup.goingSelf
+      ? "going"
+      : "not-going"
+    : null;
+  const myMealGuestsCount = mySignup ? mySignup.guests.length : 0;
+
   const base = serializeTerminList(
     {
       ...termin,
-      _count: {
-        traktanden: termin.traktanden.length,
-        mealSignups: termin.mealSignups.length,
-      },
+      _count: { traktanden: termin.traktanden.length },
     },
-    currentUserId
+    currentUserId,
+    termin.attendances,
+    {
+      mealSignupCount,
+      myMealSignup,
+      myMealGuestsCount,
+    }
   );
 
   const anwesend = termin.attendances
@@ -204,6 +232,7 @@ export function serializeTerminDetail(
     id: s.id,
     userId: s.user.id,
     name: s.user.name,
+    goingSelf: s.goingSelf,
     diet: dietMap[s.diet],
     allergies: s.allergies,
     guestDetails: s.guests.map((g) => ({

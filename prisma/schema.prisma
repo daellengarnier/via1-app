@@ -85,6 +85,9 @@ model Termin {
   organizer         String?
   withDinner        Boolean      @default(false)
   dinnerTime        String?
+  // Fuer Sitzung+Essen: optional separater Ort / Organisator des Essens
+  dinnerLocation    String?
+  dinnerOrganizer   String?
   withAttendance    Boolean      @default(false)
   sitzungsleitung   String       @default("")
   protokollfuehrung String       @default("")
@@ -131,16 +134,18 @@ model Attendance {
 }
 
 model MealSignup {
-  id        String            @id @default(cuid())
-  termin    Termin            @relation(fields: [terminId], references: [id], onDelete: Cascade)
-  terminId  String
-  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  diet      Diet
-  allergies String            @default("")
-  guests    MealSignupGuest[]
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id         String            @id @default(cuid())
+  termin     Termin            @relation(fields: [terminId], references: [id], onDelete: Cascade)
+  terminId   String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  // Ob der User selbst kommt (false = nur Gaeste oder explizite Absage)
+  goingSelf  Boolean           @default(true)
+  diet       Diet
+  allergies  String            @default("")
+  guests     MealSignupGuest[]
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
 
   @@unique([terminId, userId])
   @@map("meal_signups")

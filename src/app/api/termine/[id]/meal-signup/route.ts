@@ -9,8 +9,17 @@ interface GuestInput {
   allergies?: unknown;
 }
 
+function dietToLabel(d: "FLEISCH" | "VEGI" | "VEGAN"): "Fleisch" | "Vegi" | "Vegan" {
+  return d === "FLEISCH" ? "Fleisch" : d === "VEGI" ? "Vegi" : "Vegan";
+}
+
 // POST /api/termine/[id]/meal-signup
-// Body: { diet: "Fleisch"|"Vegi"|"Vegan", allergies: string, guests: [{diet, allergies}] }
+// Body: {
+//   diet: "Fleisch"|"Vegi"|"Vegan",
+//   allergies: string,
+//   guests: [{diet, allergies}],
+//   goingSelf?: boolean (default true)
+// }
 // Upsert pro User.
 export async function POST(
   req: Request,
@@ -30,15 +39,11 @@ export async function POST(
     diet?: unknown;
     allergies?: unknown;
     guests?: unknown;
+    goingSelf?: unknown;
   };
-  const dietStr = typeof body.diet === "string" ? body.diet : "";
-  const diet = toDiet(dietStr);
-  if (!diet) {
-    return NextResponse.json(
-      { error: "diet muss Fleisch/Vegi/Vegan sein" },
-      { status: 400 }
-    );
-  }
+  const goingSelf = body.goingSelf !== false; // default true
+  const dietStr = typeof body.diet === "string" ? body.diet : "Fleisch";
+  const diet = toDiet(dietStr) ?? "FLEISCH";
   const allergies =
     typeof body.allergies === "string" ? body.allergies : "";
   const guestsInput = Array.isArray(body.guests)
@@ -55,7 +60,10 @@ export async function POST(
     })
     .filter((g): g is { diet: "FLEISCH" | "VEGI" | "VEGAN"; allergies: string } => g !== null);
 
-  // Bestehenden Signup loeschen (inkl. Gaeste via Cascade), dann neu anlegen
+  // Wenn goingSelf=false und keine Gaeste -> einfach DELETE fuer
+  // "explizit abgemeldet" Zustand. Signup existiert trotzdem, aber
+  // effektiv leer.
+  // Bestehenden Signup ersetzen (Cascade auf Gaeste)
   await prisma.mealSignup.deleteMany({
     where: { terminId: params.id, userId: session.user.id },
   });
@@ -63,6 +71,7 @@ export async function POST(
     data: {
       terminId: params.id,
       userId: session.user.id,
+      goingSelf,
       diet,
       allergies,
       guests: { create: guestsData },
@@ -74,17 +83,89 @@ export async function POST(
     id: signup.id,
     userId: signup.user.id,
     name: signup.user.name,
-    diet: dietStr,
+    goingSelf: signup.goingSelf,
+    diet: dietToLabel(signup.diet),
     allergies: signup.allergies,
     guestDetails: signup.guests.map((g) => ({
-      diet:
-        g.diet === "FLEISCH" ? "Fleisch" : g.diet === "VEGI" ? "Vegi" : "Vegan",
+      diet: dietToLabel(g.diet),
+      allergies: g.allergies,
+    })),
+  });
+}
+
+// PATCH /api/termine/[id]/meal-signup — goingSelf toggeln
+// (ohne die Gaeste zu loeschen)
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = (await req.json()) as { goingSelf?: unknown };
+  if (typeof body.goingSelf !== "boolean") {
+    return NextResponse.json(
+      { error: "goingSelf erforderlich" },
+      { status: 400 }
+    );
+  }
+
+  const existing = await prisma.mealSignup.findUnique({
+    where: {
+      terminId_userId: {
+        terminId: params.id,
+        userId: session.user.id,
+      },
+    },
+  });
+
+  if (!existing) {
+    // Nicht existent -> anlegen mit default diet und goingSelf
+    const created = await prisma.mealSignup.create({
+      data: {
+        terminId: params.id,
+        userId: session.user.id,
+        goingSelf: body.goingSelf,
+        diet: "FLEISCH",
+      },
+      include: { user: true, guests: true },
+    });
+    return NextResponse.json({
+      id: created.id,
+      userId: created.user.id,
+      name: created.user.name,
+      goingSelf: created.goingSelf,
+      diet: dietToLabel(created.diet),
+      allergies: created.allergies,
+      guestDetails: [],
+    });
+  }
+
+  const updated = await prisma.mealSignup.update({
+    where: { id: existing.id },
+    data: { goingSelf: body.goingSelf },
+    include: { user: true, guests: true },
+  });
+
+  return NextResponse.json({
+    id: updated.id,
+    userId: updated.user.id,
+    name: updated.user.name,
+    goingSelf: updated.goingSelf,
+    diet: dietToLabel(updated.diet),
+    allergies: updated.allergies,
+    guestDetails: updated.guests.map((g) => ({
+      diet: dietToLabel(g.diet),
       allergies: g.allergies,
     })),
   });
 }
 
 // DELETE /api/termine/[id]/meal-signup — eigenen Signup entfernen
+// (inkl. aller Gaeste). Fuer "nur mich abmelden aber Gaeste bleiben"
+// bitte PATCH mit { goingSelf: false } verwenden.
 export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } }

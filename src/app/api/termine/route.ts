@@ -18,26 +18,38 @@ export async function GET() {
   const termine = await prisma.termin.findMany({
     orderBy: { date: "desc" },
     include: {
-      _count: { select: { traktanden: true, mealSignups: true } },
+      _count: { select: { traktanden: true } },
       attendances: {
         where: { userId: session.user.id },
         select: { status: true, userId: true },
       },
       mealSignups: {
-        where: { userId: session.user.id },
-        select: { id: true },
+        include: { guests: true },
       },
     },
   });
 
   return NextResponse.json(
-    termine.map((t) =>
-      serializeTerminList(
-        t as unknown as Parameters<typeof serializeTerminList>[0],
-        session.user.id,
-        t.mealSignups.length > 0
-      )
-    )
+    termine.map((t) => {
+      const mealSignupCount = t.mealSignups.reduce(
+        (sum, s) => sum + (s.goingSelf ? 1 : 0) + s.guests.length,
+        0
+      );
+      const mySignup = t.mealSignups.find(
+        (s) => s.userId === session.user.id
+      );
+      const myMealSignup: "going" | "not-going" | null = mySignup
+        ? mySignup.goingSelf
+          ? "going"
+          : "not-going"
+        : null;
+      const myMealGuestsCount = mySignup ? mySignup.guests.length : 0;
+      return serializeTerminList(t, session.user.id, t.attendances, {
+        mealSignupCount,
+        myMealSignup,
+        myMealGuestsCount,
+      });
+    })
   );
 }
 
@@ -57,6 +69,8 @@ export async function POST(req: Request) {
     organizer?: unknown;
     withDinner?: unknown;
     dinnerTime?: unknown;
+    dinnerLocation?: unknown;
+    dinnerOrganizer?: unknown;
     withAttendance?: unknown;
   };
 
@@ -87,6 +101,14 @@ export async function POST(req: Request) {
   const withDinner = body.withDinner === true;
   const dinnerTime =
     withDinner && typeof body.dinnerTime === "string" ? body.dinnerTime : null;
+  const dinnerLocation =
+    withDinner && typeof body.dinnerLocation === "string" && body.dinnerLocation.trim() !== ""
+      ? body.dinnerLocation.trim()
+      : null;
+  const dinnerOrganizer =
+    withDinner && typeof body.dinnerOrganizer === "string" && body.dinnerOrganizer.trim() !== ""
+      ? body.dinnerOrganizer.trim()
+      : null;
   const withAttendance = body.withAttendance === true || type === "SITZUNG";
 
   const termin = await prisma.termin.create({
@@ -98,20 +120,25 @@ export async function POST(req: Request) {
       organizer,
       withDinner,
       dinnerTime,
+      dinnerLocation,
+      dinnerOrganizer,
       withAttendance,
       createdById: session.user.id,
     },
     include: {
-      _count: { select: { traktanden: true, mealSignups: true } },
-      attendances: { where: { userId: session.user.id } },
+      _count: { select: { traktanden: true } },
+      attendances: {
+        where: { userId: session.user.id },
+        select: { status: true, userId: true },
+      },
     },
   });
 
   return NextResponse.json(
-    serializeTerminList(
-      termin as unknown as Parameters<typeof serializeTerminList>[0],
-      session.user.id,
-      false
-    )
+    serializeTerminList(termin, session.user.id, termin.attendances, {
+      mealSignupCount: 0,
+      myMealSignup: null,
+      myMealGuestsCount: 0,
+    })
   );
 }

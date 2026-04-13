@@ -16,9 +16,12 @@ interface Termin {
   organizer: string | null;
   withDinner: boolean;
   dinnerTime: string | null;
+  dinnerLocation: string | null;
+  dinnerOrganizer: string | null;
   withAttendance: boolean;
   myAttendance: "going" | "not-going" | null;
-  myMealSignup: boolean;
+  myMealSignup: "going" | "not-going" | null;
+  myMealGuestsCount: number;
   agendaCount: number;
   mealSignupCount: number;
 }
@@ -145,6 +148,8 @@ export default function TerminePage() {
   const [newOrganizer, setNewOrganizer] = useState("");
   const [newWithDinner, setNewWithDinner] = useState(false);
   const [newDinnerTime, setNewDinnerTime] = useState("18:30");
+  const [newDinnerLocation, setNewDinnerLocation] = useState("");
+  const [newDinnerOrganizer, setNewDinnerOrganizer] = useState("");
   const [newWithAttendance, setNewWithAttendance] = useState(false);
 
   const WG_LOCATIONS = [
@@ -187,6 +192,8 @@ export default function TerminePage() {
           organizer: newType === "sitzung" ? newOrganizer : null,
           withDinner: newWithDinner,
           dinnerTime: newWithDinner ? newDinnerTime : null,
+          dinnerLocation: newWithDinner ? newDinnerLocation : null,
+          dinnerOrganizer: newWithDinner ? newDinnerOrganizer : null,
           withAttendance:
             newType === "sitzung"
               ? true
@@ -238,6 +245,8 @@ export default function TerminePage() {
     setNewOrganizer("");
     setNewWithDinner(false);
     setNewDinnerTime("18:30");
+    setNewDinnerLocation("");
+    setNewDinnerOrganizer("");
     setNewWithAttendance(false);
     setNewType("sitzung");
   }
@@ -466,16 +475,47 @@ export default function TerminePage() {
                 </button>
               </div>
               {newWithDinner && (
-                <div className="mt-2">
-                  <label className="mb-1 block text-xs text-gray-400">
-                    Essenszeit
-                  </label>
-                  <input
-                    type="time"
-                    value={newDinnerTime}
-                    onChange={(e) => setNewDinnerTime(e.target.value)}
-                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
-                  />
+                <div className="mt-2 space-y-2">
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">
+                      Essenszeit
+                    </label>
+                    <input
+                      type="time"
+                      value={newDinnerTime}
+                      onChange={(e) => setNewDinnerTime(e.target.value)}
+                      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">
+                      Essen wird organisiert von
+                    </label>
+                    <select
+                      value={newDinnerOrganizer}
+                      onChange={(e) => setNewDinnerOrganizer(e.target.value)}
+                      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
+                    >
+                      <option value="">– keine Angabe –</option>
+                      {WG_LOCATIONS.map((wg) => (
+                        <option key={wg} value={wg}>
+                          {wg}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">
+                      Ort des Essens
+                    </label>
+                    <input
+                      type="text"
+                      value={newDinnerLocation}
+                      onChange={(e) => setNewDinnerLocation(e.target.value)}
+                      placeholder="z.B. Pyramide, oder leer lassen falls wie Sitzungsort"
+                      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-orange-400 focus:outline-none"
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -538,11 +578,6 @@ export default function TerminePage() {
                       >
                         {typeLabels[t.type]}
                       </span>
-                      {t.organizer && (
-                        <span className="text-[10px] text-gray-600">
-                          · {t.organizer}
-                        </span>
-                      )}
                     </div>
                     <h3 className="truncate text-sm font-medium text-white">
                       {t.title}
@@ -554,22 +589,29 @@ export default function TerminePage() {
                     </h3>
                     <p className="text-xs text-gray-500">
                       {formatDate(t.date)}
-                      {t.type === "sitzung" && t.withDinner && t.dinnerTime ? (
-                        <>
-                          {" · "}
-                          <span className="text-secondary">
-                            Essen {t.dinnerTime}
-                          </span>
-                          {" · "}
-                          <span className="text-accent">
-                            Sitzung {t.time}
-                          </span>
-                        </>
-                      ) : (
-                        ` · ${t.time}`
-                      )}
-                      {t.location && ` · ${t.location}`}
                     </p>
+                    {t.type === "sitzung" && t.withDinner && t.dinnerTime ? (
+                      <>
+                        <p className="mt-0.5 text-xs text-secondary">
+                          Essen {t.dinnerTime}
+                          {t.dinnerLocation && ` · ${t.dinnerLocation}`}
+                          {t.dinnerOrganizer &&
+                            ` · organisiert von ${t.dinnerOrganizer}`}
+                        </p>
+                        <p className="text-xs text-accent">
+                          Sitzung {t.time}
+                          {t.location && ` · ${t.location}`}
+                          {t.organizer &&
+                            ` · organisiert von ${t.organizer}`}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        {t.time}
+                        {t.location && ` · ${t.location}`}
+                        {t.organizer && ` · organisiert von ${t.organizer}`}
+                      </p>
+                    )}
                   </div>
                   <button
                     onClick={(e) => {
@@ -593,14 +635,13 @@ export default function TerminePage() {
                     {hasEssen && (
                       <span
                         className={
-                          t.myMealSignup
+                          t.myMealSignup === "going"
                             ? "font-bold text-secondary"
                             : "text-secondary"
                         }
                       >
                         🍽 {t.mealSignupCount} angemeldet
-                        {t.myMealSignup && " · du bist dabei"}
-                        {t.dinnerTime && ` · ${t.dinnerTime}`}
+                        {t.myMealSignup === "going" && " · du bist dabei"}
                       </span>
                     )}
                   </div>
@@ -655,35 +696,120 @@ export default function TerminePage() {
                     Essen
                   </span>
                   <button
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.preventDefault();
-                      if (t.myMealSignup) return;
+                      if (t.myMealSignup === "going") {
+                        // bereits angemeldet — nichts tun
+                        return;
+                      }
+                      if (t.myMealSignup === "not-going") {
+                        // Re-aktivieren via PATCH goingSelf=true
+                        try {
+                          const res = await fetch(
+                            `/api/termine/${t.id}/meal-signup`,
+                            {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ goingSelf: true }),
+                            }
+                          );
+                          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                          await loadTermine();
+                        } catch (err) {
+                          console.error("Anmelden", err);
+                          alert("Anmelden fehlgeschlagen.");
+                        }
+                        return;
+                      }
+                      // Noch keine Entscheidung — Gaste-Formular oeffnen
                       setSignupOpen(t.id);
                       setSignupGuests([]);
                     }}
-                    disabled={t.myMealSignup}
                     className={`flex-1 rounded-full py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                      t.myMealSignup
+                      t.myMealSignup === "going"
                         ? "bg-secondary text-white"
                         : "border border-secondary/40 text-secondary hover:bg-secondary/10"
                     }`}
                   >
-                    {t.myMealSignup ? "✓ Dabei" : "Anmelden"}
+                    {t.myMealSignup === "going" ? "✓ Dabei" : "Anmelden"}
                   </button>
                   <button
                     onClick={async (e) => {
                       e.preventDefault();
-                      if (!t.myMealSignup) return;
+                      // Wenn bereits abgemeldet, nichts tun (oder Toggle)
+                      if (t.myMealSignup === "not-going") return;
+
+                      // Wenn angemeldet und Gaeste vorhanden — fragen ob
+                      // auch Gaeste abmelden
                       if (
-                        !confirm(
-                          "Dich (und deine Gäste) wirklich vom Essen abmelden?"
-                        )
-                      )
+                        t.myMealSignup === "going" &&
+                        t.myMealGuestsCount > 0
+                      ) {
+                        const scope = confirm(
+                          `Auch deine ${t.myMealGuestsCount} Gäste abmelden?\n\n` +
+                            `OK = alle abmelden\n` +
+                            `Abbrechen = nur dich abmelden (Gäste bleiben)`
+                        );
+                        try {
+                          if (scope) {
+                            // Alles loeschen
+                            const res = await fetch(
+                              `/api/termine/${t.id}/meal-signup`,
+                              { method: "DELETE" }
+                            );
+                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                          } else {
+                            // Nur mich abmelden
+                            const res = await fetch(
+                              `/api/termine/${t.id}/meal-signup`,
+                              {
+                                method: "PATCH",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({ goingSelf: false }),
+                              }
+                            );
+                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                          }
+                          await loadTermine();
+                        } catch (err) {
+                          console.error("Abmelden", err);
+                          alert("Abmelden fehlgeschlagen.");
+                        }
                         return;
+                      }
+
+                      // Angemeldet ohne Gaeste: einfach DELETE
+                      if (t.myMealSignup === "going") {
+                        if (
+                          !confirm("Dich wirklich vom Essen abmelden?")
+                        )
+                          return;
+                        try {
+                          const res = await fetch(
+                            `/api/termine/${t.id}/meal-signup`,
+                            { method: "DELETE" }
+                          );
+                          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                          await loadTermine();
+                        } catch (err) {
+                          console.error("Abmelden", err);
+                          alert("Abmelden fehlgeschlagen.");
+                        }
+                        return;
+                      }
+
+                      // Noch keine Entscheidung — direkt als "nicht dabei"
+                      // markieren (PATCH anlegen mit goingSelf=false)
                       try {
                         const res = await fetch(
                           `/api/termine/${t.id}/meal-signup`,
-                          { method: "DELETE" }
+                          {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ goingSelf: false }),
+                          }
                         );
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
                         await loadTermine();
@@ -692,14 +818,15 @@ export default function TerminePage() {
                         alert("Abmelden fehlgeschlagen.");
                       }
                     }}
-                    disabled={!t.myMealSignup}
                     className={`flex-1 rounded-full py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                      !t.myMealSignup
-                        ? "border border-gray-700 text-gray-500 hover:bg-white/5"
-                        : "border border-red-500/50 text-red-300 hover:bg-red-500/10"
+                      t.myMealSignup === "not-going"
+                        ? "bg-gray-600 text-white"
+                        : "border border-gray-700 text-gray-500 hover:bg-white/5"
                     }`}
                   >
-                    Abmelden
+                    {t.myMealSignup === "not-going"
+                      ? "✗ Abgemeldet"
+                      : "Abmelden"}
                   </button>
                 </div>
               )}

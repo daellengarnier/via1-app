@@ -65,7 +65,7 @@ export default function GaestiPage() {
   const [newGuest, setNewGuest] = useState("");
   const [newFrom, setNewFrom] = useState("");
   const [newTo, setNewTo] = useState("");
-  const [showBookings, setShowBookings] = useState(false);
+  const [showBookings, setShowBookings] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
     null

@@ -75,6 +75,18 @@ export async function PATCH(
     data.dinnerTime =
       typeof body.dinnerTime === "string" ? body.dinnerTime : null;
   }
+  if (typeof body.dinnerLocation === "string" || body.dinnerLocation === null) {
+    data.dinnerLocation =
+      typeof body.dinnerLocation === "string" && body.dinnerLocation.trim() !== ""
+        ? body.dinnerLocation.trim()
+        : null;
+  }
+  if (typeof body.dinnerOrganizer === "string" || body.dinnerOrganizer === null) {
+    data.dinnerOrganizer =
+      typeof body.dinnerOrganizer === "string" && body.dinnerOrganizer.trim() !== ""
+        ? body.dinnerOrganizer.trim()
+        : null;
+  }
   if (typeof body.withAttendance === "boolean") {
     data.withAttendance = body.withAttendance;
   }

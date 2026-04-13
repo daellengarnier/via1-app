@@ -22,6 +22,7 @@ interface MealSignup {
   id: string;
   userId: string;
   name: string;
+  goingSelf: boolean;
   diet: string;
   allergies: string;
   guestDetails: Guest[];
@@ -42,6 +43,8 @@ interface TerminDetail {
   organizer: string | null;
   withDinner: boolean;
   dinnerTime: string | null;
+  dinnerLocation: string | null;
+  dinnerOrganizer: string | null;
   withAttendance: boolean;
   sitzungsleitung: string;
   protokollfuehrung: string;
@@ -837,6 +840,9 @@ export default function TerminDetailPage() {
           <div className="space-y-1">
             {termin.mealSignups.map((s, i) => {
               const isOwn = s.userId === currentUserId;
+              // Signups ohne goingSelf und ohne Gaeste (reine Absage)
+              // trotzdem anzeigen, aber ausgegraut
+              const isAbsent = !s.goingSelf;
               return (
                 <div
                   key={i}
@@ -844,22 +850,31 @@ export default function TerminDetailPage() {
                     isOwn
                       ? "border-secondary/40 bg-secondary/10"
                       : "border-gray-800 bg-white/5"
-                  }`}
+                  } ${isAbsent && s.guestDetails.length === 0 ? "opacity-50" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-white">
+                    <span
+                      className={`text-sm ${isAbsent ? "text-gray-500 line-through" : "text-white"}`}
+                    >
                       {s.name}
                       {isOwn && (
                         <span className="ml-1 text-[10px] text-secondary">
                           (du)
                         </span>
                       )}
+                      {isAbsent && (
+                        <span className="ml-1 text-[10px] text-gray-600">
+                          abgemeldet
+                        </span>
+                      )}
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-gray-500">
-                        {s.diet}
-                        {s.allergies && ` · ${s.allergies}`}
-                      </span>
+                      {s.goingSelf && (
+                        <span className="font-mono text-xs text-gray-500">
+                          {s.diet}
+                          {s.allergies && ` · ${s.allergies}`}
+                        </span>
+                      )}
                       {isOwn && (
                         <button
                           onClick={cancelMealSignup}
