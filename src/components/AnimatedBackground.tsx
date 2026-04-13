@@ -5,11 +5,13 @@ import type { CSSProperties } from "react";
 interface AnimatedBackgroundProps {
   icon?: string;
   glowClass?: string;
+  showIcon?: boolean;
 }
 
 export function AnimatedBackground({
   icon = "/pyramid.webp",
   glowClass = "",
+  showIcon = true,
 }: AnimatedBackgroundProps) {
   const colorMap: Record<string, string> = {
     "glow-orange": "255, 140, 30",
@@ -27,13 +29,15 @@ export function AnimatedBackground({
 
   return (
     <div className="via-bg" aria-hidden="true" style={bgStyle}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={icon}
-        alt=""
-        className={`via-tab-icon ${glowClass}`}
-        loading="eager"
-      />
+      {showIcon && (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={icon}
+          alt=""
+          className={`via-tab-icon ${glowClass}`}
+          loading="eager"
+        />
+      )}
       <div className="via-glow via-glow-1" />
       <div className="via-glow via-glow-2" />
       <div className="via-glow via-glow-3" />

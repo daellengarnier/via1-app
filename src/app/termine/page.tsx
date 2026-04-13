@@ -164,8 +164,18 @@ export default function TerminePage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <TabHeader icon="/icon-termine.webp" color="orange" />
-      <div className="mb-4 flex justify-center">
+      <TabHeader icon="/icon-termine.webp" color="orange" showIcon={false} />
+      <div className="mb-4 flex items-center justify-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/icon-termine.webp"
+          alt=""
+          className="h-12 w-12 object-contain"
+          style={{
+            filter:
+              "drop-shadow(0 0 12px rgba(255,140,30,0.55)) drop-shadow(0 0 20px rgba(255,140,30,0.3))",
+          }}
+        />
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="rounded-full bg-orange-400 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-black"

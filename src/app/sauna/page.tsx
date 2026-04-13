@@ -125,10 +125,20 @@ export default function SaunaPage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <TabHeader icon="/icon-sauna.webp" color="red" />
+      <TabHeader icon="/icon-sauna.webp" color="red" showIcon={false} />
 
       {/* Heizen Toggle — oberhalb der Temperatur */}
-      <div className="mb-4 flex justify-center">
+      <div className="mb-4 flex items-center justify-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/icon-sauna.webp"
+          alt=""
+          className="h-12 w-12 object-contain"
+          style={{
+            filter:
+              "drop-shadow(0 0 12px rgba(255,50,50,0.55)) drop-shadow(0 0 20px rgba(255,50,50,0.3))",
+          }}
+        />
         <button
           onClick={() => setHeating(!heating)}
           className={`rounded-full px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider transition-colors ${

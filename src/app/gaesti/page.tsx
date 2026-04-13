@@ -140,8 +140,18 @@ export default function GaestiPage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <TabHeader icon="/icon-gaesti.webp" color="blue" />
-      <div className="mb-4 flex justify-center">
+      <TabHeader icon="/icon-gaesti.webp" color="blue" showIcon={false} />
+      <div className="mb-4 flex items-center justify-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/icon-gaesti.webp"
+          alt=""
+          className="h-12 w-12 object-contain"
+          style={{
+            filter:
+              "drop-shadow(0 0 12px rgba(50,150,255,0.55)) drop-shadow(0 0 20px rgba(50,150,255,0.3))",
+          }}
+        />
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="rounded-full bg-blue-400 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-black"
