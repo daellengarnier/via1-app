@@ -5,12 +5,13 @@ export const config = {
     /*
      * Match all paths except:
      * - /login
+     * - /registrieren
      * - /setup/:token
      * - /api/auth (NextAuth endpoints)
      * - /api/setup (password setup API)
      * - /_next (Next.js internals)
-     * - /favicon.ico, /manifest.webmanifest, etc.
+     * - Alle statischen Dateien (mit Extension, z.B. .webp, .png, .ico, .svg)
      */
-    "/((?!login|registrieren|setup|api/auth|api/setup|_next|favicon\\.ico|manifest).*)",
+    "/((?!login|registrieren|setup|api/auth|api/setup|_next|.*\\..*).*)",
   ],
 };
