@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface Artikel {
   id: string;
@@ -21,124 +21,13 @@ const initialCategories = [
   "Regeln",
 ];
 
-const mockArtikel: Artikel[] = [
-  {
-    id: "1",
-    title: "WLAN",
-    content:
-      "Netzwerk: The Force\nPasswort: maythefurzbewithyou!\n\nRepeater im 2. OG: gleicher Name, gleiches Passwort.",
-    category: "Technik",
-    owner: "Yves",
-    updatedBy: "Yves",
-    updatedAt: "2026-01-10",
-  },
-  {
-    id: "2",
-    title: "Entsorgung",
-    content:
-      "Kehricht: jeden Montag bis 7 Uhr rausstellen.\nGrüngut: Dienstag, alle 2 Wochen (gerade KW).\nPapier/Karton: erster Mittwoch im Monat.\nGlas: Container beim Migros Felsenau.\nSperrgut: auf Abruf bei der Stadt Bern (Marke kaufen).\nElektroschrott: Sammelstelle beim Wankdorf.",
-    category: "Allgemein",
-    owner: "Lena",
-    updatedBy: "Lena",
-    updatedAt: "2026-04-01",
-  },
-  {
-    id: "3",
-    title: "Geschichte der Via",
-    content:
-      "Die Via Felsenau (Spinnereiweg 17) wurde in den 1990er-Jahren als genossenschaftliches Wohnprojekt gegründet. Das Gebäude ist ein Holzbau mit keilförmigem Grundriss, 3 Stockwerke plus Untergeschoss. Charakteristisch ist die Glaspyramide (Wintergarten) im Zentrum, die vom UG bis zum Dach reicht. Der Nord-Flügel hat eine abgerundete Form und ist um einen halben Stock tiefer versetzt als der Ost-Flügel (Hanglage).\n\nAktuell leben ca. 25 Personen in 6 Wohngemeinschaften zusammen.",
-    category: "Allgemein",
-    owner: "Alain",
-    updatedBy: "Alain",
-    updatedAt: "2026-03-01",
-  },
-  {
-    id: "4",
-    title: "Beiträge",
-    content:
-      "Monatliche Beiträge an die Gemeinschaftskasse:\n- Hausgeld: gemäss Reglement\n- Zusätzliche Beiträge für Gemeinschaftsprojekte werden an der Haussitzung beschlossen\n\nKonto-Infos bei der Verwaltung.",
-    category: "Allgemein",
-    owner: "Marco",
-    updatedBy: "Marco",
-    updatedAt: "2026-02-15",
-  },
-  {
-    id: "5",
-    title: "Kaffee-Abo",
-    content:
-      "Gemeinsames Kaffee-Abo für die Bar/Gemeinschaftsküche.\nJede:r der:die mitmacht zahlt monatlich einen Beitrag.\nAnmeldung bei Alain oder Sophie.\nAktuell: Bertschi Kaffee, Bern.",
-    category: "Allgemein",
-    owner: "Sophie",
-    updatedBy: "Sophie",
-    updatedAt: "2026-03-10",
-  },
-  {
-    id: "6",
-    title: "Unser Biotop",
-    content:
-      "Das Biotop befindet sich südlich vom Hauptgebäude. Es ist ein kleiner Naturteich mit einheimischen Pflanzen.\n\nRegeln:\n- Kein Baden\n- Keine Fische einsetzen\n- Uferbepflanzung nicht entfernen\n- Laub im Herbst abfischen",
-    category: "Garten",
-    owner: "Sven",
-    updatedBy: "Sven",
-    updatedAt: "2026-03-20",
-  },
-  {
-    id: "7",
-    title: "Unsere Verwaltung",
-    content:
-      "Die Via wird genossenschaftlich verwaltet.\n\nVorstand:\n- Präsident: Marco\n- Finanzen: Lena\n- Hauswart: Alain\n\nHaussitzungen: monatlich (siehe Termine)\nBeschlüsse werden im Protokoll festgehalten.",
-    category: "Kontakte",
-    owner: "Marco",
-    updatedBy: "Marco",
-    updatedAt: "2026-04-05",
-  },
-  {
-    id: "8",
-    title: "Maschinenpark",
-    content:
-      "Rasenmäher (Benzin): Geräteschuppen\nHeckenschere (Akku): Geräteschuppen\nKettensäge: nur mit Bewilligung, bei Alain\nBohrmaschine + Werkzeugkoffer: Werkraum UG\nHochdruckreiniger: Geräteschuppen\n\nBitte nach Gebrauch reinigen und zurückstellen.",
-    category: "Technik",
-    owner: "Alain",
-    updatedBy: "Alain",
-    updatedAt: "2026-03-25",
-  },
-  {
-    id: "9",
-    title: "Gemüsegarten",
-    content:
-      "Parzellen hinter dem Haus. Jede WG hat ein Beet.\nGemeinsam: Kräuterbeet, Beerensträucher.\n\nRegeln:\n- Eigenes Beet selber pflegen\n- Gemeinschaftsbeete nach Absprache\n- Kompost: nur Gartenabfälle, keine Essensreste\n- Wasser: Regentonne nutzen wenn möglich",
-    category: "Garten",
-    owner: "Ruth",
-    updatedBy: "Ruth",
-    updatedAt: "2026-03-15",
-  },
-  {
-    id: "10",
-    title: "Baupläne",
-    content:
-      "Die originalen Baupläne des Hauses sind bei der Verwaltung einsehbar.\nDigitale Kopien auf Anfrage bei Marco.\n\nWichtige Infos:\n- Tragende Wände: NICHT verändern ohne Bewilligung\n- Brandschutzwände: rot markiert in den Plänen\n- Leitungsplan (Wasser/Strom): im Technikraum UG",
-    category: "Technik",
-    owner: "Marco",
-    updatedBy: "Marco",
-    updatedAt: "2026-01-20",
-  },
-  {
-    id: "11",
-    title: "Gemeinschaftsladen",
-    content:
-      "Unser Quartierladen im EG funktioniert als Selbstbedienungsladen.\n\nÖffnungszeiten: rund um die Uhr (Vertrauensbasis)\n\nSortiment:\n- Grundnahrungsmittel (Mehl, Reis, Pasta, Öl)\n- Milchprodukte, Eier\n- Brot (Lieferung Di + Fr)\n- Snacks, Getränke\n- Hygieneartikel\n\nBezahlung: Twint oder Kässeli (Münz). Preise sind angeschrieben.\nBestellungen/Wünsche: Liste an der Pinnwand im Laden.\nAuffüllen: Wenn etwas leer ist, bitte im Gruppenchat melden.",
-    category: "Allgemein",
-    owner: "Mia",
-    updatedBy: "Mia",
-    updatedAt: "2026-04-02",
-  },
-];
 
 export default function HausbuchPage() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Alle");
-  const [categories, setCategories] = useState<string[]>(initialCategories);
-  const [articles, setArticles] = useState<Artikel[]>(mockArtikel);
+  const [articles, setArticles] = useState<Artikel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
@@ -147,6 +36,30 @@ export default function HausbuchPage() {
   const [newOwner, setNewOwner] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+
+  // Kategorien werden aus den Artikeln abgeleitet + Basis-Kategorien
+  const categories = Array.from(
+    new Set([...initialCategories, ...articles.map((a) => a.category)])
+  );
+
+  const loadArticles = useCallback(async () => {
+    try {
+      const res = await fetch("/api/hausbuch");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as Artikel[];
+      setArticles(data);
+      setLoadError(null);
+    } catch (err) {
+      console.error("Hausbuch laden", err);
+      setLoadError("Hausbuch konnte nicht geladen werden");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadArticles();
+  }, [loadArticles]);
 
   const filtered = articles.filter((a) => {
     const matchesSearch =
@@ -157,33 +70,37 @@ export default function HausbuchPage() {
     return matchesSearch && matchesCategory;
   });
 
-  function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!newTitle.trim() || !newContent.trim() || !newOwner.trim()) return;
-    setArticles((prev) => [
-      {
-        id: String(Date.now()),
-        title: newTitle,
-        content: newContent,
-        category: newCategory,
-        owner: newOwner,
-        updatedBy: "Alain",
-        updatedAt: new Date().toISOString().split("T")[0]!,
-      },
-      ...prev,
-    ]);
-    setNewTitle("");
-    setNewContent("");
-    setNewOwner("");
-    setShowCreate(false);
+    try {
+      const res = await fetch("/api/hausbuch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTitle,
+          content: newContent,
+          category: newCategory,
+          owner: newOwner,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = (await res.json()) as Artikel;
+      setArticles((prev) => [...prev, created]);
+      setNewTitle("");
+      setNewContent("");
+      setNewOwner("");
+      setShowCreate(false);
+    } catch (err) {
+      console.error("Hausbuch erstellen", err);
+      alert("Konnte Artikel nicht speichern.");
+    }
   }
 
   function handleAddCategory() {
     const name = newCategoryName.trim();
     if (!name) return;
-    if (!categories.includes(name)) {
-      setCategories((prev) => [...prev, name]);
-    }
+    // Kategorien werden aus Artikeln abgeleitet — einfach uebernehmen
     setNewCategory(name);
     setNewCategoryName("");
     setAddingCategory(false);
@@ -406,7 +323,13 @@ export default function HausbuchPage() {
         ))}
       </div>
 
-      {filtered.length === 0 && (
+      {loading && filtered.length === 0 && (
+        <p className="mt-8 text-center text-gray-600">Lade Artikel …</p>
+      )}
+      {!loading && loadError && (
+        <p className="mt-8 text-center text-sm text-red-400">{loadError}</p>
+      )}
+      {!loading && !loadError && filtered.length === 0 && (
         <p className="mt-8 text-center text-gray-600">
           Kein Eintrag gefunden.
         </p>

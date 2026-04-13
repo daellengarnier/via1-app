@@ -59,6 +59,7 @@ model User {
   activeAufgabenWorker AufgabeActiveWorker[]
   createdBookings      Booking[]             @relation("BookingCreator")
   bookingComments      BookingComment[]
+  hausbuchArticlesUpdated HausbuchArticle[]  @relation("HausbuchUpdatedBy")
 
   @@map("users")
 }
@@ -224,6 +225,22 @@ model BookingComment {
 
   @@index([bookingId])
   @@map("booking_comments")
+}
+
+model HausbuchArticle {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  category    String
+  // Owner als freier Name-String (analog zum UI-Eingabefeld)
+  owner       String
+  updatedBy   User     @relation("HausbuchUpdatedBy", fields: [updatedById], references: [id])
+  updatedById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@map("hausbuch_articles")
 }
 
 model Wg {
