@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { TabHeader } from "./TabHeader";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
+import { usePutzplan } from "@/lib/putzplan-store";
 
 interface PinnwandEintrag {
   id: string;
@@ -12,6 +13,13 @@ interface PinnwandEintrag {
   author: string;
   authorId: string;
   date: string;
+}
+
+interface NextTermin {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  time: string;
 }
 
 interface WeatherData {
@@ -61,6 +69,11 @@ export default function HomeScreen() {
   const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const hasKaffeeAbo = true;
   const [currentKaffee] = useCurrentKaffee();
+  const [, , putzCurrentWg] = usePutzplan();
+  const [openAufgabenCount, setOpenAufgabenCount] = useState<number | null>(
+    null
+  );
+  const [nextTermin, setNextTermin] = useState<NextTermin | null>(null);
   const [pinnwand, setPinnwand] = useState<PinnwandEintrag[]>([]);
   const [pinnwandError, setPinnwandError] = useState<string | null>(null);
   const [pinnwandLoading, setPinnwandLoading] = useState(true);
@@ -92,6 +105,34 @@ export default function HomeScreen() {
   useEffect(() => {
     loadPinnwand();
   }, [loadPinnwand]);
+
+  // Aufgaben-Count fuer die Tile
+  useEffect(() => {
+    fetch("/api/aufgaben")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: { done: boolean }[]) => {
+        setOpenAufgabenCount(data.filter((a) => !a.done).length);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Naechster Termin fuer die Tile
+  useEffect(() => {
+    fetch("/api/termine")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: NextTermin[]) => {
+        const todayStr = new Date().toISOString().split("T")[0]!;
+        const upcoming = data
+          .filter((t) => t.date >= todayStr)
+          .sort((a, b) =>
+            a.date === b.date
+              ? a.time.localeCompare(b.time)
+              : a.date.localeCompare(b.date)
+          );
+        setNextTermin(upcoming[0] ?? null);
+      })
+      .catch(() => {});
+  }, []);
 
   // Wetter laden (Open-Meteo, kein API Key)
   useEffect(() => {
@@ -237,16 +278,24 @@ export default function HomeScreen() {
       <div className="mb-4 grid grid-cols-2 gap-3">
         <div
           className="cursor-pointer rounded-full border border-accent/30 bg-accent/5 px-4 py-3 text-center transition-colors hover:bg-accent/10"
-          onClick={() => router.push("/termine/1")}
+          onClick={() =>
+            router.push(nextTermin ? `/termine/${nextTermin.id}` : "/termine")
+          }
         >
           <p className="font-display text-[9px] font-bold uppercase tracking-widest text-accent">
             TERMIN
           </p>
           <p className="mt-0.5 truncate text-xs font-medium text-white">
-            Haussitzung
+            {nextTermin?.title ?? "Keine"}
           </p>
           <p className="font-mono text-[10px] text-gray-500">
-            Mi 16. Apr · 19:30
+            {nextTermin
+              ? `${new Date(nextTermin.date).toLocaleDateString("de-CH", {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                })} · ${nextTermin.time}`
+              : "—"}
           </p>
         </div>
         <a
@@ -286,7 +335,9 @@ export default function HomeScreen() {
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-yellow-300">
             AUFGABEN
           </p>
-          <p className="mt-1 font-mono text-2xl font-bold text-white">3</p>
+          <p className="mt-1 font-mono text-2xl font-bold text-white">
+            {openAufgabenCount ?? "–"}
+          </p>
           <p className="mt-1 text-[10px] text-gray-500">offen</p>
         </div>
         <div
@@ -296,7 +347,9 @@ export default function HomeScreen() {
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-violet-400">
             PUTZEN
           </p>
-          <p className="mt-1 text-sm font-semibold text-white">Dreiecks-<br/>bar</p>
+          <p className="mt-1 break-words text-sm font-semibold leading-tight text-white">
+            {putzCurrentWg ?? "—"}
+          </p>
         </div>
       </div>
 

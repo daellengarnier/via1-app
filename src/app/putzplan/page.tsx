@@ -1,20 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-interface PutzRunde {
-  wg: string;
-  completedAt: string | null;
-}
-
-const initialRotation: PutzRunde[] = [
-  { wg: "Nordwind", completedAt: "2026-02-15" },
-  { wg: "Ostblock", completedAt: "2026-02-28" },
-  { wg: "Dreiecksbar", completedAt: "2026-03-10" },
-  { wg: "Kleenex", completedAt: null },
-  { wg: "Family-WG", completedAt: null },
-  { wg: "Bonzen", completedAt: null },
-];
+import { usePutzplan } from "@/lib/putzplan-store";
 
 const funnyMessages = [
   "Das Treppenhaus versinkt im Dreck! 🧹",
@@ -38,7 +25,7 @@ function getRandomMessage(seed: number): string {
 }
 
 export default function PutzplanPage() {
-  const [rotation, setRotation] = useState(initialRotation);
+  const [rotation, setRotation] = usePutzplan();
   const [confirmed, setConfirmed] = useState(false);
 
   const currentIndex = rotation.findIndex((r) => r.completedAt === null);
@@ -61,8 +48,8 @@ export default function PutzplanPage() {
   useEffect(() => {
     if (!confirmed || currentIndex < 0) return;
     const timer = setTimeout(() => {
-      setRotation((prev) =>
-        prev.map((r, i) =>
+      setRotation(
+        rotation.map((r, i) =>
           i === currentIndex
             ? { ...r, completedAt: new Date().toISOString().split("T")[0]! }
             : r
@@ -71,7 +58,7 @@ export default function PutzplanPage() {
       setConfirmed(false);
     }, 500);
     return () => clearTimeout(timer);
-  }, [confirmed, currentIndex]);
+  }, [confirmed, currentIndex, rotation, setRotation]);
 
   return (
     <div className="p-4 pb-20">
