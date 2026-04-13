@@ -72,10 +72,19 @@ function PushSubscribeBox() {
       setStatus("blocked");
       return;
     }
-    // Check bestehendes Abo
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => setStatus(sub ? "on" : "off"))
+    // Nur pruefen ob ein SW schon registriert ist — kein .ready, weil
+    // das blockiert wenn noch keiner da ist.
+    navigator.serviceWorker
+      .getRegistration()
+      .then((reg) => {
+        if (!reg) {
+          setStatus("off");
+          return;
+        }
+        return reg.pushManager
+          .getSubscription()
+          .then((sub) => setStatus(sub ? "on" : "off"));
+      })
       .catch(() => setStatus("off"));
   }, []);
 
