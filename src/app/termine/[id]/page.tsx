@@ -487,6 +487,11 @@ export default function TerminDetailPage() {
         )}
         <h1 className="mt-1 text-lg font-medium text-white">
           {termin.title}
+          {termin.type === "sitzung" && termin.withDinner && (
+            <span className="ml-1 text-xs font-normal text-secondary">
+              · inkl. Nachtessen
+            </span>
+          )}
         </h1>
         <p className="mt-1 text-sm text-gray-400">
           {formatDate(termin.date)} · {termin.time}

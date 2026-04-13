@@ -539,6 +539,11 @@ export default function TerminePage() {
                     </div>
                     <h3 className="truncate text-sm font-medium text-white">
                       {t.title}
+                      {t.type === "sitzung" && t.withDinner && (
+                        <span className="ml-1 text-[10px] font-normal text-secondary">
+                          · inkl. Nachtessen
+                        </span>
+                      )}
                     </h3>
                     <p className="text-xs text-gray-500">
                       {formatDate(t.date)} · {t.time}
@@ -565,8 +570,15 @@ export default function TerminePage() {
                       </span>
                     )}
                     {hasEssen && (
-                      <span className="text-secondary">
+                      <span
+                        className={
+                          t.myMealSignup
+                            ? "font-bold text-secondary"
+                            : "text-secondary"
+                        }
+                      >
                         🍽 {t.mealSignupCount} angemeldet
+                        {t.myMealSignup && " · du bist dabei"}
                         {t.dinnerTime && ` · ${t.dinnerTime}`}
                       </span>
                     )}
