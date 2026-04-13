@@ -161,9 +161,16 @@ export default function TerminePage() {
       ? termine
       : termine.filter((t) => t.type === filter);
 
-  const sorted = [...filtered].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  // Sortierung: bevorstehende Termine aufsteigend (naechster zuerst),
+  // vergangene Termine absteigend (juengster zuerst) darunter
+  const todayStr = new Date().toISOString().split("T")[0]!;
+  const sorted = [...filtered].sort((a, b) => {
+    const aUp = a.date >= todayStr;
+    const bUp = b.date >= todayStr;
+    if (aUp !== bUp) return aUp ? -1 : 1;
+    if (aUp) return a.date.localeCompare(b.date);
+    return b.date.localeCompare(a.date);
+  });
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -546,7 +553,21 @@ export default function TerminePage() {
                       )}
                     </h3>
                     <p className="text-xs text-gray-500">
-                      {formatDate(t.date)} · {t.time}
+                      {formatDate(t.date)}
+                      {t.type === "sitzung" && t.withDinner && t.dinnerTime ? (
+                        <>
+                          {" · "}
+                          <span className="text-secondary">
+                            Essen {t.dinnerTime}
+                          </span>
+                          {" · "}
+                          <span className="text-accent">
+                            Sitzung {t.time}
+                          </span>
+                        </>
+                      ) : (
+                        ` · ${t.time}`
+                      )}
                       {t.location && ` · ${t.location}`}
                     </p>
                   </div>
@@ -586,9 +607,12 @@ export default function TerminePage() {
                 )}
               </Link>
 
-              {/* Teilnahme-Toggle (fuer Termine mit Attendance) */}
+              {/* Sitzungs-Teilnahme (bei Termin mit Attendance) */}
               {t.withAttendance && (
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="w-16 shrink-0 font-display text-[9px] font-bold uppercase tracking-wider text-accent">
+                    Sitzung
+                  </span>
                   <button
                     onClick={() =>
                       setAttendance(
@@ -624,27 +648,32 @@ export default function TerminePage() {
                 </div>
               )}
 
-              {/* Direkt anmelden/abmelden Button bei Essen */}
-              {hasEssen && signupOpen !== t.id && !t.myMealSignup && (
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setSignupOpen(t.id);
-                    setSignupGuests([]);
-                  }}
-                  className="mt-2 w-full rounded-full bg-secondary/20 py-1.5 text-[10px] font-bold uppercase tracking-wider text-secondary transition-colors hover:bg-secondary/30"
-                >
-                  + Fürs Essen anmelden
-                </button>
-              )}
-              {hasEssen && t.myMealSignup && (
-                <div className="mt-2 flex items-center gap-2 rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1">
-                  <span className="flex-1 text-[10px] font-bold uppercase tracking-wider text-secondary">
-                    ✓ Angemeldet fürs Essen
+              {/* Essens-Anmeldung */}
+              {hasEssen && signupOpen !== t.id && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="w-16 shrink-0 font-display text-[9px] font-bold uppercase tracking-wider text-secondary">
+                    Essen
                   </span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (t.myMealSignup) return;
+                      setSignupOpen(t.id);
+                      setSignupGuests([]);
+                    }}
+                    disabled={t.myMealSignup}
+                    className={`flex-1 rounded-full py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                      t.myMealSignup
+                        ? "bg-secondary text-white"
+                        : "border border-secondary/40 text-secondary hover:bg-secondary/10"
+                    }`}
+                  >
+                    {t.myMealSignup ? "✓ Dabei" : "Anmelden"}
+                  </button>
                   <button
                     onClick={async (e) => {
                       e.preventDefault();
+                      if (!t.myMealSignup) return;
                       if (
                         !confirm(
                           "Dich (und deine Gäste) wirklich vom Essen abmelden?"
@@ -657,15 +686,18 @@ export default function TerminePage() {
                           { method: "DELETE" }
                         );
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        // Count optimistisch um 1 runter; genauer geht's
-                        // per Refetch
                         await loadTermine();
                       } catch (err) {
                         console.error("Abmelden", err);
                         alert("Abmelden fehlgeschlagen.");
                       }
                     }}
-                    className="rounded-full border border-red-500/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10"
+                    disabled={!t.myMealSignup}
+                    className={`flex-1 rounded-full py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                      !t.myMealSignup
+                        ? "border border-gray-700 text-gray-500 hover:bg-white/5"
+                        : "border border-red-500/50 text-red-300 hover:bg-red-500/10"
+                    }`}
                   >
                     Abmelden
                   </button>
