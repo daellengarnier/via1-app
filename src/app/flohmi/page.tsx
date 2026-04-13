@@ -15,7 +15,7 @@ interface Inserat {
   id: string;
   title: string;
   description: string;
-  image: string | null;
+  images: string[];
   createdBy: string;
   createdById: string;
   createdAt: string;
@@ -31,11 +31,13 @@ export default function FlohmiPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
-  const [newImage, setNewImage] = useState<string | null>(null);
+  const [newImages, setNewImages] = useState<string[]>([]);
 
   // Detail-Modal
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
+  const [imageIndex, setImageIndex] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   const loadInserate = useCallback(async () => {
     try {
@@ -71,7 +73,7 @@ export default function FlohmiPage() {
         body: JSON.stringify({
           title: newTitle,
           description: newDesc,
-          image: newImage,
+          images: newImages,
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -79,7 +81,7 @@ export default function FlohmiPage() {
       setInserate((prev) => [created, ...prev]);
       setNewTitle("");
       setNewDesc("");
-      setNewImage(null);
+      setNewImages([]);
       setShowCreate(false);
     } catch (err) {
       console.error("Inserat erstellen", err);
@@ -115,17 +117,34 @@ export default function FlohmiPage() {
   }
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 600_000) {
-      alert("Bild zu gross (max ~600 KB). Bitte komprimieren.");
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    if (newImages.length + files.length > 8) {
+      alert("Maximal 8 Bilder pro Inserat.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setNewImage(ev.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    const readers = files.map((file) => {
+      if (file.size > 600_000) {
+        alert(`${file.name} ist zu gross (max ~600 KB). Bitte komprimieren.`);
+        return Promise.resolve<string | null>(null);
+      }
+      return new Promise<string | null>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => resolve(ev.target?.result as string);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      });
+    });
+    Promise.all(readers).then((results) => {
+      const added = results.filter((r): r is string => typeof r === "string");
+      setNewImages((prev) => [...prev, ...added]);
+    });
+    // Input zuruecksetzen, damit dasselbe File erneut ausgewaehlt werden kann
+    e.target.value = "";
+  }
+
+  function removeNewImage(i: number) {
+    setNewImages((prev) => prev.filter((_, idx) => idx !== i));
   }
 
   async function handleAddComment(e: React.FormEvent) {
@@ -215,21 +234,42 @@ export default function FlohmiPage() {
             />
           </div>
           <div className="mb-3">
-            <label className="mb-1 block text-xs text-gray-400">Foto</label>
-            <label className="flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-700 bg-gray-900 p-4 text-sm text-gray-500 transition-colors hover:border-pink-400 hover:text-pink-200">
-              {newImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={newImage}
-                  alt="Vorschau"
-                  className="h-32 rounded object-cover"
-                />
-              ) : (
-                <span>Foto hochladen</span>
-              )}
+            <label className="mb-1 block text-xs text-gray-400">
+              Fotos{" "}
+              <span className="text-gray-600">
+                (max 8, zum Durchswipen)
+              </span>
+            </label>
+            {newImages.length > 0 && (
+              <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
+                {newImages.map((img, i) => (
+                  <div key={i} className="relative shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={img}
+                      alt=""
+                      className="h-20 w-20 rounded object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeNewImage(i)}
+                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/80 text-xs text-white"
+                      aria-label="Entfernen"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <label className="flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-700 bg-gray-900 p-3 text-sm text-gray-500 transition-colors hover:border-pink-400 hover:text-pink-200">
+              <span>
+                {newImages.length === 0 ? "Fotos hochladen" : "+ Weitere Fotos"}
+              </span>
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleImageUpload}
                 className="hidden"
               />
@@ -246,7 +286,7 @@ export default function FlohmiPage() {
               type="button"
               onClick={() => {
                 setShowCreate(false);
-                setNewImage(null);
+                setNewImages([]);
               }}
               className="rounded px-4 py-2 text-xs text-gray-400 hover:text-white"
             >
@@ -260,23 +300,34 @@ export default function FlohmiPage() {
       <div className="grid grid-cols-2 gap-3">
         {visible.map((ins) => {
           const isTaken = ins.takenBy !== null;
+          const firstImg = ins.images[0];
           return (
             <button
               key={ins.id}
-              onClick={() => setSelectedId(ins.id)}
+              onClick={() => {
+                setSelectedId(ins.id);
+                setImageIndex(0);
+              }}
               className={`flex flex-col overflow-hidden rounded-lg border text-left ${
                 isTaken
                   ? "border-pink-500/30 opacity-60"
                   : "border-gray-800 hover:border-gray-700"
               } bg-white/5`}
             >
-              {ins.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={ins.image}
-                  alt={ins.title}
-                  className="h-28 w-full object-cover"
-                />
+              {firstImg ? (
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={firstImg}
+                    alt={ins.title}
+                    className="h-28 w-full object-cover"
+                  />
+                  {ins.images.length > 1 && (
+                    <span className="absolute right-1 top-1 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[9px] text-white">
+                      {ins.images.length} 📷
+                    </span>
+                  )}
+                </div>
               ) : (
                 <div className="flex h-28 w-full items-center justify-center bg-gray-900/40 text-3xl opacity-40">
                   📦
@@ -328,13 +379,72 @@ export default function FlohmiPage() {
             className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-gray-800 bg-black sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {selected.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={selected.image}
-                alt={selected.title}
-                className="max-h-[50vh] w-full object-contain"
-              />
+            {selected.images.length > 0 ? (
+              <div
+                className="relative"
+                onTouchStart={(e) =>
+                  setTouchStartX(e.touches[0]?.clientX ?? null)
+                }
+                onTouchEnd={(e) => {
+                  if (touchStartX === null) return;
+                  const endX = e.changedTouches[0]?.clientX ?? touchStartX;
+                  const dx = endX - touchStartX;
+                  if (Math.abs(dx) > 40) {
+                    if (dx < 0 && imageIndex < selected.images.length - 1) {
+                      setImageIndex(imageIndex + 1);
+                    } else if (dx > 0 && imageIndex > 0) {
+                      setImageIndex(imageIndex - 1);
+                    }
+                  }
+                  setTouchStartX(null);
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={selected.images[imageIndex]}
+                  alt={selected.title}
+                  className="max-h-[50vh] w-full select-none object-contain"
+                  draggable={false}
+                />
+                {selected.images.length > 1 && (
+                  <>
+                    <button
+                      onClick={() =>
+                        setImageIndex(Math.max(0, imageIndex - 1))
+                      }
+                      disabled={imageIndex === 0}
+                      className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm disabled:opacity-30"
+                      aria-label="Vorheriges Bild"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      onClick={() =>
+                        setImageIndex(
+                          Math.min(selected.images.length - 1, imageIndex + 1)
+                        )
+                      }
+                      disabled={imageIndex === selected.images.length - 1}
+                      className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm disabled:opacity-30"
+                      aria-label="Naechstes Bild"
+                    >
+                      ›
+                    </button>
+                    <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
+                      {selected.images.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setImageIndex(i)}
+                          className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                            i === imageIndex ? "bg-white" : "bg-white/30"
+                          }`}
+                          aria-label={`Bild ${i + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             ) : (
               <div className="flex h-40 w-full items-center justify-center bg-gray-900/40 text-5xl opacity-40">
                 📦

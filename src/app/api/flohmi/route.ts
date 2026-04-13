@@ -26,6 +26,7 @@ export async function GET() {
     include: {
       createdBy: { select: { id: true, name: true } },
       takenBy: { select: { id: true, name: true } },
+      images: { orderBy: { order: "asc" } },
       comments: {
         orderBy: { createdAt: "asc" },
         include: { author: { select: { id: true, name: true } } },
@@ -38,7 +39,7 @@ export async function GET() {
       id: i.id,
       title: i.title,
       description: i.description,
-      image: i.image,
+      images: i.images.map((img) => img.data),
       createdBy: i.createdBy.name,
       createdById: i.createdBy.id,
       createdAt: toDateOnly(i.createdAt),
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
   const body = (await req.json()) as {
     title?: unknown;
     description?: unknown;
-    image?: unknown;
+    images?: unknown;
   };
   const title = typeof body.title === "string" ? body.title.trim() : "";
   if (!title) {
@@ -74,25 +75,40 @@ export async function POST(req: Request) {
   }
   const description =
     typeof body.description === "string" ? body.description : "";
-  const image = typeof body.image === "string" ? body.image : null;
 
-  // Limit: Bild max ~500 KB Base64
-  if (image && image.length > 700_000) {
+  const imagesInput = Array.isArray(body.images)
+    ? (body.images as unknown[]).filter((x): x is string => typeof x === "string")
+    : [];
+
+  // Limit: Max 8 Bilder, jedes max ~500 KB Base64
+  if (imagesInput.length > 8) {
     return NextResponse.json(
-      { error: "Bild zu gross (max ~500KB)" },
+      { error: "Max. 8 Bilder pro Inserat" },
       { status: 400 }
     );
+  }
+  for (const img of imagesInput) {
+    if (img.length > 700_000) {
+      return NextResponse.json(
+        { error: "Bild zu gross (max ~500KB pro Bild)" },
+        { status: 400 }
+      );
+    }
   }
 
   const created = await prisma.flohmiInserat.create({
     data: {
       title,
       description,
-      image,
+      image: imagesInput[0] ?? null,
       createdById: session.user.id,
+      images: {
+        create: imagesInput.map((data, order) => ({ data, order })),
+      },
     },
     include: {
       createdBy: { select: { id: true, name: true } },
+      images: { orderBy: { order: "asc" } },
     },
   });
 
@@ -100,7 +116,7 @@ export async function POST(req: Request) {
     id: created.id,
     title: created.title,
     description: created.description,
-    image: created.image,
+    images: created.images.map((img) => img.data),
     createdBy: created.createdBy.name,
     createdById: created.createdBy.id,
     createdAt: toDateOnly(created.createdAt),

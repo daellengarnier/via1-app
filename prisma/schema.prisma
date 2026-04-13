@@ -257,8 +257,9 @@ model FlohmiInserat {
   id          String           @id @default(cuid())
   title       String
   description String           @default("")
-  // Bild als Base64-Data-URL (klein, einfach)
+  // Erstes Bild (Backwards-Compat / Thumbnail)
   image       String?
+  images      FlohmiImage[]
   createdBy   User             @relation("FlohmiCreator", fields: [createdById], references: [id])
   createdById String
   takenBy     User?            @relation("FlohmiTaker", fields: [takenById], references: [id])
@@ -271,6 +272,19 @@ model FlohmiInserat {
   @@index([createdAt])
   @@index([takenAt])
   @@map("flohmi_inserate")
+}
+
+model FlohmiImage {
+  id        String        @id @default(cuid())
+  inserat   FlohmiInserat @relation(fields: [inseratId], references: [id], onDelete: Cascade)
+  inseratId String
+  // Base64 Data-URL
+  data      String
+  order     Int           @default(0)
+  createdAt DateTime      @default(now())
+
+  @@index([inseratId])
+  @@map("flohmi_images")
 }
 
 model FlohmiComment {
