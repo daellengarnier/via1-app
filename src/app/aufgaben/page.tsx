@@ -403,23 +403,25 @@ export default function AufgabenPage() {
   return (
     <div className="relative p-4 pb-20">
       <TabHeader icon="/icon-aufgaben.webp" color="yellow" showIcon={false} />
-      <div className="mb-4 flex items-center justify-center gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/icon-aufgaben.webp"
-          alt=""
-          className="h-12 w-12 object-contain"
-          style={{
-            filter:
-              "drop-shadow(0 0 12px rgba(255,220,50,0.55)) drop-shadow(0 0 20px rgba(255,220,50,0.3))",
-          }}
-        />
-        <button
-          onClick={() => setShowCreate(!showCreate)}
-          className="rounded-full bg-yellow-400 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-black"
-        >
-          + Neue Aufgabe
-        </button>
+      <div className="mb-4 flex justify-center">
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/icon-aufgaben.webp"
+            alt=""
+            className="pointer-events-none absolute right-full top-1/2 mr-3 h-24 w-24 -translate-y-1/2 object-contain"
+            style={{
+              filter:
+                "drop-shadow(0 0 14px rgba(255,220,50,0.55)) drop-shadow(0 0 28px rgba(255,220,50,0.3))",
+            }}
+          />
+          <button
+            onClick={() => setShowCreate(!showCreate)}
+            className="rounded-full border border-yellow-400/50 bg-yellow-400/15 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-yellow-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors hover:bg-yellow-400/25"
+          >
+            + Neue Aufgabe
+          </button>
+        </div>
       </div>
 
       {/* Karte */}

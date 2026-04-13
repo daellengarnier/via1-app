@@ -128,27 +128,29 @@ export default function SaunaPage() {
       <TabHeader icon="/icon-sauna.webp" color="red" showIcon={false} />
 
       {/* Heizen Toggle — oberhalb der Temperatur */}
-      <div className="mb-4 flex items-center justify-center gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/icon-sauna.webp"
-          alt=""
-          className="h-12 w-12 object-contain"
-          style={{
-            filter:
-              "drop-shadow(0 0 12px rgba(255,50,50,0.55)) drop-shadow(0 0 20px rgba(255,50,50,0.3))",
-          }}
-        />
-        <button
-          onClick={() => setHeating(!heating)}
-          className={`rounded-full px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider transition-colors ${
-            heating
-              ? "bg-gray-700 text-white hover:bg-gray-600"
-              : "bg-red-500 text-white hover:brightness-110"
-          }`}
-        >
-          {heating ? "× Heizung stoppen" : "+ Sauna einheizen"}
-        </button>
+      <div className="mb-4 flex justify-center">
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/icon-sauna.webp"
+            alt=""
+            className="pointer-events-none absolute right-full top-1/2 mr-3 h-24 w-24 -translate-y-1/2 object-contain"
+            style={{
+              filter:
+                "drop-shadow(0 0 14px rgba(255,50,50,0.6)) drop-shadow(0 0 28px rgba(255,50,50,0.35))",
+            }}
+          />
+          <button
+            onClick={() => setHeating(!heating)}
+            className={`rounded-full border px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors ${
+              heating
+                ? "border-gray-600/60 bg-gray-700/30 text-white hover:bg-gray-700/50"
+                : "border-red-500/50 bg-red-500/20 text-red-200 hover:bg-red-500/30"
+            }`}
+          >
+            {heating ? "× Heizung stoppen" : "+ Sauna einheizen"}
+          </button>
+        </div>
       </div>
 
       {/* Temperatur */}
