@@ -7,11 +7,12 @@ interface Artikel {
   title: string;
   content: string;
   category: string;
+  owner: string;
   updatedBy: string;
   updatedAt: string;
 }
 
-const categories = [
+const initialCategories = [
   "Allgemein",
   "Technik",
   "Garten",
@@ -27,6 +28,7 @@ const mockArtikel: Artikel[] = [
     content:
       "Netzwerk: The Force\nPasswort: maythefurzbewithyou!\n\nRepeater im 2. OG: gleicher Name, gleiches Passwort.",
     category: "Technik",
+    owner: "Yves",
     updatedBy: "Yves",
     updatedAt: "2026-01-10",
   },
@@ -36,6 +38,7 @@ const mockArtikel: Artikel[] = [
     content:
       "Kehricht: jeden Montag bis 7 Uhr rausstellen.\nGrüngut: Dienstag, alle 2 Wochen (gerade KW).\nPapier/Karton: erster Mittwoch im Monat.\nGlas: Container beim Migros Felsenau.\nSperrgut: auf Abruf bei der Stadt Bern (Marke kaufen).\nElektroschrott: Sammelstelle beim Wankdorf.",
     category: "Allgemein",
+    owner: "Lena",
     updatedBy: "Lena",
     updatedAt: "2026-04-01",
   },
@@ -45,6 +48,7 @@ const mockArtikel: Artikel[] = [
     content:
       "Die Via Felsenau (Spinnereiweg 17) wurde in den 1990er-Jahren als genossenschaftliches Wohnprojekt gegründet. Das Gebäude ist ein Holzbau mit keilförmigem Grundriss, 3 Stockwerke plus Untergeschoss. Charakteristisch ist die Glaspyramide (Wintergarten) im Zentrum, die vom UG bis zum Dach reicht. Der Nord-Flügel hat eine abgerundete Form und ist um einen halben Stock tiefer versetzt als der Ost-Flügel (Hanglage).\n\nAktuell leben ca. 25 Personen in 6 Wohngemeinschaften zusammen.",
     category: "Allgemein",
+    owner: "Alain",
     updatedBy: "Alain",
     updatedAt: "2026-03-01",
   },
@@ -54,6 +58,7 @@ const mockArtikel: Artikel[] = [
     content:
       "Monatliche Beiträge an die Gemeinschaftskasse:\n- Hausgeld: gemäss Reglement\n- Zusätzliche Beiträge für Gemeinschaftsprojekte werden an der Haussitzung beschlossen\n\nKonto-Infos bei der Verwaltung.",
     category: "Allgemein",
+    owner: "Marco",
     updatedBy: "Marco",
     updatedAt: "2026-02-15",
   },
@@ -63,6 +68,7 @@ const mockArtikel: Artikel[] = [
     content:
       "Gemeinsames Kaffee-Abo für die Bar/Gemeinschaftsküche.\nJede:r der:die mitmacht zahlt monatlich einen Beitrag.\nAnmeldung bei Alain oder Sophie.\nAktuell: Bertschi Kaffee, Bern.",
     category: "Allgemein",
+    owner: "Sophie",
     updatedBy: "Sophie",
     updatedAt: "2026-03-10",
   },
@@ -72,6 +78,7 @@ const mockArtikel: Artikel[] = [
     content:
       "Das Biotop befindet sich südlich vom Hauptgebäude. Es ist ein kleiner Naturteich mit einheimischen Pflanzen.\n\nRegeln:\n- Kein Baden\n- Keine Fische einsetzen\n- Uferbepflanzung nicht entfernen\n- Laub im Herbst abfischen",
     category: "Garten",
+    owner: "Sven",
     updatedBy: "Sven",
     updatedAt: "2026-03-20",
   },
@@ -81,6 +88,7 @@ const mockArtikel: Artikel[] = [
     content:
       "Die Via wird genossenschaftlich verwaltet.\n\nVorstand:\n- Präsident: Marco\n- Finanzen: Lena\n- Hauswart: Alain\n\nHaussitzungen: monatlich (siehe Termine)\nBeschlüsse werden im Protokoll festgehalten.",
     category: "Kontakte",
+    owner: "Marco",
     updatedBy: "Marco",
     updatedAt: "2026-04-05",
   },
@@ -90,6 +98,7 @@ const mockArtikel: Artikel[] = [
     content:
       "Rasenmäher (Benzin): Geräteschuppen\nHeckenschere (Akku): Geräteschuppen\nKettensäge: nur mit Bewilligung, bei Alain\nBohrmaschine + Werkzeugkoffer: Werkraum UG\nHochdruckreiniger: Geräteschuppen\n\nBitte nach Gebrauch reinigen und zurückstellen.",
     category: "Technik",
+    owner: "Alain",
     updatedBy: "Alain",
     updatedAt: "2026-03-25",
   },
@@ -99,6 +108,7 @@ const mockArtikel: Artikel[] = [
     content:
       "Parzellen hinter dem Haus. Jede WG hat ein Beet.\nGemeinsam: Kräuterbeet, Beerensträucher.\n\nRegeln:\n- Eigenes Beet selber pflegen\n- Gemeinschaftsbeete nach Absprache\n- Kompost: nur Gartenabfälle, keine Essensreste\n- Wasser: Regentonne nutzen wenn möglich",
     category: "Garten",
+    owner: "Ruth",
     updatedBy: "Ruth",
     updatedAt: "2026-03-15",
   },
@@ -108,32 +118,35 @@ const mockArtikel: Artikel[] = [
     content:
       "Die originalen Baupläne des Hauses sind bei der Verwaltung einsehbar.\nDigitale Kopien auf Anfrage bei Marco.\n\nWichtige Infos:\n- Tragende Wände: NICHT verändern ohne Bewilligung\n- Brandschutzwände: rot markiert in den Plänen\n- Leitungsplan (Wasser/Strom): im Technikraum UG",
     category: "Technik",
+    owner: "Marco",
     updatedBy: "Marco",
     updatedAt: "2026-01-20",
+  },
+  {
+    id: "11",
+    title: "Gemeinschaftsladen",
+    content:
+      "Unser Quartierladen im EG funktioniert als Selbstbedienungsladen.\n\nÖffnungszeiten: rund um die Uhr (Vertrauensbasis)\n\nSortiment:\n- Grundnahrungsmittel (Mehl, Reis, Pasta, Öl)\n- Milchprodukte, Eier\n- Brot (Lieferung Di + Fr)\n- Snacks, Getränke\n- Hygieneartikel\n\nBezahlung: Twint oder Kässeli (Münz). Preise sind angeschrieben.\nBestellungen/Wünsche: Liste an der Pinnwand im Laden.\nAuffüllen: Wenn etwas leer ist, bitte im Gruppenchat melden.",
+    category: "Allgemein",
+    owner: "Mia",
+    updatedBy: "Mia",
+    updatedAt: "2026-04-02",
   },
 ];
 
 export default function HausbuchPage() {
-  const allArticles: Artikel[] = [
-    ...mockArtikel,
-    {
-      id: "11",
-      title: "Gemeinschaftsladen",
-      content:
-        "Unser Quartierladen im EG funktioniert als Selbstbedienungsladen.\n\nÖffnungszeiten: rund um die Uhr (Vertrauensbasis)\n\nSortiment:\n- Grundnahrungsmittel (Mehl, Reis, Pasta, Öl)\n- Milchprodukte, Eier\n- Brot (Lieferung Di + Fr)\n- Snacks, Getränke\n- Hygieneartikel\n\nBezahlung: Twint oder Kässeli (Münz). Preise sind angeschrieben.\nBestellungen/Wünsche: Liste an der Pinnwand im Laden.\nAuffüllen: Wenn etwas leer ist, bitte im Gruppenchat melden.",
-      category: "Allgemein",
-      updatedBy: "Mia",
-      updatedAt: "2026-04-02",
-    },
-  ];
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Alle");
-  const [articles, setArticles] = useState(allArticles);
+  const [categories, setCategories] = useState<string[]>(initialCategories);
+  const [articles, setArticles] = useState<Artikel[]>(mockArtikel);
   const [showCreate, setShowCreate] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
   const [newCategory, setNewCategory] = useState("Allgemein");
+  const [newOwner, setNewOwner] = useState("");
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   const filtered = articles.filter((a) => {
     const matchesSearch =
@@ -146,13 +159,14 @@ export default function HausbuchPage() {
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!newTitle.trim() || !newContent.trim()) return;
+    if (!newTitle.trim() || !newContent.trim() || !newOwner.trim()) return;
     setArticles((prev) => [
       {
         id: String(Date.now()),
         title: newTitle,
         content: newContent,
         category: newCategory,
+        owner: newOwner,
         updatedBy: "Alain",
         updatedAt: new Date().toISOString().split("T")[0]!,
       },
@@ -160,7 +174,19 @@ export default function HausbuchPage() {
     ]);
     setNewTitle("");
     setNewContent("");
+    setNewOwner("");
     setShowCreate(false);
+  }
+
+  function handleAddCategory() {
+    const name = newCategoryName.trim();
+    if (!name) return;
+    if (!categories.includes(name)) {
+      setCategories((prev) => [...prev, name]);
+    }
+    setNewCategory(name);
+    setNewCategoryName("");
+    setAddingCategory(false);
   }
 
   return (
@@ -222,20 +248,81 @@ export default function HausbuchPage() {
             />
           </div>
           <div className="mb-3">
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-xs text-gray-400">Kategorie</label>
+              {!addingCategory && (
+                <button
+                  type="button"
+                  onClick={() => setAddingCategory(true)}
+                  className="font-mono text-[10px] text-accent hover:underline"
+                >
+                  + Neue Kategorie
+                </button>
+              )}
+            </div>
+            {addingCategory ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddCategory();
+                    }
+                  }}
+                  placeholder="Name der neuen Kategorie"
+                  autoFocus
+                  className="flex-1 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCategory}
+                  className="rounded bg-accent px-3 text-xs font-bold text-dark"
+                >
+                  OK
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddingCategory(false);
+                    setNewCategoryName("");
+                  }}
+                  className="rounded px-2 text-xs text-gray-400 hover:text-white"
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <select
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              >
+                {categories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          <div className="mb-3">
             <label className="mb-1 block text-xs text-gray-400">
-              Kategorie
+              Owner{" "}
+              <span className="text-gray-600">
+                (verantwortlich für Aktualität)
+              </span>
             </label>
-            <select
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
+            <input
+              type="text"
+              value={newOwner}
+              onChange={(e) => setNewOwner(e.target.value)}
+              placeholder="z.B. Alain"
               className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
-            >
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+              required
+            />
           </div>
           <div className="mb-3">
             <label className="mb-1 block text-xs text-gray-400">Inhalt</label>
@@ -279,13 +366,15 @@ export default function HausbuchPage() {
               }
               className="flex w-full items-center justify-between p-4 text-left"
             >
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="font-medium text-white">{a.title}</h3>
-                <span className="font-mono text-xs text-accent">
-                  {a.category}
-                </span>
+                <div className="mt-0.5 flex items-center gap-2 font-mono text-xs">
+                  <span className="text-accent">{a.category}</span>
+                  <span className="text-gray-700">·</span>
+                  <span className="text-gray-500">👤 {a.owner}</span>
+                </div>
               </div>
-              <span className="text-gray-500">
+              <span className="ml-2 shrink-0 text-gray-500">
                 {expanded === a.id ? "▲" : "▼"}
               </span>
             </button>
@@ -294,14 +383,23 @@ export default function HausbuchPage() {
                 <p className="whitespace-pre-line text-sm text-gray-300">
                   {a.content}
                 </p>
-                <p className="mt-3 text-xs text-gray-600">
-                  Aktualisiert von {a.updatedBy} ·{" "}
-                  {new Date(a.updatedAt).toLocaleDateString("de-CH", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </p>
+                <div className="mt-3 space-y-0.5">
+                  <p className="text-xs text-gray-500">
+                    <span className="text-gray-600">Owner:</span>{" "}
+                    <span className="text-accent">{a.owner}</span>{" "}
+                    <span className="text-gray-600">
+                      (hält den Eintrag aktuell)
+                    </span>
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Aktualisiert von {a.updatedBy} ·{" "}
+                    {new Date(a.updatedAt).toLocaleDateString("de-CH", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
               </div>
             )}
           </div>
