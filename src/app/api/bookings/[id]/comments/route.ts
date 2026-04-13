@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notify } from "@/lib/notify";
 
 function toDateOnly(d: Date): string {
   return d.toISOString().split("T")[0]!;
@@ -44,6 +45,17 @@ export async function POST(
     },
     include: { author: { select: { id: true, name: true } } },
   });
+
+  // Nur den Booking-Ersteller benachrichtigen (wenn nicht selbst)
+  if (booking.createdById !== session.user.id) {
+    notify({
+      kind: "BOOKING_COMMENT",
+      title: `Kommentar auf deiner Buchung (${booking.guest})`,
+      body: `${c.author.name}: ${text}`,
+      link: "/gaesti",
+      audience: [booking.createdById],
+    }).catch((e) => console.error("notify", e));
+  }
 
   return NextResponse.json({
     id: c.id,

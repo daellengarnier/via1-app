@@ -48,14 +48,29 @@ export default function PutzplanPage() {
   useEffect(() => {
     if (!confirmed || currentIndex < 0) return;
     const timer = setTimeout(() => {
-      setRotation(
-        rotation.map((r, i) =>
-          i === currentIndex
-            ? { ...r, completedAt: new Date().toISOString().split("T")[0]! }
-            : r
-        )
+      const newRotation = rotation.map((r, i) =>
+        i === currentIndex
+          ? { ...r, completedAt: new Date().toISOString().split("T")[0]! }
+          : r
       );
+      setRotation(newRotation);
       setConfirmed(false);
+      // Naechste WG ermitteln und benachrichtigen
+      const nextIdx = newRotation.findIndex((r) => r.completedAt === null);
+      if (nextIdx >= 0) {
+        const nextWg = newRotation[nextIdx]!.wg;
+        fetch("/api/notifications/trigger", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "PUTZPLAN_MY_WG",
+            title: "Eure WG ist mit Putzen dran 🧹",
+            body: `${nextWg} — das gemeinsame Putzen wartet.`,
+            link: "/putzplan",
+            wg: nextWg,
+          }),
+        }).catch(() => {});
+      }
     }, 500);
     return () => clearTimeout(timer);
   }, [confirmed, currentIndex, rotation, setRotation]);

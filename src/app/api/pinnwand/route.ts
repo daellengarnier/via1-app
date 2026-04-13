@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notify } from "@/lib/notify";
 
 // GET /api/pinnwand — alle Eintraege, neueste zuerst
 export async function GET() {
@@ -59,6 +60,16 @@ export async function POST(req: Request) {
       author: { select: { id: true, name: true } },
     },
   });
+
+  // Alle anderen User benachrichtigen
+  notify({
+    kind: "PINNWAND_NEW",
+    title: `Neuer Pinnwand-Eintrag von ${note.author.name}`,
+    body: text.length > 80 ? text.slice(0, 80) + "…" : text,
+    link: "/",
+    audience: "all",
+    excludeUserId: session.user.id,
+  }).catch((e) => console.error("notify", e));
 
   return NextResponse.json({
     id: note.id,

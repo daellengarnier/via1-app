@@ -52,23 +52,51 @@ const PINS_KEY = "via1-mehr-pins";
 
 interface Notification {
   id: string;
-  text: string;
-  time: string;
+  kind: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read: boolean;
+  createdAt: string;
 }
 
-const INITIAL_NOTIFICATIONS: Notification[] = [
-  { id: "1", text: "Sauna wird eingeheizt 🔥", time: "vor 10 Min." },
-  { id: "2", text: "Neue Aufgabe: Laub entfernen", time: "vor 1 Std." },
-  { id: "3", text: "Haussitzung April in 5 Tagen", time: "vor 3 Std." },
-];
+function formatAge(iso: string): string {
+  const now = Date.now();
+  const then = new Date(iso).getTime();
+  const diffMs = now - then;
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "jetzt";
+  if (mins < 60) return `vor ${mins} Min.`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `vor ${hrs} Std.`;
+  const days = Math.floor(hrs / 24);
+  return `vor ${days} ${days === 1 ? "Tag" : "Tagen"}`;
+}
 
 export function HamburgerMenu() {
   const [open, setOpen] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
   const [pinned, setPinned] = useState<string[]>([]);
-  const [notifications, setNotifications] =
-    useState<Notification[]>(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const notifCount = notifications.length;
+
+  // Notifications laden
+  const loadNotifications = async () => {
+    try {
+      const res = await fetch("/api/notifications");
+      if (!res.ok) return;
+      const data = (await res.json()) as Notification[];
+      setNotifications(data);
+    } catch {
+      // ignore
+    }
+  };
+  useEffect(() => {
+    loadNotifications();
+    // Alle 60s pollen
+    const id = setInterval(loadNotifications, 60000);
+    return () => clearInterval(id);
+  }, []);
 
   // Pins aus localStorage laden
   useEffect(() => {
@@ -101,12 +129,22 @@ export function HamburgerMenu() {
     ...MEHR_ITEMS.filter((i) => !pinned.includes(i.id)),
   ];
 
-  function dismissNotification(id: string) {
+  async function dismissNotification(id: string) {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
+    try {
+      await fetch(`/api/notifications/${id}`, { method: "DELETE" });
+    } catch {
+      // ignore
+    }
   }
 
-  function clearAllNotifications() {
+  async function clearAllNotifications() {
     setNotifications([]);
+    try {
+      await fetch("/api/notifications", { method: "DELETE" });
+    } catch {
+      // ignore
+    }
   }
 
   return (
@@ -157,23 +195,49 @@ export function HamburgerMenu() {
                 </button>
               )}
             </div>
-            <div className="space-y-2">
-              {notifications.map((n) => (
-                <div
-                  key={n.id}
-                  className="group relative rounded border border-white/5 bg-white/3 p-2 pr-6"
-                >
-                  <p className="text-xs text-gray-300">{n.text}</p>
-                  <p className="mt-0.5 text-[10px] text-gray-600">{n.time}</p>
-                  <button
-                    onClick={() => dismissNotification(n.id)}
-                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center text-gray-600 hover:text-red-400"
-                    aria-label="Benachrichtigung entfernen"
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+              {notifications.map((n) => {
+                const content = (
+                  <>
+                    <p className="text-xs font-semibold text-gray-200">
+                      {n.title}
+                    </p>
+                    {n.body && (
+                      <p className="mt-0.5 text-[10px] text-gray-400">
+                        {n.body}
+                      </p>
+                    )}
+                    <p className="mt-0.5 text-[9px] text-gray-600">
+                      {formatAge(n.createdAt)}
+                    </p>
+                  </>
+                );
+                return (
+                  <div
+                    key={n.id}
+                    className="group relative rounded border border-white/5 bg-white/3 p-2 pr-6"
                   >
-                    ×
-                  </button>
-                </div>
-              ))}
+                    {n.link ? (
+                      <Link
+                        href={n.link}
+                        onClick={() => setShowNotifs(false)}
+                        className="block"
+                      >
+                        {content}
+                      </Link>
+                    ) : (
+                      <div>{content}</div>
+                    )}
+                    <button
+                      onClick={() => dismissNotification(n.id)}
+                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center text-gray-600 hover:text-red-400"
+                      aria-label="Benachrichtigung entfernen"
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
               {notifications.length === 0 && (
                 <p className="py-3 text-center text-xs text-gray-600">
                   Keine neuen Benachrichtigungen

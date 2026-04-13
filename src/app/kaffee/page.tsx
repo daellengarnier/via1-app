@@ -186,6 +186,19 @@ export default function KaffeePage() {
                 onClick={() => {
                   setCurrentKaffee(k);
                   setShowSelect(false);
+                  // Nur benachrichtigen wenn wirklich ein anderer
+                  if (currentBeans !== k.name) {
+                    fetch("/api/notifications/trigger", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        kind: "KAFFEE_CHANGED",
+                        title: `Neue Kaffeebohnen: ${k.name}`,
+                        body: k.duftnotizen,
+                        link: "/kaffee",
+                      }),
+                    }).catch(() => {});
+                  }
                 }}
                 className={`flex w-full items-start justify-between rounded-lg border p-3 text-left transition-colors ${
                   currentBeans === k.name

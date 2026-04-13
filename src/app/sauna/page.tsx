@@ -138,7 +138,23 @@ export default function SaunaPage() {
           fetchPriority="high"
         />
         <button
-          onClick={() => setHeating(!heating)}
+          onClick={() => {
+            const wasOff = !heating;
+            setHeating(!heating);
+            // Beim Einheizen Benachrichtigung an alle
+            if (wasOff) {
+              fetch("/api/notifications/trigger", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  kind: "SAUNA",
+                  title: "Die Sauna wird eingeheizt 🔥",
+                  body: "Bald aufheizen!",
+                  link: "/sauna",
+                }),
+              }).catch(() => {});
+            }
+          }}
           className={`rounded-full border px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors ${
             heating
               ? "border-gray-600/60 bg-gray-700/30 text-white hover:bg-gray-700/50"

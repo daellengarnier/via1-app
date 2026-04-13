@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { serializeAufgabe } from "@/lib/aufgaben-serialize";
+import { notify } from "@/lib/notify";
 
 // GET /api/aufgaben
 export async function GET() {
@@ -79,6 +80,15 @@ export async function POST(req: Request) {
       activeWorkers: { include: { user: true } },
     },
   });
+
+  notify({
+    kind: "AUFGABE_NEW",
+    title: `Neue Aufgabe: ${title}`,
+    body: description || location || undefined,
+    link: "/aufgaben",
+    audience: "all",
+    excludeUserId: session.user.id,
+  }).catch((e) => console.error("notify", e));
 
   return NextResponse.json(serializeAufgabe(created));
 }

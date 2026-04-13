@@ -28,6 +28,12 @@ interface ProfileData {
     sauna: boolean;
     aufgaben: boolean;
     termine: boolean;
+    aufgabeStarted: boolean;
+    putzplan: boolean;
+    kaffee: boolean;
+    pinnwand: boolean;
+    flohmi: boolean;
+    bookingComment: boolean;
   };
 }
 
@@ -36,6 +42,155 @@ const dietLabels: Record<Diet, string> = {
   vegi: "Vegetarisch",
   vegan: "Vegan",
 };
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+function PushSubscribeBox() {
+  const [status, setStatus] = useState<
+    "loading" | "unsupported" | "blocked" | "off" | "on"
+  >("loading");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setStatus("unsupported");
+      return;
+    }
+    if (Notification.permission === "denied") {
+      setStatus("blocked");
+      return;
+    }
+    // Check bestehendes Abo
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => setStatus(sub ? "on" : "off"))
+      .catch(() => setStatus("off"));
+  }, []);
+
+  async function subscribe() {
+    setBusy(true);
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") {
+        setStatus(perm === "denied" ? "blocked" : "off");
+        return;
+      }
+      const keyRes = await fetch("/api/push/subscribe");
+      const { publicKey } = (await keyRes.json()) as { publicKey: string | null };
+      if (!publicKey) {
+        alert(
+          "Push-Notifications sind auf dem Server nicht konfiguriert (VAPID_PUBLIC_KEY fehlt)."
+        );
+        return;
+      }
+      const keyArray = urlBase64ToUint8Array(publicKey);
+      // Next/TS braucht einen expliziten ArrayBuffer-Cast
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: keyArray.buffer.slice(
+          keyArray.byteOffset,
+          keyArray.byteOffset + keyArray.byteLength
+        ) as ArrayBuffer,
+      });
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub.toJSON()),
+      });
+      setStatus("on");
+    } catch (err) {
+      console.error("push subscribe", err);
+      alert("Aktivierung fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function unsubscribe() {
+    setBusy(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await fetch("/api/push/subscribe", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: sub.endpoint }),
+        });
+        await sub.unsubscribe();
+      }
+      setStatus("off");
+    } catch (err) {
+      console.error("push unsubscribe", err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (status === "loading") return null;
+
+  return (
+    <div className="mb-3 rounded-lg border border-accent/30 bg-accent/5 p-3">
+      <p className="mb-1 text-xs font-semibold text-accent">
+        📱 Push-Benachrichtigungen
+      </p>
+      {status === "unsupported" && (
+        <p className="text-xs text-gray-500">
+          Dein Browser unterstützt keine Web-Push-Benachrichtigungen.
+        </p>
+      )}
+      {status === "blocked" && (
+        <p className="text-xs text-gray-500">
+          Benachrichtigungen sind im Browser blockiert. Bitte in den
+          Browser-Einstellungen freigeben.
+        </p>
+      )}
+      {status === "off" && (
+        <>
+          <p className="mb-2 text-xs text-gray-400">
+            Aktivieren, um Push-Benachrichtigungen auf diesem Gerät zu
+            empfangen.
+          </p>
+          <button
+            onClick={subscribe}
+            disabled={busy}
+            className="rounded-full bg-accent px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-dark disabled:opacity-60"
+          >
+            {busy ? "…" : "Aktivieren"}
+          </button>
+        </>
+      )}
+      {status === "on" && (
+        <>
+          <p className="mb-2 text-xs text-gray-400">
+            ✓ Push-Benachrichtigungen sind auf diesem Gerät aktiv.
+          </p>
+          <button
+            onClick={unsubscribe}
+            disabled={busy}
+            className="rounded-full border border-gray-600 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-300 disabled:opacity-60"
+          >
+            {busy ? "…" : "Deaktivieren"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function ProfilPage() {
   const router = useRouter();
@@ -56,6 +211,12 @@ export default function ProfilPage() {
       sauna: true,
       aufgaben: true,
       termine: true,
+      aufgabeStarted: true,
+      putzplan: true,
+      kaffee: true,
+      pinnwand: true,
+      flohmi: true,
+      bookingComment: true,
     },
   });
 
@@ -313,12 +474,26 @@ export default function ProfilPage() {
         <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
           Benachrichtigungen
         </h2>
-        <div className="space-y-3">
-          {([
-            { key: "sauna" as const, label: "Sauna wird eingeheizt" },
-            { key: "aufgaben" as const, label: "Neue Aufgaben" },
-            { key: "termine" as const, label: "Neue Termine" },
-          ]).map(({ key, label }) => (
+
+        <PushSubscribeBox />
+
+        <div className="space-y-2">
+          {(
+            [
+              { key: "sauna", label: "Sauna wird eingeheizt" },
+              { key: "termine", label: "Neuer Termin" },
+              { key: "putzplan", label: "Putzämtli: meine WG ist dran" },
+              { key: "kaffee", label: "Kaffeebohnen gewechselt" },
+              { key: "pinnwand", label: "Neuer Pinnwand-Eintrag" },
+              { key: "flohmi", label: "Neues Inserat im Flohmi" },
+              { key: "aufgaben", label: "Neue Aufgabe" },
+              { key: "aufgabeStarted", label: "Jemand packt eine Aufgabe an" },
+              {
+                key: "bookingComment",
+                label: "Kommentar auf meiner Gästi-Buchung",
+              },
+            ] as const
+          ).map(({ key, label }) => (
             <div
               key={key}
               className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 p-3"
@@ -334,7 +509,7 @@ export default function ProfilPage() {
                     },
                   })
                 }
-                className={`relative h-6 w-11 rounded-full transition-colors ${
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
                   profile.notifications[key] ? "bg-accent" : "bg-gray-700"
                 }`}
               >

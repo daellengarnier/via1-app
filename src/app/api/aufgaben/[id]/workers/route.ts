@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { serializeAufgabe } from "@/lib/aufgaben-serialize";
+import { notify } from "@/lib/notify";
 
 // POST /api/aufgaben/[id]/workers — aktueller User startet / joint
 export async function POST(
@@ -24,6 +25,12 @@ export async function POST(
       { status: 400 }
     );
   }
+
+  // Pruefen ob die Aufgabe schon Worker hat (dann ist's ein Join,
+  // kein "angefangen")
+  const existingWorkers = await prisma.aufgabeActiveWorker.count({
+    where: { aufgabeId: params.id },
+  });
 
   await prisma.aufgabeActiveWorker.upsert({
     where: {
@@ -49,6 +56,23 @@ export async function POST(
   if (!full) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  // Nur beim ersten Worker eine "angefangen"-Notification senden
+  if (existingWorkers === 0) {
+    const me = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true },
+    });
+    notify({
+      kind: "AUFGABE_STARTED",
+      title: `${me?.name ?? "Jemand"} packt eine Aufgabe an`,
+      body: aufgabe.title,
+      link: "/aufgaben",
+      audience: "all",
+      excludeUserId: session.user.id,
+    }).catch((e) => console.error("notify", e));
+  }
+
   return NextResponse.json(serializeAufgabe(full));
 }
 

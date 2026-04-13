@@ -36,6 +36,18 @@ enum Diet {
   VEGAN
 }
 
+enum NotificationKind {
+  SAUNA
+  TERMIN_NEW
+  PUTZPLAN_MY_WG
+  KAFFEE_CHANGED
+  PINNWAND_NEW
+  FLOHMI_NEW
+  AUFGABE_NEW
+  AUFGABE_STARTED
+  BOOKING_COMMENT
+}
+
 model User {
   id          String    @id @default(cuid())
   name        String
@@ -49,9 +61,15 @@ model User {
   birthday    DateTime?
   diet        Diet?
   allergies   String?
-  notifyTermine  Boolean @default(true)
-  notifyAufgaben Boolean @default(true)
-  notifySauna    Boolean @default(true)
+  notifyTermine         Boolean @default(true)
+  notifyAufgaben        Boolean @default(true)
+  notifyAufgabeStarted  Boolean @default(true)
+  notifySauna           Boolean @default(true)
+  notifyPutzplan        Boolean @default(true)
+  notifyKaffee          Boolean @default(true)
+  notifyPinnwand        Boolean @default(true)
+  notifyFlohmi          Boolean @default(true)
+  notifyBookingComment  Boolean @default(true)
   room        Room?     @relation(fields: [roomId], references: [id])
   roomId      String?
   createdAt   DateTime  @default(now())
@@ -71,6 +89,8 @@ model User {
   createdFlohmi        FlohmiInserat[]       @relation("FlohmiCreator")
   takenFlohmi          FlohmiInserat[]       @relation("FlohmiTaker")
   flohmiComments       FlohmiComment[]
+  notifications        Notification[]
+  pushSubscriptions    PushSubscription[]
 
   @@map("users")
 }
@@ -298,6 +318,35 @@ model FlohmiComment {
 
   @@index([inseratId])
   @@map("flohmi_comments")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  kind      NotificationKind
+  title     String
+  body      String?
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 model HausbuchArticle {

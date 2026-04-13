@@ -52,6 +52,12 @@ export async function GET() {
       sauna: user.notifySauna,
       aufgaben: user.notifyAufgaben,
       termine: user.notifyTermine,
+      aufgabeStarted: user.notifyAufgabeStarted,
+      putzplan: user.notifyPutzplan,
+      kaffee: user.notifyKaffee,
+      pinnwand: user.notifyPinnwand,
+      flohmi: user.notifyFlohmi,
+      bookingComment: user.notifyBookingComment,
     },
   });
 }
@@ -96,6 +102,14 @@ export async function PATCH(req: Request) {
     if (typeof n.sauna === "boolean") data.notifySauna = n.sauna;
     if (typeof n.aufgaben === "boolean") data.notifyAufgaben = n.aufgaben;
     if (typeof n.termine === "boolean") data.notifyTermine = n.termine;
+    if (typeof n.aufgabeStarted === "boolean")
+      data.notifyAufgabeStarted = n.aufgabeStarted;
+    if (typeof n.putzplan === "boolean") data.notifyPutzplan = n.putzplan;
+    if (typeof n.kaffee === "boolean") data.notifyKaffee = n.kaffee;
+    if (typeof n.pinnwand === "boolean") data.notifyPinnwand = n.pinnwand;
+    if (typeof n.flohmi === "boolean") data.notifyFlohmi = n.flohmi;
+    if (typeof n.bookingComment === "boolean")
+      data.notifyBookingComment = n.bookingComment;
   }
 
   // Room-Update: Nur wenn 'room' (keyNumber) gesetzt ist — der Raum
@@ -141,6 +155,12 @@ export async function PATCH(req: Request) {
       sauna: user.notifySauna,
       aufgaben: user.notifyAufgaben,
       termine: user.notifyTermine,
+      aufgabeStarted: user.notifyAufgabeStarted,
+      putzplan: user.notifyPutzplan,
+      kaffee: user.notifyKaffee,
+      pinnwand: user.notifyPinnwand,
+      flohmi: user.notifyFlohmi,
+      bookingComment: user.notifyBookingComment,
     },
   });
 }

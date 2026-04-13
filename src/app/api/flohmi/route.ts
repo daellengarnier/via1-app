@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notify } from "@/lib/notify";
 
 function toDateOnly(d: Date): string {
   return d.toISOString().split("T")[0]!;
@@ -111,6 +112,15 @@ export async function POST(req: Request) {
       images: { orderBy: { order: "asc" } },
     },
   });
+
+  notify({
+    kind: "FLOHMI_NEW",
+    title: `Neu im Flohmi: ${title}`,
+    body: description || `von ${created.createdBy.name}`,
+    link: "/flohmi",
+    audience: "all",
+    excludeUserId: session.user.id,
+  }).catch((e) => console.error("notify", e));
 
   return NextResponse.json({
     id: created.id,

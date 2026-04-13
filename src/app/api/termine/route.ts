@@ -7,6 +7,7 @@ import {
   serializeTerminList,
   toTerminType,
 } from "@/lib/termine-serialize";
+import { notify } from "@/lib/notify";
 
 // GET /api/termine — alle Termine
 export async function GET() {
@@ -142,6 +143,25 @@ export async function POST(req: Request) {
       },
     },
   });
+
+  // Alle benachrichtigen
+  const labelByType: Record<typeof type, string> = {
+    SITZUNG: "Neue Sitzung",
+    ESSEN: "Neues Essen",
+    SONSTIGE: "Neuer Termin",
+  };
+  const dateHuman = new Date(`${date}T${time}:00`).toLocaleDateString(
+    "de-CH",
+    { weekday: "short", day: "numeric", month: "short" }
+  );
+  notify({
+    kind: "TERMIN_NEW",
+    title: `${labelByType[type]}: ${title}`,
+    body: `${dateHuman} · ${time}${location ? ` · ${location}` : ""}`,
+    link: `/termine/${termin.id}`,
+    audience: "all",
+    excludeUserId: session.user.id,
+  }).catch((e) => console.error("notify", e));
 
   return NextResponse.json(
     serializeTerminList(termin, session.user.id, termin.attendances, {
