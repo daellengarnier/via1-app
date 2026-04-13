@@ -116,9 +116,21 @@ export default function TerminePage() {
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("19:30");
   const [newLocation, setNewLocation] = useState("");
+  const [newLocationMode, setNewLocationMode] = useState<"wg" | "custom">(
+    "custom"
+  );
   const [newOrganizer, setNewOrganizer] = useState("");
   const [newWithDinner, setNewWithDinner] = useState(false);
   const [newDinnerTime, setNewDinnerTime] = useState("18:30");
+
+  const WG_LOCATIONS = [
+    "Nordwind",
+    "Ostblock",
+    "Dreiecksbar",
+    "Kleenex",
+    "Family-WG",
+    "Bonzen",
+  ];
 
   const filtered =
     filter === "alle"
@@ -154,6 +166,7 @@ export default function TerminePage() {
     setNewDate("");
     setNewTime("19:30");
     setNewLocation("");
+    setNewLocationMode("custom");
     setNewOrganizer("");
     setNewWithDinner(false);
     setNewDinnerTime("18:30");
@@ -258,38 +271,83 @@ export default function TerminePage() {
 
           {/* Datum & Zeit */}
           <div className="mb-3 grid grid-cols-2 gap-2">
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-xs text-gray-400">Datum</label>
               <input
                 type="date"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
+                className="block w-full min-w-0 rounded border border-gray-700 bg-gray-900 px-2 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
                 required
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-xs text-gray-400">Zeit</label>
               <input
                 type="time"
                 value={newTime}
                 onChange={(e) => setNewTime(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
+                className="block w-full min-w-0 rounded border border-gray-700 bg-gray-900 px-2 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
                 required
               />
             </div>
           </div>
 
-          {/* Ort */}
+          {/* Ort — WG-Picker oder Freitext */}
           <div className="mb-3">
-            <label className="mb-1 block text-xs text-gray-400">Ort</label>
-            <input
-              type="text"
-              value={newLocation}
-              onChange={(e) => setNewLocation(e.target.value)}
-              placeholder="z.B. Gemeinschaftsraum EG"
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
-            />
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-xs text-gray-400">Ort</label>
+              <div className="flex gap-1 text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => setNewLocationMode("wg")}
+                  className={`rounded px-2 py-0.5 font-mono uppercase ${
+                    newLocationMode === "wg"
+                      ? "bg-orange-400 text-black"
+                      : "border border-gray-700 text-gray-500"
+                  }`}
+                >
+                  WG
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewLocationMode("custom")}
+                  className={`rounded px-2 py-0.5 font-mono uppercase ${
+                    newLocationMode === "custom"
+                      ? "bg-orange-400 text-black"
+                      : "border border-gray-700 text-gray-500"
+                  }`}
+                >
+                  Anderer Ort
+                </button>
+              </div>
+            </div>
+            {newLocationMode === "wg" ? (
+              <div className="grid grid-cols-3 gap-2">
+                {WG_LOCATIONS.map((wg) => (
+                  <button
+                    key={wg}
+                    type="button"
+                    onClick={() => setNewLocation(wg)}
+                    className={`rounded border px-2 py-2 text-xs transition-colors ${
+                      newLocation === wg
+                        ? "border-orange-400 bg-orange-400/10 text-orange-200"
+                        : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
+                    }`}
+                  >
+                    {wg}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <input
+                type="text"
+                value={newLocation}
+                onChange={(e) => setNewLocation(e.target.value)}
+                placeholder="z.B. Gemeinschaftsraum EG, Innenhof, …"
+                className="w-full min-w-0 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
+              />
+            )}
           </div>
 
           {/* Mit Abendessen (bei Sitzung) */}
