@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 interface Artikel {
   id: string;
@@ -107,22 +108,29 @@ export default function HausbuchPage() {
   }
 
   return (
-    <div className="p-4 pb-20">
+    <div className="relative p-4 pb-20">
+      <AnimatedBackground
+        icon="/pic-hausbuch.webp"
+        glowClass="glow-violet"
+        showIcon={false}
+      />
       <div className="mb-2 flex justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/pic-hausbuch.webp"
           alt=""
-          className="tab-btn-icon"
+          className="tab-btn-icon glow-violet"
           loading="eager"
           fetchPriority="high"
         />
       </div>
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">Hausbuch</h1>
+      <h1 className="mb-1 text-center font-cinzel text-3xl text-violet-300">
+        Hausbuch
+      </h1>
       <div className="mb-4 flex justify-center">
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="rounded-full bg-accent px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
+          className="rounded-full bg-violet-500 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
         >
           + Neuer Eintrag
         </button>
@@ -137,7 +145,7 @@ export default function HausbuchPage() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Suchen..."
-        className="mb-3 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+        className="mb-3 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-violet-400 focus:outline-none"
       />
 
       {/* Kategorien */}
@@ -148,7 +156,7 @@ export default function HausbuchPage() {
             onClick={() => setSelectedCategory(cat)}
             className={`shrink-0 rounded-full px-3 py-1 font-mono text-xs transition-colors ${
               selectedCategory === cat
-                ? "bg-accent text-dark"
+                ? "bg-violet-500 text-dark"
                 : "border border-gray-700 text-gray-400 hover:text-white"
             }`}
           >
@@ -161,7 +169,7 @@ export default function HausbuchPage() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="mb-4 rounded-lg border border-accent/30 bg-accent/5 p-4"
+          className="mb-4 rounded-lg border border-violet-500/30 bg-violet-500/5 p-4"
         >
           <div className="mb-3">
             <label className="mb-1 block text-xs text-gray-400">Titel</label>
@@ -170,7 +178,7 @@ export default function HausbuchPage() {
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="z.B. Waschmaschine bedienen"
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-violet-400 focus:outline-none"
               required
             />
           </div>
@@ -181,7 +189,7 @@ export default function HausbuchPage() {
                 <button
                   type="button"
                   onClick={() => setAddingCategory(true)}
-                  className="font-mono text-[10px] text-accent hover:underline"
+                  className="font-mono text-[10px] text-violet-300 hover:underline"
                 >
                   + Neue Kategorie
                 </button>
@@ -201,12 +209,12 @@ export default function HausbuchPage() {
                   }}
                   placeholder="Name der neuen Kategorie"
                   autoFocus
-                  className="flex-1 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                  className="flex-1 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-violet-400 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleAddCategory}
-                  className="rounded bg-accent px-3 text-xs font-bold text-dark"
+                  className="rounded bg-violet-500 px-3 text-xs font-bold text-dark"
                 >
                   OK
                 </button>
@@ -225,7 +233,7 @@ export default function HausbuchPage() {
               <select
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-violet-400 focus:outline-none"
               >
                 {categories.map((c) => (
                   <option key={c} value={c}>
@@ -247,7 +255,7 @@ export default function HausbuchPage() {
               value={newOwner}
               onChange={(e) => setNewOwner(e.target.value)}
               placeholder="z.B. Alain"
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-violet-400 focus:outline-none"
               required
             />
           </div>
@@ -258,14 +266,14 @@ export default function HausbuchPage() {
               onChange={(e) => setNewContent(e.target.value)}
               placeholder="Beschreibung, Anleitung, Infos..."
               rows={4}
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-violet-400 focus:outline-none"
               required
             />
           </div>
           <div className="flex gap-2">
             <button
               type="submit"
-              className="rounded bg-accent px-4 py-2 font-mono text-xs font-bold text-dark"
+              className="rounded bg-violet-500 px-4 py-2 font-mono text-xs font-bold text-dark"
             >
               Speichern
             </button>
@@ -296,7 +304,7 @@ export default function HausbuchPage() {
               <div className="min-w-0 flex-1">
                 <h3 className="font-medium text-white">{a.title}</h3>
                 <div className="mt-0.5 flex items-center gap-2 font-mono text-xs">
-                  <span className="text-accent">{a.category}</span>
+                  <span className="text-violet-300">{a.category}</span>
                   <span className="text-gray-700">·</span>
                   <span className="text-gray-500">👤 {a.owner}</span>
                 </div>
@@ -313,7 +321,7 @@ export default function HausbuchPage() {
                 <div className="mt-3 space-y-0.5">
                   <p className="text-xs text-gray-500">
                     <span className="text-gray-600">Owner:</span>{" "}
-                    <span className="text-accent">{a.owner}</span>{" "}
+                    <span className="text-violet-300">{a.owner}</span>{" "}
                     <span className="text-gray-600">
                       (hält den Eintrag aktuell)
                     </span>

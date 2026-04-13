@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 type AboType = "1-espresso" | "1-doppio" | "2-doppio" | "kein";
 
@@ -118,18 +119,25 @@ export default function KaffeePage() {
   }
 
   return (
-    <div className="p-4 pb-20">
+    <div className="relative p-4 pb-20">
+      <AnimatedBackground
+        icon="/pic-kaffee.webp"
+        glowClass="glow-amber"
+        showIcon={false}
+      />
       <div className="mb-2 flex justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/pic-kaffee.webp"
           alt=""
-          className="tab-btn-icon"
+          className="tab-btn-icon glow-amber"
           loading="eager"
           fetchPriority="high"
         />
       </div>
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">Kaffee-Abo</h1>
+      <h1 className="mb-1 text-center font-cinzel text-3xl text-amber-200">
+        Kaffee-Abo
+      </h1>
       <p className="mb-6 text-center text-sm text-gray-500">Hauseigene Kaffeemaschine</p>
 
       {/* Aktuelle Bohnen */}
@@ -206,7 +214,7 @@ export default function KaffeePage() {
 
       {/* Mein Abo */}
       <section className="mb-6">
-        <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+        <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
           MEIN ABO
         </h2>
         <div className="space-y-2">
@@ -244,8 +252,8 @@ export default function KaffeePage() {
           onClick={handleSaveAbo}
           className={`mt-3 w-full rounded-lg py-2 text-sm font-bold transition-colors ${
             saved
-              ? "bg-accent/20 text-accent"
-              : "bg-accent text-dark hover:brightness-110"
+              ? "bg-amber-500/20 text-amber-300"
+              : "bg-amber-500 text-dark hover:brightness-110"
           }`}
         >
           {saved ? "Gespeichert!" : "Abo speichern"}
@@ -254,7 +262,7 @@ export default function KaffeePage() {
 
       {/* Bezahlung */}
       <section className="mb-6">
-        <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+        <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
           BEZAHLUNG
         </h2>
         <div className="rounded-lg border border-gray-800 bg-black/20 p-4">
@@ -276,7 +284,7 @@ export default function KaffeePage() {
 
       {/* Info */}
       <div className="rounded-lg border border-gray-800 bg-black/20 p-4">
-        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
           INFO
         </p>
         <p className="mt-2 text-sm text-gray-400">

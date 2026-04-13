@@ -84,6 +84,34 @@ body {
   100% { filter: drop-shadow(0 0 15px rgba(255, 220, 50, 0.5)) brightness(1.0); }
 }
 
+.via-tab-icon.glow-amber { animation-name: icon-glow-amber; }
+@keyframes icon-glow-amber {
+  0% { filter: drop-shadow(0 0 10px rgba(180, 120, 60, 0.4)) brightness(0.95); }
+  50% { filter: drop-shadow(0 0 25px rgba(180, 120, 60, 0.7)) brightness(1.15); }
+  100% { filter: drop-shadow(0 0 15px rgba(180, 120, 60, 0.5)) brightness(1.0); }
+}
+
+.via-tab-icon.glow-violet { animation-name: icon-glow-violet; }
+@keyframes icon-glow-violet {
+  0% { filter: drop-shadow(0 0 10px rgba(150, 100, 255, 0.4)) brightness(0.95); }
+  50% { filter: drop-shadow(0 0 25px rgba(150, 100, 255, 0.7)) brightness(1.15); }
+  100% { filter: drop-shadow(0 0 15px rgba(150, 100, 255, 0.5)) brightness(1.0); }
+}
+
+.via-tab-icon.glow-pink { animation-name: icon-glow-pink; }
+@keyframes icon-glow-pink {
+  0% { filter: drop-shadow(0 0 10px rgba(255, 100, 180, 0.4)) brightness(0.95); }
+  50% { filter: drop-shadow(0 0 25px rgba(255, 100, 180, 0.7)) brightness(1.15); }
+  100% { filter: drop-shadow(0 0 15px rgba(255, 100, 180, 0.5)) brightness(1.0); }
+}
+
+.via-tab-icon.glow-silver { animation-name: icon-glow-silver; }
+@keyframes icon-glow-silver {
+  0% { filter: drop-shadow(0 0 10px rgba(200, 210, 220, 0.4)) brightness(0.95); }
+  50% { filter: drop-shadow(0 0 25px rgba(200, 210, 220, 0.7)) brightness(1.15); }
+  100% { filter: drop-shadow(0 0 15px rgba(200, 210, 220, 0.5)) brightness(1.0); }
+}
+
 /* Inline Tab-Button-Icon (neben Action-Buttons) — gleiche Pulse-Animation */
 .tab-btn-icon {
   width: 96px;
@@ -95,6 +123,10 @@ body {
 .tab-btn-icon.glow-yellow { animation-name: icon-glow-yellow; }
 .tab-btn-icon.glow-red { animation-name: icon-glow-red; }
 .tab-btn-icon.glow-blue { animation-name: icon-glow-blue; }
+.tab-btn-icon.glow-amber { animation-name: icon-glow-amber; }
+.tab-btn-icon.glow-violet { animation-name: icon-glow-violet; }
+.tab-btn-icon.glow-pink { animation-name: icon-glow-pink; }
+.tab-btn-icon.glow-silver { animation-name: icon-glow-silver; }
 
 /* Glow-Spots */
 .via-glow {

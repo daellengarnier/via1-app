@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 interface Comment {
   id: string;
@@ -154,22 +155,29 @@ export default function FlohmiPage() {
   }
 
   return (
-    <div className="p-4 pb-20">
+    <div className="relative p-4 pb-20">
+      <AnimatedBackground
+        icon="/pic-flohmi.webp"
+        glowClass="glow-pink"
+        showIcon={false}
+      />
       <div className="mb-2 flex justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/pic-flohmi.webp"
           alt=""
-          className="tab-btn-icon"
+          className="tab-btn-icon glow-pink"
           loading="eager"
           fetchPriority="high"
         />
       </div>
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">Flohmi</h1>
+      <h1 className="mb-1 text-center font-cinzel text-3xl text-pink-300">
+        Flohmi
+      </h1>
       <div className="mb-4 flex justify-center">
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="rounded-full bg-accent px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
+          className="rounded-full bg-pink-500 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
         >
           + Neues Inserat
         </button>
@@ -179,7 +187,7 @@ export default function FlohmiPage() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="mb-4 rounded-lg border border-accent/30 bg-accent/5 p-4"
+          className="mb-4 rounded-lg border border-pink-500/30 bg-pink-500/5 p-4"
         >
           <div className="mb-3">
             <label className="mb-1 block text-xs text-gray-400">
@@ -190,7 +198,7 @@ export default function FlohmiPage() {
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="z.B. Pulli, Schuhe, Regal..."
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-pink-400 focus:outline-none"
               required
             />
           </div>
@@ -203,12 +211,12 @@ export default function FlohmiPage() {
               onChange={(e) => setNewDesc(e.target.value)}
               placeholder="Grösse, Zustand, Abholort..."
               rows={2}
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-pink-400 focus:outline-none"
             />
           </div>
           <div className="mb-3">
             <label className="mb-1 block text-xs text-gray-400">Foto</label>
-            <label className="flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-700 bg-gray-900 p-4 text-sm text-gray-500 transition-colors hover:border-accent hover:text-accent">
+            <label className="flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-700 bg-gray-900 p-4 text-sm text-gray-500 transition-colors hover:border-pink-400 hover:text-pink-200">
               {newImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -230,7 +238,7 @@ export default function FlohmiPage() {
           <div className="flex gap-2">
             <button
               type="submit"
-              className="rounded bg-accent px-4 py-2 font-mono text-xs font-bold text-dark"
+              className="rounded bg-pink-500 px-4 py-2 font-mono text-xs font-bold text-dark"
             >
               Inserieren
             </button>
@@ -258,7 +266,7 @@ export default function FlohmiPage() {
               onClick={() => setSelectedId(ins.id)}
               className={`flex flex-col overflow-hidden rounded-lg border text-left ${
                 isTaken
-                  ? "border-accent/30 opacity-60"
+                  ? "border-pink-500/30 opacity-60"
                   : "border-gray-800 hover:border-gray-700"
               } bg-white/5`}
             >
@@ -360,7 +368,7 @@ export default function FlohmiPage() {
               </div>
 
               {selected.takenBy ? (
-                <p className="mt-3 text-sm text-accent">
+                <p className="mt-3 text-sm text-pink-300">
                   ✓ Genommen von {selected.takenBy}
                 </p>
               ) : (
@@ -368,7 +376,7 @@ export default function FlohmiPage() {
                   onClick={() => {
                     handleTake(selected.id);
                   }}
-                  className="mt-4 w-full rounded-full bg-accent py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
+                  className="mt-4 w-full rounded-full bg-pink-500 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
                 >
                   Nehme ich!
                 </button>
@@ -404,11 +412,11 @@ export default function FlohmiPage() {
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     placeholder="Frage oder Kommentar..."
-                    className="flex-1 rounded border border-gray-800 bg-white/5 px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+                    className="flex-1 rounded border border-gray-800 bg-white/5 px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:border-pink-400 focus:outline-none"
                   />
                   <button
                     type="submit"
-                    className="rounded bg-accent px-3 py-1.5 text-[10px] font-bold text-dark"
+                    className="rounded bg-pink-500 px-3 py-1.5 text-[10px] font-bold text-dark"
                   >
                     OK
                   </button>

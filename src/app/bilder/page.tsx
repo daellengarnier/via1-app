@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 interface Bild {
   id: string;
@@ -61,7 +62,12 @@ export default function BilderPage() {
   const [selected, setSelected] = useState<Bild | null>(null);
 
   return (
-    <div className="p-4 pb-20">
+    <div className="relative p-4 pb-20">
+      <AnimatedBackground
+        icon="/pic-bilder.webp"
+        glowClass="glow-silver"
+        showIcon={false}
+      />
       <button
         onClick={() => router.back()}
         className="mb-4 ml-14 text-sm text-gray-500 hover:text-white"
@@ -74,12 +80,12 @@ export default function BilderPage() {
         <img
           src="/pic-bilder.webp"
           alt=""
-          className="tab-btn-icon"
+          className="tab-btn-icon glow-silver"
           loading="eager"
           fetchPriority="high"
         />
       </div>
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">
+      <h1 className="mb-1 text-center font-cinzel text-3xl text-gray-200">
         Bilder
       </h1>
       <p className="mb-6 text-center text-sm text-gray-500">
@@ -91,7 +97,7 @@ export default function BilderPage() {
           <button
             key={b.id}
             onClick={() => setSelected(b)}
-            className="group flex aspect-square flex-col items-center justify-center rounded-lg border border-gray-800 bg-white/5 p-3 text-center transition-colors hover:border-accent/40"
+            className="group flex aspect-square flex-col items-center justify-center rounded-lg border border-gray-800 bg-white/5 p-3 text-center transition-colors hover:border-gray-400/40"
           >
             <span className="text-4xl opacity-80 transition-transform group-hover:scale-110">
               {b.emoji}

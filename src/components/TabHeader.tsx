@@ -2,7 +2,16 @@
 
 import { AnimatedBackground } from "./AnimatedBackground";
 
-export type TabColor = "green" | "orange" | "yellow" | "red" | "blue";
+export type TabColor =
+  | "green"
+  | "orange"
+  | "yellow"
+  | "red"
+  | "blue"
+  | "amber"
+  | "violet"
+  | "pink"
+  | "silver";
 
 interface TabHeaderProps {
   title?: string;
@@ -19,6 +28,10 @@ const colorMap: Record<TabColor, { text: string; glowClass: string }> = {
   yellow: { text: "text-yellow-300", glowClass: "glow-yellow" },
   red: { text: "text-red-400", glowClass: "glow-red" },
   blue: { text: "text-blue-300", glowClass: "glow-blue" },
+  amber: { text: "text-amber-300", glowClass: "glow-amber" },
+  violet: { text: "text-violet-300", glowClass: "glow-violet" },
+  pink: { text: "text-pink-300", glowClass: "glow-pink" },
+  silver: { text: "text-gray-300", glowClass: "glow-silver" },
 };
 
 export function TabHeader({
