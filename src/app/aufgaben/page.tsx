@@ -18,7 +18,11 @@ interface Aufgabe {
   pin: Pin | null;
   createdBy: string;
   createdAt: string;
+  completedAt: string | null;
+  activeWorkers: string[];
 }
+
+const CURRENT_USER = "Alain";
 
 const mockAufgaben: Aufgabe[] = [
   {
@@ -31,6 +35,8 @@ const mockAufgaben: Aufgabe[] = [
     pin: { lat: 46.9697, lng: 7.441 },
     createdBy: "Marco",
     createdAt: "2026-04-08",
+    completedAt: null,
+    activeWorkers: [],
   },
   {
     id: "2",
@@ -42,6 +48,8 @@ const mockAufgaben: Aufgabe[] = [
     pin: null,
     createdBy: "Lena",
     createdAt: "2026-04-09",
+    completedAt: null,
+    activeWorkers: ["Sophie"],
   },
   {
     id: "3",
@@ -53,6 +61,8 @@ const mockAufgaben: Aufgabe[] = [
     pin: { lat: 46.9691, lng: 7.4415 },
     createdBy: "Sven",
     createdAt: "2026-04-05",
+    completedAt: null,
+    activeWorkers: [],
   },
   {
     id: "4",
@@ -64,6 +74,8 @@ const mockAufgaben: Aufgabe[] = [
     pin: null,
     createdBy: "Lena",
     createdAt: "2026-04-01",
+    completedAt: "2026-04-03",
+    activeWorkers: [],
   },
   {
     id: "5",
@@ -75,10 +87,68 @@ const mockAufgaben: Aufgabe[] = [
     pin: { lat: 46.9693, lng: 7.4419 },
     createdBy: "Felix",
     createdAt: "2026-04-07",
+    completedAt: null,
+    activeWorkers: [],
+  },
+  {
+    id: "6",
+    title: "Velokeller aufräumen",
+    description: "Ungenutzte Velos aussortieren",
+    location: "UG",
+    done: true,
+    assignee: "Marco",
+    pin: null,
+    createdBy: "Marco",
+    createdAt: "2026-03-20",
+    completedAt: "2026-03-22",
+    activeWorkers: [],
+  },
+  {
+    id: "7",
+    title: "Briefkasten reparieren",
+    description: "Klappe hängt durch",
+    location: "Eingang",
+    done: true,
+    assignee: "Alain",
+    pin: null,
+    createdBy: "Nina",
+    createdAt: "2026-03-15",
+    completedAt: "2026-03-18",
+    activeWorkers: [],
+  },
+  {
+    id: "8",
+    title: "Kräuterbeet jäten",
+    description: "Unkraut entfernen",
+    location: "Garten",
+    done: true,
+    assignee: "Ruth",
+    pin: null,
+    createdBy: "Ruth",
+    createdAt: "2026-03-10",
+    completedAt: "2026-03-11",
+    activeWorkers: [],
   },
 ];
 
 type Filter = "offen" | "erledigt" | "alle";
+
+function daysBetween(a: string, b: string): number {
+  return Math.max(
+    0,
+    Math.round(
+      (new Date(b).getTime() - new Date(a).getTime()) / (1000 * 60 * 60 * 24)
+    )
+  );
+}
+
+function formatDuration(days: number): string {
+  if (days < 1) return "< 1 Tag";
+  if (days === 1) return "1 Tag";
+  if (days < 7) return `${days} Tage`;
+  const weeks = Math.round(days / 7);
+  return weeks === 1 ? "1 Woche" : `${weeks} Wochen`;
+}
 
 function GelaendeMap({
   aufgaben,
@@ -181,6 +251,7 @@ export default function AufgabenPage() {
   const [pendingPin, setPendingPin] = useState<Pin | null>(null);
   const [placingPin, setPlacingPin] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const filtered = aufgaben.filter((a) => {
     if (filter === "offen") return !a.done;
@@ -188,9 +259,79 @@ export default function AufgabenPage() {
     return true;
   });
 
+  // Durchschnittliche Erledigungsdauer
+  const completedWithTime = aufgaben.filter(
+    (a) => a.done && a.completedAt && a.createdAt
+  );
+  const avgDays =
+    completedWithTime.length > 0
+      ? completedWithTime.reduce(
+          (sum, a) => sum + daysBetween(a.createdAt, a.completedAt!),
+          0
+        ) / completedWithTime.length
+      : null;
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
+  }
+
   function toggleDone(id: string) {
+    const today = new Date().toISOString().split("T")[0]!;
     setAufgaben((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, done: !a.done } : a))
+      prev.map((a) =>
+        a.id === id
+          ? {
+              ...a,
+              done: !a.done,
+              completedAt: !a.done ? today : null,
+              activeWorkers: !a.done ? [] : a.activeWorkers,
+            }
+          : a
+      )
+    );
+  }
+
+  function startWorking(id: string) {
+    const task = aufgaben.find((a) => a.id === id);
+    if (!task) return;
+    setAufgaben((prev) =>
+      prev.map((a) =>
+        a.id === id && !a.activeWorkers.includes(CURRENT_USER)
+          ? { ...a, activeWorkers: [...a.activeWorkers, CURRENT_USER] }
+          : a
+      )
+    );
+    showToast(
+      `🔔 Push gesendet: ${CURRENT_USER} macht jetzt "${task.title}"`
+    );
+  }
+
+  function joinWorking(id: string) {
+    const task = aufgaben.find((a) => a.id === id);
+    if (!task) return;
+    setAufgaben((prev) =>
+      prev.map((a) =>
+        a.id === id && !a.activeWorkers.includes(CURRENT_USER)
+          ? { ...a, activeWorkers: [...a.activeWorkers, CURRENT_USER] }
+          : a
+      )
+    );
+    showToast(
+      `🤝 Du hilfst jetzt bei "${task.title}" mit`
+    );
+  }
+
+  function leaveWorking(id: string) {
+    setAufgaben((prev) =>
+      prev.map((a) =>
+        a.id === id
+          ? {
+              ...a,
+              activeWorkers: a.activeWorkers.filter((n) => n !== CURRENT_USER),
+            }
+          : a
+      )
     );
   }
 
@@ -206,8 +347,10 @@ export default function AufgabenPage() {
         done: false,
         assignee: null,
         pin: pendingPin,
-        createdBy: "Alain",
+        createdBy: CURRENT_USER,
         createdAt: new Date().toISOString().split("T")[0]!,
+        completedAt: null,
+        activeWorkers: [],
       },
       ...prev,
     ]);
@@ -324,6 +467,27 @@ export default function AufgabenPage() {
         </form>
       )}
 
+      {/* Stats */}
+      {avgDays !== null && (
+        <div className="mb-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-3 py-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-display text-[9px] font-bold uppercase tracking-widest text-yellow-400">
+                ⏱ Ø Erledigungsdauer
+              </p>
+              <p className="mt-0.5 font-mono text-sm text-white">
+                {formatDuration(Math.round(avgDays))}
+              </p>
+            </div>
+            <p className="text-right font-mono text-[10px] text-gray-500">
+              aus {completedWithTime.length} erledigten
+              <br />
+              Aufgaben
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Filter */}
       <div className="mb-4 flex justify-center gap-2">
         {(["offen", "erledigt", "alle"] as const).map((f) => (
@@ -411,10 +575,67 @@ export default function AufgabenPage() {
                   )}
                 </div>
               </div>
+
+              {/* Active workers / "Ich mache das" */}
+              {!a.done && (
+                <div className="mt-2 border-t border-gray-800 pt-2">
+                  {a.activeWorkers.length === 0 ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startWorking(a.id);
+                      }}
+                      className="w-full rounded-full bg-yellow-400/15 py-1 text-[9px] font-bold uppercase tracking-wider text-yellow-300 hover:bg-yellow-400/25"
+                    >
+                      🏃 Ich mache das
+                    </button>
+                  ) : (
+                    <>
+                      <p className="mb-1 flex items-center gap-1 text-[9px] text-yellow-300">
+                        <span>🏃</span>
+                        <span className="truncate">
+                          {a.activeWorkers.join(", ")}
+                          {a.activeWorkers.length === 1
+                            ? " macht das"
+                            : " machen das"}
+                        </span>
+                      </p>
+                      {a.activeWorkers.includes(CURRENT_USER) ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            leaveWorking(a.id);
+                          }}
+                          className="w-full rounded-full border border-gray-700 py-1 text-[9px] font-bold uppercase tracking-wider text-gray-400 hover:border-gray-600 hover:text-white"
+                        >
+                          Aussteigen
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            joinWorking(a.id);
+                          }}
+                          className="w-full rounded-full bg-yellow-400 py-1 text-[9px] font-bold uppercase tracking-wider text-black hover:brightness-110"
+                        >
+                          + Joinen
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-20 left-1/2 z-[80] max-w-[92%] -translate-x-1/2 rounded-full border border-yellow-400/40 bg-black/90 px-4 py-2 text-xs text-yellow-200 shadow-[0_0_20px_rgba(251,191,36,0.3)] backdrop-blur-sm">
+          {toast}
+        </div>
+      )}
 
       {filtered.length === 0 && (
         <p className="mt-8 text-center text-gray-600">
