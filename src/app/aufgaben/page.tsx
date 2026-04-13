@@ -253,6 +253,12 @@ export default function AufgabenPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
+  // Edit-Modal state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+
   const filtered = aufgaben.filter((a) => {
     if (filter === "offen") return !a.done;
     if (filter === "erledigt") return a.done;
@@ -333,6 +339,38 @@ export default function AufgabenPage() {
           : a
       )
     );
+  }
+
+  function openEdit(id: string) {
+    const task = aufgaben.find((a) => a.id === id);
+    if (!task) return;
+    setEditingId(id);
+    setEditTitle(task.title);
+    setEditDesc(task.description);
+    setEditLocation(task.location);
+  }
+
+  function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingId || !editTitle.trim()) return;
+    setAufgaben((prev) =>
+      prev.map((a) =>
+        a.id === editingId
+          ? {
+              ...a,
+              title: editTitle,
+              description: editDesc,
+              location: editLocation,
+            }
+          : a
+      )
+    );
+    setEditingId(null);
+  }
+
+  function deleteAufgabe(id: string) {
+    setAufgaben((prev) => prev.filter((a) => a.id !== id));
+    setEditingId(null);
   }
 
   function handleCreate(e: React.FormEvent) {
@@ -516,7 +554,7 @@ export default function AufgabenPage() {
                 if (!a.pin) return;
                 setSelectedId(isSelected ? null : a.id);
               }}
-              className={`cursor-pointer rounded-lg border p-3 transition-colors ${
+              className={`relative cursor-pointer rounded-lg border p-3 transition-colors ${
                 a.done ? "opacity-50" : ""
               } ${
                 isSelected
@@ -524,7 +562,18 @@ export default function AufgabenPage() {
                   : "border-gray-800 bg-white/5 hover:border-gray-700"
               }`}
             >
-              <div className="flex items-start gap-2">
+              {/* Edit button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openEdit(a.id);
+                }}
+                className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded text-[10px] text-gray-600 hover:bg-white/10 hover:text-yellow-300"
+                aria-label="Aufgabe bearbeiten"
+              >
+                ✎
+              </button>
+              <div className="flex items-start gap-2 pr-4">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -587,7 +636,7 @@ export default function AufgabenPage() {
                       }}
                       className="w-full rounded-full bg-yellow-400/15 py-1 text-[9px] font-bold uppercase tracking-wider text-yellow-300 hover:bg-yellow-400/25"
                     >
-                      🏃 Ich mache das
+                      🏃 Ich mache mich an die Aufgabe
                     </button>
                   ) : (
                     <>
@@ -596,8 +645,8 @@ export default function AufgabenPage() {
                         <span className="truncate">
                           {a.activeWorkers.join(", ")}
                           {a.activeWorkers.length === 1
-                            ? " macht das"
-                            : " machen das"}
+                            ? " ist dabei"
+                            : " sind dabei"}
                         </span>
                       </p>
                       {a.activeWorkers.includes(CURRENT_USER) ? (
@@ -629,6 +678,86 @@ export default function AufgabenPage() {
           );
         })}
       </div>
+
+      {/* Edit Modal */}
+      {editingId && (
+        <div
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center"
+          onClick={() => setEditingId(null)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-gray-800 bg-black sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <form onSubmit={saveEdit} className="p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="font-display text-sm font-bold uppercase tracking-wider text-yellow-300">
+                  Aufgabe bearbeiten
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setEditingId(null)}
+                  className="text-gray-500 hover:text-white"
+                  aria-label="Schliessen"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mb-3">
+                <label className="mb-1 block text-xs text-gray-400">Titel</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none"
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="mb-1 block text-xs text-gray-400">
+                  Beschreibung
+                </label>
+                <input
+                  type="text"
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="mb-1 block text-xs text-gray-400">Ort</label>
+                <input
+                  type="text"
+                  value={editLocation}
+                  onChange={(e) => setEditLocation(e.target.value)}
+                  className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 rounded-lg bg-yellow-400 py-2 font-display text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-110"
+                >
+                  Speichern
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm("Diese Aufgabe wirklich löschen?")) {
+                      deleteAufgabe(editingId);
+                    }
+                  }}
+                  className="rounded-lg border border-red-500/40 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10"
+                >
+                  Löschen
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (
