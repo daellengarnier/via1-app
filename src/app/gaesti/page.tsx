@@ -146,11 +146,9 @@ export default function GaestiPage() {
         <img
           src="/icon-gaesti.webp"
           alt=""
-          className="h-24 w-24 object-contain"
-          style={{
-            filter:
-              "drop-shadow(0 0 14px rgba(50,150,255,0.6)) drop-shadow(0 0 28px rgba(50,150,255,0.35))",
-          }}
+          className="tab-btn-icon glow-blue"
+          loading="eager"
+          fetchPriority="high"
         />
         <button
           onClick={() => setShowCreate(!showCreate)}

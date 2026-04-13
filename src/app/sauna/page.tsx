@@ -133,11 +133,9 @@ export default function SaunaPage() {
         <img
           src="/icon-sauna.webp"
           alt=""
-          className="h-24 w-24 object-contain"
-          style={{
-            filter:
-              "drop-shadow(0 0 14px rgba(255,50,50,0.6)) drop-shadow(0 0 28px rgba(255,50,50,0.35))",
-          }}
+          className="tab-btn-icon glow-red"
+          loading="eager"
+          fetchPriority="high"
         />
         <button
           onClick={() => setHeating(!heating)}

@@ -408,11 +408,9 @@ export default function AufgabenPage() {
         <img
           src="/icon-aufgaben.webp"
           alt=""
-          className="h-24 w-24 object-contain"
-          style={{
-            filter:
-              "drop-shadow(0 0 14px rgba(255,220,50,0.55)) drop-shadow(0 0 28px rgba(255,220,50,0.3))",
-          }}
+          className="tab-btn-icon glow-yellow"
+          loading="eager"
+          fetchPriority="high"
         />
         <button
           onClick={() => setShowCreate(!showCreate)}

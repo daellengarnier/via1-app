@@ -84,6 +84,18 @@ body {
   100% { filter: drop-shadow(0 0 15px rgba(255, 220, 50, 0.5)) brightness(1.0); }
 }
 
+/* Inline Tab-Button-Icon (neben Action-Buttons) — gleiche Pulse-Animation */
+.tab-btn-icon {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  animation: icon-glow 4s ease-in-out infinite alternate;
+}
+.tab-btn-icon.glow-orange { animation-name: icon-glow-orange; }
+.tab-btn-icon.glow-yellow { animation-name: icon-glow-yellow; }
+.tab-btn-icon.glow-red { animation-name: icon-glow-red; }
+.tab-btn-icon.glow-blue { animation-name: icon-glow-blue; }
+
 /* Glow-Spots */
 .via-glow {
   position: absolute;

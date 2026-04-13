@@ -36,6 +36,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de">
+      <head>
+        {/* Tab-Icons + Pyramide vorladen, damit sie sofort beim ersten
+            Paint ohne sichtbaren "Rand"-Flash angezeigt werden */}
+        <link rel="preload" as="image" href="/pyramid.webp" />
+        <link rel="preload" as="image" href="/icon-termine.webp" />
+        <link rel="preload" as="image" href="/icon-aufgaben.webp" />
+        <link rel="preload" as="image" href="/icon-sauna.webp" />
+        <link rel="preload" as="image" href="/icon-gaesti.webp" />
+      </head>
       <body className="min-h-screen font-sans antialiased">
         <div className="relative mx-auto max-w-lg">{children}</div>
         <ConditionalNav />

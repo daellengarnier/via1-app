@@ -183,11 +183,9 @@ export default function TerminePage() {
         <img
           src="/icon-termine.webp"
           alt=""
-          className="h-24 w-24 object-contain"
-          style={{
-            filter:
-              "drop-shadow(0 0 14px rgba(255,140,30,0.55)) drop-shadow(0 0 28px rgba(255,140,30,0.3))",
-          }}
+          className="tab-btn-icon glow-orange"
+          loading="eager"
+          fetchPriority="high"
         />
         <button
           onClick={() => setShowCreate(!showCreate)}
