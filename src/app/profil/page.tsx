@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 type Diet = "fleisch" | "vegi" | "vegan";
@@ -40,13 +40,15 @@ const dietLabels: Record<Diet, string> = {
 export default function ProfilPage() {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileData>({
-    fullName: "Alain d'Allengarnier",
-    displayName: "Alain",
-    email: "alain@via1.ch",
-    birthday: "1990-06-15",
-    wg: "Dreiecksbar",
-    room: "N11",
+    fullName: "",
+    displayName: "",
+    email: "",
+    birthday: "",
+    wg: "",
+    room: "",
     diet: "fleisch",
     allergies: "",
     profileImage: null,
@@ -59,14 +61,57 @@ export default function ProfilPage() {
 
   const selectedWg = wgOptions.find((w) => w.name === profile.wg);
 
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const loadProfile = useCallback(async () => {
+    try {
+      const res = await fetch("/api/profile");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as ProfileData;
+      setProfile(data);
+    } catch (err) {
+      console.error("Profil laden", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      });
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        throw new Error(err.error ?? `HTTP ${res.status}`);
+      }
+      const updated = (await res.json()) as ProfileData;
+      setProfile(updated);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error("Profil speichern", err);
+      alert(
+        "Konnte Profil nicht speichern: " +
+          (err instanceof Error ? err.message : "Fehler")
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 600_000) {
+      alert("Bild zu gross (max ~600 KB). Bitte komprimieren.");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (ev) => {
       setProfile({ ...profile, profileImage: ev.target?.result as string });
@@ -307,13 +352,14 @@ export default function ProfilPage() {
       {/* Speichern */}
       <button
         onClick={handleSave}
-        className={`w-full rounded-lg py-3 font-mono text-sm font-bold transition-colors ${
+        disabled={saving || loading}
+        className={`w-full rounded-lg py-3 font-mono text-sm font-bold transition-colors disabled:opacity-60 ${
           saved
             ? "bg-accent/20 text-accent"
             : "bg-accent text-dark hover:brightness-110"
         }`}
       >
-        {saved ? "Gespeichert!" : "Speichern"}
+        {saving ? "Speichern …" : saved ? "Gespeichert!" : "Speichern"}
       </button>
     </div>
   );

@@ -128,6 +128,18 @@ body {
 .tab-btn-icon.glow-pink { animation-name: icon-glow-pink; }
 .tab-btn-icon.glow-silver { animation-name: icon-glow-silver; }
 
+/* Kleines Icon fuer Hamburger-Menu-Items */
+.menu-item-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  animation: icon-glow 4s ease-in-out infinite alternate;
+}
+.menu-item-icon.glow-amber { animation-name: icon-glow-amber; }
+.menu-item-icon.glow-violet { animation-name: icon-glow-violet; }
+.menu-item-icon.glow-pink { animation-name: icon-glow-pink; }
+.menu-item-icon.glow-silver { animation-name: icon-glow-silver; }
+
 /* Glow-Spots */
 .via-glow {
   position: absolute;

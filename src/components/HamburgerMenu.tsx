@@ -7,7 +7,9 @@ import { signOut } from "next-auth/react";
 interface MehrItem {
   id: string;
   href: string;
+  // Entweder ein Bildpfad (wenn mit / beginnend) oder ein Emoji
   icon: string;
+  glowClass?: string;
   title: string;
   subtitle: string;
 }
@@ -16,21 +18,24 @@ const MEHR_ITEMS: MehrItem[] = [
   {
     id: "hausbuch",
     href: "/hausbuch",
-    icon: "📖",
+    icon: "/pic-hausbuch.webp",
+    glowClass: "glow-violet",
     title: "Hausbuch",
     subtitle: "Wissen & Infos rund ums Haus",
   },
   {
     id: "flohmi",
     href: "/flohmi",
-    icon: "🛍️",
+    icon: "/pic-flohmi.webp",
+    glowClass: "glow-pink",
     title: "Flohmi",
     subtitle: "Dinge zum Weitergeben",
   },
   {
     id: "bilder",
     href: "/bilder",
-    icon: "📷",
+    icon: "/pic-bilder.webp",
+    glowClass: "glow-silver",
     title: "Bilder",
     subtitle: "Fotos aus dem Hausleben",
   },
@@ -245,7 +250,13 @@ export function HamburgerMenu() {
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-lg border border-amber-600/30 bg-amber-700/10 p-3 transition-colors hover:border-amber-500"
             >
-              <span className="text-lg">☕</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/pic-kaffee.webp"
+                alt=""
+                className="menu-item-icon glow-amber"
+                loading="eager"
+              />
               <div>
                 <p className="font-medium text-amber-200">Kaffee-Abo</p>
                 <p className="text-xs text-gray-500">1 Doppio / Tag · Bohnen</p>
@@ -279,7 +290,17 @@ export function HamburgerMenu() {
                     onClick={() => setOpen(false)}
                     className="flex flex-1 items-center gap-3"
                   >
-                    <span className="text-lg">{item.icon}</span>
+                    {item.icon.startsWith("/") ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.icon}
+                        alt=""
+                        className={`menu-item-icon ${item.glowClass ?? ""}`}
+                        loading="eager"
+                      />
+                    ) : (
+                      <span className="text-lg">{item.icon}</span>
+                    )}
                     <div className="flex-1">
                       <p className="font-medium text-white">{item.title}</p>
                       <p className="text-xs text-gray-500">{item.subtitle}</p>

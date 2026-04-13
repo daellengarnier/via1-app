@@ -37,18 +37,25 @@ enum Diet {
 }
 
 model User {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
-  email       String   @unique
+  fullName    String?
+  email       String    @unique
   password    String?
-  roles       Role[]   @default([USER])
-  setupToken  String?  @unique
-  passwordSet Boolean  @default(false)
+  roles       Role[]    @default([USER])
+  setupToken  String?   @unique
+  passwordSet Boolean   @default(false)
   avatar      String?
-  room        Room?    @relation(fields: [roomId], references: [id])
+  birthday    DateTime?
+  diet        Diet?
+  allergies   String?
+  notifyTermine  Boolean @default(true)
+  notifyAufgaben Boolean @default(true)
+  notifySauna    Boolean @default(true)
+  room        Room?     @relation(fields: [roomId], references: [id])
   roomId      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   pinnwandNotes        PinnwandNote[]
   createdTermine       Termin[]              @relation("TerminCreator")
