@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { TabHeader } from "./TabHeader";
+import { useCurrentKaffee } from "@/lib/kaffee-store";
 
 interface PinnwandEintrag {
   id: string;
@@ -68,12 +69,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const userName = "Alain";
   const hasKaffeeAbo = true;
-  const currentKaffee = {
-    name: "Bologna Bio Fairtrade",
-    herkunft: "Bio Arabica Blend",
-    duftnotizen: "Klassisch italienisch, modern & frisch",
-    fairtrade: true,
-  };
+  const [currentKaffee] = useCurrentKaffee();
   const [pinnwand, setPinnwand] = useState(initialPinnwand);
   const [newNote, setNewNote] = useState("");
   const [showNoteForm, setShowNoteForm] = useState(false);

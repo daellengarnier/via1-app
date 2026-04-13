@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 
+interface Comment {
+  id: string;
+  author: string;
+  text: string;
+  date: string;
+}
+
 interface Inserat {
   id: string;
   title: string;
@@ -11,6 +18,7 @@ interface Inserat {
   createdAt: string;
   takenBy: string | null;
   takenAt: string | null;
+  comments: Comment[];
 }
 
 const mockInserate: Inserat[] = [
@@ -23,6 +31,20 @@ const mockInserate: Inserat[] = [
     createdAt: "2026-04-08",
     takenBy: null,
     takenAt: null,
+    comments: [
+      {
+        id: "c1",
+        author: "Lena",
+        text: "Ist sie wirklich warm genug für -10°C?",
+        date: "2026-04-09",
+      },
+      {
+        id: "c2",
+        author: "Sophie",
+        text: "Ja, absolut! Hatte sie letzten Winter an.",
+        date: "2026-04-09",
+      },
+    ],
   },
   {
     id: "2",
@@ -33,6 +55,7 @@ const mockInserate: Inserat[] = [
     createdAt: "2026-04-07",
     takenBy: null,
     takenAt: null,
+    comments: [],
   },
   {
     id: "3",
@@ -43,6 +66,7 @@ const mockInserate: Inserat[] = [
     createdAt: "2026-04-05",
     takenBy: "Dario",
     takenAt: "2026-04-09",
+    comments: [],
   },
 ];
 
@@ -60,11 +84,19 @@ export default function FlohmiPage() {
   const [newDesc, setNewDesc] = useState("");
   const [newImage, setNewImage] = useState<string | null>(null);
 
-  // Inserate die noch sichtbar sind: nicht genommen ODER genommen vor weniger als 2 Tagen
+  // Detail-Modal
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState("");
+
+  // Inserate die noch sichtbar sind
   const visible = inserate.filter((ins) => {
     if (!ins.takenAt) return true;
     return daysBetween(ins.takenAt, today) < 2;
   });
+
+  const selected = selectedId
+    ? inserate.find((i) => i.id === selectedId) ?? null
+    : null;
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -79,6 +111,7 @@ export default function FlohmiPage() {
         createdAt: today,
         takenBy: null,
         takenAt: null,
+        comments: [],
       },
       ...prev,
     ]);
@@ -106,6 +139,30 @@ export default function FlohmiPage() {
       setNewImage(ev.target?.result as string);
     };
     reader.readAsDataURL(file);
+  }
+
+  function handleAddComment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newComment.trim() || !selectedId) return;
+    setInserate((prev) =>
+      prev.map((ins) =>
+        ins.id === selectedId
+          ? {
+              ...ins,
+              comments: [
+                ...ins.comments,
+                {
+                  id: String(Date.now()),
+                  author: "Alain",
+                  text: newComment,
+                  date: today,
+                },
+              ],
+            }
+          : ins
+      )
+    );
+    setNewComment("");
   }
 
   return (
@@ -155,6 +212,7 @@ export default function FlohmiPage() {
             <label className="mb-1 block text-xs text-gray-400">Foto</label>
             <label className="flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-700 bg-gray-900 p-4 text-sm text-gray-500 transition-colors hover:border-accent hover:text-accent">
               {newImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={newImage}
                   alt="Vorschau"
@@ -192,68 +250,55 @@ export default function FlohmiPage() {
         </form>
       )}
 
-      {/* Inserate */}
-      <div className="space-y-3">
+      {/* Inserate — 2 Spalten */}
+      <div className="grid grid-cols-2 gap-3">
         {visible.map((ins) => {
           const isTaken = ins.takenBy !== null;
           return (
-            <div
+            <button
               key={ins.id}
-              className={`rounded-lg border bg-gradient-to-br from-gray-900/80 to-gray-900/40 ${
+              onClick={() => setSelectedId(ins.id)}
+              className={`flex flex-col overflow-hidden rounded-lg border text-left ${
                 isTaken
                   ? "border-accent/30 opacity-60"
-                  : "border-gray-800"
-              }`}
+                  : "border-gray-800 hover:border-gray-700"
+              } bg-white/5`}
             >
-              {ins.image && (
+              {ins.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={ins.image}
                   alt={ins.title}
-                  className="h-40 w-full rounded-t-lg object-cover"
+                  className="h-28 w-full object-cover"
                 />
-              )}
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3
-                      className={`font-medium ${isTaken ? "text-gray-500 line-through" : "text-white"}`}
-                    >
-                      {ins.title}
-                    </h3>
-                    <p className="mt-0.5 text-sm text-gray-500">
-                      {ins.description}
-                    </p>
-                  </div>
+              ) : (
+                <div className="flex h-28 w-full items-center justify-center bg-gray-900/40 text-3xl opacity-40">
+                  📦
                 </div>
-                <div className="mt-3 flex items-center justify-between">
-                  <p className="text-xs text-gray-600">
-                    von {ins.createdBy} ·{" "}
-                    {new Date(ins.createdAt).toLocaleDateString("de-CH", {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </p>
-                  {isTaken ? (
-                    <span className="font-mono text-xs text-accent">
-                      ✓ Genommen von {ins.takenBy}
+              )}
+              <div className="flex flex-1 flex-col p-2.5">
+                <h3
+                  className={`truncate text-xs font-medium ${
+                    isTaken ? "text-gray-500 line-through" : "text-white"
+                  }`}
+                >
+                  {ins.title}
+                </h3>
+                <p className="mt-0.5 line-clamp-2 text-[10px] text-gray-500">
+                  {ins.description}
+                </p>
+                <div className="mt-auto flex items-center justify-between pt-2">
+                  <span className="text-[9px] text-gray-600">
+                    {ins.createdBy}
+                  </span>
+                  {ins.comments.length > 0 && (
+                    <span className="text-[9px] text-gray-500">
+                      💬 {ins.comments.length}
                     </span>
-                  ) : (
-                    <button
-                      onClick={() => handleTake(ins.id)}
-                      className="rounded-full bg-accent px-3 py-1 font-mono text-xs font-bold text-dark"
-                    >
-                      Nehme ich!
-                    </button>
                   )}
                 </div>
-                {isTaken && ins.takenAt && (
-                  <p className="mt-1 text-xs text-gray-600">
-                    Verschwindet automatisch in{" "}
-                    {2 - daysBetween(ins.takenAt, today)} Tag(en)
-                  </p>
-                )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -262,6 +307,115 @@ export default function FlohmiPage() {
         <p className="mt-8 text-center text-gray-600">
           Keine Inserate vorhanden. Hast du etwas zum Weggeben?
         </p>
+      )}
+
+      {/* Detail-Modal */}
+      {selected && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center"
+          onClick={() => setSelectedId(null)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-gray-800 bg-black sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {selected.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={selected.image}
+                alt={selected.title}
+                className="max-h-[50vh] w-full object-contain"
+              />
+            ) : (
+              <div className="flex h-40 w-full items-center justify-center bg-gray-900/40 text-5xl opacity-40">
+                📦
+              </div>
+            )}
+
+            <div className="p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-white">
+                    {selected.title}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-400">
+                    {selected.description}
+                  </p>
+                  <p className="mt-2 text-xs text-gray-600">
+                    von {selected.createdBy} ·{" "}
+                    {new Date(selected.createdAt).toLocaleDateString("de-CH", {
+                      day: "numeric",
+                      month: "long",
+                    })}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedId(null)}
+                  className="text-gray-500 hover:text-white"
+                  aria-label="Schliessen"
+                >
+                  ×
+                </button>
+              </div>
+
+              {selected.takenBy ? (
+                <p className="mt-3 text-sm text-accent">
+                  ✓ Genommen von {selected.takenBy}
+                </p>
+              ) : (
+                <button
+                  onClick={() => {
+                    handleTake(selected.id);
+                  }}
+                  className="mt-4 w-full rounded-full bg-accent py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
+                >
+                  Nehme ich!
+                </button>
+              )}
+
+              {/* Kommentare */}
+              <div className="mt-5 border-t border-gray-800 pt-4">
+                <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                  KOMMENTARE ({selected.comments.length})
+                </p>
+                <div className="space-y-2">
+                  {selected.comments.map((c) => (
+                    <div
+                      key={c.id}
+                      className="rounded border-l-2 border-gray-700 bg-white/3 py-1.5 pl-2 pr-2"
+                    >
+                      <p className="text-xs text-gray-300">{c.text}</p>
+                      <p className="mt-0.5 text-[9px] text-gray-600">
+                        — {c.author}
+                      </p>
+                    </div>
+                  ))}
+                  {selected.comments.length === 0 && (
+                    <p className="text-xs text-gray-600">
+                      Noch keine Kommentare
+                    </p>
+                  )}
+                </div>
+
+                <form onSubmit={handleAddComment} className="mt-3 flex gap-2">
+                  <input
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Frage oder Kommentar..."
+                    className="flex-1 rounded border border-gray-800 bg-white/5 px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded bg-accent px-3 py-1.5 text-[10px] font-bold text-dark"
+                  >
+                    OK
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

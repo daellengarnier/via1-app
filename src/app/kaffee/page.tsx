@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useCurrentKaffee } from "@/lib/kaffee-store";
 
 type AboType = "1-espresso" | "1-doppio" | "2-doppio" | "kein";
 
@@ -102,14 +103,14 @@ const rastSortiment: RastKaffee[] = [
 
 export default function KaffeePage() {
   const [abo, setAbo] = useState<AboType>("1-doppio");
-  const [currentBeans, setCurrentBeans] = useState("Bologna Bio Fairtrade");
+  const [currentKaffee, setCurrentKaffee] = useCurrentKaffee();
   const [changedBy] = useState("Sophie");
   const [changedAt] = useState("2026-04-09");
   const [showSelect, setShowSelect] = useState(false);
   const [saved, setSaved] = useState(false);
 
-
-  const currentInfo = rastSortiment.find((k) => k.name === currentBeans);
+  const currentBeans = currentKaffee.name;
+  const currentInfo = rastSortiment.find((k) => k.name === currentBeans) ?? currentKaffee;
 
   function handleSaveAbo() {
     setSaved(true);
@@ -118,8 +119,8 @@ export default function KaffeePage() {
 
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">Kaffee</h1>
-      <p className="mb-6 text-sm text-gray-500">Hauseigene Kaffeemaschine</p>
+      <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">Kaffee-Abo</h1>
+      <p className="mb-6 text-center text-sm text-gray-500">Hauseigene Kaffeemaschine</p>
 
       {/* Aktuelle Bohnen */}
       <div className="mb-6 rounded-lg border border-amber-600/30 bg-gradient-to-b from-amber-600/10 to-transparent p-4">
@@ -165,7 +166,7 @@ export default function KaffeePage() {
               <button
                 key={k.name}
                 onClick={() => {
-                  setCurrentBeans(k.name);
+                  setCurrentKaffee(k);
                   setShowSelect(false);
                 }}
                 className={`flex w-full items-start justify-between rounded-lg border p-3 text-left transition-colors ${

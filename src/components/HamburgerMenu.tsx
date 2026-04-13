@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 
 export function HamburgerMenu() {
   const [open, setOpen] = useState(false);
@@ -177,7 +178,10 @@ export function HamburgerMenu() {
           </Link>
 
           {/* Abmelden */}
-          <button className="mt-3 w-full rounded-lg border border-gray-700 py-2 font-display text-[10px] font-bold uppercase tracking-widest text-gray-400 transition-colors hover:border-red-500 hover:text-red-400">
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="mt-3 w-full rounded-lg border border-gray-700 py-2 font-display text-[10px] font-bold uppercase tracking-widest text-gray-400 transition-colors hover:border-red-500 hover:text-red-400"
+          >
             ABMELDEN
           </button>
         </div>
