@@ -57,6 +57,8 @@ model User {
   mealSignups          MealSignup[]
   createdAufgaben      Aufgabe[]             @relation("AufgabeCreator")
   activeAufgabenWorker AufgabeActiveWorker[]
+  createdBookings      Booking[]             @relation("BookingCreator")
+  bookingComments      BookingComment[]
 
   @@map("users")
 }
@@ -188,6 +190,35 @@ model AufgabeActiveWorker {
 
   @@unique([aufgabeId, userId])
   @@map("aufgabe_active_workers")
+}
+
+model Booking {
+  id          String           @id @default(cuid())
+  guest       String
+  // Start- und End-Datum der Buchung (inklusive)
+  fromDate    DateTime
+  toDate      DateTime
+  createdBy   User             @relation("BookingCreator", fields: [createdById], references: [id])
+  createdById String
+  comments    BookingComment[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([fromDate])
+  @@map("bookings")
+}
+
+model BookingComment {
+  id        String   @id @default(cuid())
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+  @@map("booking_comments")
 }
 
 model Wg {

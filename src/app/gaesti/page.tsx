@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TabHeader } from "@/components/TabHeader";
 
 interface Comment {
   id: string;
   author: string;
+  authorId: string;
   text: string;
   date: string;
 }
@@ -14,52 +15,11 @@ interface Booking {
   id: string;
   guest: string;
   invitedBy: string;
+  invitedById: string;
   from: string;
   to: string;
   comments: Comment[];
 }
-
-const CURRENT_USER = "Alain";
-
-const mockBookings: Booking[] = [
-  {
-    id: "1",
-    guest: "Anna Müller",
-    invitedBy: "Alain",
-    from: "2026-04-21",
-    to: "2026-04-23",
-    comments: [
-      {
-        id: "c1",
-        author: "Sophie",
-        text: "Bettwäsche ist im Schrank links.",
-        date: "2026-04-18",
-      },
-      {
-        id: "c2",
-        author: "Alain",
-        text: "Danke! Kommt am Dienstag Abend an.",
-        date: "2026-04-19",
-      },
-    ],
-  },
-  {
-    id: "2",
-    guest: "Peter Schmidt",
-    invitedBy: "Sophie",
-    from: "2026-04-28",
-    to: "2026-04-30",
-    comments: [],
-  },
-  {
-    id: "3",
-    guest: "Familie Meier",
-    invitedBy: "Felix",
-    from: "2026-05-10",
-    to: "2026-05-15",
-    comments: [],
-  },
-];
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
@@ -98,7 +58,9 @@ export default function GaestiPage() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
-  const [bookings, setBookings] = useState(mockBookings);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newGuest, setNewGuest] = useState("");
   const [newFrom, setNewFrom] = useState("");
@@ -114,6 +76,25 @@ export default function GaestiPage() {
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfWeek(year, month);
   const today = now.toISOString().split("T")[0]!;
+
+  const loadBookings = useCallback(async () => {
+    try {
+      const res = await fetch("/api/bookings");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as Booking[];
+      setBookings(data);
+      setLoadError(null);
+    } catch (err) {
+      console.error("Bookings laden", err);
+      setLoadError("Buchungen konnten nicht geladen werden");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadBookings();
+  }, [loadBookings]);
 
   function prevMonth() {
     if (month === 0) {
@@ -137,60 +118,75 @@ export default function GaestiPage() {
     return bookings.find((b) => isDateInRange(dateStr, b.from, b.to));
   }
 
-  function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!newGuest || !newFrom || !newTo) return;
-
-    // Prüfen auf Doppelbuchung
-    const conflict = bookings.find(
-      (b) =>
-        (newFrom >= b.from && newFrom <= b.to) ||
-        (newTo >= b.from && newTo <= b.to) ||
-        (newFrom <= b.from && newTo >= b.to)
-    );
-    if (conflict) {
-      alert(`Konflikt: ${conflict.guest} hat in diesem Zeitraum gebucht.`);
-      return;
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guest: newGuest,
+          from: newFrom,
+          to: newTo,
+        }),
+      });
+      if (res.status === 409) {
+        const data = (await res.json()) as { error: string };
+        alert(data.error);
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = (await res.json()) as Booking;
+      setBookings((prev) => [...prev, created]);
+      setShowCreate(false);
+      setNewGuest("");
+      setNewFrom("");
+      setNewTo("");
+    } catch (err) {
+      console.error("Buchung erstellen", err);
+      alert("Konnte Buchung nicht erstellen.");
     }
-
-    setBookings((prev) => [
-      ...prev,
-      {
-        id: String(Date.now()),
-        guest: newGuest,
-        invitedBy: CURRENT_USER,
-        from: newFrom,
-        to: newTo,
-        comments: [],
-      },
-    ]);
-    setShowCreate(false);
-    setNewGuest("");
-    setNewFrom("");
-    setNewTo("");
   }
 
-  function addComment(bookingId: string) {
-    if (!newComment.trim()) return;
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === bookingId
-          ? {
-              ...b,
-              comments: [
-                ...b.comments,
-                {
-                  id: String(Date.now()),
-                  author: CURRENT_USER,
-                  text: newComment,
-                  date: new Date().toISOString().split("T")[0]!,
-                },
-              ],
-            }
-          : b
-      )
-    );
-    setNewComment("");
+  async function addComment(bookingId: string) {
+    const text = newComment.trim();
+    if (!text) return;
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = (await res.json()) as Comment;
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === bookingId
+            ? { ...b, comments: [...b.comments, created] }
+            : b
+        )
+      );
+      setNewComment("");
+    } catch (err) {
+      console.error("Kommentar", err);
+      alert("Kommentar konnte nicht gespeichert werden.");
+    }
+  }
+
+  async function deleteBooking(bookingId: string) {
+    if (!confirm("Diese Buchung wirklich löschen?")) return;
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+      setSelectedBookingId(null);
+    } catch (err) {
+      console.error("Buchung loeschen", err);
+      alert("Konnte nicht loeschen.");
+    }
   }
 
   return (
@@ -417,6 +413,12 @@ export default function GaestiPage() {
                 <p className="mt-1 text-xs text-gray-500">
                   {formatDateShort(booking.from)} – {formatDateShort(booking.to)}
                 </p>
+                <button
+                  onClick={() => deleteBooking(booking.id)}
+                  className="mt-3 rounded border border-red-500/40 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10"
+                >
+                  Buchung löschen
+                </button>
               </div>
             ) : (
               <div>
@@ -543,11 +545,19 @@ export default function GaestiPage() {
             );
           })}
 
-        {bookings.filter((b) => b.to >= today).length === 0 && (
-          <p className="text-center text-sm text-gray-600">
-            Keine kommenden Buchungen
-          </p>
+        {loading && bookings.length === 0 && (
+          <p className="text-center text-sm text-gray-600">Lade …</p>
         )}
+        {!loading && loadError && (
+          <p className="text-center text-sm text-red-400">{loadError}</p>
+        )}
+        {!loading &&
+          !loadError &&
+          bookings.filter((b) => b.to >= today).length === 0 && (
+            <p className="text-center text-sm text-gray-600">
+              Keine kommenden Buchungen
+            </p>
+          )}
       </div>}
     </div>
   );
