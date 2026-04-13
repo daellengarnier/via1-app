@@ -18,6 +18,11 @@ interface WeatherData {
   summary: string;
 }
 
+interface AareData {
+  temp: number;
+  flow: number;
+}
+
 const initialPinnwand: PinnwandEintrag[] = [
   {
     id: "1",
@@ -74,6 +79,7 @@ export default function HomeScreen() {
   const [newNote, setNewNote] = useState("");
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [aare, setAare] = useState<AareData | null>(null);
 
   // Wetter laden (Open-Meteo, kein API Key)
   useEffect(() => {
@@ -108,6 +114,27 @@ export default function HomeScreen() {
       .catch(() => {});
   }, []);
 
+  // Aare-Daten laden (aare.guru API, kein API Key)
+  useEffect(() => {
+    const url =
+      "https://aareguru.existenz.ch/v2018/current?city=bern&app=via1-app&version=1.0";
+    fetch(url)
+      .then((r) => r.json())
+      .then((data: { aare?: { temperature?: number; flow?: number } }) => {
+        if (!data.aare) return;
+        if (
+          typeof data.aare.temperature === "number" &&
+          typeof data.aare.flow === "number"
+        ) {
+          setAare({
+            temp: Math.round(data.aare.temperature * 10) / 10,
+            flow: Math.round(data.aare.flow),
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   function addNote(e: React.FormEvent) {
     e.preventDefault();
     if (!newNote.trim()) return;
@@ -136,13 +163,22 @@ export default function HomeScreen() {
         color="green"
       />
 
-      {/* Wetter */}
-      {weather && (
-        <p className="-mt-4 mb-6 text-center text-sm text-gray-400">
-          {weather.summary} · {weather.temp}°C
-        </p>
+      {/* Wetter + Aare */}
+      {(weather || aare) && (
+        <div className="-mt-4 mb-6 space-y-0.5 text-center">
+          {weather && (
+            <p className="text-sm text-gray-400">
+              {weather.summary} · {weather.temp}°C
+            </p>
+          )}
+          {aare && (
+            <p className="font-mono text-xs text-cyan-300/80">
+              🌊 Aare {aare.temp}°C · {aare.flow} m³/s
+            </p>
+          )}
+        </div>
       )}
-      {!weather && <div className="-mt-4 mb-6 h-5" />}
+      {!weather && !aare && <div className="-mt-4 mb-6 h-5" />}
 
       {/* Nächster Termin + Spinnerei — rund & nebeneinander */}
       <div className="mb-4 grid grid-cols-2 gap-3">
