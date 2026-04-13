@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 interface Traktandum {
@@ -8,6 +8,7 @@ interface Traktandum {
   title: string;
   notes: string;
   createdBy: string;
+  order: number;
 }
 
 interface Guest {
@@ -16,10 +17,17 @@ interface Guest {
 }
 
 interface MealSignup {
+  id: string;
+  userId: string;
   name: string;
   diet: string;
   allergies: string;
   guestDetails: Guest[];
+}
+
+interface PersonRef {
+  id: string;
+  name: string;
 }
 
 interface TerminDetail {
@@ -32,174 +40,15 @@ interface TerminDetail {
   organizer: string | null;
   withDinner: boolean;
   dinnerTime: string | null;
+  withAttendance: boolean;
   sitzungsleitung: string;
   protokollfuehrung: string;
-  anwesend: string[];
-  abgemeldet: string[];
+  anwesend: PersonRef[];
+  abgemeldet: PersonRef[];
   traktanden: Traktandum[];
   mealSignups: MealSignup[];
 }
 
-// Alle Bewohner:innen (Mock — später aus DB)
-const ALL_RESIDENTS = [
-  "Alain", "Yves", "Sophie", "Dario", "Marco", "Lena", "Sven", "Mia",
-  "Nina", "Tim", "Nora", "Fabio", "Lea", "Jan", "Anna", "Lars", "Vera",
-  "Thomas", "Sarah", "Ruth", "Beat", "Maja", "Felix", "Claudia", "Martin",
-  "Lia",
-];
-
-const mockTermine: Record<string, TerminDetail> = {
-  "1": {
-    id: "1",
-    title: "Haussitzung April",
-    date: "2026-04-16",
-    time: "19:30",
-    location: "Gemeinschaftsraum EG",
-    type: "sitzung",
-    organizer: "Dreiecksbar",
-    withDinner: true,
-    dinnerTime: "18:30",
-    sitzungsleitung: "Alain",
-    protokollfuehrung: "",
-    anwesend: [
-      "Alain",
-      "Yves",
-      "Sophie",
-      "Dario",
-      "Marco",
-      "Lena",
-      "Nina",
-      "Felix",
-    ],
-    abgemeldet: ["Thomas", "Ruth"],
-    traktanden: [
-      {
-        id: "t1",
-        title: "Gartenplanung Sommer",
-        notes: "",
-        createdBy: "Alain",
-      },
-      {
-        id: "t2",
-        title: "Waschküche-Regeln",
-        notes: "",
-        createdBy: "Nina",
-      },
-      {
-        id: "t3",
-        title: "Sauna-Zeiten anpassen",
-        notes: "",
-        createdBy: "Felix",
-      },
-    ],
-    mealSignups: [
-      { name: "Alain", diet: "Fleisch", allergies: "", guestDetails: [] },
-      {
-        name: "Sophie",
-        diet: "Vegi",
-        allergies: "",
-        guestDetails: [{ diet: "Fleisch", allergies: "Laktose" }],
-      },
-      { name: "Marco", diet: "Fleisch", allergies: "", guestDetails: [] },
-      { name: "Nina", diet: "Vegan", allergies: "Nüsse", guestDetails: [] },
-    ],
-  },
-  "2": {
-    id: "2",
-    title: "Hausessen Frühling",
-    date: "2026-04-25",
-    time: "18:00",
-    location: "Innenhof",
-    type: "essen",
-    organizer: null,
-    withDinner: false,
-    dinnerTime: null,
-    sitzungsleitung: "",
-    protokollfuehrung: "",
-    anwesend: [],
-    abgemeldet: [],
-    traktanden: [],
-    mealSignups: [
-      { name: "Alain", diet: "Fleisch", allergies: "", guestDetails: [] },
-      {
-        name: "Yves",
-        diet: "Fleisch",
-        allergies: "",
-        guestDetails: [
-          { diet: "Vegi", allergies: "" },
-          { diet: "Vegan", allergies: "Gluten" },
-        ],
-      },
-      { name: "Sophie", diet: "Vegi", allergies: "", guestDetails: [] },
-      { name: "Lena", diet: "Vegan", allergies: "", guestDetails: [] },
-      {
-        name: "Felix",
-        diet: "Fleisch",
-        allergies: "",
-        guestDetails: [{ diet: "Fleisch", allergies: "" }],
-      },
-    ],
-  },
-  "3": {
-    id: "3",
-    title: "Haussitzung März",
-    date: "2026-03-19",
-    time: "19:30",
-    location: "Gemeinschaftsraum EG",
-    type: "sitzung",
-    organizer: "Nordwind",
-    withDinner: false,
-    dinnerTime: null,
-    sitzungsleitung: "Marco",
-    protokollfuehrung: "Lena",
-    anwesend: [
-      "Marco",
-      "Lena",
-      "Sven",
-      "Alain",
-      "Sophie",
-      "Nina",
-      "Jan",
-      "Felix",
-      "Claudia",
-    ],
-    abgemeldet: ["Yves", "Dario"],
-    traktanden: [
-      {
-        id: "t4",
-        title: "Budget 2026",
-        notes: "Budget wurde genehmigt. CHF 5000 für Gemeinschaftsraum.",
-        createdBy: "Marco",
-      },
-      {
-        id: "t5",
-        title: "Neuer Putzplan",
-        notes:
-          "Rotation bleibt gleich. Kontrolle wird eingeführt.",
-        createdBy: "Lena",
-      },
-      {
-        id: "t6",
-        title: "Fahrradraum aufräumen",
-        notes: "Termin: 22. März, 10 Uhr. Alle sind eingeladen.",
-        createdBy: "Sven",
-      },
-      {
-        id: "t7",
-        title: "Gästewohnwagen Saison",
-        notes: "Ab April buchbar. Preise bleiben gleich.",
-        createdBy: "Felix",
-      },
-      {
-        id: "t8",
-        title: "Varia",
-        notes: "Keine weiteren Punkte.",
-        createdBy: "Marco",
-      },
-    ],
-    mealSignups: [],
-  },
-};
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -216,8 +65,10 @@ export default function TerminDetailPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const initial = mockTermine[id];
-  const [termin, setTermin] = useState<TerminDetail | null>(initial ?? null);
+  const [termin, setTermin] = useState<TerminDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [allUsers, setAllUsers] = useState<PersonRef[]>([]);
   const [newTraktandum, setNewTraktandum] = useState("");
   const [showSignup, setShowSignup] = useState(false);
   const [signupGuestDetails, setSignupGuestDetails] = useState<Guest[]>([]);
@@ -229,9 +80,8 @@ export default function TerminDetailPage() {
   );
   const [locationMode, setLocationMode] = useState<"wg" | "custom">("custom");
 
-  // Aus Profil (Mock)
+  // Aus Profil (Mock — bis wir ein echtes Profil haben)
   const myDiet = "Fleisch";
-  const myAllergies = "";
 
   const WG_OPTIONS = [
     "Nordwind",
@@ -242,7 +92,41 @@ export default function TerminDetailPage() {
     "Bonzen",
   ];
 
-  if (!termin) {
+  const loadTermin = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/termine/${id}`);
+      if (res.status === 404) {
+        setNotFound(true);
+        setTermin(null);
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as TerminDetail;
+      setTermin(data);
+    } catch (err) {
+      console.error("Termin laden", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    loadTermin();
+    fetch("/api/users")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((u: PersonRef[]) => setAllUsers(u))
+      .catch(() => {});
+  }, [loadTermin]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <p className="text-gray-400">Lade Termin …</p>
+      </div>
+    );
+  }
+
+  if (notFound || !termin) {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <p className="text-gray-400">Termin nicht gefunden.</p>
@@ -270,24 +154,27 @@ export default function TerminDetailPage() {
     s.guestDetails.forEach((g) => add(g.diet));
   });
 
-  function addTraktandum(e: React.FormEvent) {
+  async function addTraktandum(e: React.FormEvent) {
     e.preventDefault();
     if (!newTraktandum.trim() || !termin) return;
-    setTermin({
-      ...termin,
-      traktanden: [
-        ...termin.traktanden,
-        {
-          id: String(Date.now()),
-          title: newTraktandum,
-          notes: "",
-          createdBy: "Alain",
-        },
-      ],
-    });
-    setNewTraktandum("");
+    try {
+      const res = await fetch(`/api/termine/${id}/traktanden`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTraktandum }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = (await res.json()) as Traktandum;
+      setTermin({ ...termin, traktanden: [...termin.traktanden, created] });
+      setNewTraktandum("");
+    } catch (err) {
+      console.error("Traktandum erstellen", err);
+      alert("Konnte Traktandum nicht erstellen.");
+    }
   }
 
+  // Debounced save der Notizen: lokales State-Update sofort, PATCH
+  // verzoegert (on blur) damit wir nicht bei jedem Tastendruck schreiben
   function updateTraktandumNotes(tId: string, notes: string) {
     if (!termin) return;
     setTermin({
@@ -298,23 +185,39 @@ export default function TerminDetailPage() {
     });
   }
 
-  function handleMealSignup(e: React.FormEvent) {
+  async function saveTraktandumNotes(tId: string, notes: string) {
+    try {
+      await fetch(`/api/termine/${id}/traktanden/${tId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes }),
+      });
+    } catch (err) {
+      console.error("Traktandum-Notizen speichern", err);
+    }
+  }
+
+  async function handleMealSignup(e: React.FormEvent) {
     e.preventDefault();
     if (!termin) return;
-    setTermin({
-      ...termin,
-      mealSignups: [
-        ...termin.mealSignups,
-        {
-          name: "Alain",
+    try {
+      const res = await fetch(`/api/termine/${id}/meal-signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           diet: myDiet,
-          allergies: myAllergies,
-          guestDetails: signupGuestDetails,
-        },
-      ],
-    });
-    setShowSignup(false);
-    setSignupGuestDetails([]);
+          allergies: "",
+          guests: signupGuestDetails,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await loadTermin();
+      setShowSignup(false);
+      setSignupGuestDetails([]);
+    } catch (err) {
+      console.error("Essens-Anmeldung", err);
+      alert("Anmeldung fehlgeschlagen.");
+    }
   }
 
   function addGuest() {
@@ -334,27 +237,65 @@ export default function TerminDetailPage() {
     );
   }
 
-  function toggleAttendance(name: string, mode: "anwesend" | "abgemeldet") {
+  async function toggleAttendance(
+    user: PersonRef,
+    mode: "anwesend" | "abgemeldet"
+  ) {
     if (!termin) return;
     const key = mode;
-    const otherKey = mode === "anwesend" ? "abgemeldet" : "anwesend";
     const current = termin[key];
-    const isIn = current.includes(name);
-    setTermin({
-      ...termin,
-      [key]: isIn ? current.filter((n) => n !== name) : [...current, name],
-      // Aus der anderen Liste entfernen falls dort
-      [otherKey]: termin[otherKey].filter((n) => n !== name),
-    });
+    const isIn = current.some((p) => p.id === user.id);
+    const newStatus: "going" | "not-going" | null = isIn
+      ? null
+      : mode === "anwesend"
+        ? "going"
+        : "not-going";
+
+    try {
+      await fetch(`/api/termine/${id}/attendance/bulk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, status: newStatus }),
+      });
+      await loadTermin();
+    } catch (err) {
+      console.error("Attendance", err);
+      alert("Konnte Anwesenheit nicht aktualisieren.");
+    }
   }
 
-  function deleteTraktandum(tId: string) {
+  async function deleteTraktandum(tId: string) {
     if (!termin) return;
-    setTermin({
-      ...termin,
-      traktanden: termin.traktanden.filter((t) => t.id !== tId),
-    });
-    setDeleteTraktandumId(null);
+    try {
+      const res = await fetch(`/api/termine/${id}/traktanden/${tId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setTermin({
+        ...termin,
+        traktanden: termin.traktanden.filter((t) => t.id !== tId),
+      });
+    } catch (err) {
+      console.error("Traktandum loeschen", err);
+      alert("Konnte nicht loeschen.");
+    } finally {
+      setDeleteTraktandumId(null);
+    }
+  }
+
+  // Generische PATCH-Funktion fuer Termin-Felder (Titel, Ort, Sitzungsleitung,
+  // Protokollfuehrung, withAttendance …). Lokaler State wird sofort
+  // aktualisiert; PATCH wird mit kurzer Verzoegerung abgeschickt.
+  async function patchTermin(data: Partial<TerminDetail>) {
+    try {
+      await fetch(`/api/termine/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      console.error("Termin patch", err);
+    }
   }
 
   function exportPdf() {
@@ -471,8 +412,8 @@ export default function TerminDetailPage() {
     ${termin.organizer ? `<dt>Organisiert von</dt><dd>${esc(termin.organizer)}</dd>` : ""}
     ${termin.sitzungsleitung ? `<dt>Sitzungsleitung</dt><dd>${esc(termin.sitzungsleitung)}</dd>` : ""}
     ${termin.protokollfuehrung ? `<dt>Protokollführung</dt><dd>${esc(termin.protokollfuehrung)}</dd>` : ""}
-    <dt>Anwesend (${termin.anwesend.length})</dt><dd>${esc(termin.anwesend.join(", ") || "–")}</dd>
-    <dt>Abgemeldet (${termin.abgemeldet.length})</dt><dd>${esc(termin.abgemeldet.join(", ") || "–")}</dd>
+    <dt>Anwesend (${termin.anwesend.length})</dt><dd>${esc(termin.anwesend.map((p) => p.name).join(", ") || "–")}</dd>
+    <dt>Abgemeldet (${termin.abgemeldet.length})</dt><dd>${esc(termin.abgemeldet.map((p) => p.name).join(", ") || "–")}</dd>
   </dl>
 
   <h2>Traktanden</h2>
@@ -549,6 +490,9 @@ export default function TerminDetailPage() {
                 onChange={(e) =>
                   setTermin({ ...termin, sitzungsleitung: e.target.value })
                 }
+                onBlur={(e) =>
+                  patchTermin({ sitzungsleitung: e.target.value })
+                }
                 className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
               />
             </div>
@@ -561,6 +505,9 @@ export default function TerminDetailPage() {
                 value={termin.protokollfuehrung}
                 onChange={(e) =>
                   setTermin({ ...termin, protokollfuehrung: e.target.value })
+                }
+                onBlur={(e) =>
+                  patchTermin({ protokollfuehrung: e.target.value })
                 }
                 className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
               />
@@ -604,7 +551,10 @@ export default function TerminDetailPage() {
                   <button
                     key={wg}
                     type="button"
-                    onClick={() => setTermin({ ...termin, location: wg })}
+                    onClick={() => {
+                      setTermin({ ...termin, location: wg });
+                      patchTermin({ location: wg });
+                    }}
                     className={`rounded border px-2 py-2 text-xs transition-colors ${
                       termin.location === wg
                         ? "border-accent bg-accent/10 text-accent"
@@ -622,6 +572,7 @@ export default function TerminDetailPage() {
                 onChange={(e) =>
                   setTermin({ ...termin, location: e.target.value })
                 }
+                onBlur={(e) => patchTermin({ location: e.target.value })}
                 placeholder="z.B. Innenhof, Pyramide, …"
                 className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
               />
@@ -639,7 +590,8 @@ export default function TerminDetailPage() {
                 Anwesend ({termin.anwesend.length})
               </p>
               <p className="line-clamp-3 text-xs text-gray-400">
-                {termin.anwesend.join(", ") || "Tippe zum Auswählen…"}
+                {termin.anwesend.map((p) => p.name).join(", ") ||
+                  "Tippe zum Auswählen…"}
               </p>
             </button>
             <button
@@ -651,7 +603,8 @@ export default function TerminDetailPage() {
                 Abgemeldet ({termin.abgemeldet.length})
               </p>
               <p className="line-clamp-3 text-xs text-gray-400">
-                {termin.abgemeldet.join(", ") || "Tippe zum Auswählen…"}
+                {termin.abgemeldet.map((p) => p.name).join(", ") ||
+                  "Tippe zum Auswählen…"}
               </p>
             </button>
           </div>
@@ -682,6 +635,9 @@ export default function TerminDetailPage() {
                         value={t.notes}
                         onChange={(e) =>
                           updateTraktandumNotes(t.id, e.target.value)
+                        }
+                        onBlur={(e) =>
+                          saveTraktandumNotes(t.id, e.target.value)
                         }
                         placeholder="Notizen / Was wurde besprochen..."
                         rows={2}
@@ -910,28 +866,31 @@ export default function TerminDetailPage() {
               Tippe auf einen Namen zum Umschalten.
             </p>
             <div className="flex flex-wrap gap-2">
-              {ALL_RESIDENTS.map((name) => {
+              {allUsers.length === 0 && (
+                <p className="text-xs text-gray-600">Lade Bewohnende …</p>
+              )}
+              {allUsers.map((u) => {
                 const list =
                   attendanceMode === "anwesend"
                     ? termin.anwesend
                     : termin.abgemeldet;
-                const selected = list.includes(name);
+                const selected = list.some((p) => p.id === u.id);
                 const activeColor =
                   attendanceMode === "anwesend"
                     ? "bg-accent text-dark border-accent"
                     : "bg-secondary text-white border-secondary";
                 return (
                   <button
-                    key={name}
+                    key={u.id}
                     type="button"
-                    onClick={() => toggleAttendance(name, attendanceMode)}
+                    onClick={() => toggleAttendance(u, attendanceMode)}
                     className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
                       selected
                         ? activeColor
                         : "border-gray-700 bg-white/5 text-gray-400 hover:border-gray-600"
                     }`}
                   >
-                    {name}
+                    {u.name}
                   </button>
                 );
               })}

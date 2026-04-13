@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { TabHeader } from "@/components/TabHeader";
 
@@ -19,7 +19,7 @@ interface Termin {
   withAttendance: boolean;
   myAttendance: "going" | "not-going" | null;
   agendaCount: number;
-  mealSignups: number;
+  mealSignupCount: number;
 }
 
 const wgNames = [
@@ -60,53 +60,7 @@ function formatDate(iso: string): string {
   });
 }
 
-const initialTermine: Termin[] = [
-  {
-    id: "1",
-    title: "Haussitzung April",
-    date: "2026-04-16",
-    time: "19:30",
-    location: "Gemeinschaftsraum EG",
-    type: "sitzung",
-    organizer: "Dreiecksbar",
-    withDinner: true,
-    dinnerTime: "18:30",
-    withAttendance: true,
-    myAttendance: null,
-    agendaCount: 3,
-    mealSignups: 12,
-  },
-  {
-    id: "2",
-    title: "Hausessen Frühling",
-    date: "2026-04-25",
-    time: "18:00",
-    location: "Innenhof",
-    type: "essen",
-    organizer: null,
-    withDinner: false,
-    dinnerTime: null,
-    withAttendance: false,
-    myAttendance: null,
-    agendaCount: 0,
-    mealSignups: 18,
-  },
-  {
-    id: "3",
-    title: "Haussitzung März",
-    date: "2026-03-19",
-    time: "19:30",
-    location: "Gemeinschaftsraum EG",
-    type: "sitzung",
-    organizer: "Nordwind",
-    withDinner: false,
-    dinnerTime: null,
-    withAttendance: true,
-    myAttendance: null,
-    agendaCount: 5,
-    mealSignups: 0,
-  },
-];
+// Termine werden vom API geladen
 
 function exportIcs(termin: Termin) {
   // Naive Dauer: 2h fuer Sitzung, 3h fuer Essen, 1h fuer Sonstige
@@ -149,8 +103,29 @@ function exportIcs(termin: Termin) {
 
 export default function TerminePage() {
   const [filter, setFilter] = useState<TerminType | "alle">("alle");
-  const [termine, setTermine] = useState(initialTermine);
+  const [termine, setTermine] = useState<Termin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+
+  const loadTermine = useCallback(async () => {
+    try {
+      const res = await fetch("/api/termine");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as Termin[];
+      setTermine(data);
+      setError(null);
+    } catch (err) {
+      console.error("Termine laden", err);
+      setError("Termine konnten nicht geladen werden");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTermine();
+  }, [loadTermine]);
 
   // Signup state (inline, per termin)
   type GuestDiet = "Fleisch" | "Vegi" | "Vegan";
@@ -189,42 +164,61 @@ export default function TerminePage() {
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    const newTermin: Termin = {
-      id: String(Date.now()),
-      title: newTitle,
-      date: newDate,
-      time: newTime,
-      location: newLocation,
-      type: newType,
-      organizer: newType === "sitzung" ? newOrganizer : null,
-      withDinner: newWithDinner,
-      dinnerTime: newWithDinner ? newDinnerTime : null,
-      // Sitzung immer mit Teilnahmeliste, Sonstige optional,
-      // Essen nutzt die Essens-Anmeldung separat
-      withAttendance:
-        newType === "sitzung"
-          ? true
-          : newType === "sonstige"
-            ? newWithAttendance
-            : false,
-      myAttendance: null,
-      agendaCount: 0,
-      mealSignups: 0,
-    };
-    setTermine((prev) => [newTermin, ...prev]);
-    setShowCreate(false);
-    resetForm();
+    try {
+      const res = await fetch("/api/termine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTitle,
+          date: newDate,
+          time: newTime,
+          location: newLocation,
+          type: newType,
+          organizer: newType === "sitzung" ? newOrganizer : null,
+          withDinner: newWithDinner,
+          dinnerTime: newWithDinner ? newDinnerTime : null,
+          withAttendance:
+            newType === "sitzung"
+              ? true
+              : newType === "sonstige"
+                ? newWithAttendance
+                : false,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = (await res.json()) as Termin;
+      setTermine((prev) => [created, ...prev]);
+      setShowCreate(false);
+      resetForm();
+    } catch (err) {
+      console.error("Termin erstellen", err);
+      alert("Konnte Termin nicht erstellen.");
+    }
   }
 
-  function setAttendance(
+  async function setAttendance(
     id: string,
     value: "going" | "not-going" | null
   ) {
-    setTermine((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, myAttendance: value } : t))
+    // Optimistic update
+    const prev = termine;
+    setTermine((ts) =>
+      ts.map((t) => (t.id === id ? { ...t, myAttendance: value } : t))
     );
+    try {
+      const res = await fetch(`/api/termine/${id}/attendance`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: value }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      console.error("Attendance", err);
+      setTermine(prev);
+      alert("Anmeldung konnte nicht gespeichert werden.");
+    }
   }
 
   function resetForm() {
@@ -571,7 +565,7 @@ export default function TerminePage() {
                     )}
                     {hasEssen && (
                       <span className="text-secondary">
-                        🍽 {t.mealSignups} angemeldet
+                        🍽 {t.mealSignupCount} angemeldet
                         {t.dinnerTime && ` · ${t.dinnerTime}`}
                       </span>
                     )}
@@ -714,21 +708,42 @@ export default function TerminePage() {
                   ))}
 
                   <button
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.preventDefault();
-                      setTermine((prev) =>
-                        prev.map((x) =>
-                          x.id === t.id
-                            ? {
-                                ...x,
-                                mealSignups:
-                                  x.mealSignups + 1 + signupGuests.length,
-                              }
-                            : x
-                        )
-                      );
-                      setSignupOpen(null);
-                      setSignupGuests([]);
+                      try {
+                        const res = await fetch(
+                          `/api/termine/${t.id}/meal-signup`,
+                          {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              diet: "Fleisch",
+                              allergies: "",
+                              guests: signupGuests.map((d) => ({
+                                diet: d,
+                                allergies: "",
+                              })),
+                            }),
+                          }
+                        );
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        setTermine((prev) =>
+                          prev.map((x) =>
+                            x.id === t.id
+                              ? {
+                                  ...x,
+                                  mealSignupCount:
+                                    x.mealSignupCount + 1 + signupGuests.length,
+                                }
+                              : x
+                          )
+                        );
+                        setSignupOpen(null);
+                        setSignupGuests([]);
+                      } catch (err) {
+                        console.error("Essens-Anmeldung", err);
+                        alert("Anmeldung fehlgeschlagen.");
+                      }
                     }}
                     className="mt-1 w-full rounded-full bg-secondary py-1.5 text-[10px] font-bold uppercase tracking-wider text-white"
                   >
@@ -742,7 +757,13 @@ export default function TerminePage() {
         })}
       </div>
 
-      {sorted.length === 0 && (
+      {loading && sorted.length === 0 && (
+        <p className="mt-8 text-center text-gray-600">Lade Termine …</p>
+      )}
+      {!loading && error && (
+        <p className="mt-8 text-center text-sm text-red-400">{error}</p>
+      )}
+      {!loading && !error && sorted.length === 0 && (
         <p className="mt-8 text-center text-gray-600">
           Keine Termine in dieser Ansicht.
         </p>

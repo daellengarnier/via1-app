@@ -19,6 +19,23 @@ enum Side {
   OST
 }
 
+enum TerminType {
+  SITZUNG
+  ESSEN
+  SONSTIGE
+}
+
+enum AttendanceStatus {
+  GOING
+  NOT_GOING
+}
+
+enum Diet {
+  FLEISCH
+  VEGI
+  VEGAN
+}
+
 model User {
   id          String   @id @default(cuid())
   name        String
@@ -33,7 +50,11 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  pinnwandNotes PinnwandNote[]
+  pinnwandNotes     PinnwandNote[]
+  createdTermine    Termin[]          @relation("TerminCreator")
+  createdTraktanden Traktandum[]      @relation("TraktandumCreator")
+  attendances       Attendance[]
+  mealSignups       MealSignup[]
 
   @@map("users")
 }
@@ -48,6 +69,89 @@ model PinnwandNote {
 
   @@index([createdAt])
   @@map("pinnwand_notes")
+}
+
+model Termin {
+  id                String       @id @default(cuid())
+  title             String
+  // date = Start-Datum mit Uhrzeit, als UTC gespeichert
+  date              DateTime
+  location          String       @default("")
+  type              TerminType
+  organizer         String?
+  withDinner        Boolean      @default(false)
+  dinnerTime        String?
+  withAttendance    Boolean      @default(false)
+  sitzungsleitung   String       @default("")
+  protokollfuehrung String       @default("")
+  createdBy         User         @relation("TerminCreator", fields: [createdById], references: [id])
+  createdById       String
+  traktanden        Traktandum[]
+  attendances       Attendance[]
+  mealSignups       MealSignup[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([date])
+  @@map("termine")
+}
+
+model Traktandum {
+  id          String   @id @default(cuid())
+  termin      Termin   @relation(fields: [terminId], references: [id], onDelete: Cascade)
+  terminId    String
+  title       String
+  notes       String   @default("")
+  order       Int      @default(0)
+  createdBy   User     @relation("TraktandumCreator", fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([terminId])
+  @@map("traktanden")
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  termin    Termin           @relation(fields: [terminId], references: [id], onDelete: Cascade)
+  terminId  String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  status    AttendanceStatus
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([terminId, userId])
+  @@map("attendances")
+}
+
+model MealSignup {
+  id        String            @id @default(cuid())
+  termin    Termin            @relation(fields: [terminId], references: [id], onDelete: Cascade)
+  terminId  String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  diet      Diet
+  allergies String            @default("")
+  guests    MealSignupGuest[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([terminId, userId])
+  @@map("meal_signups")
+}
+
+model MealSignupGuest {
+  id           String     @id @default(cuid())
+  mealSignup   MealSignup @relation(fields: [mealSignupId], references: [id], onDelete: Cascade)
+  mealSignupId String
+  diet         Diet
+  allergies    String     @default("")
+  createdAt    DateTime   @default(now())
+
+  @@index([mealSignupId])
+  @@map("meal_signup_guests")
 }
 
 model Wg {
