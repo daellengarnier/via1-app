@@ -105,6 +105,9 @@ export default function GaestiPage() {
   const [newTo, setNewTo] = useState("");
   const [showBookings, setShowBookings] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
+    null
+  );
   const [openCommentsId, setOpenCommentsId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
 
@@ -303,79 +306,100 @@ export default function GaestiPage() {
         </div>
 
         {/* Tage */}
-        <div className="grid grid-cols-7 gap-y-1">
+        <div className="grid grid-cols-7">
           {Array.from({ length: firstDay }).map((_, i) => (
-            <div key={`empty-${i}`} />
+            <div key={`empty-${i}`} className="h-10" />
           ))}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
             const booking = getBookingForDate(dateStr);
             const isToday = dateStr === today;
-            const isSelected = dateStr === selectedDate;
+            const isSelected =
+              dateStr === selectedDate ||
+              (booking !== undefined && booking.id === selectedBookingId);
 
-            // Mehrtages-Balken: erkennen ob vorheriger / naechster Tag
-            // ebenfalls zur selben Buchung gehoert
-            let barLeft = false;
-            let barRight = false;
+            // Mehrtages-Balken: Rundungen an Buchungs-Start/Ende und
+            // an den Wochen-Raendern (Mo/So)
+            let isBookingStart = false;
+            let isBookingEnd = false;
             if (booking) {
-              barLeft = dateStr > booking.from;
-              barRight = dateStr < booking.to;
-              // Am Wochen-Rand (Mo / So) den Balken abschneiden
+              isBookingStart = dateStr === booking.from;
+              isBookingEnd = dateStr === booking.to;
               const dow = new Date(dateStr).getDay(); // 0=So, 1=Mo
-              if (dow === 1) barLeft = false; // Montag: kein linker Balken
-              if (dow === 0) barRight = false; // Sonntag: kein rechter Balken
+              if (dow === 1) isBookingStart = true; // Montag: neuer Start
+              if (dow === 0) isBookingEnd = true; // Sonntag: Ende
             }
+            const roundLeft = isBookingStart;
+            const roundRight = isBookingEnd;
+
+            const bookingBg = isSelected
+              ? "bg-secondary/50"
+              : "bg-secondary/20 hover:bg-secondary/30";
 
             return (
-              <div key={day} className="relative h-9 px-0.5">
-                {/* Balken-Hintergrund */}
-                {booking && (
-                  <div
-                    className={`pointer-events-none absolute top-1/2 h-7 -translate-y-1/2 bg-secondary/25 ${
-                      barLeft ? "-left-1" : "left-0.5 rounded-l"
-                    } ${barRight ? "-right-1" : "right-0.5 rounded-r"}`}
-                  />
-                )}
-                <button
-                  onClick={() =>
-                    setSelectedDate(isSelected ? null : dateStr)
+              <button
+                key={day}
+                onClick={() => {
+                  if (booking) {
+                    // Ganze Buchung anwaehlen
+                    if (selectedBookingId === booking.id) {
+                      setSelectedBookingId(null);
+                      setSelectedDate(null);
+                    } else {
+                      setSelectedBookingId(booking.id);
+                      setSelectedDate(null);
+                    }
+                  } else {
+                    setSelectedBookingId(null);
+                    setSelectedDate(isSelected ? null : dateStr);
                   }
-                  className={`relative flex h-9 w-full items-center justify-center rounded text-xs transition-colors ${
-                    isSelected
-                      ? "bg-blue-500/60 text-white ring-2 ring-blue-400"
-                      : booking
-                        ? "font-semibold text-secondary hover:bg-secondary/20"
-                        : isToday
-                          ? "border border-blue-400 text-blue-300 hover:bg-blue-500/10"
-                          : "text-gray-400 hover:bg-white/5"
-                  }`}
-                >
-                  {day}
-                </button>
-              </div>
+                }}
+                className={`relative flex h-10 items-center justify-center text-xs transition-colors ${
+                  booking
+                    ? `${bookingBg} font-semibold text-secondary ${roundLeft ? "rounded-l-full ml-1" : ""} ${roundRight ? "rounded-r-full mr-1" : ""}`
+                    : isToday
+                      ? "my-0.5 mx-0.5 rounded border border-blue-400 text-blue-300 hover:bg-blue-500/10"
+                      : isSelected
+                        ? "my-0.5 mx-0.5 rounded bg-blue-500/60 text-white ring-2 ring-blue-400"
+                        : "my-0.5 mx-0.5 rounded text-gray-400 hover:bg-white/5"
+                }`}
+              >
+                {day}
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Tagesinfo für ausgewählten Tag */}
-      {selectedDate && (() => {
-        const booking = getBookingForDate(selectedDate);
-        const formatted = new Date(selectedDate).toLocaleDateString("de-CH", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        });
+      {/* Info für ausgewählten Tag oder ausgewählte Buchung */}
+      {(selectedDate || selectedBookingId) && (() => {
+        const booking = selectedBookingId
+          ? bookings.find((b) => b.id === selectedBookingId)
+          : selectedDate
+            ? getBookingForDate(selectedDate)
+            : undefined;
+        const headerText = selectedBookingId && booking
+          ? `${formatDateShort(booking.from)} – ${formatDateShort(booking.to)}`
+          : selectedDate
+            ? new Date(selectedDate).toLocaleDateString("de-CH", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })
+            : "";
         return (
           <div className="mb-4 rounded-lg border border-blue-500/30 bg-blue-500/5 p-4">
             <div className="mb-2 flex items-center justify-between">
               <p className="font-display text-[10px] font-bold uppercase tracking-widest text-blue-300">
-                {formatted}
+                {headerText}
               </p>
               <button
-                onClick={() => setSelectedDate(null)}
+                onClick={() => {
+                  setSelectedDate(null);
+                  setSelectedBookingId(null);
+                }}
                 className="text-xs text-gray-500 hover:text-white"
               >
                 ×

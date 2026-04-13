@@ -17,6 +17,7 @@ interface Termin {
   withDinner: boolean;
   dinnerTime: string | null;
   withAttendance: boolean;
+  myAttendance: "going" | "not-going" | null;
   agendaCount: number;
   mealSignups: number;
 }
@@ -71,6 +72,7 @@ const initialTermine: Termin[] = [
     withDinner: true,
     dinnerTime: "18:30",
     withAttendance: true,
+    myAttendance: null,
     agendaCount: 3,
     mealSignups: 12,
   },
@@ -85,6 +87,7 @@ const initialTermine: Termin[] = [
     withDinner: false,
     dinnerTime: null,
     withAttendance: false,
+    myAttendance: null,
     agendaCount: 0,
     mealSignups: 18,
   },
@@ -99,10 +102,50 @@ const initialTermine: Termin[] = [
     withDinner: false,
     dinnerTime: null,
     withAttendance: true,
+    myAttendance: null,
     agendaCount: 5,
     mealSignups: 0,
   },
 ];
+
+function exportIcs(termin: Termin) {
+  // Naive Dauer: 2h fuer Sitzung, 3h fuer Essen, 1h fuer Sonstige
+  const durationH = termin.type === "essen" ? 3 : termin.type === "sonstige" ? 1 : 2;
+  const [hh, mm] = termin.time.split(":").map((s) => parseInt(s, 10));
+  const start = new Date(termin.date);
+  start.setHours(hh ?? 0, mm ?? 0, 0, 0);
+  const end = new Date(start);
+  end.setHours(end.getHours() + durationH);
+  const fmt = (d: Date) =>
+    d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const uid = `${termin.id}@via1-app`;
+  const escape = (s: string) => s.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Via 1//Termine//DE",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${fmt(new Date())}`,
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    `SUMMARY:${escape(termin.title)}`,
+    termin.location ? `LOCATION:${escape(termin.location)}` : "",
+    termin.organizer
+      ? `DESCRIPTION:Organisiert von ${escape(termin.organizer)}`
+      : "",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].filter(Boolean);
+  const blob = new Blob([lines.join("\r\n")], { type: "text/calendar" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${termin.title.replace(/\s+/g, "_")}.ics`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function TerminePage() {
   const [filter, setFilter] = useState<TerminType | "alle">("alle");
@@ -166,12 +209,22 @@ export default function TerminePage() {
           : newType === "sonstige"
             ? newWithAttendance
             : false,
+      myAttendance: null,
       agendaCount: 0,
       mealSignups: 0,
     };
     setTermine((prev) => [newTermin, ...prev]);
     setShowCreate(false);
     resetForm();
+  }
+
+  function setAttendance(
+    id: string,
+    value: "going" | "not-going" | null
+  ) {
+    setTermine((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, myAttendance: value } : t))
+    );
   }
 
   function resetForm() {
@@ -282,14 +335,14 @@ export default function TerminePage() {
           )}
 
           {/* Datum & Zeit */}
-          <div className="mb-3 grid grid-cols-2 gap-2">
+          <div className="mb-3 grid grid-cols-[3fr_2fr] gap-2">
             <div className="min-w-0">
               <label className="mb-1 block text-xs text-gray-400">Datum</label>
               <input
                 type="date"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
-                className="block w-full min-w-0 rounded border border-gray-700 bg-gray-900 px-2 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
+                className="block w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 py-2 text-xs text-white focus:border-orange-400 focus:outline-none"
                 required
               />
             </div>
@@ -299,7 +352,7 @@ export default function TerminePage() {
                 type="time"
                 value={newTime}
                 onChange={(e) => setNewTime(e.target.value)}
-                className="block w-full min-w-0 rounded border border-gray-700 bg-gray-900 px-2 py-2 text-sm text-white focus:border-orange-400 focus:outline-none"
+                className="block w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 py-2 text-xs text-white focus:border-orange-400 focus:outline-none"
                 required
               />
             </div>
@@ -497,6 +550,17 @@ export default function TerminePage() {
                       {t.location && ` · ${t.location}`}
                     </p>
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      exportIcs(t);
+                    }}
+                    className="shrink-0 rounded border border-gray-700 px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-gray-400 hover:border-orange-400 hover:text-orange-300"
+                    title="In Kalender exportieren"
+                  >
+                    📅 Export
+                  </button>
                 </div>
                 {(t.agendaCount > 0 || hasEssen) && (
                   <div className="mt-1.5 flex items-center gap-3 text-[10px]">
@@ -514,6 +578,44 @@ export default function TerminePage() {
                   </div>
                 )}
               </Link>
+
+              {/* Teilnahme-Toggle (fuer Termine mit Attendance) */}
+              {t.withAttendance && (
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() =>
+                      setAttendance(
+                        t.id,
+                        t.myAttendance === "going" ? null : "going"
+                      )
+                    }
+                    className={`flex-1 rounded-full py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                      t.myAttendance === "going"
+                        ? "bg-accent text-dark"
+                        : "border border-accent/40 text-accent hover:bg-accent/10"
+                    }`}
+                  >
+                    {t.myAttendance === "going" ? "✓ Dabei" : "Anmelden"}
+                  </button>
+                  <button
+                    onClick={() =>
+                      setAttendance(
+                        t.id,
+                        t.myAttendance === "not-going" ? null : "not-going"
+                      )
+                    }
+                    className={`flex-1 rounded-full py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                      t.myAttendance === "not-going"
+                        ? "bg-gray-600 text-white"
+                        : "border border-gray-700 text-gray-500 hover:bg-white/5"
+                    }`}
+                  >
+                    {t.myAttendance === "not-going"
+                      ? "✗ Abgemeldet"
+                      : "Abmelden"}
+                  </button>
+                </div>
+              )}
 
               {/* Direkt anmelden Button bei Essen */}
               {hasEssen && signupOpen !== t.id && (
