@@ -1,0 +1,84 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { serializeAufgabe } from "@/lib/aufgaben-serialize";
+
+// GET /api/aufgaben
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const aufgaben = await prisma.aufgabe.findMany({
+    orderBy: [{ done: "asc" }, { createdAt: "desc" }],
+    include: {
+      createdBy: true,
+      activeWorkers: { include: { user: true } },
+    },
+  });
+
+  return NextResponse.json(aufgaben.map(serializeAufgabe));
+}
+
+// POST /api/aufgaben
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = (await req.json()) as {
+    title?: unknown;
+    description?: unknown;
+    location?: unknown;
+    pin?: unknown;
+    assignee?: unknown;
+  };
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  if (!title) {
+    return NextResponse.json({ error: "title erforderlich" }, { status: 400 });
+  }
+
+  const description =
+    typeof body.description === "string" ? body.description : "";
+  const location = typeof body.location === "string" ? body.location : "";
+  const assignee =
+    typeof body.assignee === "string" && body.assignee.trim() !== ""
+      ? body.assignee.trim()
+      : null;
+
+  let pinLat: number | null = null;
+  let pinLng: number | null = null;
+  if (
+    body.pin &&
+    typeof body.pin === "object" &&
+    "lat" in body.pin &&
+    "lng" in body.pin
+  ) {
+    const p = body.pin as { lat: unknown; lng: unknown };
+    if (typeof p.lat === "number" && typeof p.lng === "number") {
+      pinLat = p.lat;
+      pinLng = p.lng;
+    }
+  }
+
+  const created = await prisma.aufgabe.create({
+    data: {
+      title,
+      description,
+      location,
+      assignee,
+      pinLat,
+      pinLng,
+      createdById: session.user.id,
+    },
+    include: {
+      createdBy: true,
+      activeWorkers: { include: { user: true } },
+    },
+  });
+
+  return NextResponse.json(serializeAufgabe(created));
+}

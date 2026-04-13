@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { TabHeader } from "@/components/TabHeader";
 
 interface Pin {
@@ -22,114 +23,7 @@ interface Aufgabe {
   activeWorkers: string[];
 }
 
-const CURRENT_USER = "Alain";
-
-const mockAufgaben: Aufgabe[] = [
-  {
-    id: "1",
-    title: "Laub auf Wegen entfernen",
-    description: "Hauptweg und Zufahrt",
-    location: "Aussenbereich",
-    done: false,
-    assignee: null,
-    pin: { lat: 46.9697, lng: 7.441 },
-    createdBy: "Marco",
-    createdAt: "2026-04-08",
-    completedAt: null,
-    activeWorkers: [],
-  },
-  {
-    id: "2",
-    title: "Waschküche reinigen",
-    description: "Boden wischen, Maschinen abwischen",
-    location: "UG",
-    done: false,
-    assignee: "Alain",
-    pin: null,
-    createdBy: "Lena",
-    createdAt: "2026-04-09",
-    completedAt: null,
-    activeWorkers: ["Sophie"],
-  },
-  {
-    id: "3",
-    title: "Aprikosenbaum schneiden",
-    description: "Tote Äste entfernen",
-    location: "Garten Süd",
-    done: false,
-    assignee: null,
-    pin: { lat: 46.9691, lng: 7.4415 },
-    createdBy: "Sven",
-    createdAt: "2026-04-05",
-    completedAt: null,
-    activeWorkers: [],
-  },
-  {
-    id: "4",
-    title: "Treppenhaus 1. OG reinigen",
-    description: "Staubsaugen und wischen",
-    location: "1. OG",
-    done: true,
-    assignee: "Yves",
-    pin: null,
-    createdBy: "Lena",
-    createdAt: "2026-04-01",
-    completedAt: "2026-04-03",
-    activeWorkers: [],
-  },
-  {
-    id: "5",
-    title: "Sauna reinigen",
-    description: "Holz abschleifen, Boden wischen",
-    location: "Sauna",
-    done: false,
-    assignee: null,
-    pin: { lat: 46.9693, lng: 7.4419 },
-    createdBy: "Felix",
-    createdAt: "2026-04-07",
-    completedAt: null,
-    activeWorkers: [],
-  },
-  {
-    id: "6",
-    title: "Velokeller aufräumen",
-    description: "Ungenutzte Velos aussortieren",
-    location: "UG",
-    done: true,
-    assignee: "Marco",
-    pin: null,
-    createdBy: "Marco",
-    createdAt: "2026-03-20",
-    completedAt: "2026-03-22",
-    activeWorkers: [],
-  },
-  {
-    id: "7",
-    title: "Briefkasten reparieren",
-    description: "Klappe hängt durch",
-    location: "Eingang",
-    done: true,
-    assignee: "Alain",
-    pin: null,
-    createdBy: "Nina",
-    createdAt: "2026-03-15",
-    completedAt: "2026-03-18",
-    activeWorkers: [],
-  },
-  {
-    id: "8",
-    title: "Kräuterbeet jäten",
-    description: "Unkraut entfernen",
-    location: "Garten",
-    done: true,
-    assignee: "Ruth",
-    pin: null,
-    createdBy: "Ruth",
-    createdAt: "2026-03-10",
-    completedAt: "2026-03-11",
-    activeWorkers: [],
-  },
-];
+// Aufgaben werden vom API geladen
 
 type Filter = "offen" | "erledigt" | "alle";
 
@@ -246,8 +140,12 @@ function GelaendeMap({
 }
 
 export default function AufgabenPage() {
+  const { data: session } = useSession();
+  const currentUserName = session?.user?.name ?? "";
   const [filter, setFilter] = useState<Filter>("offen");
-  const [aufgaben, setAufgaben] = useState(mockAufgaben);
+  const [aufgaben, setAufgaben] = useState<Aufgabe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -264,6 +162,25 @@ export default function AufgabenPage() {
   const [editLocation, setEditLocation] = useState("");
   const [editPin, setEditPin] = useState<Pin | null>(null);
   const [editPlacingPin, setEditPlacingPin] = useState(false);
+
+  const loadAufgaben = useCallback(async () => {
+    try {
+      const res = await fetch("/api/aufgaben");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as Aufgabe[];
+      setAufgaben(data);
+      setLoadError(null);
+    } catch (err) {
+      console.error("Aufgaben laden", err);
+      setLoadError("Aufgaben konnten nicht geladen werden");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAufgaben();
+  }, [loadAufgaben]);
 
   const filtered = aufgaben.filter((a) => {
     if (filter === "offen") return !a.done;
@@ -288,63 +205,73 @@ export default function AufgabenPage() {
     setTimeout(() => setToast(null), 3500);
   }
 
-  function toggleDone(id: string) {
-    const today = new Date().toISOString().split("T")[0]!;
-    setAufgaben((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              done: !a.done,
-              completedAt: !a.done ? today : null,
-              activeWorkers: !a.done ? [] : a.activeWorkers,
-            }
-          : a
-      )
-    );
+  function updateLocalAufgabe(updated: Aufgabe) {
+    setAufgaben((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
   }
 
-  function startWorking(id: string) {
+  async function toggleDone(id: string) {
+    const current = aufgaben.find((a) => a.id === id);
+    if (!current) return;
+    try {
+      const res = await fetch(`/api/aufgaben/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ done: !current.done }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = (await res.json()) as Aufgabe;
+      updateLocalAufgabe(updated);
+    } catch (err) {
+      console.error("toggleDone", err);
+      alert("Konnte Status nicht aendern.");
+    }
+  }
+
+  async function startWorking(id: string) {
     const task = aufgaben.find((a) => a.id === id);
     if (!task) return;
-    setAufgaben((prev) =>
-      prev.map((a) =>
-        a.id === id && !a.activeWorkers.includes(CURRENT_USER)
-          ? { ...a, activeWorkers: [...a.activeWorkers, CURRENT_USER] }
-          : a
-      )
-    );
-    showToast(
-      `🔔 Push gesendet: ${CURRENT_USER} macht jetzt "${task.title}"`
-    );
+    try {
+      const res = await fetch(`/api/aufgaben/${id}/workers`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = (await res.json()) as Aufgabe;
+      updateLocalAufgabe(updated);
+      showToast(
+        `🔔 Push gesendet: ${currentUserName} packt "${task.title}" an`
+      );
+    } catch (err) {
+      console.error("startWorking", err);
+    }
   }
 
-  function joinWorking(id: string) {
+  async function joinWorking(id: string) {
     const task = aufgaben.find((a) => a.id === id);
     if (!task) return;
-    setAufgaben((prev) =>
-      prev.map((a) =>
-        a.id === id && !a.activeWorkers.includes(CURRENT_USER)
-          ? { ...a, activeWorkers: [...a.activeWorkers, CURRENT_USER] }
-          : a
-      )
-    );
-    showToast(
-      `🤝 Du hilfst jetzt bei "${task.title}" mit`
-    );
+    try {
+      const res = await fetch(`/api/aufgaben/${id}/workers`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = (await res.json()) as Aufgabe;
+      updateLocalAufgabe(updated);
+      showToast(`🤝 Du hilfst jetzt bei "${task.title}" mit`);
+    } catch (err) {
+      console.error("joinWorking", err);
+    }
   }
 
-  function leaveWorking(id: string) {
-    setAufgaben((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              activeWorkers: a.activeWorkers.filter((n) => n !== CURRENT_USER),
-            }
-          : a
-      )
-    );
+  async function leaveWorking(id: string) {
+    try {
+      const res = await fetch(`/api/aufgaben/${id}/workers`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = (await res.json()) as Aufgabe;
+      updateLocalAufgabe(updated);
+    } catch (err) {
+      console.error("leaveWorking", err);
+    }
   }
 
   function openEdit(id: string) {
@@ -363,55 +290,69 @@ export default function AufgabenPage() {
     setEditPlacingPin(false);
   }
 
-  function saveEdit(e: React.FormEvent) {
+  async function saveEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editingId || !editTitle.trim()) return;
-    setAufgaben((prev) =>
-      prev.map((a) =>
-        a.id === editingId
-          ? {
-              ...a,
-              title: editTitle,
-              description: editDesc,
-              location: editLocation,
-              pin: editPin,
-            }
-          : a
-      )
-    );
-    closeEdit();
+    try {
+      const res = await fetch(`/api/aufgaben/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editTitle,
+          description: editDesc,
+          location: editLocation,
+          pin: editPin,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = (await res.json()) as Aufgabe;
+      updateLocalAufgabe(updated);
+      closeEdit();
+    } catch (err) {
+      console.error("saveEdit", err);
+      alert("Konnte Aenderungen nicht speichern.");
+    }
   }
 
-  function deleteAufgabe(id: string) {
-    setAufgaben((prev) => prev.filter((a) => a.id !== id));
-    closeEdit();
+  async function deleteAufgabe(id: string) {
+    try {
+      const res = await fetch(`/api/aufgaben/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setAufgaben((prev) => prev.filter((a) => a.id !== id));
+      closeEdit();
+    } catch (err) {
+      console.error("deleteAufgabe", err);
+      alert("Konnte nicht loeschen.");
+    }
   }
 
-  function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!newTitle.trim()) return;
-    setAufgaben((prev) => [
-      {
-        id: String(Date.now()),
-        title: newTitle,
-        description: newDesc,
-        location: newLocation,
-        done: false,
-        assignee: null,
-        pin: pendingPin,
-        createdBy: CURRENT_USER,
-        createdAt: new Date().toISOString().split("T")[0]!,
-        completedAt: null,
-        activeWorkers: [],
-      },
-      ...prev,
-    ]);
-    setNewTitle("");
-    setNewDesc("");
-    setNewLocation("");
-    setPendingPin(null);
-    setPlacingPin(false);
-    setShowCreate(false);
+    try {
+      const res = await fetch("/api/aufgaben", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTitle,
+          description: newDesc,
+          location: newLocation,
+          pin: pendingPin,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = (await res.json()) as Aufgabe;
+      setAufgaben((prev) => [created, ...prev]);
+      setNewTitle("");
+      setNewDesc("");
+      setNewLocation("");
+      setPendingPin(null);
+      setPlacingPin(false);
+      setShowCreate(false);
+    } catch (err) {
+      console.error("handleCreate", err);
+      alert("Konnte Aufgabe nicht erstellen.");
+    }
   }
 
   return (
@@ -708,7 +649,7 @@ export default function AufgabenPage() {
                             : " sind dabei"}
                         </span>
                       </p>
-                      {a.activeWorkers.includes(CURRENT_USER) ? (
+                      {a.activeWorkers.includes(currentUserName) ? (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -867,7 +808,13 @@ export default function AufgabenPage() {
         </div>
       )}
 
-      {filtered.length === 0 && (
+      {loading && filtered.length === 0 && (
+        <p className="mt-8 text-center text-gray-600">Lade Aufgaben …</p>
+      )}
+      {!loading && loadError && (
+        <p className="mt-8 text-center text-sm text-red-400">{loadError}</p>
+      )}
+      {!loading && !loadError && filtered.length === 0 && (
         <p className="mt-8 text-center text-gray-600">
           Keine Aufgaben in dieser Ansicht.
         </p>

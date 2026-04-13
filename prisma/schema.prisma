@@ -50,11 +50,13 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  pinnwandNotes     PinnwandNote[]
-  createdTermine    Termin[]          @relation("TerminCreator")
-  createdTraktanden Traktandum[]      @relation("TraktandumCreator")
-  attendances       Attendance[]
-  mealSignups       MealSignup[]
+  pinnwandNotes        PinnwandNote[]
+  createdTermine       Termin[]              @relation("TerminCreator")
+  createdTraktanden    Traktandum[]          @relation("TraktandumCreator")
+  attendances          Attendance[]
+  mealSignups          MealSignup[]
+  createdAufgaben      Aufgabe[]             @relation("AufgabeCreator")
+  activeAufgabenWorker AufgabeActiveWorker[]
 
   @@map("users")
 }
@@ -152,6 +154,40 @@ model MealSignupGuest {
 
   @@index([mealSignupId])
   @@map("meal_signup_guests")
+}
+
+model Aufgabe {
+  id            String                @id @default(cuid())
+  title         String
+  description   String                @default("")
+  location      String                @default("")
+  done          Boolean               @default(false)
+  completedAt   DateTime?
+  // Optionaler Pin auf der Satellit-Karte
+  pinLat        Float?
+  pinLng        Float?
+  // assignee wird aktuell als freier Name-String gepflegt
+  assignee      String?
+  createdBy     User                  @relation("AufgabeCreator", fields: [createdById], references: [id])
+  createdById   String
+  activeWorkers AufgabeActiveWorker[]
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@index([done, createdAt])
+  @@map("aufgaben")
+}
+
+model AufgabeActiveWorker {
+  id        String   @id @default(cuid())
+  aufgabe   Aufgabe  @relation(fields: [aufgabeId], references: [id], onDelete: Cascade)
+  aufgabeId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  startedAt DateTime @default(now())
+
+  @@unique([aufgabeId, userId])
+  @@map("aufgabe_active_workers")
 }
 
 model Wg {
