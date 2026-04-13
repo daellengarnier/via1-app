@@ -16,6 +16,7 @@ interface Termin {
   organizer: string | null;
   withDinner: boolean;
   dinnerTime: string | null;
+  withAttendance: boolean;
   agendaCount: number;
   mealSignups: number;
 }
@@ -69,6 +70,7 @@ const initialTermine: Termin[] = [
     organizer: "Dreiecksbar",
     withDinner: true,
     dinnerTime: "18:30",
+    withAttendance: true,
     agendaCount: 3,
     mealSignups: 12,
   },
@@ -82,6 +84,7 @@ const initialTermine: Termin[] = [
     organizer: null,
     withDinner: false,
     dinnerTime: null,
+    withAttendance: false,
     agendaCount: 0,
     mealSignups: 18,
   },
@@ -95,6 +98,7 @@ const initialTermine: Termin[] = [
     organizer: "Nordwind",
     withDinner: false,
     dinnerTime: null,
+    withAttendance: true,
     agendaCount: 5,
     mealSignups: 0,
   },
@@ -122,6 +126,7 @@ export default function TerminePage() {
   const [newOrganizer, setNewOrganizer] = useState("");
   const [newWithDinner, setNewWithDinner] = useState(false);
   const [newDinnerTime, setNewDinnerTime] = useState("18:30");
+  const [newWithAttendance, setNewWithAttendance] = useState(false);
 
   const WG_LOCATIONS = [
     "Nordwind",
@@ -153,6 +158,14 @@ export default function TerminePage() {
       organizer: newType === "sitzung" ? newOrganizer : null,
       withDinner: newWithDinner,
       dinnerTime: newWithDinner ? newDinnerTime : null,
+      // Sitzung immer mit Teilnahmeliste, Sonstige optional,
+      // Essen nutzt die Essens-Anmeldung separat
+      withAttendance:
+        newType === "sitzung"
+          ? true
+          : newType === "sonstige"
+            ? newWithAttendance
+            : false,
       agendaCount: 0,
       mealSignups: 0,
     };
@@ -170,6 +183,7 @@ export default function TerminePage() {
     setNewOrganizer("");
     setNewWithDinner(false);
     setNewDinnerTime("18:30");
+    setNewWithAttendance(false);
     setNewType("sitzung");
   }
 
@@ -347,6 +361,35 @@ export default function TerminePage() {
               />
             )}
           </div>
+
+          {/* Mit Teilnahmeliste (nur bei Sonstige) */}
+          {newType === "sonstige" && (
+            <div className="mb-3">
+              <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-white/5 p-3">
+                <div>
+                  <span className="text-sm text-white">
+                    Mit Teilnahmeliste
+                  </span>
+                  <p className="text-[10px] text-gray-500">
+                    An- und Abmeldungen im Termin sichtbar
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setNewWithAttendance(!newWithAttendance)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                    newWithAttendance ? "bg-orange-400" : "bg-gray-700"
+                  }`}
+                >
+                  <span
+                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                      newWithAttendance ? "translate-x-5" : ""
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Mit Abendessen (bei Sitzung) */}
           {(newType === "sitzung") && (

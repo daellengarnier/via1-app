@@ -45,11 +45,25 @@ const MEHR_ITEMS: MehrItem[] = [
 
 const PINS_KEY = "via1-mehr-pins";
 
+interface Notification {
+  id: string;
+  text: string;
+  time: string;
+}
+
+const INITIAL_NOTIFICATIONS: Notification[] = [
+  { id: "1", text: "Sauna wird eingeheizt 🔥", time: "vor 10 Min." },
+  { id: "2", text: "Neue Aufgabe: Laub entfernen", time: "vor 1 Std." },
+  { id: "3", text: "Haussitzung April in 5 Tagen", time: "vor 3 Std." },
+];
+
 export function HamburgerMenu() {
   const [open, setOpen] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
   const [pinned, setPinned] = useState<string[]>([]);
-  const notifCount = 3;
+  const [notifications, setNotifications] =
+    useState<Notification[]>(INITIAL_NOTIFICATIONS);
+  const notifCount = notifications.length;
 
   // Pins aus localStorage laden
   useEffect(() => {
@@ -82,11 +96,13 @@ export function HamburgerMenu() {
     ...MEHR_ITEMS.filter((i) => !pinned.includes(i.id)),
   ];
 
-  const notifications = [
-    { id: "1", text: "Sauna wird eingeheizt 🔥", time: "vor 10 Min." },
-    { id: "2", text: "Neue Aufgabe: Laub entfernen", time: "vor 1 Std." },
-    { id: "3", text: "Haussitzung April in 5 Tagen", time: "vor 3 Std." },
-  ];
+  function dismissNotification(id: string) {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }
+
+  function clearAllNotifications() {
+    setNotifications([]);
+  }
 
   return (
     <>
@@ -123,16 +139,41 @@ export function HamburgerMenu() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setShowNotifs(false)} />
           <div className="fixed left-4 top-16 z-50 w-72 rounded-lg border border-gray-800 bg-black/95 p-3 shadow-xl backdrop-blur-sm">
-            <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
-              BENACHRICHTIGUNGEN
-            </p>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+                BENACHRICHTIGUNGEN
+              </p>
+              {notifications.length > 0 && (
+                <button
+                  onClick={clearAllNotifications}
+                  className="font-mono text-[9px] text-gray-500 hover:text-red-400"
+                >
+                  ALLE LÖSCHEN
+                </button>
+              )}
+            </div>
             <div className="space-y-2">
               {notifications.map((n) => (
-                <div key={n.id} className="rounded border border-white/5 bg-white/3 p-2">
+                <div
+                  key={n.id}
+                  className="group relative rounded border border-white/5 bg-white/3 p-2 pr-6"
+                >
                   <p className="text-xs text-gray-300">{n.text}</p>
                   <p className="mt-0.5 text-[10px] text-gray-600">{n.time}</p>
+                  <button
+                    onClick={() => dismissNotification(n.id)}
+                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center text-gray-600 hover:text-red-400"
+                    aria-label="Benachrichtigung entfernen"
+                  >
+                    ×
+                  </button>
                 </div>
               ))}
+              {notifications.length === 0 && (
+                <p className="py-3 text-center text-xs text-gray-600">
+                  Keine neuen Benachrichtigungen
+                </p>
+              )}
             </div>
           </div>
         </>

@@ -155,6 +155,7 @@ function GelaendeMap({
   placingPin,
   pendingPin,
   selectedId,
+  hideId,
   onPlacePin,
   onMovePin,
 }: {
@@ -162,12 +163,15 @@ function GelaendeMap({
   placingPin: boolean;
   pendingPin: Pin | null;
   selectedId: string | null;
+  hideId?: string | null;
   onPlacePin: (pin: Pin) => void;
   onMovePin: (pin: Pin) => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [mapReady, setMapReady] = useState(false);
-  const openPins = aufgaben.filter((a) => !a.done && a.pin);
+  const openPins = aufgaben.filter(
+    (a) => !a.done && a.pin && a.id !== hideId
+  );
 
   // Empfange Nachrichten vom iframe
   useEffect(() => {
@@ -258,6 +262,8 @@ export default function AufgabenPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editLocation, setEditLocation] = useState("");
+  const [editPin, setEditPin] = useState<Pin | null>(null);
+  const [editPlacingPin, setEditPlacingPin] = useState(false);
 
   const filtered = aufgaben.filter((a) => {
     if (filter === "offen") return !a.done;
@@ -348,6 +354,13 @@ export default function AufgabenPage() {
     setEditTitle(task.title);
     setEditDesc(task.description);
     setEditLocation(task.location);
+    setEditPin(task.pin);
+    setEditPlacingPin(false);
+  }
+
+  function closeEdit() {
+    setEditingId(null);
+    setEditPlacingPin(false);
   }
 
   function saveEdit(e: React.FormEvent) {
@@ -361,16 +374,17 @@ export default function AufgabenPage() {
               title: editTitle,
               description: editDesc,
               location: editLocation,
+              pin: editPin,
             }
           : a
       )
     );
-    setEditingId(null);
+    closeEdit();
   }
 
   function deleteAufgabe(id: string) {
     setAufgaben((prev) => prev.filter((a) => a.id !== id));
-    setEditingId(null);
+    closeEdit();
   }
 
   function handleCreate(e: React.FormEvent) {
@@ -423,15 +437,52 @@ export default function AufgabenPage() {
       {/* Karte */}
       <GelaendeMap
         aufgaben={aufgaben}
-        placingPin={placingPin}
-        pendingPin={showCreate ? pendingPin : null}
+        placingPin={placingPin || editPlacingPin}
+        pendingPin={
+          editingId ? editPin : showCreate ? pendingPin : null
+        }
         selectedId={selectedId}
+        hideId={editingId}
         onPlacePin={(pin) => {
-          setPendingPin(pin);
-          setPlacingPin(false);
+          if (editingId) {
+            setEditPin(pin);
+            setEditPlacingPin(false);
+          } else {
+            setPendingPin(pin);
+            setPlacingPin(false);
+          }
         }}
-        onMovePin={(pin) => setPendingPin(pin)}
+        onMovePin={(pin) => {
+          if (editingId) setEditPin(pin);
+          else setPendingPin(pin);
+        }}
       />
+
+      {/* Pin-Edit Banner (wenn editPlacingPin aktiv) */}
+      {editPlacingPin && (
+        <div className="mb-4 rounded-lg border border-yellow-400/60 bg-yellow-400/10 p-3 text-center">
+          <p className="mb-2 text-xs text-yellow-200">
+            📍 Tippe auf die Karte oder ziehe den Pin an die richtige Stelle.
+          </p>
+          <div className="flex justify-center gap-2">
+            <button
+              onClick={() => setEditPlacingPin(false)}
+              className="rounded-full bg-yellow-400 px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-black"
+            >
+              Fertig
+            </button>
+            <button
+              onClick={() => {
+                setEditPin(null);
+                setEditPlacingPin(false);
+              }}
+              className="rounded-full border border-red-400/50 px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-red-300"
+            >
+              Pin entfernen
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Erstellen */}
       {showCreate && (
@@ -687,11 +738,11 @@ export default function AufgabenPage() {
         })}
       </div>
 
-      {/* Edit Modal */}
-      {editingId && (
+      {/* Edit Modal (beim Pin-Platzieren versteckt) */}
+      {editingId && !editPlacingPin && (
         <div
           className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center"
-          onClick={() => setEditingId(null)}
+          onClick={closeEdit}
         >
           <div
             className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-gray-800 bg-black sm:rounded-2xl"
@@ -704,7 +755,7 @@ export default function AufgabenPage() {
                 </h2>
                 <button
                   type="button"
-                  onClick={() => setEditingId(null)}
+                  onClick={closeEdit}
                   className="text-gray-500 hover:text-white"
                   aria-label="Schliessen"
                 >
@@ -733,7 +784,7 @@ export default function AufgabenPage() {
                   className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none"
                 />
               </div>
-              <div className="mb-4">
+              <div className="mb-3">
                 <label className="mb-1 block text-xs text-gray-400">Ort</label>
                 <input
                   type="text"
@@ -741,6 +792,48 @@ export default function AufgabenPage() {
                   onChange={(e) => setEditLocation(e.target.value)}
                   className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none"
                 />
+              </div>
+
+              {/* Pin-Section */}
+              <div className="mb-4 rounded-lg border border-gray-800 bg-white/5 p-3">
+                <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-yellow-400">
+                  Pin auf Karte
+                </p>
+                {editPin ? (
+                  <div>
+                    <p className="mb-2 font-mono text-[10px] text-gray-400">
+                      📍 {editPin.lat.toFixed(5)}, {editPin.lng.toFixed(5)}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditPlacingPin(true)}
+                        className="flex-1 rounded border border-yellow-400/50 py-1.5 text-[10px] font-bold uppercase tracking-wider text-yellow-300 hover:bg-yellow-400/10"
+                      >
+                        Pin verschieben
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditPin(null)}
+                        className="rounded border border-red-500/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10"
+                      >
+                        Entfernen
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Standardposition setzen falls leer — Zentrum der Karte
+                      setEditPin({ lat: 46.9695, lng: 7.4413 });
+                      setEditPlacingPin(true);
+                    }}
+                    className="w-full rounded border border-gray-700 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:border-yellow-400 hover:text-yellow-300"
+                  >
+                    📍 Pin auf Karte setzen
+                  </button>
+                )}
               </div>
 
               <div className="flex gap-2">

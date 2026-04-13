@@ -3,13 +3,23 @@
 import { useState } from "react";
 import { TabHeader } from "@/components/TabHeader";
 
+interface Comment {
+  id: string;
+  author: string;
+  text: string;
+  date: string;
+}
+
 interface Booking {
   id: string;
   guest: string;
   invitedBy: string;
   from: string;
   to: string;
+  comments: Comment[];
 }
+
+const CURRENT_USER = "Alain";
 
 const mockBookings: Booking[] = [
   {
@@ -18,6 +28,20 @@ const mockBookings: Booking[] = [
     invitedBy: "Alain",
     from: "2026-04-21",
     to: "2026-04-23",
+    comments: [
+      {
+        id: "c1",
+        author: "Sophie",
+        text: "Bettwäsche ist im Schrank links.",
+        date: "2026-04-18",
+      },
+      {
+        id: "c2",
+        author: "Alain",
+        text: "Danke! Kommt am Dienstag Abend an.",
+        date: "2026-04-19",
+      },
+    ],
   },
   {
     id: "2",
@@ -25,6 +49,7 @@ const mockBookings: Booking[] = [
     invitedBy: "Sophie",
     from: "2026-04-28",
     to: "2026-04-30",
+    comments: [],
   },
   {
     id: "3",
@@ -32,6 +57,7 @@ const mockBookings: Booking[] = [
     invitedBy: "Felix",
     from: "2026-05-10",
     to: "2026-05-15",
+    comments: [],
   },
 ];
 
@@ -79,6 +105,8 @@ export default function GaestiPage() {
   const [newTo, setNewTo] = useState("");
   const [showBookings, setShowBookings] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [openCommentsId, setOpenCommentsId] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState("");
 
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfWeek(year, month);
@@ -127,15 +155,39 @@ export default function GaestiPage() {
       {
         id: String(Date.now()),
         guest: newGuest,
-        invitedBy: "Alain",
+        invitedBy: CURRENT_USER,
         from: newFrom,
         to: newTo,
+        comments: [],
       },
     ]);
     setShowCreate(false);
     setNewGuest("");
     setNewFrom("");
     setNewTo("");
+  }
+
+  function addComment(bookingId: string) {
+    if (!newComment.trim()) return;
+    setBookings((prev) =>
+      prev.map((b) =>
+        b.id === bookingId
+          ? {
+              ...b,
+              comments: [
+                ...b.comments,
+                {
+                  id: String(Date.now()),
+                  author: CURRENT_USER,
+                  text: newComment,
+                  date: new Date().toISOString().split("T")[0]!,
+                },
+              ],
+            }
+          : b
+      )
+    );
+    setNewComment("");
   }
 
   return (
@@ -251,7 +303,7 @@ export default function GaestiPage() {
         </div>
 
         {/* Tage */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-y-1">
           {Array.from({ length: firstDay }).map((_, i) => (
             <div key={`empty-${i}`} />
           ))}
@@ -262,24 +314,46 @@ export default function GaestiPage() {
             const isToday = dateStr === today;
             const isSelected = dateStr === selectedDate;
 
+            // Mehrtages-Balken: erkennen ob vorheriger / naechster Tag
+            // ebenfalls zur selben Buchung gehoert
+            let barLeft = false;
+            let barRight = false;
+            if (booking) {
+              barLeft = dateStr > booking.from;
+              barRight = dateStr < booking.to;
+              // Am Wochen-Rand (Mo / So) den Balken abschneiden
+              const dow = new Date(dateStr).getDay(); // 0=So, 1=Mo
+              if (dow === 1) barLeft = false; // Montag: kein linker Balken
+              if (dow === 0) barRight = false; // Sonntag: kein rechter Balken
+            }
+
             return (
-              <button
-                key={day}
-                onClick={() =>
-                  setSelectedDate(isSelected ? null : dateStr)
-                }
-                className={`relative flex h-9 items-center justify-center rounded text-xs transition-colors ${
-                  isSelected
-                    ? "bg-blue-500/50 text-white ring-2 ring-blue-400"
-                    : booking
-                      ? "bg-secondary/30 text-secondary hover:bg-secondary/40"
-                      : isToday
-                        ? "border border-blue-400 text-blue-300 hover:bg-blue-500/10"
-                        : "text-gray-400 hover:bg-white/5"
-                }`}
-              >
-                {day}
-              </button>
+              <div key={day} className="relative h-9 px-0.5">
+                {/* Balken-Hintergrund */}
+                {booking && (
+                  <div
+                    className={`pointer-events-none absolute top-1/2 h-7 -translate-y-1/2 bg-secondary/25 ${
+                      barLeft ? "-left-1" : "left-0.5 rounded-l"
+                    } ${barRight ? "-right-1" : "right-0.5 rounded-r"}`}
+                  />
+                )}
+                <button
+                  onClick={() =>
+                    setSelectedDate(isSelected ? null : dateStr)
+                  }
+                  className={`relative flex h-9 w-full items-center justify-center rounded text-xs transition-colors ${
+                    isSelected
+                      ? "bg-blue-500/60 text-white ring-2 ring-blue-400"
+                      : booking
+                        ? "font-semibold text-secondary hover:bg-secondary/20"
+                        : isToday
+                          ? "border border-blue-400 text-blue-300 hover:bg-blue-500/10"
+                          : "text-gray-400 hover:bg-white/5"
+                  }`}
+                >
+                  {day}
+                </button>
+              </div>
             );
           })}
         </div>
@@ -359,29 +433,91 @@ export default function GaestiPage() {
         {bookings
           .filter((b) => b.to >= today)
           .sort((a, b) => a.from.localeCompare(b.from))
-          .map((b) => (
-            <div
-              key={b.id}
-              className="rounded-lg border border-gray-800 bg-white/5 p-3"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-white">{b.guest}</p>
-                  <p className="text-xs text-gray-500">
-                    Eingeladen von {b.invitedBy}
-                  </p>
+          .map((b) => {
+            const commentsOpen = openCommentsId === b.id;
+            return (
+              <div
+                key={b.id}
+                className="rounded-lg border border-gray-800 bg-white/5 p-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-white">{b.guest}</p>
+                    <p className="text-xs text-gray-500">
+                      Eingeladen von {b.invitedBy}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-xs text-secondary">
+                      {formatDateShort(b.from)}
+                    </p>
+                    <p className="font-mono text-xs text-gray-500">
+                      bis {formatDateShort(b.to)}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-mono text-xs text-secondary">
-                    {formatDateShort(b.from)}
-                  </p>
-                  <p className="font-mono text-xs text-gray-500">
-                    bis {formatDateShort(b.to)}
-                  </p>
-                </div>
+
+                {/* Kommentar-Toggle */}
+                <button
+                  onClick={() =>
+                    setOpenCommentsId(commentsOpen ? null : b.id)
+                  }
+                  className="mt-2 flex items-center gap-1 font-mono text-[10px] text-gray-500 hover:text-blue-300"
+                >
+                  💬 {b.comments.length}{" "}
+                  {commentsOpen ? "ausblenden" : "Kommentare"}
+                </button>
+
+                {commentsOpen && (
+                  <div className="mt-2 border-t border-gray-800 pt-2">
+                    <div className="space-y-1.5">
+                      {b.comments.map((c) => (
+                        <div
+                          key={c.id}
+                          className="rounded border-l-2 border-blue-500/40 bg-white/3 py-1 pl-2 pr-2"
+                        >
+                          <p className="text-xs text-gray-300">{c.text}</p>
+                          <p className="mt-0.5 text-[9px] text-gray-600">
+                            — {c.author} ·{" "}
+                            {new Date(c.date).toLocaleDateString("de-CH", {
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </p>
+                        </div>
+                      ))}
+                      {b.comments.length === 0 && (
+                        <p className="text-xs text-gray-600">
+                          Noch keine Kommentare
+                        </p>
+                      )}
+                    </div>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        addComment(b.id);
+                      }}
+                      className="mt-2 flex gap-2"
+                    >
+                      <input
+                        type="text"
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="Frage oder Kommentar..."
+                        className="flex-1 rounded border border-gray-800 bg-white/5 px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:border-blue-400 focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        className="rounded bg-blue-400 px-3 py-1.5 text-[10px] font-bold text-dark"
+                      >
+                        OK
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
 
         {bookings.filter((b) => b.to >= today).length === 0 && (
           <p className="text-center text-sm text-gray-600">

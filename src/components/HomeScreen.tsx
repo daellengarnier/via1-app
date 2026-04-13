@@ -78,6 +78,8 @@ export default function HomeScreen() {
   const [pinnwand, setPinnwand] = useState(initialPinnwand);
   const [newNote, setNewNote] = useState("");
   const [showNoteForm, setShowNoteForm] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editNoteText, setEditNoteText] = useState("");
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [aare, setAare] = useState<AareData | null>(null);
 
@@ -153,6 +155,22 @@ export default function HomeScreen() {
 
   function dismissNote(id: string) {
     setPinnwand((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  function startEditNote(id: string, text: string) {
+    setEditingNoteId(id);
+    setEditNoteText(text);
+  }
+
+  function saveEditNote() {
+    if (!editingNoteId || !editNoteText.trim()) return;
+    setPinnwand((prev) =>
+      prev.map((p) =>
+        p.id === editingNoteId ? { ...p, text: editNoteText } : p
+      )
+    );
+    setEditingNoteId(null);
+    setEditNoteText("");
   }
 
   return (
@@ -346,6 +364,8 @@ export default function HomeScreen() {
               },
             ];
             const style = styles[i % styles.length]!;
+            const isOwn = p.author === userName;
+            const isEditing = editingNoteId === p.id;
             return (
               <div
                 key={p.id}
@@ -358,29 +378,74 @@ export default function HomeScreen() {
                 {/* Glassy highlight */}
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
 
-                <button
-                  onClick={() => dismissNote(p.id)}
-                  className={`absolute right-1.5 top-1 ${style.meta} opacity-60 hover:opacity-100`}
-                  aria-label="Schliessen"
-                >
-                  ×
-                </button>
-                <p
-                  className={`relative pt-1 text-xs leading-relaxed ${style.text}`}
-                >
-                  {p.text}
-                </p>
                 <div
-                  className={`absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[9px] ${style.meta}`}
+                  className={`absolute right-1 top-0.5 flex items-center gap-0.5 ${style.meta}`}
                 >
-                  <span>
-                    {new Date(p.date).toLocaleDateString("de-CH", {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </span>
-                  <span>— {p.author}</span>
+                  {isOwn && !isEditing && (
+                    <button
+                      onClick={() => startEditNote(p.id, p.text)}
+                      className="text-[10px] opacity-60 hover:opacity-100"
+                      aria-label="Bearbeiten"
+                    >
+                      ✎
+                    </button>
+                  )}
+                  <button
+                    onClick={() => dismissNote(p.id)}
+                    className="opacity-60 hover:opacity-100"
+                    aria-label="Schliessen"
+                  >
+                    ×
+                  </button>
                 </div>
+
+                {isEditing ? (
+                  <div className="relative pt-1">
+                    <textarea
+                      value={editNoteText}
+                      onChange={(e) => setEditNoteText(e.target.value)}
+                      rows={3}
+                      autoFocus
+                      className={`w-full resize-none rounded bg-black/30 p-1.5 text-xs leading-relaxed ${style.text} focus:outline-none`}
+                    />
+                    <div className="mt-1 flex gap-1">
+                      <button
+                        onClick={saveEditNote}
+                        className={`rounded bg-black/40 px-2 py-0.5 text-[9px] font-bold ${style.text}`}
+                      >
+                        OK
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingNoteId(null);
+                          setEditNoteText("");
+                        }}
+                        className={`rounded px-2 py-0.5 text-[9px] ${style.meta}`}
+                      >
+                        Abbrechen
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p
+                    className={`relative pt-1 text-xs leading-relaxed ${style.text}`}
+                  >
+                    {p.text}
+                  </p>
+                )}
+                {!isEditing && (
+                  <div
+                    className={`absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[9px] ${style.meta}`}
+                  >
+                    <span>
+                      {new Date(p.date).toLocaleDateString("de-CH", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                    <span>— {p.author}</span>
+                  </div>
+                )}
               </div>
             );
           })}
