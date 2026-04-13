@@ -23,6 +23,7 @@ export interface TerminListDTO {
   dinnerTime: string | null;
   withAttendance: boolean;
   myAttendance: "going" | "not-going" | null;
+  myMealSignup: boolean;
   agendaCount: number;
   mealSignupCount: number;
 }
@@ -121,7 +122,8 @@ export function serializeTerminList(
     mealSignups?: MealSignup[];
     attendances?: Attendance[];
   },
-  currentUserId: string | null
+  currentUserId: string | null,
+  myMealSignupFlag?: boolean
 ): TerminListDTO {
   const { date, time } = splitDate(termin.date);
   const agendaCount =
@@ -136,6 +138,11 @@ export function serializeTerminList(
       ? "going"
       : "not-going"
     : null;
+  const myMealSignup =
+    myMealSignupFlag ??
+    (currentUserId
+      ? termin.mealSignups?.some((s) => s.userId === currentUserId) ?? false
+      : false);
   return {
     id: termin.id,
     title: termin.title,
@@ -148,6 +155,7 @@ export function serializeTerminList(
     dinnerTime: termin.dinnerTime,
     withAttendance: termin.withAttendance,
     myAttendance,
+    myMealSignup,
     agendaCount,
     mealSignupCount,
   };

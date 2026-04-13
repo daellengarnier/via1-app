@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { jsPDF } from "jspdf";
 
 interface Traktandum {
   id: string;
@@ -63,6 +65,8 @@ function formatDate(iso: string): string {
 export default function TerminDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id ?? "";
   const id = params.id as string;
 
   const [termin, setTermin] = useState<TerminDetail | null>(null);
@@ -78,7 +82,7 @@ export default function TerminDetailPage() {
   const [deleteTraktandumId, setDeleteTraktandumId] = useState<string | null>(
     null
   );
-  const [locationMode, setLocationMode] = useState<"wg" | "custom">("custom");
+  const [locationMode, setLocationMode] = useState<"wg" | "custom">("wg");
 
   // Aus Profil (Mock — bis wir ein echtes Profil haben)
   const myDiet = "Fleisch";
@@ -220,6 +224,21 @@ export default function TerminDetailPage() {
     }
   }
 
+  async function cancelMealSignup() {
+    if (!termin) return;
+    if (!confirm("Dich (und deine Gäste) wirklich vom Essen abmelden?")) return;
+    try {
+      const res = await fetch(`/api/termine/${id}/meal-signup`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await loadTermin();
+    } catch (err) {
+      console.error("Abmeldung", err);
+      alert("Abmelden fehlgeschlagen.");
+    }
+  }
+
   function addGuest() {
     setSignupGuestDetails((prev) => [
       ...prev,
@@ -301,141 +320,146 @@ export default function TerminDetailPage() {
   function exportPdf() {
     if (!termin) return;
 
-    const esc = (s: string) =>
-      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    // A4 = 210 x 297 mm, margin 20mm
+    const doc = new jsPDF({
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+    });
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const marginX = 20;
+    const contentWidth = pageWidth - marginX * 2;
+    let y = 22;
 
-    const traktandenHtml = termin.traktanden
-      .map(
-        (t, i) => `
-        <div class="traktandum">
-          <h3>${i + 1}. ${esc(t.title)}</h3>
-          ${t.notes ? `<p>${esc(t.notes).replace(/\n/g, "<br>")}</p>` : `<p class="empty">— keine Notizen —</p>`}
-        </div>`
-      )
-      .join("");
+    const addPageIfNeeded = (need: number) => {
+      if (y + need > pageHeight - 20) {
+        doc.addPage();
+        y = 22;
+      }
+    };
 
-    const html = `<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<title>${esc(termin.title)} — Protokoll</title>
-<style>
-  @page { size: A4; margin: 2cm; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    color: #111;
-    line-height: 1.5;
-    max-width: 780px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  h1 {
-    font-size: 22pt;
-    margin: 0 0 4px;
-    color: #1a1a1a;
-  }
-  .subtitle {
-    color: #666;
-    font-size: 11pt;
-    margin-bottom: 20px;
-  }
-  .meta {
-    display: grid;
-    grid-template-columns: 140px 1fr;
-    gap: 4px 12px;
-    margin: 18px 0;
-    font-size: 10pt;
-  }
-  .meta dt { color: #666; }
-  .meta dd { margin: 0; color: #111; }
-  h2 {
-    font-size: 13pt;
-    margin: 24px 0 10px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid #ddd;
-    color: #1a1a1a;
-  }
-  .traktandum {
-    margin-bottom: 14px;
-    padding: 10px 14px;
-    background: #f6f6f6;
-    border-left: 3px solid #8bc34a;
-    border-radius: 2px;
-    page-break-inside: avoid;
-  }
-  .traktandum h3 {
-    margin: 0 0 6px;
-    font-size: 11pt;
-    color: #222;
-  }
-  .traktandum p {
-    margin: 0;
-    font-size: 10pt;
-    color: #444;
-  }
-  .empty { color: #aaa; font-style: italic; }
-  .footer {
-    margin-top: 40px;
-    padding-top: 12px;
-    border-top: 1px solid #eee;
-    font-size: 8pt;
-    color: #999;
-    text-align: center;
-  }
-  @media print {
-    body { padding: 0; }
-    .no-print { display: none; }
-  }
-  .print-btn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #8bc34a;
-    color: #000;
-    border: 0;
-    padding: 10px 18px;
-    font-weight: 700;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 11pt;
-  }
-</style>
-</head>
-<body>
-  <button class="print-btn no-print" onclick="window.print()">PDF speichern / Drucken</button>
-  <h1>${esc(termin.title)}</h1>
-  <p class="subtitle">Sitzungsprotokoll</p>
+    // Titel
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(26, 26, 26);
+    doc.text(termin.title, marginX, y);
+    y += 7;
 
-  <dl class="meta">
-    <dt>Datum</dt><dd>${esc(formatDate(termin.date))}, ${esc(termin.time)}</dd>
-    <dt>Ort</dt><dd>${esc(termin.location)}</dd>
-    ${termin.organizer ? `<dt>Organisiert von</dt><dd>${esc(termin.organizer)}</dd>` : ""}
-    ${termin.sitzungsleitung ? `<dt>Sitzungsleitung</dt><dd>${esc(termin.sitzungsleitung)}</dd>` : ""}
-    ${termin.protokollfuehrung ? `<dt>Protokollführung</dt><dd>${esc(termin.protokollfuehrung)}</dd>` : ""}
-    <dt>Anwesend (${termin.anwesend.length})</dt><dd>${esc(termin.anwesend.map((p) => p.name).join(", ") || "–")}</dd>
-    <dt>Abgemeldet (${termin.abgemeldet.length})</dt><dd>${esc(termin.abgemeldet.map((p) => p.name).join(", ") || "–")}</dd>
-  </dl>
+    // Subtitle
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(102, 102, 102);
+    doc.text("Sitzungsprotokoll", marginX, y);
+    y += 8;
 
-  <h2>Traktanden</h2>
-  ${traktandenHtml || '<p class="empty">Keine Traktanden.</p>'}
+    // Trennlinie
+    doc.setDrawColor(221, 221, 221);
+    doc.setLineWidth(0.2);
+    doc.line(marginX, y, pageWidth - marginX, y);
+    y += 6;
 
-  <div class="footer">
-    Via 1 — Spinnereiweg 17, 3004 Bern · Erstellt am ${new Date().toLocaleDateString("de-CH", { day: "numeric", month: "long", year: "numeric" })}
-  </div>
-  <script>
-    // Print-Dialog automatisch öffnen
-    setTimeout(() => window.print(), 300);
-  </script>
-</body>
-</html>`;
+    // Meta-Block als Label:Value-Zeilen
+    const metaRows: [string, string][] = [
+      ["Datum", `${formatDate(termin.date)}, ${termin.time}`],
+      ["Ort", termin.location || "—"],
+    ];
+    if (termin.organizer)
+      metaRows.push(["Organisiert von", termin.organizer]);
+    if (termin.sitzungsleitung)
+      metaRows.push(["Sitzungsleitung", termin.sitzungsleitung]);
+    if (termin.protokollfuehrung)
+      metaRows.push(["Protokollführung", termin.protokollfuehrung]);
+    metaRows.push([
+      `Anwesend (${termin.anwesend.length})`,
+      termin.anwesend.map((p) => p.name).join(", ") || "–",
+    ]);
+    metaRows.push([
+      `Abgemeldet (${termin.abgemeldet.length})`,
+      termin.abgemeldet.map((p) => p.name).join(", ") || "–",
+    ]);
 
-    const win = window.open("", "_blank");
-    if (!win) {
-      alert("Bitte Pop-up-Blocker deaktivieren, um das PDF zu erstellen.");
-      return;
+    doc.setFontSize(10);
+    for (const [label, value] of metaRows) {
+      addPageIfNeeded(8);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(102, 102, 102);
+      doc.text(label, marginX, y);
+      doc.setTextColor(17, 17, 17);
+      const valueLines = doc.splitTextToSize(value, contentWidth - 45);
+      doc.text(valueLines, marginX + 45, y);
+      y += Math.max(6, valueLines.length * 5);
     }
-    win.document.write(html);
-    win.document.close();
+    y += 4;
+
+    // Traktanden-Header
+    addPageIfNeeded(12);
+    doc.setDrawColor(221, 221, 221);
+    doc.line(marginX, y, pageWidth - marginX, y);
+    y += 6;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(26, 26, 26);
+    doc.text("Traktanden", marginX, y);
+    y += 8;
+
+    if (termin.traktanden.length === 0) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(170, 170, 170);
+      doc.text("Keine Traktanden.", marginX, y);
+      y += 8;
+    } else {
+      termin.traktanden.forEach((t, i) => {
+        // Titel fett
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(34, 34, 34);
+        const titleLines = doc.splitTextToSize(
+          `${i + 1}. ${t.title}`,
+          contentWidth
+        );
+        addPageIfNeeded(titleLines.length * 6 + 10);
+        doc.text(titleLines, marginX, y);
+        y += titleLines.length * 5 + 1;
+
+        // Notizen
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        if (t.notes.trim()) {
+          doc.setTextColor(68, 68, 68);
+          const noteLines = doc.splitTextToSize(t.notes, contentWidth - 4);
+          for (const line of noteLines) {
+            addPageIfNeeded(6);
+            doc.text(line, marginX + 4, y);
+            y += 5;
+          }
+        } else {
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(170, 170, 170);
+          doc.text("— keine Notizen —", marginX + 4, y);
+          y += 5;
+        }
+        y += 4;
+      });
+    }
+
+    // Footer mit Datum
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(153, 153, 153);
+    const footerY = pageHeight - 12;
+    doc.text(
+      `Via 1 — Spinnereiweg 17, 3004 Bern · Erstellt am ${new Date().toLocaleDateString(
+        "de-CH",
+        { day: "numeric", month: "long", year: "numeric" }
+      )}`,
+      pageWidth / 2,
+      footerY,
+      { align: "center" }
+    );
+
+    doc.save(`${termin.title.replace(/\s+/g, "_")}_Protokoll.pdf`);
   }
 
   return (
@@ -640,8 +664,8 @@ export default function TerminDetailPage() {
                           saveTraktandumNotes(t.id, e.target.value)
                         }
                         placeholder="Notizen / Was wurde besprochen..."
-                        rows={2}
-                        className="mt-2 w-full rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+                        rows={Math.max(2, t.notes.split("\n").length)}
+                        className="mt-2 min-h-[3.5rem] w-full resize-y rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white placeholder-gray-600 focus:border-accent focus:outline-none"
                       />
                     </div>
                     <button
@@ -806,36 +830,61 @@ export default function TerminDetailPage() {
 
           {/* Anmeldungsliste */}
           <div className="space-y-1">
-            {termin.mealSignups.map((s, i) => (
-              <div
-                key={i}
-                className="rounded-lg border border-gray-800 bg-white/5 px-3 py-2"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-white">{s.name}</span>
-                  <span className="font-mono text-xs text-gray-500">
-                    {s.diet}
-                    {s.allergies && ` · ${s.allergies}`}
-                  </span>
-                </div>
-                {s.guestDetails.length > 0 && (
-                  <div className="mt-1 space-y-0.5 border-t border-gray-800 pt-1">
-                    {s.guestDetails.map((g, gi) => (
-                      <div
-                        key={gi}
-                        className="flex items-center justify-between text-xs text-gray-400"
-                      >
-                        <span>+ Gast {gi + 1}</span>
-                        <span className="font-mono text-gray-600">
-                          {g.diet}
-                          {g.allergies && ` · ${g.allergies}`}
+            {termin.mealSignups.map((s, i) => {
+              const isOwn = s.userId === currentUserId;
+              return (
+                <div
+                  key={i}
+                  className={`rounded-lg border px-3 py-2 ${
+                    isOwn
+                      ? "border-secondary/40 bg-secondary/10"
+                      : "border-gray-800 bg-white/5"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-white">
+                      {s.name}
+                      {isOwn && (
+                        <span className="ml-1 text-[10px] text-secondary">
+                          (du)
                         </span>
-                      </div>
-                    ))}
+                      )}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-gray-500">
+                        {s.diet}
+                        {s.allergies && ` · ${s.allergies}`}
+                      </span>
+                      {isOwn && (
+                        <button
+                          onClick={cancelMealSignup}
+                          className="rounded border border-red-500/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10"
+                          aria-label="Abmelden"
+                        >
+                          Abmelden
+                        </button>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+                  {s.guestDetails.length > 0 && (
+                    <div className="mt-1 space-y-0.5 border-t border-gray-800 pt-1">
+                      {s.guestDetails.map((g, gi) => (
+                        <div
+                          key={gi}
+                          className="flex items-center justify-between text-xs text-gray-400"
+                        >
+                          <span>+ Gast {gi + 1}</span>
+                          <span className="font-mono text-gray-600">
+                            {g.diet}
+                            {g.allergies && ` · ${g.allergies}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

@@ -18,6 +18,7 @@ interface Termin {
   dinnerTime: string | null;
   withAttendance: boolean;
   myAttendance: "going" | "not-going" | null;
+  myMealSignup: boolean;
   agendaCount: number;
   mealSignupCount: number;
 }
@@ -139,7 +140,7 @@ export default function TerminePage() {
   const [newTime, setNewTime] = useState("19:30");
   const [newLocation, setNewLocation] = useState("");
   const [newLocationMode, setNewLocationMode] = useState<"wg" | "custom">(
-    "custom"
+    "wg"
   );
   const [newOrganizer, setNewOrganizer] = useState("");
   const [newWithDinner, setNewWithDinner] = useState(false);
@@ -226,7 +227,7 @@ export default function TerminePage() {
     setNewDate("");
     setNewTime("19:30");
     setNewLocation("");
-    setNewLocationMode("custom");
+    setNewLocationMode("wg");
     setNewOrganizer("");
     setNewWithDinner(false);
     setNewDinnerTime("18:30");
@@ -336,7 +337,7 @@ export default function TerminePage() {
                 type="date"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
-                className="block w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 py-2 text-xs text-white focus:border-orange-400 focus:outline-none"
+                className="box-border block h-10 w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 text-xs leading-[1.25rem] text-white focus:border-orange-400 focus:outline-none"
                 required
               />
             </div>
@@ -346,7 +347,7 @@ export default function TerminePage() {
                 type="time"
                 value={newTime}
                 onChange={(e) => setNewTime(e.target.value)}
-                className="block w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 py-2 text-xs text-white focus:border-orange-400 focus:outline-none"
+                className="box-border block h-10 w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 text-xs leading-[1.25rem] text-white focus:border-orange-400 focus:outline-none"
                 required
               />
             </div>
@@ -611,8 +612,8 @@ export default function TerminePage() {
                 </div>
               )}
 
-              {/* Direkt anmelden Button bei Essen */}
-              {hasEssen && signupOpen !== t.id && (
+              {/* Direkt anmelden/abmelden Button bei Essen */}
+              {hasEssen && signupOpen !== t.id && !t.myMealSignup && (
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -623,6 +624,40 @@ export default function TerminePage() {
                 >
                   + Fürs Essen anmelden
                 </button>
+              )}
+              {hasEssen && t.myMealSignup && (
+                <div className="mt-2 flex items-center gap-2 rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1">
+                  <span className="flex-1 text-[10px] font-bold uppercase tracking-wider text-secondary">
+                    ✓ Angemeldet fürs Essen
+                  </span>
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      if (
+                        !confirm(
+                          "Dich (und deine Gäste) wirklich vom Essen abmelden?"
+                        )
+                      )
+                        return;
+                      try {
+                        const res = await fetch(
+                          `/api/termine/${t.id}/meal-signup`,
+                          { method: "DELETE" }
+                        );
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        // Count optimistisch um 1 runter; genauer geht's
+                        // per Refetch
+                        await loadTermine();
+                      } catch (err) {
+                        console.error("Abmelden", err);
+                        alert("Abmelden fehlgeschlagen.");
+                      }
+                    }}
+                    className="rounded-full border border-red-500/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10"
+                  >
+                    Abmelden
+                  </button>
+                </div>
               )}
 
               {/* Inline-Form für Essens-Anmeldung */}
@@ -727,17 +762,9 @@ export default function TerminePage() {
                           }
                         );
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        setTermine((prev) =>
-                          prev.map((x) =>
-                            x.id === t.id
-                              ? {
-                                  ...x,
-                                  mealSignupCount:
-                                    x.mealSignupCount + 1 + signupGuests.length,
-                                }
-                              : x
-                          )
-                        );
+                        // Refetch um myMealSignup + Count korrekt zu
+                        // bekommen
+                        await loadTermine();
                         setSignupOpen(null);
                         setSignupGuests([]);
                       } catch (err) {

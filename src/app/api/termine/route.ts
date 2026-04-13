@@ -23,14 +23,20 @@ export async function GET() {
         where: { userId: session.user.id },
         select: { status: true, userId: true },
       },
+      mealSignups: {
+        where: { userId: session.user.id },
+        select: { id: true },
+      },
     },
   });
 
   return NextResponse.json(
     termine.map((t) =>
-      // Type hack: attendances hat nur status+userId, aber das reicht
-      // fuer myAttendance-Berechnung
-      serializeTerminList(t as unknown as Parameters<typeof serializeTerminList>[0], session.user.id)
+      serializeTerminList(
+        t as unknown as Parameters<typeof serializeTerminList>[0],
+        session.user.id,
+        t.mealSignups.length > 0
+      )
     )
   );
 }
@@ -102,6 +108,10 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json(
-    serializeTerminList(termin as unknown as Parameters<typeof serializeTerminList>[0], session.user.id)
+    serializeTerminList(
+      termin as unknown as Parameters<typeof serializeTerminList>[0],
+      session.user.id,
+      false
+    )
   );
 }
