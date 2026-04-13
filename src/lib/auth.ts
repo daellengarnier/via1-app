@@ -1,5 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
 const DEMO_MODE = !process.env.DATABASE_URL;
 
@@ -34,37 +36,29 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Production mode: check against database
-        const { PrismaClient } = require("@prisma/client");
-        const bcrypt = require("bcryptjs") as typeof import("bcryptjs");
-        const prisma = new PrismaClient();
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        });
 
-        try {
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email },
-          });
-
-          if (!user || !user.password || !user.passwordSet) {
-            return null;
-          }
-
-          const isValid = await bcrypt.compare(
-            credentials.password,
-            user.password
-          );
-
-          if (!isValid) {
-            return null;
-          }
-
-          return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            roles: user.roles as string[],
-          };
-        } finally {
-          await prisma.$disconnect();
+        if (!user || !user.password || !user.passwordSet) {
+          return null;
         }
+
+        const isValid = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
+
+        if (!isValid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          roles: user.roles as string[],
+        };
       },
     }),
   ],

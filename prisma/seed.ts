@@ -36,6 +36,24 @@ async function main() {
   console.log(
     `  Yves:  https://app.felsenau.org/setup/${users[1]!.setupToken}`
   );
+
+  // Pinnwand: Willkommens-Eintrag von Alain, nur wenn es noch gar keine
+  // Eintraege gibt (damit wiederholte Seeds nichts ueberschreiben)
+  const existingNotesCount = await prisma.pinnwandNote.count();
+  if (existingNotesCount === 0) {
+    const alain = await prisma.user.findUnique({
+      where: { email: "alain@via1.ch" },
+    });
+    if (alain) {
+      await prisma.pinnwandNote.create({
+        data: {
+          text: "Willkommen in der Via1-App! Hier koennen wir Nachrichten an alle Bewohnenden pinnen.",
+          authorId: alain.id,
+        },
+      });
+      console.log("Initial Pinnwand-Eintrag erstellt.");
+    }
+  }
 }
 
 main()

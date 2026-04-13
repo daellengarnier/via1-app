@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { TabHeader } from "./TabHeader";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 
@@ -9,6 +10,7 @@ interface PinnwandEintrag {
   id: string;
   text: string;
   author: string;
+  authorId: string;
   date: string;
 }
 
@@ -23,26 +25,7 @@ interface AareData {
   flow: number;
 }
 
-const initialPinnwand: PinnwandEintrag[] = [
-  {
-    id: "1",
-    text: "Grüngut-Container wird am Dienstag 15.4. geleert. Bitte bis Montag Abend alles reinwerfen!",
-    author: "Marco",
-    date: "2026-04-10",
-  },
-  {
-    id: "2",
-    text: "Trocknungsraum-Schlüssel ist beim Eingang an der Pinnwand. Bitte immer zurückhängen.",
-    author: "Lena",
-    date: "2026-04-08",
-  },
-  {
-    id: "3",
-    text: "Nächsten Samstag Gartenputzete! Wer kann mithelfen bitte bei Sven melden.",
-    author: "Sven",
-    date: "2026-04-06",
-  },
-];
+// Pinnwand wird aus /api/pinnwand gelesen
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -72,16 +55,43 @@ function weatherSummary(code: number, willRainTonight: boolean): string {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const userName = "Alain";
+  const { data: session } = useSession();
+  const userName = session?.user?.name ?? "";
+  const userId = session?.user?.id ?? "";
+  const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const hasKaffeeAbo = true;
   const [currentKaffee] = useCurrentKaffee();
-  const [pinnwand, setPinnwand] = useState(initialPinnwand);
+  const [pinnwand, setPinnwand] = useState<PinnwandEintrag[]>([]);
+  const [pinnwandError, setPinnwandError] = useState<string | null>(null);
+  const [pinnwandLoading, setPinnwandLoading] = useState(true);
   const [newNote, setNewNote] = useState("");
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editNoteText, setEditNoteText] = useState("");
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [aare, setAare] = useState<AareData | null>(null);
+
+  // Pinnwand laden
+  const loadPinnwand = useCallback(async () => {
+    try {
+      const res = await fetch("/api/pinnwand");
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const data = (await res.json()) as PinnwandEintrag[];
+      setPinnwand(data);
+      setPinnwandError(null);
+    } catch (err) {
+      console.error("Pinnwand laden fehlgeschlagen", err);
+      setPinnwandError("Pinnwand konnte nicht geladen werden");
+    } finally {
+      setPinnwandLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPinnwand();
+  }, [loadPinnwand]);
 
   // Wetter laden (Open-Meteo, kein API Key)
   useEffect(() => {
@@ -137,24 +147,39 @@ export default function HomeScreen() {
       .catch(() => {});
   }, []);
 
-  function addNote(e: React.FormEvent) {
+  async function addNote(e: React.FormEvent) {
     e.preventDefault();
-    if (!newNote.trim()) return;
-    setPinnwand((prev) => [
-      {
-        id: String(Date.now()),
-        text: newNote,
-        author: userName,
-        date: new Date().toISOString().split("T")[0]!,
-      },
-      ...prev,
-    ]);
-    setNewNote("");
-    setShowNoteForm(false);
+    const text = newNote.trim();
+    if (!text) return;
+    try {
+      const res = await fetch("/api/pinnwand", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = (await res.json()) as PinnwandEintrag;
+      setPinnwand((prev) => [created, ...prev]);
+      setNewNote("");
+      setShowNoteForm(false);
+    } catch (err) {
+      console.error("Pinnwand-Eintrag erstellen fehlgeschlagen", err);
+      alert("Konnte Eintrag nicht speichern. Bitte erneut versuchen.");
+    }
   }
 
-  function dismissNote(id: string) {
+  async function dismissNote(id: string) {
+    // Optimistic update
+    const previous = pinnwand;
     setPinnwand((prev) => prev.filter((p) => p.id !== id));
+    try {
+      const res = await fetch(`/api/pinnwand/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      console.error("Loeschen fehlgeschlagen", err);
+      setPinnwand(previous);
+      alert("Konnte nicht loeschen.");
+    }
   }
 
   function startEditNote(id: string, text: string) {
@@ -162,15 +187,25 @@ export default function HomeScreen() {
     setEditNoteText(text);
   }
 
-  function saveEditNote() {
-    if (!editingNoteId || !editNoteText.trim()) return;
-    setPinnwand((prev) =>
-      prev.map((p) =>
-        p.id === editingNoteId ? { ...p, text: editNoteText } : p
-      )
-    );
-    setEditingNoteId(null);
-    setEditNoteText("");
+  async function saveEditNote() {
+    const text = editNoteText.trim();
+    if (!editingNoteId || !text) return;
+    const id = editingNoteId;
+    try {
+      const res = await fetch(`/api/pinnwand/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = (await res.json()) as PinnwandEintrag;
+      setPinnwand((prev) => prev.map((p) => (p.id === id ? updated : p)));
+      setEditingNoteId(null);
+      setEditNoteText("");
+    } catch (err) {
+      console.error("Bearbeiten fehlgeschlagen", err);
+      alert("Konnte Aenderung nicht speichern.");
+    }
   }
 
   return (
@@ -364,7 +399,8 @@ export default function HomeScreen() {
               },
             ];
             const style = styles[i % styles.length]!;
-            const isOwn = p.author === userName;
+            const isOwn = p.authorId === userId;
+            const canDelete = isOwn || isAdmin;
             const isEditing = editingNoteId === p.id;
             return (
               <div
@@ -390,13 +426,15 @@ export default function HomeScreen() {
                       ✎
                     </button>
                   )}
-                  <button
-                    onClick={() => dismissNote(p.id)}
-                    className="opacity-60 hover:opacity-100"
-                    aria-label="Schliessen"
-                  >
-                    ×
-                  </button>
+                  {canDelete && (
+                    <button
+                      onClick={() => dismissNote(p.id)}
+                      className="opacity-60 hover:opacity-100"
+                      aria-label="Schliessen"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
 
                 {isEditing ? (
@@ -451,10 +489,16 @@ export default function HomeScreen() {
           })}
         </div>
 
-        {pinnwand.length === 0 && (
+        {pinnwandLoading && pinnwand.length === 0 && (
+          <p className="text-center text-xs text-gray-600">Laden …</p>
+        )}
+        {!pinnwandLoading && !pinnwandError && pinnwand.length === 0 && (
           <p className="text-center text-sm text-gray-600">
             Keine Nachrichten
           </p>
+        )}
+        {pinnwandError && (
+          <p className="text-center text-xs text-red-400">{pinnwandError}</p>
         )}
       </div>
     </div>

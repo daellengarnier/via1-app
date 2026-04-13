@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ConditionalNav } from "@/components/ConditionalNav";
+import { Providers } from "@/components/Providers";
 export const metadata: Metadata = {
   title: "Via 1 – Hausgemeinschaft",
   description: "Organisations-App für die Wohngemeinschaft Via 1, Spinnereiweg 17, Bern",
@@ -46,8 +47,10 @@ export default function RootLayout({
         <link rel="preload" as="image" href="/icon-gaesti.webp" />
       </head>
       <body className="min-h-screen font-sans antialiased">
-        <div className="relative mx-auto max-w-lg">{children}</div>
-        <ConditionalNav />
+        <Providers>
+          <div className="relative mx-auto max-w-lg">{children}</div>
+          <ConditionalNav />
+        </Providers>
       </body>
     </html>
   );
