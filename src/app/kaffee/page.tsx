@@ -119,6 +119,16 @@ export default function KaffeePage() {
 
   return (
     <div className="p-4 pb-20">
+      <div className="mb-2 flex justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/pic-kaffee.webp"
+          alt=""
+          className="tab-btn-icon"
+          loading="eager"
+          fetchPriority="high"
+        />
+      </div>
       <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">Kaffee-Abo</h1>
       <p className="mb-6 text-center text-sm text-gray-500">Hauseigene Kaffeemaschine</p>
 

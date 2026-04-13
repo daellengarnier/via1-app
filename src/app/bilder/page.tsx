@@ -69,6 +69,16 @@ export default function BilderPage() {
         ← Zurück
       </button>
 
+      <div className="mb-2 flex justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/pic-bilder.webp"
+          alt=""
+          className="tab-btn-icon"
+          loading="eager"
+          fetchPriority="high"
+        />
+      </div>
       <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">
         Bilder
       </h1>

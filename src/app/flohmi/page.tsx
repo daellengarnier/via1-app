@@ -155,6 +155,16 @@ export default function FlohmiPage() {
 
   return (
     <div className="p-4 pb-20">
+      <div className="mb-2 flex justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/pic-flohmi.webp"
+          alt=""
+          className="tab-btn-icon"
+          loading="eager"
+          fetchPriority="high"
+        />
+      </div>
       <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">Flohmi</h1>
       <div className="mb-4 flex justify-center">
         <button
