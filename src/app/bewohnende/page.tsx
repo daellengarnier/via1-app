@@ -140,12 +140,12 @@ export default function BewohnendePage() {
         </div>
       </div>
 
-      {/* Schlafzimmer — kompakt als 2-Spalten-Liste */}
+      {/* Schlafzimmer — kompakt als Liste */}
       <section className="mb-5">
         <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-accent">
           Schlafzimmer
         </h3>
-        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+        <div className="space-y-1.5">
           {zimmer.map((room) => {
             const user = usersByRoom.get(room.keyNumber);
             const isMine = user?.id === currentUserId;
@@ -153,7 +153,7 @@ export default function BewohnendePage() {
               <button
                 key={room.id}
                 onClick={() => setSelectedRoom(room)}
-                className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-all ${
+                className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-all ${
                   isMine
                     ? "border-accent bg-accent/10 shadow-[0_0_12px_rgba(184,240,104,0.2)]"
                     : user
@@ -161,11 +161,16 @@ export default function BewohnendePage() {
                       : "border-gray-800 bg-gray-900/40 hover:border-gray-600"
                 }`}
               >
-                <span className="text-base">{roomTypeIcons[room.type]}</span>
+                <span className="shrink-0 text-lg">
+                  {roomTypeIcons[room.type]}
+                </span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-[10px] text-gray-500">
-                    {room.label}
-                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-sm text-gray-300">{room.label}</p>
+                    <p className="font-mono text-[10px] text-gray-600">
+                      {room.keyNumber}
+                    </p>
+                  </div>
                   <p
                     className={`truncate text-xs ${
                       user ? "font-medium text-white" : "text-gray-600"
@@ -177,26 +182,40 @@ export default function BewohnendePage() {
                     )}
                   </p>
                 </div>
+                <span className="shrink-0 text-gray-600">›</span>
               </button>
             );
           })}
         </div>
       </section>
 
-      {/* Gemeinschaftsraeume — kompakt als Pills */}
+      {/* Gemeinschaftsraeume — gleiche Liste wie Schlafzimmer */}
       <section>
         <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-accent">
           Gemeinschaftsräume
         </h3>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="space-y-1.5">
           {commonRooms.map((room) => (
             <button
               key={room.id}
               onClick={() => setSelectedRoom(room)}
-              className="flex items-center gap-1.5 rounded-full border border-gray-800 bg-gray-900/40 px-3 py-1 text-left text-[11px] transition-all hover:border-gray-600"
+              className="flex w-full items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2 text-left transition-all hover:border-gray-600"
             >
-              <span className="text-sm">{roomTypeIcons[room.type]}</span>
-              <span className="text-gray-300">{roomTypeLabels[room.type]}</span>
+              <span className="shrink-0 text-lg">
+                {roomTypeIcons[room.type]}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2">
+                  <p className="text-sm text-gray-300">{room.label}</p>
+                  <p className="font-mono text-[10px] text-gray-600">
+                    {room.keyNumber}
+                  </p>
+                </div>
+                <p className="truncate text-xs text-gray-600">
+                  {roomTypeLabels[room.type]}
+                </p>
+              </div>
+              <span className="shrink-0 text-gray-600">›</span>
             </button>
           ))}
         </div>

@@ -33,8 +33,8 @@ export function RoomDetail({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center">
-      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-gray-800 bg-dark sm:rounded-2xl">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center">
+      <div className="max-h-[100dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-gray-800 bg-dark pb-[env(safe-area-inset-bottom,0px)] sm:max-h-[92vh] sm:rounded-2xl">
         {/* Header */}
         <div className="sticky top-0 z-10 border-b border-gray-800 bg-dark/95 px-5 py-4 backdrop-blur-sm">
           <div className="flex items-start justify-between">
