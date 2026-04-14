@@ -386,7 +386,7 @@ export default function HomeScreen() {
               })}
             </p>
           </div>
-        ) : (
+        ) : !hasKaffeeAbo ? (
           <a
             href="https://kulturspinnerei.ch"
             target="_blank"
@@ -403,6 +403,16 @@ export default function HomeScreen() {
               Fr 25. Apr · 21:00
             </p>
           </a>
+        ) : (
+          <div className="rounded-full border border-gray-800 bg-white/5 px-4 py-3 text-center">
+            <p className="font-display text-[9px] font-bold uppercase tracking-widest text-gray-500">
+              AKTIVITÄT
+            </p>
+            <p className="mt-0.5 truncate text-xs font-medium text-gray-500">
+              Keine geplant
+            </p>
+            <p className="font-mono text-[10px] text-gray-700">—</p>
+          </div>
         )}
       </div>
 
@@ -443,41 +453,79 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Kaffee (nur für Abo) — Pille */}
-      {hasKaffeeAbo && (
+      {/* Kaffee (nur für Abo) + Spinnerei — 2-Spalten */}
+      {hasKaffeeAbo ? (
         <div className="mb-5">
           <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
-            AKTUELL IN DER KAFFEEMÜHLE
+            AKTUELL
           </p>
-          <div
-            className="cursor-pointer rounded-2xl border border-amber-600/30 bg-gradient-to-r from-amber-700/10 to-transparent px-4 py-2.5 transition-all hover:border-amber-500/50"
-            onClick={() => router.push("/kaffee")}
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-lg">☕</span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-amber-200">
-                  {currentKaffee.name}
-                  {currentKaffee.fairtrade && (
-                    <span className="ml-1 text-[9px] text-emerald-400">
-                      ● Fair Trade
-                    </span>
-                  )}
+          <div className="grid grid-cols-2 gap-3">
+            <div
+              className="cursor-pointer rounded-2xl border border-amber-600/30 bg-gradient-to-br from-amber-700/15 to-transparent p-3 transition-all hover:border-amber-500/50"
+              onClick={() => router.push("/kaffee")}
+            >
+              <div className="mb-1 flex items-center gap-1.5">
+                <span className="text-base">☕</span>
+                <p className="font-display text-[9px] font-bold uppercase tracking-widest text-amber-300">
+                  KAFFEEMÜHLE
                 </p>
-                {kaffeeState.changedBy && kaffeeState.changedAt && (
-                  <p className="truncate font-mono text-[9px] text-gray-600">
-                    von {kaffeeState.changedBy} ·{" "}
-                    {new Date(kaffeeState.changedAt).toLocaleDateString(
-                      "de-CH",
-                      { day: "numeric", month: "short" }
-                    )}
-                  </p>
+              </div>
+              <p className="truncate text-sm font-semibold text-amber-200">
+                {currentKaffee.name}
+              </p>
+              {currentKaffee.duftnotizen && (
+                <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-gray-400">
+                  {currentKaffee.duftnotizen}
+                </p>
+              )}
+              <div className="mt-1 flex items-center gap-1.5 text-[9px]">
+                {currentKaffee.herkunft && (
+                  <span className="text-gray-500">
+                    {currentKaffee.herkunft}
+                  </span>
+                )}
+                {currentKaffee.fairtrade && (
+                  <span className="text-emerald-400">● Fair</span>
                 )}
               </div>
+              {kaffeeState.changedBy && kaffeeState.changedAt && (
+                <p className="mt-1 truncate font-mono text-[9px] text-gray-600">
+                  {kaffeeState.changedBy} ·{" "}
+                  {new Date(kaffeeState.changedAt).toLocaleDateString("de-CH", {
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </p>
+              )}
             </div>
+            <a
+              href="https://kulturspinnerei.ch"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cursor-pointer rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 to-transparent p-3 transition-all hover:border-secondary/60"
+            >
+              <div className="mb-1 flex items-center gap-1.5">
+                <span className="text-base">🎭</span>
+                <p className="font-display text-[9px] font-bold uppercase tracking-widest text-secondary">
+                  SPINNEREI
+                </p>
+              </div>
+              <p className="truncate text-sm font-semibold text-orange-200">
+                Soirée Tropicale
+              </p>
+              <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-gray-400">
+                Latin Beats, Cocktails & Tanzfieber im Hinterhof
+              </p>
+              <div className="mt-1 text-[9px] text-gray-500">
+                Kulturspinnerei
+              </div>
+              <p className="mt-1 truncate font-mono text-[9px] text-gray-600">
+                Fr 25. Apr · 21:00
+              </p>
+            </a>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Pinnwand als Sticky Notes */}
       <div className="relative">

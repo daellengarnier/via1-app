@@ -13,11 +13,12 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const threeHoursAgo = new Date();
-  threeHoursAgo.setHours(threeHoursAgo.getHours() - 3);
+  // Aktivitaeten verschwinden 1h nach Start (Aktivitaeten koennen noch laufen)
+  const oneHourAgo = new Date();
+  oneHourAgo.setHours(oneHourAgo.getHours() - 1);
 
   const activities = await prisma.activity.findMany({
-    where: { startAt: { gte: threeHoursAgo } },
+    where: { startAt: { gte: oneHourAgo } },
     orderBy: { startAt: "asc" },
     include: {
       createdBy: { select: { id: true, name: true } },

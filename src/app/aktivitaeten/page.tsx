@@ -34,6 +34,11 @@ interface Activity {
 const TEMPLATES: { id: string; title: string; defaultLocation: string }[] = [
   { id: "aareschwumm", title: "Aareschwumm", defaultLocation: "Aare" },
   { id: "spielabend", title: "Spieleabend", defaultLocation: "Pyramide" },
+  {
+    id: "sonnenuntergang",
+    title: "Sonnenuntergang schauen",
+    defaultLocation: "Dach",
+  },
 ];
 
 const QUICK_TIMES = [
@@ -390,6 +395,7 @@ export default function AktivitaetenPage() {
       <div className="space-y-2">
         {activities.map((a) => {
           const goingCount = a.participants.filter((p) => p.going).length;
+          const notGoingCount = a.participants.filter((p) => !p.going).length;
           const myP = a.myParticipation;
           const isOwn = a.createdById === session?.user?.id;
           const isCommentsOpen = openCommentsId === a.id;
@@ -421,6 +427,11 @@ export default function AktivitaetenPage() {
                   )}
                   <p className="mt-0.5 text-[10px] text-gray-600">
                     von {a.createdBy} · 🙋 {goingCount} dabei
+                    {notGoingCount > 0 && (
+                      <span className="text-gray-700">
+                        {" · "}✗ {notGoingCount} abgesagt
+                      </span>
+                    )}
                   </p>
                 </div>
                 {isOwn && (
