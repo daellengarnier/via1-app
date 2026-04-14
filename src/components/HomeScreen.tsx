@@ -22,6 +22,15 @@ interface NextTermin {
   time: string;
 }
 
+interface NextActivity {
+  id: string;
+  title: string;
+  startAt: string; // ISO
+  location: string;
+  createdBy: string;
+  participantsGoing: number;
+}
+
 interface WeatherData {
   temp: number;
   code: number;
@@ -75,6 +84,7 @@ export default function HomeScreen() {
     null
   );
   const [nextTermin, setNextTermin] = useState<NextTermin | null>(null);
+  const [nextActivity, setNextActivity] = useState<NextActivity | null>(null);
   const [pinnwand, setPinnwand] = useState<PinnwandEintrag[]>([]);
   const [pinnwandError, setPinnwandError] = useState<string | null>(null);
   const [pinnwandLoading, setPinnwandLoading] = useState(true);
@@ -151,6 +161,39 @@ export default function HomeScreen() {
               : a.date.localeCompare(b.date)
           );
         setNextTermin(upcoming[0] ?? null);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Naechste Aktivitaet fuer die Tile
+  useEffect(() => {
+    interface ApiActivity {
+      id: string;
+      title: string;
+      startAt: string;
+      location: string;
+      createdBy: string;
+      participants: { going: boolean }[];
+    }
+    fetch("/api/activities")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: ApiActivity[]) => {
+        const sorted = [...data].sort((a, b) =>
+          a.startAt.localeCompare(b.startAt)
+        );
+        const first = sorted[0];
+        if (!first) {
+          setNextActivity(null);
+          return;
+        }
+        setNextActivity({
+          id: first.id,
+          title: first.title,
+          startAt: first.startAt,
+          location: first.location,
+          createdBy: first.createdBy,
+          participantsGoing: first.participants.filter((p) => p.going).length,
+        });
       })
       .catch(() => {});
   }, []);
@@ -319,22 +362,48 @@ export default function HomeScreen() {
               : "—"}
           </p>
         </div>
-        <a
-          href="https://kulturspinnerei.ch"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="cursor-pointer rounded-full border border-secondary/30 bg-secondary/5 px-4 py-3 text-center transition-colors hover:bg-secondary/10"
-        >
-          <p className="font-display text-[9px] font-bold uppercase tracking-widest text-secondary">
-            SPINNEREI
-          </p>
-          <p className="mt-0.5 truncate text-xs font-medium text-white">
-            Soirée Tropicale
-          </p>
-          <p className="font-mono text-[10px] text-gray-500">
-            Fr 25. Apr · 21:00
-          </p>
-        </a>
+        {nextActivity ? (
+          <div
+            className="cursor-pointer rounded-full border border-blue-400/30 bg-blue-400/5 px-4 py-3 text-center transition-colors hover:bg-blue-400/10"
+            onClick={() => router.push("/aktivitaeten")}
+          >
+            <p className="font-display text-[9px] font-bold uppercase tracking-widest text-blue-300">
+              AKTIVITÄT
+            </p>
+            <p className="mt-0.5 truncate text-xs font-medium text-white">
+              {nextActivity.title}
+            </p>
+            <p className="font-mono text-[10px] text-gray-500">
+              {new Date(nextActivity.startAt).toLocaleDateString("de-CH", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              })}{" "}
+              ·{" "}
+              {new Date(nextActivity.startAt).toLocaleTimeString("de-CH", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+          </div>
+        ) : (
+          <a
+            href="https://kulturspinnerei.ch"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer rounded-full border border-secondary/30 bg-secondary/5 px-4 py-3 text-center transition-colors hover:bg-secondary/10"
+          >
+            <p className="font-display text-[9px] font-bold uppercase tracking-widest text-secondary">
+              SPINNEREI
+            </p>
+            <p className="mt-0.5 truncate text-xs font-medium text-white">
+              Soirée Tropicale
+            </p>
+            <p className="font-mono text-[10px] text-gray-500">
+              Fr 25. Apr · 21:00
+            </p>
+          </a>
+        )}
       </div>
 
       {/* Glasige Neon-Kacheln — ohne Gästi */}

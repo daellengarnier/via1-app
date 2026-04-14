@@ -17,6 +17,14 @@ interface MehrItem {
 
 const MEHR_ITEMS: MehrItem[] = [
   {
+    id: "bewohnende",
+    href: "/bewohnende",
+    icon: "/pic-bewohnende.webp",
+    glowClass: "glow-green",
+    title: "WGs & Bewohnende",
+    subtitle: "Zimmer, Schluessel, Historie",
+  },
+  {
     id: "gaesti",
     href: "/gaesti",
     icon: "/icon-gaesti.webp",
@@ -39,13 +47,6 @@ const MEHR_ITEMS: MehrItem[] = [
     glowClass: "glow-pink",
     title: "Flohmi",
     subtitle: "Dinge zum Weitergeben",
-  },
-  {
-    id: "modell",
-    href: "/modell",
-    icon: "🏠",
-    title: "3D Modell Via1",
-    subtitle: "Das Haus interaktiv",
   },
 ];
 
@@ -309,22 +310,6 @@ export function HamburgerMenu() {
             </div>
           </Link>
 
-          {/* Bewohnende */}
-          <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
-            BEWOHNENDE
-          </h2>
-          <Link
-            href="/bewohnende"
-            onClick={() => setOpen(false)}
-            className="mb-6 flex items-center justify-between rounded-lg border border-accent/30 bg-accent/5 p-3 transition-colors hover:border-accent"
-          >
-            <div>
-              <p className="font-medium text-accent">Alle Bewohnenden</p>
-              <p className="text-xs text-gray-500">WGs, Zimmer, Schlüssel, Historie</p>
-            </div>
-            <span className="text-gray-500">›</span>
-          </Link>
-
           {/* Meine Abos — nur wenn Kaffee-Abo aktiv */}
           {hasKaffeeAbo && (
             <>
@@ -363,7 +348,7 @@ export function HamburgerMenu() {
           {/* Mehr */}
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
-              MEHR
+              WEITERES
             </h2>
             <span className="font-mono text-[9px] text-gray-600">
               📌 zum Anheften
@@ -397,14 +382,9 @@ export function HamburgerMenu() {
                     ) : (
                       <span className="text-lg">{item.icon}</span>
                     )}
-                    <div className="flex min-w-0 flex-1 items-baseline gap-2">
-                      <p className="shrink-0 font-medium text-white">
-                        {item.title}
-                      </p>
-                      <p className="truncate text-xs text-gray-500">
-                        {item.subtitle}
-                      </p>
-                    </div>
+                    <p className="min-w-0 flex-1 truncate font-medium text-white">
+                      {item.title}
+                    </p>
                   </Link>
                   <button
                     type="button"

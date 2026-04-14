@@ -49,6 +49,7 @@ export async function GET() {
     allergies: user.allergies ?? "",
     profileImage: user.avatar,
     hasKaffeeAbo: user.hasKaffeeAbo,
+    favoriteAnimal: user.favoriteAnimal ?? "",
     notifications: {
       sauna: user.notifySauna,
       aufgaben: user.notifyAufgaben,
@@ -91,6 +92,10 @@ export async function PATCH(req: Request) {
   }
   if (typeof body.hasKaffeeAbo === "boolean") {
     data.hasKaffeeAbo = body.hasKaffeeAbo;
+  }
+  if (typeof body.favoriteAnimal === "string") {
+    const v = body.favoriteAnimal.trim();
+    data.favoriteAnimal = v === "" ? null : v;
   }
   if (typeof body.birthday === "string") {
     data.birthday = body.birthday ? new Date(body.birthday) : null;
@@ -189,6 +194,7 @@ export async function PATCH(req: Request) {
     allergies: user.allergies ?? "",
     profileImage: user.avatar,
     hasKaffeeAbo: user.hasKaffeeAbo,
+    favoriteAnimal: user.favoriteAnimal ?? "",
     notifications: {
       sauna: user.notifySauna,
       aufgaben: user.notifyAufgaben,

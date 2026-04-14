@@ -562,16 +562,28 @@ export default function AufgabenPage() {
                   : "border-gray-800 bg-white/5 hover:border-gray-700"
               }`}
             >
-              {/* Edit button */}
+              {/* Edit + Delete */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   openEdit(a.id);
                 }}
-                className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded text-[10px] text-gray-600 hover:bg-white/10 hover:text-yellow-300"
+                className="absolute right-6 top-1.5 flex h-5 w-5 items-center justify-center rounded text-[10px] text-gray-600 hover:bg-white/10 hover:text-yellow-300"
                 aria-label="Aufgabe bearbeiten"
               >
                 ✎
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm("Diese Aufgabe wirklich löschen?")) {
+                    deleteAufgabe(a.id);
+                  }
+                }}
+                className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded text-[14px] leading-none text-gray-600 hover:bg-white/10 hover:text-red-400"
+                aria-label="Aufgabe löschen"
+              >
+                ×
               </button>
               <div className="flex items-start gap-2 pr-4">
                 <button

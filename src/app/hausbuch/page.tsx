@@ -201,6 +201,9 @@ export default function HausbuchPage() {
       <h1 className="mb-1 text-center font-cinzel text-3xl text-violet-300">
         Hausbuch
       </h1>
+      <p className="mb-4 text-center text-sm text-violet-300/70">
+        Alles Wissenswerte rund ums Haus
+      </p>
       <div className="mb-4 flex justify-center">
         <button
           onClick={() => setShowCreate(!showCreate)}
@@ -209,9 +212,6 @@ export default function HausbuchPage() {
           + Neuer Eintrag
         </button>
       </div>
-      <p className="mb-4 text-sm text-gray-500">
-        Alles Wissenswerte rund ums Haus
-      </p>
 
       {/* Suche */}
       <input

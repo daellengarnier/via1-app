@@ -73,7 +73,7 @@ export function RoomDetail({
                 { key: "info" as const, label: "Info" },
                 { key: "historie" as const, label: "Historie" },
                 { key: "arbeiten" as const, label: "Arbeiten" },
-                { key: "schaeden" as const, label: "Schaeden" },
+                { key: "schaeden" as const, label: "Schäden" },
               ] as const
             ).map((t) => (
               <button
@@ -110,7 +110,7 @@ export function RoomDetail({
             />
           )}
           {tab === "schaeden" && (
-            <SchaedenTab
+            <SchädenTab
               room={room}
               onAdd={() => setShowAddDamage(true)}
             />
@@ -223,14 +223,14 @@ function InfoTab({
         </section>
       )}
 
-      {/* Schluessel */}
+      {/* Schlüssel */}
       <section>
         <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-accent">
-          Schluessel
+          Schlüssel
         </h3>
         <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 p-3">
           <span className="text-sm text-gray-400">
-            Anzahl Schluessel vorhanden
+            Anzahl Schlüssel vorhanden
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -264,7 +264,7 @@ function InfoTab({
           <p className="font-mono text-xl font-bold text-secondary">
             {room.damages.filter((d) => !d.resolvedAt).length}
           </p>
-          <p className="text-xs text-gray-500">Offene Schaeden</p>
+          <p className="text-xs text-gray-500">Offene Schäden</p>
         </div>
         <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3 text-center">
           <p className="font-mono text-xl font-bold text-white">
@@ -341,7 +341,7 @@ function HistorieTab({ room }: { room: Room }) {
               )}
               {entry.handover.damageCount > 0 && (
                 <p className="mt-1 text-xs text-secondary">
-                  {entry.handover.damageCount} Schaeden protokolliert
+                  {entry.handover.damageCount} Schäden protokolliert
                 </p>
               )}
             </div>
@@ -419,9 +419,9 @@ function ArbeitenTab({
   );
 }
 
-// ============== Schaeden Tab ==============
+// ============== Schäden Tab ==============
 
-function SchaedenTab({
+function SchädenTab({
   room,
   onAdd,
 }: {
@@ -439,7 +439,7 @@ function SchaedenTab({
 
       {room.damages.length === 0 ? (
         <p className="py-4 text-center text-sm text-gray-600">
-          Keine Schaeden gemeldet.
+          Keine Schäden gemeldet.
         </p>
       ) : (
         <div className="space-y-2">
@@ -780,7 +780,7 @@ function HandoverModal({
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-400">
-            Schaeden fotografiert (Mock: {damageCount})
+            Schäden fotografiert (Mock: {damageCount})
           </label>
           <button
             type="button"

@@ -271,7 +271,7 @@ export default function AktivitaetenPage() {
           onClick={() => setShowCreate(!showCreate)}
           className="rounded-full border border-blue-400/50 bg-blue-400/15 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-blue-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors hover:bg-blue-400/25"
         >
-          + Spontane Aktivität
+          + Neue Aktivität
         </button>
       </div>
 
@@ -542,7 +542,7 @@ export default function AktivitaetenPage() {
           Keine Aktivitäten geplant.
           <br />
           <span className="text-xs text-gray-600">
-            Erstelle eine spontane Aktivität oben 👆
+            Erstelle eine neue Aktivität oben 👆
           </span>
         </p>
       )}

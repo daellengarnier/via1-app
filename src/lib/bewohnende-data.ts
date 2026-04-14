@@ -45,7 +45,7 @@ export interface Handover {
 export interface Room {
   id: string;
   keyNumber: string; // z.B. "N01"
-  label: string; // z.B. "Zimmer 1", "Bad", "Wohnkueche"
+  label: string; // z.B. "Zimmer 1", "Bad", "Wohnküche"
   type: RoomType;
   keyCount: number;
   currentResident?: Resident;
@@ -83,13 +83,8 @@ function makeRooms(
       label: `Zimmer ${i}`,
       type: "zimmer",
       keyCount: 2,
-      currentResident: i === 1
-        ? {
-            id: `r-${prefix}${i}`,
-            name: "Muster Person",
-            movedIn: "2024-08-01",
-          }
-        : undefined,
+      // currentResident wird zur Laufzeit aus /api/users gesetzt
+      currentResident: undefined,
       residentHistory: [],
       handovers: [],
       works: [],
@@ -137,7 +132,7 @@ function makeRooms(
   rooms.push({
     id: `${prefix}-wk`,
     keyNumber: `${prefix}-WK`,
-    label: "Wohnkueche",
+    label: "Wohnküche",
     type: "wohnkueche",
     keyCount: 0,
     residentHistory: [],
@@ -219,7 +214,7 @@ export const roomTypeLabels: Record<RoomType, string> = {
   bad: "Bad",
   wc: "WC",
   bad_wc: "Bad & WC",
-  wohnkueche: "Wohnkueche",
+  wohnkueche: "Wohnküche",
   balkon: "Balkon / Terrasse",
 };
 

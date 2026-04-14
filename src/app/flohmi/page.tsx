@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { compressImage } from "@/lib/image-compress";
 
@@ -27,9 +28,13 @@ interface Inserat {
 }
 
 export default function FlohmiPage() {
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id ?? "";
+  const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const [inserate, setInserate] = useState<Inserat[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newImages, setNewImages] = useState<string[]>([]);
@@ -68,25 +73,66 @@ export default function FlohmiPage() {
     e.preventDefault();
     if (!newTitle.trim()) return;
     try {
-      const res = await fetch("/api/flohmi", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: newTitle,
-          description: newDesc,
-          images: newImages,
-        }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const created = (await res.json()) as Inserat;
-      setInserate((prev) => [created, ...prev]);
+      if (editingId) {
+        const res = await fetch(`/api/flohmi/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: newTitle,
+            description: newDesc,
+            images: newImages,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const updated = (await res.json()) as Inserat;
+        setInserate((prev) =>
+          prev.map((i) => (i.id === editingId ? updated : i))
+        );
+      } else {
+        const res = await fetch("/api/flohmi", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: newTitle,
+            description: newDesc,
+            images: newImages,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const created = (await res.json()) as Inserat;
+        setInserate((prev) => [created, ...prev]);
+      }
       setNewTitle("");
       setNewDesc("");
       setNewImages([]);
+      setEditingId(null);
       setShowCreate(false);
     } catch (err) {
-      console.error("Inserat erstellen", err);
-      alert("Konnte Inserat nicht erstellen (ev. Bild zu gross?)");
+      console.error("Inserat speichern", err);
+      alert("Konnte Inserat nicht speichern.");
+    }
+  }
+
+  function openEditInserat(ins: Inserat) {
+    setEditingId(ins.id);
+    setNewTitle(ins.title);
+    setNewDesc(ins.description);
+    setNewImages([...ins.images]);
+    setShowCreate(true);
+    setSelectedId(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Dieses Inserat wirklich löschen?")) return;
+    try {
+      const res = await fetch(`/api/flohmi/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setInserate((prev) => prev.filter((i) => i.id !== id));
+      setSelectedId(null);
+    } catch (err) {
+      console.error("Inserat löschen", err);
+      alert("Konnte Inserat nicht löschen.");
     }
   }
 
@@ -189,12 +235,29 @@ export default function FlohmiPage() {
       <h1 className="mb-1 text-center font-cinzel text-3xl text-pink-300">
         Flohmi
       </h1>
+      <p className="mb-4 text-center text-sm text-pink-300/70">
+        Dinge zum Weitergeben
+      </p>
       <div className="mb-4 flex justify-center">
         <button
-          onClick={() => setShowCreate(!showCreate)}
+          onClick={() => {
+            if (showCreate) {
+              setShowCreate(false);
+              setEditingId(null);
+              setNewTitle("");
+              setNewDesc("");
+              setNewImages([]);
+            } else {
+              setEditingId(null);
+              setNewTitle("");
+              setNewDesc("");
+              setNewImages([]);
+              setShowCreate(true);
+            }
+          }}
           className="rounded-full bg-pink-500 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
         >
-          + Neues Inserat
+          {editingId ? "Inserat bearbeiten" : "+ Neues Inserat"}
         </button>
       </div>
 
@@ -276,12 +339,15 @@ export default function FlohmiPage() {
               type="submit"
               className="rounded bg-pink-500 px-4 py-2 font-mono text-xs font-bold text-dark"
             >
-              Inserieren
+              {editingId ? "Speichern" : "Inserieren"}
             </button>
             <button
               type="button"
               onClick={() => {
                 setShowCreate(false);
+                setEditingId(null);
+                setNewTitle("");
+                setNewDesc("");
                 setNewImages([]);
               }}
               className="rounded px-4 py-2 text-xs text-gray-400 hover:text-white"
@@ -486,6 +552,24 @@ export default function FlohmiPage() {
                 >
                   Nehme ich!
                 </button>
+              )}
+
+              {/* Edit + Delete fuer eigene Inserate */}
+              {(selected.createdById === currentUserId || isAdmin) && (
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => openEditInserat(selected)}
+                    className="flex-1 rounded border border-pink-500/50 py-1.5 text-[10px] font-bold uppercase tracking-wider text-pink-200 hover:bg-pink-500/10"
+                  >
+                    ✎ Bearbeiten
+                  </button>
+                  <button
+                    onClick={() => handleDelete(selected.id)}
+                    className="flex-1 rounded border border-red-500/40 py-1.5 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10"
+                  >
+                    Löschen
+                  </button>
+                </div>
               )}
 
               {/* Kommentare */}

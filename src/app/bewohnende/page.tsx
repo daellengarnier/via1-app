@@ -1,13 +1,47 @@
 "use client";
 
-import { useState } from "react";
-import { wgs, roomTypeIcons, roomTypeLabels } from "@/lib/bewohnende-data";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
+import {
+  wgs,
+  roomTypeIcons,
+  roomTypeLabels,
+} from "@/lib/bewohnende-data";
 import type { Room, Wg } from "@/lib/bewohnende-data";
 import { RoomDetail } from "@/components/RoomDetail";
 
+interface ApiUser {
+  id: string;
+  name: string;
+  fullName: string;
+  favoriteAnimal: string;
+  roomKey: string | null;
+  roomNumber: number | null;
+  wgName: string | null;
+}
+
 export default function BewohnendePage() {
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id ?? "";
+  const [apiUsers, setApiUsers] = useState<ApiUser[]>([]);
   const [selectedWg, setSelectedWg] = useState<Wg>(wgs[0]!);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+
+  useEffect(() => {
+    fetch("/api/users")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((u: ApiUser[]) => setApiUsers(u))
+      .catch(() => {});
+  }, []);
+
+  // Springe in die WG des eingeloggten Users, sobald wir die Users haben
+  useEffect(() => {
+    const me = apiUsers.find((u) => u.id === currentUserId);
+    if (!me || !me.wgName) return;
+    const wg = wgs.find((w) => w.name === me.wgName);
+    if (wg) setSelectedWg(wg);
+  }, [apiUsers, currentUserId]);
 
   // Staffelung wie im Schnitt: Nordwind unten, Bonzen oben
   const wgOrder: Wg[] = [
@@ -22,32 +56,54 @@ export default function BewohnendePage() {
   const zimmer = selectedWg.rooms.filter((r) => r.type === "zimmer");
   const commonRooms = selectedWg.rooms.filter((r) => r.type !== "zimmer");
 
-  const occupiedCount = zimmer.filter((r) => r.currentResident).length;
-  const openDamages = selectedWg.rooms.reduce(
-    (acc, r) => acc + r.damages.filter((d) => !d.resolvedAt).length,
-    0
-  );
+  // Mapping Zimmer-keyNumber -> API-User
+  const usersByRoom = new Map<string, ApiUser>();
+  for (const u of apiUsers) {
+    if (u.roomKey) usersByRoom.set(u.roomKey, u);
+  }
+
+  const occupiedCount = zimmer.filter((r) =>
+    usersByRoom.has(r.keyNumber)
+  ).length;
 
   return (
-    <div className="p-4 pb-24">
+    <div className="relative p-4 pb-24">
+      <AnimatedBackground
+        icon="/pic-bewohnende.webp"
+        glowClass="glow-green"
+        showIcon={false}
+      />
+      <div className="mb-2 flex justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/pic-bewohnende.webp"
+          alt=""
+          className="tab-btn-icon glow-green"
+          loading="eager"
+          fetchPriority="high"
+        />
+      </div>
       <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">
-        Bewohnende
+        WGs & Bewohnende
       </h1>
-      <p className="mb-5 text-sm text-gray-400">
-        Uebersicht Zimmer, Bewohnende und Arbeiten
+      <p className="mb-5 text-center text-sm text-accent/70">
+        Zimmer, Schlüssel, Historie
       </p>
 
-      {/* WG-Auswahl als gestaffelte Buttons (wie Schnitt). Die
-          Staffelung ist responsive via max-w statt fixer Margins. */}
+      {/* WG-Auswahl als gestaffelte Buttons (wie Schnitt). */}
       <div className="mb-6 space-y-1">
         {wgOrder.map((wg) => {
           const isActive = wg.slug === selectedWg.slug;
           const isNord = wg.side === "nord";
+          const count = wg.rooms
+            .filter((r) => r.type === "zimmer")
+            .filter((r) => usersByRoom.has(r.keyNumber)).length;
+          const total = wg.rooms.filter((r) => r.type === "zimmer").length;
           return (
             <button
               key={wg.slug}
               onClick={() => setSelectedWg(wg)}
-              className={`flex w-[88%] items-center justify-between rounded-lg border px-4 py-2.5 text-left font-mono text-sm transition-all ${
+              className={`flex w-[88%] items-center justify-between rounded-lg border px-3 py-2 text-left font-mono text-sm transition-all ${
                 isNord ? "mr-auto" : "ml-auto"
               } ${
                 isActive
@@ -58,68 +114,90 @@ export default function BewohnendePage() {
               }`}
             >
               <span className="font-bold">{wg.name}</span>
-              <span className="text-xs opacity-70">{wg.floor}</span>
+              <span className="text-[10px] opacity-70">
+                {wg.floor} · {count}/{total}
+              </span>
             </button>
           );
         })}
       </div>
 
       {/* WG Header */}
-      <div className="mb-4 rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-4">
+      <div className="mb-4 rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900/80 to-gray-900/40 p-3">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-lg font-bold text-white">
               {selectedWg.name}
             </h2>
             <p className="text-xs text-gray-500">{selectedWg.floor}</p>
           </div>
-          <div className="flex gap-4 text-right">
-            <div>
-              <p className="font-mono text-lg font-bold text-accent">
-                {occupiedCount}/{zimmer.length}
-              </p>
-              <p className="text-[10px] text-gray-500">belegt</p>
-            </div>
-            {openDamages > 0 && (
-              <div>
-                <p className="font-mono text-lg font-bold text-secondary">
-                  {openDamages}
-                </p>
-                <p className="text-[10px] text-gray-500">Schaeden</p>
-              </div>
-            )}
+          <div>
+            <p className="font-mono text-lg font-bold text-accent">
+              {occupiedCount}/{zimmer.length}
+            </p>
+            <p className="text-right text-[10px] text-gray-500">belegt</p>
           </div>
         </div>
       </div>
 
-      {/* Zimmer (Schlafzimmer) */}
+      {/* Schlafzimmer — kompakt als 2-Spalten-Liste */}
       <section className="mb-5">
         <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-accent">
           Schlafzimmer
         </h3>
-        <div className="grid grid-cols-2 gap-2">
-          {zimmer.map((room) => (
-            <RoomTile
-              key={room.id}
-              room={room}
-              onClick={() => setSelectedRoom(room)}
-            />
-          ))}
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          {zimmer.map((room) => {
+            const user = usersByRoom.get(room.keyNumber);
+            const isMine = user?.id === currentUserId;
+            return (
+              <button
+                key={room.id}
+                onClick={() => setSelectedRoom(room)}
+                className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-all ${
+                  isMine
+                    ? "border-accent bg-accent/10 shadow-[0_0_12px_rgba(184,240,104,0.2)]"
+                    : user
+                      ? "border-accent/30 bg-accent/5 hover:border-accent/60"
+                      : "border-gray-800 bg-gray-900/40 hover:border-gray-600"
+                }`}
+              >
+                <span className="text-base">{roomTypeIcons[room.type]}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono text-[10px] text-gray-500">
+                    {room.label}
+                  </p>
+                  <p
+                    className={`truncate text-xs ${
+                      user ? "font-medium text-white" : "text-gray-600"
+                    }`}
+                  >
+                    {user?.name ?? "Frei"}
+                    {isMine && (
+                      <span className="ml-1 text-[9px] text-accent">(du)</span>
+                    )}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      {/* Gemeinschaftsraeume */}
+      {/* Gemeinschaftsraeume — kompakt als Pills */}
       <section>
         <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-accent">
-          Gemeinschaftsraeume
+          Gemeinschaftsräume
         </h3>
-        <div className="space-y-2">
+        <div className="flex flex-wrap gap-1.5">
           {commonRooms.map((room) => (
-            <CommonRoomTile
+            <button
               key={room.id}
-              room={room}
               onClick={() => setSelectedRoom(room)}
-            />
+              className="flex items-center gap-1.5 rounded-full border border-gray-800 bg-gray-900/40 px-3 py-1 text-left text-[11px] transition-all hover:border-gray-600"
+            >
+              <span className="text-sm">{roomTypeIcons[room.type]}</span>
+              <span className="text-gray-300">{roomTypeLabels[room.type]}</span>
+            </button>
           ))}
         </div>
       </section>
@@ -127,76 +205,24 @@ export default function BewohnendePage() {
       {/* Room Detail Modal */}
       {selectedRoom && (
         <RoomDetail
-          room={selectedRoom}
+          room={(() => {
+            const user = usersByRoom.get(selectedRoom.keyNumber);
+            if (!user) {
+              return { ...selectedRoom, currentResident: undefined };
+            }
+            return {
+              ...selectedRoom,
+              currentResident: {
+                id: user.id,
+                name: user.name,
+                movedIn: "",
+              },
+            };
+          })()}
           wgName={selectedWg.name}
           onClose={() => setSelectedRoom(null)}
         />
       )}
     </div>
-  );
-}
-
-function RoomTile({ room, onClick }: { room: Room; onClick: () => void }) {
-  const hasResident = !!room.currentResident;
-  const hasDamage = room.damages.some((d) => !d.resolvedAt);
-
-  return (
-    <button
-      onClick={onClick}
-      className={`relative rounded-lg border p-3 text-left transition-all ${
-        hasResident
-          ? "border-accent/40 bg-accent/5 hover:border-accent"
-          : "border-gray-800 bg-gray-900/40 hover:border-gray-600"
-      }`}
-    >
-      <div className="flex items-start justify-between">
-        <span className="text-2xl">{roomTypeIcons[room.type]}</span>
-        {hasDamage && (
-          <span className="h-2 w-2 rounded-full bg-secondary" />
-        )}
-      </div>
-      <p className="mt-2 font-mono text-xs text-gray-500">{room.keyNumber}</p>
-      <p className="font-medium text-white">{room.label}</p>
-      {hasResident ? (
-        <p className="mt-1 truncate text-xs text-accent">
-          {room.currentResident!.name}
-        </p>
-      ) : (
-        <p className="mt-1 text-xs text-gray-600">Frei</p>
-      )}
-    </button>
-  );
-}
-
-function CommonRoomTile({
-  room,
-  onClick,
-}: {
-  room: Room;
-  onClick: () => void;
-}) {
-  const hasDamage = room.damages.some((d) => !d.resolvedAt);
-
-  return (
-    <button
-      onClick={onClick}
-      className="flex w-full items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 p-3 text-left transition-all hover:border-gray-600"
-    >
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">{roomTypeIcons[room.type]}</span>
-        <div>
-          <p className="font-medium text-white">{room.label}</p>
-          <p className="text-xs text-gray-500">{roomTypeLabels[room.type]}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        {hasDamage && (
-          <span className="rounded-full bg-secondary/20 px-2 py-0.5 font-mono text-[10px] text-secondary">
-            Schaden
-          </span>
-        )}
-        <span className="text-gray-600">›</span>
-      </div>
-    </button>
   );
 }

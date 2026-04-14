@@ -6,6 +6,8 @@ import {
   combineDateTime,
   serializeTerminList,
   toTerminType,
+  computeDietCount,
+  collectAllergies,
 } from "@/lib/termine-serialize";
 import { notify } from "@/lib/notify";
 
@@ -21,10 +23,7 @@ export async function GET() {
     include: {
       _count: { select: { traktanden: true, comments: true } },
       createdBy: { select: { name: true } },
-      attendances: {
-        where: { userId: session.user.id },
-        select: { status: true, userId: true },
-      },
+      attendances: true,
       mealSignups: {
         include: { guests: true },
       },
@@ -46,11 +45,23 @@ export async function GET() {
           : "not-going"
         : null;
       const myMealGuestsCount = mySignup ? mySignup.guests.length : 0;
-      return serializeTerminList(t, session.user.id, t.attendances, {
+      const mealDietCount = computeDietCount(t.mealSignups);
+      const mealAllergies = collectAllergies(t.mealSignups);
+      const attendanceCount = t.attendances.filter(
+        (a) => a.status === "GOING"
+      ).length;
+      // Fuer myAttendance brauchen wir nur die eigenen
+      const myAttendances = t.attendances.filter(
+        (a) => a.userId === session.user.id
+      );
+      return serializeTerminList(t, session.user.id, myAttendances, {
         mealSignupCount,
         myMealSignup,
         myMealGuestsCount,
         commentCount: t._count.comments,
+        mealDietCount,
+        mealAllergies,
+        attendanceCount,
       });
     })
   );
@@ -169,6 +180,9 @@ export async function POST(req: Request) {
       myMealSignup: null,
       myMealGuestsCount: 0,
       commentCount: 0,
+      mealDietCount: { fleisch: 0, vegi: 0, vegan: 0 },
+      mealAllergies: [],
+      attendanceCount: 0,
     })
   );
 }

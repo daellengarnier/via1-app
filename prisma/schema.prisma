@@ -75,6 +75,7 @@ model User {
   notifyActivity        Boolean @default(true)
   notifyActivityComment Boolean @default(true)
   hasKaffeeAbo          Boolean @default(false)
+  favoriteAnimal        String?
   room        Room?     @relation(fields: [roomId], references: [id])
   roomId      String?
   createdAt   DateTime  @default(now())

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { TabHeader } from "@/components/TabHeader";
 
 type TerminType = "sitzung" | "essen" | "sonstige";
@@ -21,6 +22,10 @@ interface Termin {
   dinnerMenu: string | null;
   withAttendance: boolean;
   createdBy: string;
+  createdById: string;
+  mealDietCount: { fleisch: number; vegi: number; vegan: number };
+  mealAllergies: string[];
+  attendanceCount: number;
   myAttendance: "going" | "not-going" | null;
   myMealSignup: "going" | "not-going" | null;
   myMealGuestsCount: number;
@@ -46,8 +51,8 @@ const typeLabels: Record<TerminType, string> = {
 };
 
 const typeBg: Record<TerminType, string> = {
-  sitzung: "bg-orange-400",
-  essen: "bg-secondary",
+  sitzung: "bg-accent",
+  essen: "bg-amber-400",
   sonstige: "bg-gray-600",
 };
 
@@ -108,11 +113,15 @@ function exportIcs(termin: Termin) {
 }
 
 export default function TerminePage() {
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id ?? "";
+  const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const [filter, setFilter] = useState<TerminType | "alle">("alle");
   const [termine, setTermine] = useState<Termin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const loadTermine = useCallback(async () => {
     try {
@@ -185,38 +194,89 @@ export default function TerminePage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const res = await fetch("/api/termine", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: newTitle,
-          date: newDate,
-          time: newTime,
-          location: newLocation,
-          type: newType,
-          organizer: newType === "sitzung" ? newOrganizer : null,
-          withDinner: newWithDinner,
-          dinnerTime: newWithDinner ? newDinnerTime : null,
-          dinnerLocation: newWithDinner ? newDinnerLocation : null,
-          dinnerOrganizer: null,
-          dinnerMenu:
-            newWithDinner || newType === "essen" ? newDinnerMenu : null,
-          withAttendance:
-            newType === "sitzung"
-              ? true
-              : newType === "sonstige"
-                ? newWithAttendance
-                : false,
-        }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const created = (await res.json()) as Termin;
-      setTermine((prev) => [created, ...prev]);
+      const payload = {
+        title: newTitle,
+        date: newDate,
+        time: newTime,
+        location: newLocation,
+        type: newType,
+        organizer: newType === "sitzung" ? newOrganizer : null,
+        withDinner: newWithDinner,
+        dinnerTime: newWithDinner ? newDinnerTime : null,
+        dinnerLocation: newWithDinner ? newDinnerLocation : null,
+        dinnerOrganizer: null,
+        dinnerMenu:
+          newWithDinner || newType === "essen" ? newDinnerMenu : null,
+        withAttendance:
+          newType === "sitzung"
+            ? true
+            : newType === "sonstige"
+              ? newWithAttendance
+              : false,
+      };
+      if (editingId) {
+        const res = await fetch(`/api/termine/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        // Reload to get correct list entry (detail endpoint returns
+        // a detail DTO, not list-compatible)
+        await loadTermine();
+      } else {
+        const res = await fetch("/api/termine", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const created = (await res.json()) as Termin;
+        setTermine((prev) => [created, ...prev]);
+      }
       setShowCreate(false);
+      setEditingId(null);
       resetForm();
     } catch (err) {
-      console.error("Termin erstellen", err);
-      alert("Konnte Termin nicht erstellen.");
+      console.error("Termin speichern", err);
+      alert("Konnte Termin nicht speichern.");
+    }
+  }
+
+  function openEditTermin(t: Termin) {
+    setEditingId(t.id);
+    setNewType(t.type);
+    setNewTitle(t.title);
+    setNewDate(t.date);
+    setNewTime(t.time);
+    setNewLocation(t.location);
+    setNewLocationMode(
+      WG_LOCATIONS.includes(t.location) ? "wg" : "custom"
+    );
+    setNewOrganizer(t.organizer ?? "");
+    setNewWithDinner(t.withDinner);
+    setNewDinnerTime(t.dinnerTime ?? "18:30");
+    setNewDinnerLocation(t.dinnerLocation ?? "");
+    setNewDinnerLocationMode(
+      t.dinnerLocation && WG_LOCATIONS.includes(t.dinnerLocation)
+        ? "wg"
+        : "custom"
+    );
+    setNewDinnerMenu(t.dinnerMenu ?? "");
+    setNewWithAttendance(t.withAttendance);
+    setShowCreate(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function deleteTermin(id: string) {
+    if (!confirm("Diesen Termin wirklich löschen?")) return;
+    try {
+      const res = await fetch(`/api/termine/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setTermine((prev) => prev.filter((t) => t.id !== id));
+    } catch (err) {
+      console.error("Termin löschen", err);
+      alert("Konnte Termin nicht löschen.");
     }
   }
 
@@ -274,10 +334,20 @@ export default function TerminePage() {
           fetchPriority="high"
         />
         <button
-          onClick={() => setShowCreate(!showCreate)}
+          onClick={() => {
+            if (showCreate) {
+              setShowCreate(false);
+              setEditingId(null);
+              resetForm();
+            } else {
+              setEditingId(null);
+              resetForm();
+              setShowCreate(true);
+            }
+          }}
           className="rounded-full border border-orange-400/50 bg-orange-400/15 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-orange-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors hover:bg-orange-400/25"
         >
-          + Neuer Termin
+          {editingId ? "Termin bearbeiten" : "+ Neuer Termin"}
         </button>
       </div>
 
@@ -287,28 +357,30 @@ export default function TerminePage() {
           onSubmit={handleCreate}
           className="mb-4 rounded-lg border border-orange-500/30 bg-orange-500/5 p-4"
         >
-          {/* Kategorie */}
-          <div className="mb-3">
-            <label className="mb-1 block text-xs text-gray-400">
-              Kategorie
-            </label>
-            <div className="flex gap-2">
-              {(["sitzung", "essen", "sonstige"] as TerminType[]).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setNewType(t)}
-                  className={`flex-1 rounded-lg py-2 font-mono text-xs font-bold transition-colors ${
-                    newType === t
-                      ? `${typeBg[t]} text-dark`
-                      : "border border-gray-700 text-gray-400"
-                  }`}
-                >
-                  {typeLabels[t]}
-                </button>
-              ))}
+          {/* Kategorie — nur bei neuem Termin (Typ bleibt beim Bearbeiten) */}
+          {!editingId && (
+            <div className="mb-3">
+              <label className="mb-1 block text-xs text-gray-400">
+                Kategorie
+              </label>
+              <div className="flex gap-2">
+                {(["sitzung", "essen", "sonstige"] as TerminType[]).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setNewType(t)}
+                    className={`flex-1 rounded-lg py-2 font-mono text-xs font-bold transition-colors ${
+                      newType === t
+                        ? `${typeBg[t]} text-dark`
+                        : "border border-gray-700 text-gray-400"
+                    }`}
+                  >
+                    {typeLabels[t]}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Name */}
           <div className="mb-3">
@@ -591,12 +663,13 @@ export default function TerminePage() {
               type="submit"
               className="rounded bg-orange-400 px-4 py-2 font-mono text-xs font-bold text-dark"
             >
-              Erstellen
+              {editingId ? "Speichern" : "Erstellen"}
             </button>
             <button
               type="button"
               onClick={() => {
                 setShowCreate(false);
+                setEditingId(null);
                 resetForm();
               }}
               className="rounded px-4 py-2 text-xs text-gray-400 hover:text-white"
@@ -628,101 +701,154 @@ export default function TerminePage() {
       <div className="space-y-2">
         {sorted.map((t) => {
           const hasEssen = t.type === "essen" || t.withDinner;
+          const isOwner = t.createdById === currentUserId;
+          const canEdit = isOwner || isAdmin;
+          const showSitzungBadge = t.type === "sitzung";
+          const sitzungTime = t.time;
+          const essenTime = t.type === "essen" ? t.time : t.dinnerTime ?? "";
+          const essenLocation =
+            t.type === "essen" ? t.location : t.dinnerLocation ?? "";
+          const diet = t.mealDietCount;
           return (
             <div
               key={t.id}
               className="rounded-lg border border-gray-800 bg-white/5 p-3 transition-colors hover:border-gray-700"
             >
-              <Link href={`/termine/${t.id}`} className="block">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className="font-mono text-[10px] font-bold uppercase tracking-wider text-orange-300"
-                    >
-                      {formatDateUpper(t.date)}
-                    </p>
-                    <h3 className="text-sm font-medium text-white">
-                      {t.title}
-                      {t.type === "sitzung" && t.withDinner && (
-                        <> inkl. Nachtessen</>
-                      )}
-                      {t.organizer && (
-                        <span className="text-gray-500">
-                          {" "}(organisiert von {t.organizer})
-                        </span>
-                      )}
-                    </h3>
-                    {/* Zeiten */}
-                    {t.type === "sitzung" && t.withDinner && t.dinnerTime && (
-                      <p className="mt-0.5 text-xs text-gray-400">
-                        Essen: {t.dinnerTime}
-                        {t.dinnerLocation && ` (${t.dinnerLocation})`}
-                      </p>
-                    )}
-                    {t.type === "sitzung" && (
-                      <p className="text-xs text-gray-400">
-                        Sitzung: {t.time}
-                        {t.location && ` (${t.location})`}
-                      </p>
-                    )}
-                    {t.type === "essen" && (
-                      <p className="mt-0.5 text-xs text-gray-400">
-                        Essen: {t.time}
-                        {t.location && ` (${t.location})`}
-                      </p>
-                    )}
-                    {t.type === "sonstige" && (
-                      <p className="mt-0.5 text-xs text-gray-400">
-                        {t.time}
-                        {t.location && ` (${t.location})`}
-                      </p>
-                    )}
-                    {t.dinnerMenu && (
-                      <p className="mt-0.5 text-xs italic text-gray-500">
-                        🍽 {t.dinnerMenu}
-                      </p>
-                    )}
-                    {t.type === "sonstige" && t.createdBy && (
-                      <p className="mt-0.5 text-[10px] text-gray-600">
-                        erstellt von {t.createdBy}
-                      </p>
-                    )}
-                  </div>
+              {/* Kopf: Datum + Aktionen */}
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-orange-300">
+                  {formatDateUpper(t.date)}
+                </p>
+                <div className="flex shrink-0 items-center gap-1">
                   <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      exportIcs(t);
-                    }}
-                    className="shrink-0 rounded border border-gray-700 px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-gray-400 hover:border-orange-400 hover:text-orange-300"
+                    onClick={() => exportIcs(t)}
+                    className="rounded px-1.5 py-0.5 font-mono text-[9px] text-gray-500 hover:text-orange-300"
                     title="In Kalender exportieren"
                   >
-                    📅 Export
+                    📅
                   </button>
-                </div>
-                {(t.agendaCount > 0 || hasEssen || t.commentCount > 0) && (
-                  <div className="mt-1.5 flex items-center gap-3 text-[10px]">
-                    {t.agendaCount > 0 && (
-                      <span className="text-gray-600">
-                        {t.agendaCount} Traktanden
-                      </span>
-                    )}
-                    {hasEssen && (
-                      <span
-                        className={
-                          t.myMealSignup === "going"
-                            ? "font-bold text-secondary"
-                            : "text-secondary"
-                        }
+                  {canEdit && (
+                    <>
+                      <button
+                        onClick={() => openEditTermin(t)}
+                        className="rounded px-1.5 py-0.5 text-[12px] text-gray-500 hover:text-orange-300"
+                        title="Bearbeiten"
+                        aria-label="Termin bearbeiten"
                       >
-                        🍽 {t.mealSignupCount} angemeldet
-                        {t.myMealSignup === "going" && " · du bist dabei"}
+                        ✎
+                      </button>
+                      <button
+                        onClick={() => deleteTermin(t.id)}
+                        className="rounded px-1.5 py-0.5 text-[14px] leading-none text-gray-500 hover:text-red-400"
+                        title="Löschen"
+                        aria-label="Termin löschen"
+                      >
+                        ×
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <Link href={`/termine/${t.id}`} className="block">
+                {/* Titel */}
+                <h3 className="mt-0.5 text-sm font-medium text-white">
+                  {t.title}
+                  {t.type === "sitzung" && t.withDinner && (
+                    <> inkl. Nachtessen</>
+                  )}
+                </h3>
+                {/* Organisator (eigene Zeile) */}
+                {t.organizer && (
+                  <p className="mt-0.5 text-[10px] text-gray-500">
+                    organisiert von {t.organizer}
+                  </p>
+                )}
+                {t.type === "sonstige" && t.createdBy && !t.organizer && (
+                  <p className="mt-0.5 text-[10px] text-gray-500">
+                    erstellt von {t.createdBy}
+                  </p>
+                )}
+
+                {/* Badges mit Zeit + Anmeldezahlen */}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {showSitzungBadge && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 font-mono text-[10px] font-bold text-accent ring-1 ring-accent/40">
+                      SITZUNG · {sitzungTime}
+                      {t.withAttendance && (
+                        <span className="font-normal text-accent/80">
+                          · {t.attendanceCount} dabei
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  {hasEssen && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-2.5 py-0.5 font-mono text-[10px] font-bold text-amber-300 ring-1 ring-amber-400/40">
+                      ESSEN · {essenTime}
+                      <span className="font-normal text-amber-200/90">
+                        · {t.mealSignupCount}
                       </span>
+                      {t.mealSignupCount > 0 && (
+                        <span className="font-normal text-amber-200/70">
+                          ({diet.fleisch} 🍖 {diet.vegi} 🥗 {diet.vegan} 🌱)
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  {t.type === "sonstige" && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-600/20 px-2.5 py-0.5 font-mono text-[10px] font-bold text-gray-300 ring-1 ring-gray-600/40">
+                      {t.time}
+                      {t.withAttendance && (
+                        <span className="font-normal text-gray-400">
+                          · {t.attendanceCount} dabei
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </div>
+
+                {/* Ort(e) */}
+                {(t.location || essenLocation) && (
+                  <p className="mt-1 text-[10px] text-gray-500">
+                    {showSitzungBadge && t.location && (
+                      <>📍 Sitzung: {t.location}</>
+                    )}
+                    {showSitzungBadge &&
+                      t.location &&
+                      hasEssen &&
+                      essenLocation && <> · </>}
+                    {hasEssen && essenLocation && (
+                      <>
+                        {!showSitzungBadge && "📍 "}
+                        {showSitzungBadge ? "Essen: " : "Essen: "}
+                        {essenLocation}
+                      </>
+                    )}
+                    {!showSitzungBadge && !hasEssen && t.location && (
+                      <>📍 {t.location}</>
+                    )}
+                  </p>
+                )}
+                {t.dinnerMenu && (
+                  <p className="mt-0.5 text-[10px] italic text-gray-500">
+                    🍽 {t.dinnerMenu}
+                  </p>
+                )}
+
+                {/* Allergien */}
+                {hasEssen && t.mealAllergies.length > 0 && (
+                  <p className="mt-1 text-[10px] text-amber-200/70">
+                    ⚠ {t.mealAllergies.join(", ")}
+                  </p>
+                )}
+
+                {(t.agendaCount > 0 || t.commentCount > 0) && (
+                  <div className="mt-1 flex items-center gap-3 text-[10px] text-gray-600">
+                    {t.agendaCount > 0 && (
+                      <span>{t.agendaCount} Traktanden</span>
                     )}
                     {t.commentCount > 0 && (
-                      <span className="text-gray-600">
-                        💬 {t.commentCount}
-                      </span>
+                      <span>💬 {t.commentCount}</span>
                     )}
                   </div>
                 )}
@@ -772,7 +898,7 @@ export default function TerminePage() {
               {/* Essens-Anmeldung */}
               {hasEssen && signupOpen !== t.id && (
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="w-16 shrink-0 font-display text-[9px] font-bold uppercase tracking-wider text-secondary">
+                  <span className="w-16 shrink-0 font-display text-[9px] font-bold uppercase tracking-wider text-amber-300">
                     Essen
                   </span>
                   <button
@@ -807,8 +933,8 @@ export default function TerminePage() {
                     }}
                     className={`flex-1 rounded-full py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
                       t.myMealSignup === "going"
-                        ? "bg-secondary text-white"
-                        : "border border-secondary/40 text-secondary hover:bg-secondary/10"
+                        ? "bg-amber-400 text-dark"
+                        : "border border-amber-400/40 text-amber-300 hover:bg-amber-400/10"
                     }`}
                   >
                     {t.myMealSignup === "going" ? "✓ Dabei" : "Anmelden"}
@@ -913,9 +1039,9 @@ export default function TerminePage() {
 
               {/* Inline-Form für Essens-Anmeldung */}
               {hasEssen && signupOpen === t.id && (
-                <div className="mt-2 rounded-lg border border-secondary/30 bg-secondary/5 p-2.5">
+                <div className="mt-2 rounded-lg border border-amber-400/30 bg-amber-400/5 p-2.5">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="font-display text-[10px] font-bold uppercase tracking-wider text-secondary">
+                    <span className="font-display text-[10px] font-bold uppercase tracking-wider text-amber-300">
                       Anmeldung
                     </span>
                     <button
@@ -943,7 +1069,7 @@ export default function TerminePage() {
                         e.preventDefault();
                         setSignupGuests((g) => [...g, "Fleisch"]);
                       }}
-                      className="rounded-full bg-secondary/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-secondary hover:bg-secondary/30"
+                      className="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300 hover:bg-amber-400/30"
                     >
                       + Gast
                     </button>
@@ -952,7 +1078,7 @@ export default function TerminePage() {
                   {signupGuests.map((g, gi) => (
                     <div
                       key={gi}
-                      className="mb-1.5 rounded border border-secondary/20 bg-white/5 p-1.5"
+                      className="mb-1.5 rounded border border-amber-400/20 bg-white/5 p-1.5"
                     >
                       <div className="mb-1 flex items-center justify-between">
                         <span className="text-[10px] text-gray-500">
@@ -982,7 +1108,7 @@ export default function TerminePage() {
                             }}
                             className={`flex-1 rounded py-1 font-mono text-[10px] transition-colors ${
                               g === d
-                                ? "bg-secondary text-white"
+                                ? "bg-amber-400 text-dark"
                                 : "border border-gray-700 text-gray-400 hover:text-white"
                             }`}
                           >
@@ -1023,7 +1149,7 @@ export default function TerminePage() {
                         alert("Anmeldung fehlgeschlagen.");
                       }
                     }}
-                    className="mt-1 w-full rounded-full bg-secondary py-1.5 text-[10px] font-bold uppercase tracking-wider text-white"
+                    className="mt-1 w-full rounded-full bg-amber-400 py-1.5 text-[10px] font-bold uppercase tracking-wider text-dark"
                   >
                     Anmelden
                     {signupGuests.length > 0 && ` (+${signupGuests.length})`}

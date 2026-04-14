@@ -26,6 +26,7 @@ interface ProfileData {
   allergies: string;
   profileImage: string | null;
   hasKaffeeAbo: boolean;
+  favoriteAnimal: string;
   notifications: {
     sauna: boolean;
     aufgaben: boolean;
@@ -221,6 +222,7 @@ export default function ProfilPage() {
     allergies: "",
     profileImage: null,
     hasKaffeeAbo: false,
+    favoriteAnimal: "",
     notifications: {
       sauna: true,
       aufgaben: true,
@@ -503,6 +505,25 @@ export default function ProfilPage() {
         />
       </section>
 
+      {/* Lieblingstier */}
+      <section className="mb-6">
+        <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
+          Lieblingstier
+        </h2>
+        <input
+          type="text"
+          value={profile.favoriteAnimal}
+          onChange={(e) =>
+            setProfile({ ...profile, favoriteAnimal: e.target.value })
+          }
+          placeholder="z.B. Fuchs, Pinguin, Wolf..."
+          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+        />
+        <p className="mt-1 text-xs text-gray-600">
+          Daraus werden später die Profilbild-Grafiken erstellt.
+        </p>
+      </section>
+
       {/* Kaffee-Abo */}
       <section className="mb-6">
         <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
@@ -510,7 +531,7 @@ export default function ProfilPage() {
         </h2>
         <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 p-3">
           <div className="pr-3">
-            <p className="text-sm text-white">Ich habe das Kaffee-Abo</p>
+            <p className="text-sm text-white">Ich habe oder möchte das Kaffee-Abo</p>
             <p className="mt-0.5 text-xs text-gray-500">
               Dann erscheint die Kaffee-Kachel im Menu und auf dem Home.
             </p>

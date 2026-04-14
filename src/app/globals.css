@@ -112,6 +112,13 @@ body {
   100% { filter: drop-shadow(0 0 15px rgba(200, 210, 220, 0.5)) brightness(1.0); }
 }
 
+.via-tab-icon.glow-green { animation-name: icon-glow-green; }
+@keyframes icon-glow-green {
+  0% { filter: drop-shadow(0 0 10px rgba(80, 240, 140, 0.4)) brightness(0.95); }
+  50% { filter: drop-shadow(0 0 25px rgba(80, 240, 140, 0.7)) brightness(1.15); }
+  100% { filter: drop-shadow(0 0 15px rgba(80, 240, 140, 0.5)) brightness(1.0); }
+}
+
 /* Inline Tab-Button-Icon (neben Action-Buttons) — gleiche Pulse-Animation */
 .tab-btn-icon {
   width: 96px;
@@ -127,6 +134,7 @@ body {
 .tab-btn-icon.glow-violet { animation-name: icon-glow-violet; }
 .tab-btn-icon.glow-pink { animation-name: icon-glow-pink; }
 .tab-btn-icon.glow-silver { animation-name: icon-glow-silver; }
+.tab-btn-icon.glow-green { animation-name: icon-glow-green; }
 
 /* Kleines Icon fuer Hamburger-Menu-Items */
 .menu-item-icon {
@@ -140,6 +148,7 @@ body {
 .menu-item-icon.glow-pink { animation-name: icon-glow-pink; }
 .menu-item-icon.glow-silver { animation-name: icon-glow-silver; }
 .menu-item-icon.glow-blue { animation-name: icon-glow-blue; }
+.menu-item-icon.glow-green { animation-name: icon-glow-green; }
 
 /* Glow-Spots */
 .via-glow {

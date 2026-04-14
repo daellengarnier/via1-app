@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { TabHeader } from "@/components/TabHeader";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 interface Comment {
   id: string;
@@ -191,8 +191,12 @@ export default function GaestiPage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <TabHeader icon="/icon-gaesti.webp" color="blue" showIcon={false} />
-      <div className="mb-4 flex flex-col items-center gap-2">
+      <AnimatedBackground
+        icon="/icon-gaesti.webp"
+        glowClass="glow-blue"
+        showIcon={false}
+      />
+      <div className="mb-2 flex justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/icon-gaesti.webp"
@@ -201,9 +205,17 @@ export default function GaestiPage() {
           loading="eager"
           fetchPriority="high"
         />
+      </div>
+      <h1 className="mb-1 text-center font-cinzel text-3xl text-blue-300">
+        Gästewohnwagen
+      </h1>
+      <p className="mb-4 text-center text-sm text-blue-300/70">
+        Buchungen & Belegung
+      </p>
+      <div className="mb-4 flex justify-center">
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="rounded-full border border-blue-400/50 bg-blue-400/15 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-blue-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors hover:bg-blue-400/25"
+          className="rounded-full bg-blue-500 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
         >
           + Neue Buchung
         </button>
