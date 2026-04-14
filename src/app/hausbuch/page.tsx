@@ -32,6 +32,7 @@ export default function HausbuchPage() {
   const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Alle");
+  const [onlyMine, setOnlyMine] = useState(false);
   const [articles, setArticles] = useState<Artikel[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -81,7 +82,9 @@ export default function HausbuchPage() {
       a.content.toLowerCase().includes(search.toLowerCase());
     const matchesCategory =
       selectedCategory === "Alle" || a.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesMine =
+      !onlyMine || (currentUserId && a.createdById === currentUserId);
+    return matchesSearch && matchesCategory && matchesMine;
   });
 
   async function handleCreate(e: React.FormEvent) {
@@ -220,7 +223,7 @@ export default function HausbuchPage() {
       />
 
       {/* Kategorien */}
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+      <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
         {["Alle", ...categories].map((cat) => (
           <button
             key={cat}
@@ -234,6 +237,20 @@ export default function HausbuchPage() {
             {cat}
           </button>
         ))}
+      </div>
+
+      {/* Nur eigene Einträge */}
+      <div className="mb-4 flex justify-end">
+        <button
+          onClick={() => setOnlyMine((v) => !v)}
+          className={`rounded-full px-3 py-1 font-mono text-[11px] transition-colors ${
+            onlyMine
+              ? "bg-violet-500 text-dark"
+              : "border border-gray-700 text-gray-400 hover:text-white"
+          }`}
+        >
+          {onlyMine ? "✓ Meine Einträge" : "Nur meine Einträge"}
+        </button>
       </div>
 
       {/* Erstellen */}

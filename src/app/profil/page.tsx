@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { compressImage } from "@/lib/image-compress";
 
 type Diet = "fleisch" | "vegi" | "vegan";
 
@@ -24,6 +25,7 @@ interface ProfileData {
   diet: Diet;
   allergies: string;
   profileImage: string | null;
+  hasKaffeeAbo: boolean;
   notifications: {
     sauna: boolean;
     aufgaben: boolean;
@@ -218,6 +220,7 @@ export default function ProfilPage() {
     diet: "fleisch",
     allergies: "",
     profileImage: null,
+    hasKaffeeAbo: false,
     notifications: {
       sauna: true,
       aufgaben: true,
@@ -279,18 +282,17 @@ export default function ProfilPage() {
     }
   }
 
-  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 600_000) {
-      alert("Bild zu gross (max ~600 KB). Bitte komprimieren.");
-      return;
+    try {
+      // Profilbild ist klein -> 512px reicht voellig
+      const dataUrl = await compressImage(file, { maxSize: 512, quality: 0.85 });
+      setProfile((prev) => ({ ...prev, profileImage: dataUrl }));
+    } catch (err) {
+      console.error("Bild komprimieren", err);
+      alert("Bild konnte nicht verarbeitet werden.");
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setProfile({ ...profile, profileImage: ev.target?.result as string });
-    };
-    reader.readAsDataURL(file);
   }
 
   return (
@@ -360,6 +362,25 @@ export default function ProfilPage() {
           className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
           required
         />
+      </section>
+
+      {/* E-Mail */}
+      <section className="mb-6">
+        <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
+          E-Mail
+        </h2>
+        <input
+          type="email"
+          value={profile.email}
+          onChange={(e) =>
+            setProfile({ ...profile, email: e.target.value })
+          }
+          placeholder="name@example.com"
+          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+        />
+        <p className="mt-1 text-xs text-gray-600">
+          Wird auch fürs Login verwendet
+        </p>
       </section>
 
       {/* Anzeigename */}
@@ -480,6 +501,35 @@ export default function ProfilPage() {
           rows={2}
           className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
         />
+      </section>
+
+      {/* Kaffee-Abo */}
+      <section className="mb-6">
+        <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
+          Kaffee-Abo
+        </h2>
+        <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+          <div className="pr-3">
+            <p className="text-sm text-white">Ich habe das Kaffee-Abo</p>
+            <p className="mt-0.5 text-xs text-gray-500">
+              Dann erscheint die Kaffee-Kachel im Menu und auf dem Home.
+            </p>
+          </div>
+          <button
+            onClick={() =>
+              setProfile({ ...profile, hasKaffeeAbo: !profile.hasKaffeeAbo })
+            }
+            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+              profile.hasKaffeeAbo ? "bg-accent" : "bg-gray-700"
+            }`}
+          >
+            <span
+              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                profile.hasKaffeeAbo ? "translate-x-5" : ""
+              }`}
+            />
+          </button>
+        </div>
       </section>
 
       {/* Benachrichtigungen */}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { compressImage } from "@/lib/image-compress";
 
 interface Comment {
   id: string;
@@ -116,31 +117,26 @@ export default function FlohmiPage() {
     }
   }
 
-  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
+    // Input direkt zuruecksetzen, damit dasselbe File erneut ausgewaehlt werden kann
+    e.target.value = "";
     if (files.length === 0) return;
     if (newImages.length + files.length > 8) {
       alert("Maximal 8 Bilder pro Inserat.");
       return;
     }
-    const readers = files.map((file) => {
-      if (file.size > 600_000) {
-        alert(`${file.name} ist zu gross (max ~600 KB). Bitte komprimieren.`);
-        return Promise.resolve<string | null>(null);
-      }
-      return new Promise<string | null>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (ev) => resolve(ev.target?.result as string);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(file);
-      });
-    });
-    Promise.all(readers).then((results) => {
-      const added = results.filter((r): r is string => typeof r === "string");
-      setNewImages((prev) => [...prev, ...added]);
-    });
-    // Input zuruecksetzen, damit dasselbe File erneut ausgewaehlt werden kann
-    e.target.value = "";
+    try {
+      const compressed = await Promise.all(
+        files.map((file) =>
+          compressImage(file, { maxSize: 1024, quality: 0.8 })
+        )
+      );
+      setNewImages((prev) => [...prev, ...compressed]);
+    } catch (err) {
+      console.error("Bild komprimieren", err);
+      alert("Ein Bild konnte nicht verarbeitet werden.");
+    }
   }
 
   function removeNewImage(i: number) {

@@ -74,6 +74,7 @@ model User {
   notifyBookingComment  Boolean @default(true)
   notifyActivity        Boolean @default(true)
   notifyActivityComment Boolean @default(true)
+  hasKaffeeAbo          Boolean @default(false)
   room        Room?     @relation(fields: [roomId], references: [id])
   roomId      String?
   createdAt   DateTime  @default(now())

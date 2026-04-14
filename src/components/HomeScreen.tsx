@@ -66,7 +66,7 @@ export default function HomeScreen() {
   const { data: session } = useSession();
   const userId = session?.user?.id ?? "";
   const isAdmin = (session?.user?.roles || []).includes("ADMIN");
-  const hasKaffeeAbo = true;
+  const [hasKaffeeAbo, setHasKaffeeAbo] = useState(false);
   const [userName, setUserName] = useState(session?.user?.name ?? "");
   const [kaffeeState] = useCurrentKaffee();
   const currentKaffee = kaffeeState.kaffee;
@@ -122,9 +122,18 @@ export default function HomeScreen() {
   useEffect(() => {
     fetch("/api/profile")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { displayName?: string } | null) => {
-        if (data?.displayName) setUserName(data.displayName);
-      })
+      .then(
+        (
+          data:
+            | { displayName?: string; hasKaffeeAbo?: boolean }
+            | null
+        ) => {
+          if (data?.displayName) setUserName(data.displayName);
+          if (data && typeof data.hasKaffeeAbo === "boolean") {
+            setHasKaffeeAbo(data.hasKaffeeAbo);
+          }
+        }
+      )
       .catch(() => {});
   }, []);
 
@@ -367,36 +376,35 @@ export default function HomeScreen() {
 
       {/* Kaffee (nur für Abo) — Pille */}
       {hasKaffeeAbo && (
-        <div
-          className="mb-5 cursor-pointer rounded-2xl border border-amber-600/30 bg-gradient-to-r from-amber-700/10 to-transparent px-4 py-3 transition-all hover:border-amber-500/50"
-          onClick={() => router.push("/kaffee")}
-        >
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 text-xl">☕</span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-amber-200">
-                {currentKaffee.name}
-                {currentKaffee.fairtrade && (
-                  <span className="ml-1 text-[9px] text-emerald-400">
-                    ● Fair Trade
-                  </span>
-                )}
-              </p>
-              <p className="mt-0.5 text-[10px] leading-snug text-gray-400">
-                {currentKaffee.duftnotizen}
-              </p>
-              <p className="mt-0.5 text-[10px] leading-snug text-gray-500">
-                {currentKaffee.herkunft}
-              </p>
-              {kaffeeState.changedBy && kaffeeState.changedAt && (
-                <p className="mt-1 font-mono text-[9px] text-gray-600">
-                  Eingefüllt von {kaffeeState.changedBy} ·{" "}
-                  {new Date(kaffeeState.changedAt).toLocaleDateString(
-                    "de-CH",
-                    { day: "numeric", month: "short" }
+        <div className="mb-5">
+          <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+            AKTUELL IN DER KAFFEEMÜHLE
+          </p>
+          <div
+            className="cursor-pointer rounded-2xl border border-amber-600/30 bg-gradient-to-r from-amber-700/10 to-transparent px-4 py-2.5 transition-all hover:border-amber-500/50"
+            onClick={() => router.push("/kaffee")}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-lg">☕</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-amber-200">
+                  {currentKaffee.name}
+                  {currentKaffee.fairtrade && (
+                    <span className="ml-1 text-[9px] text-emerald-400">
+                      ● Fair Trade
+                    </span>
                   )}
                 </p>
-              )}
+                {kaffeeState.changedBy && kaffeeState.changedAt && (
+                  <p className="truncate font-mono text-[9px] text-gray-600">
+                    von {kaffeeState.changedBy} ·{" "}
+                    {new Date(kaffeeState.changedAt).toLocaleDateString(
+                      "de-CH",
+                      { day: "numeric", month: "short" }
+                    )}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>

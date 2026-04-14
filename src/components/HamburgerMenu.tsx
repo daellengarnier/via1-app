@@ -30,7 +30,7 @@ const MEHR_ITEMS: MehrItem[] = [
     icon: "/pic-hausbuch.webp",
     glowClass: "glow-violet",
     title: "Hausbuch",
-    subtitle: "Wissen & Infos rund ums Haus",
+    subtitle: "Wissen & Infos",
   },
   {
     id: "flohmi",
@@ -41,19 +41,11 @@ const MEHR_ITEMS: MehrItem[] = [
     subtitle: "Dinge zum Weitergeben",
   },
   {
-    id: "bilder",
-    href: "/bilder",
-    icon: "/pic-bilder.webp",
-    glowClass: "glow-silver",
-    title: "Bilder",
-    subtitle: "Fotos aus dem Hausleben",
-  },
-  {
     id: "modell",
     href: "/modell",
     icon: "🏠",
     title: "3D Modell Via1",
-    subtitle: "Das Haus interaktiv erkunden",
+    subtitle: "Das Haus interaktiv",
   },
 ];
 
@@ -88,7 +80,26 @@ export function HamburgerMenu() {
   const [pinned, setPinned] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [kaffeeState] = useCurrentKaffee();
+  const [hasKaffeeAbo, setHasKaffeeAbo] = useState(false);
   const notifCount = notifications.length;
+
+  // Kaffee-Abo Status vom Profil laden
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/profile");
+        if (!res.ok) return;
+        const data = (await res.json()) as { hasKaffeeAbo?: boolean };
+        if (!cancelled) setHasKaffeeAbo(Boolean(data.hasKaffeeAbo));
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   // Notifications laden
   const loadNotifications = async () => {
@@ -314,38 +325,40 @@ export function HamburgerMenu() {
             <span className="text-gray-500">›</span>
           </Link>
 
-          {/* Meine Abos */}
-          <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
-            MEINE ABOS
-          </h2>
-          <div className="mb-6 space-y-2">
-            <Link
-              href="/kaffee"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-lg border border-amber-600/30 bg-amber-700/10 p-3 transition-colors hover:border-amber-500"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/pic-kaffee.webp"
-                alt=""
-                className="menu-item-icon glow-amber"
-                loading="eager"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-amber-200">
-                  {kaffeeState.kaffee.name}
-                </p>
-                <p className="truncate text-xs text-gray-500">
-                  {kaffeeState.kaffee.duftnotizen}
-                </p>
-                {kaffeeState.changedBy && (
-                  <p className="mt-0.5 font-mono text-[9px] text-gray-600">
-                    Eingefüllt von {kaffeeState.changedBy}
-                  </p>
-                )}
+          {/* Meine Abos — nur wenn Kaffee-Abo aktiv */}
+          {hasKaffeeAbo && (
+            <>
+              <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+                MEINE ABOS
+              </h2>
+              <div className="mb-6 space-y-2">
+                <Link
+                  href="/kaffee"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-lg border border-amber-600/30 bg-amber-700/10 p-3 transition-colors hover:border-amber-500"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/pic-kaffee.webp"
+                    alt=""
+                    className="menu-item-icon glow-amber"
+                    loading="eager"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-amber-200">
+                      Kaffee-Abo
+                    </p>
+                    <p className="truncate text-xs text-gray-500">
+                      {kaffeeState.kaffee.name}
+                      {kaffeeState.changedBy
+                        ? ` · von ${kaffeeState.changedBy}`
+                        : ""}
+                    </p>
+                  </div>
+                </Link>
               </div>
-            </Link>
-          </div>
+            </>
+          )}
 
           {/* Mehr */}
           <div className="mb-3 flex items-center justify-between">
@@ -371,7 +384,7 @@ export function HamburgerMenu() {
                   <Link
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="flex flex-1 items-center gap-3"
+                    className="flex min-w-0 flex-1 items-center gap-3"
                   >
                     {item.icon.startsWith("/") ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -384,9 +397,13 @@ export function HamburgerMenu() {
                     ) : (
                       <span className="text-lg">{item.icon}</span>
                     )}
-                    <div className="flex-1">
-                      <p className="font-medium text-white">{item.title}</p>
-                      <p className="text-xs text-gray-500">{item.subtitle}</p>
+                    <div className="flex min-w-0 flex-1 items-baseline gap-2">
+                      <p className="shrink-0 font-medium text-white">
+                        {item.title}
+                      </p>
+                      <p className="truncate text-xs text-gray-500">
+                        {item.subtitle}
+                      </p>
                     </div>
                   </Link>
                   <button

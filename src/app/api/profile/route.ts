@@ -48,6 +48,7 @@ export async function GET() {
     diet: dietToApi(user.diet ?? null),
     allergies: user.allergies ?? "",
     profileImage: user.avatar,
+    hasKaffeeAbo: user.hasKaffeeAbo,
     notifications: {
       sauna: user.notifySauna,
       aufgaben: user.notifyAufgaben,
@@ -77,6 +78,20 @@ export async function PATCH(req: Request) {
   if (typeof body.fullName === "string") data.fullName = body.fullName.trim();
   if (typeof body.displayName === "string" && body.displayName.trim() !== "")
     data.name = body.displayName.trim();
+  if (typeof body.email === "string") {
+    const email = body.email.trim().toLowerCase();
+    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      data.email = email;
+    } else if (email !== "") {
+      return NextResponse.json(
+        { error: "Ungültige E-Mail" },
+        { status: 400 }
+      );
+    }
+  }
+  if (typeof body.hasKaffeeAbo === "boolean") {
+    data.hasKaffeeAbo = body.hasKaffeeAbo;
+  }
   if (typeof body.birthday === "string") {
     data.birthday = body.birthday ? new Date(body.birthday) : null;
   }
@@ -136,13 +151,30 @@ export async function PATCH(req: Request) {
     }
   }
 
-  const user = await prisma.user.update({
-    where: { id: session.user.id },
-    data,
-    include: {
-      room: { include: { wg: { select: { name: true } } } },
-    },
-  });
+  let user;
+  try {
+    user = await prisma.user.update({
+      where: { id: session.user.id },
+      data,
+      include: {
+        room: { include: { wg: { select: { name: true } } } },
+      },
+    });
+  } catch (err) {
+    // Unique-Constraint z.B. bei E-Mail
+    if (
+      err &&
+      typeof err === "object" &&
+      "code" in err &&
+      (err as { code: string }).code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "E-Mail bereits vergeben" },
+        { status: 400 }
+      );
+    }
+    throw err;
+  }
 
   return NextResponse.json({
     fullName: user.fullName ?? "",
@@ -156,6 +188,7 @@ export async function PATCH(req: Request) {
     diet: dietToApi(user.diet ?? null),
     allergies: user.allergies ?? "",
     profileImage: user.avatar,
+    hasKaffeeAbo: user.hasKaffeeAbo,
     notifications: {
       sauna: user.notifySauna,
       aufgaben: user.notifyAufgaben,

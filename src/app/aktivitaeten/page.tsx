@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { TabHeader } from "@/components/TabHeader";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 interface Participant {
   userId: string;
@@ -33,9 +33,7 @@ interface Activity {
 
 const TEMPLATES: { id: string; title: string; defaultLocation: string }[] = [
   { id: "aareschwumm", title: "Aareschwumm", defaultLocation: "Aare" },
-  { id: "biertrinken", title: "Biertrinken", defaultLocation: "Bar" },
   { id: "spielabend", title: "Spieleabend", defaultLocation: "Pyramide" },
-  { id: "grillen", title: "Grillen", defaultLocation: "Innenhof" },
 ];
 
 const QUICK_TIMES = [
@@ -255,19 +253,23 @@ export default function AktivitaetenPage() {
 
   return (
     <div className="relative p-4 pb-20">
-      <TabHeader icon="/pyramid.webp" color="green" showIcon={false} />
+      <AnimatedBackground
+        icon="/pic-aktivitaeten.webp"
+        glowClass="glow-blue"
+        showIcon={false}
+      />
       <div className="mb-4 flex flex-col items-center gap-2">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/pic-aktivitaeten.webp"
           alt=""
-          className="tab-btn-icon"
+          className="tab-btn-icon glow-blue"
           loading="eager"
           fetchPriority="high"
         />
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="rounded-full border border-accent/50 bg-accent/15 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors hover:bg-accent/25"
+          className="rounded-full border border-blue-400/50 bg-blue-400/15 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-blue-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors hover:bg-blue-400/25"
         >
           + Spontane Aktivität
         </button>
@@ -275,9 +277,9 @@ export default function AktivitaetenPage() {
 
       {/* Erstellen-Formular */}
       {showCreate && (
-        <div className="mb-4 rounded-lg border border-accent/30 bg-accent/5 p-4">
+        <div className="mb-4 rounded-lg border border-blue-400/30 bg-blue-400/5 p-4">
           {/* Vorlagen */}
-          <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+          <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-blue-300">
             VORLAGE
           </p>
           <div className="mb-3 grid grid-cols-2 gap-2">
@@ -291,7 +293,7 @@ export default function AktivitaetenPage() {
                 }}
                 className={`rounded border px-3 py-2 text-xs transition-colors ${
                   selectedTemplate === t.id
-                    ? "border-accent bg-accent/20 text-accent"
+                    ? "border-accent bg-blue-400/20 text-blue-300"
                     : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
                 }`}
               >
@@ -303,7 +305,7 @@ export default function AktivitaetenPage() {
           {/* Oder eigener Titel */}
           {!selectedTemplate && (
             <>
-              <p className="mb-2 mt-3 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+              <p className="mb-2 mt-3 font-display text-[10px] font-bold uppercase tracking-widest text-blue-300">
                 ODER EIGENE AKTIVITÄT
               </p>
               <input
@@ -311,14 +313,14 @@ export default function AktivitaetenPage() {
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
                 placeholder="Titel, z.B. 'Yoga', 'Kaffee trinken'..."
-                className="mb-2 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                className="mb-2 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
               />
               <input
                 type="text"
                 value={customLocation}
                 onChange={(e) => setCustomLocation(e.target.value)}
                 placeholder="Ort (optional)"
-                className="mb-2 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                className="mb-2 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
               />
             </>
           )}
@@ -328,11 +330,11 @@ export default function AktivitaetenPage() {
             value={customDescription}
             onChange={(e) => setCustomDescription(e.target.value)}
             placeholder="Infos / Treffpunkt (optional)"
-            className="mb-3 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+            className="mb-3 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
           />
 
           {/* Zeit */}
-          <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+          <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-blue-300">
             WANN?
           </p>
           <div className="mb-2 flex flex-wrap gap-1.5">
@@ -346,7 +348,7 @@ export default function AktivitaetenPage() {
                 }}
                 className={`rounded-full px-3 py-1 font-mono text-[10px] font-bold transition-colors ${
                   quickTimeMinutes === qt.minutes && !customTime
-                    ? "bg-accent text-dark"
+                    ? "bg-blue-400 text-dark"
                     : "border border-gray-700 text-gray-400"
                 }`}
               >
@@ -363,7 +365,7 @@ export default function AktivitaetenPage() {
                 setCustomTime(e.target.value);
                 setQuickTimeMinutes(null);
               }}
-              className="rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-accent focus:outline-none"
+              className="rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-blue-400 focus:outline-none"
             />
           </div>
 
@@ -400,7 +402,7 @@ export default function AktivitaetenPage() {
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-accent">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-blue-300">
                     {formatTime(a.startAt)}
                     {rel && (
                       <span className="ml-1 text-gray-500">· {rel}</span>
@@ -440,8 +442,8 @@ export default function AktivitaetenPage() {
                   }
                   className={`flex-1 rounded-full py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
                     myP === "going"
-                      ? "bg-accent text-dark"
-                      : "border border-accent/40 text-accent hover:bg-accent/10"
+                      ? "bg-blue-400 text-dark"
+                      : "border border-blue-400/40 text-blue-300 hover:bg-blue-400/10"
                   }`}
                 >
                   {myP === "going" ? "✓ Dabei" : "Dabei"}
@@ -479,7 +481,7 @@ export default function AktivitaetenPage() {
                 onClick={() =>
                   setOpenCommentsId(isCommentsOpen ? null : a.id)
                 }
-                className="mt-2 flex items-center gap-1 font-mono text-[10px] text-gray-500 hover:text-accent"
+                className="mt-2 flex items-center gap-1 font-mono text-[10px] text-gray-500 hover:text-blue-300"
               >
                 💬 {a.comments.length}{" "}
                 {isCommentsOpen ? "ausblenden" : "Kommentare"}
@@ -490,7 +492,7 @@ export default function AktivitaetenPage() {
                     {a.comments.map((c) => (
                       <div
                         key={c.id}
-                        className="rounded border-l-2 border-accent/40 bg-white/3 py-1 pl-2 pr-2"
+                        className="rounded border-l-2 border-blue-400/40 bg-white/3 py-1 pl-2 pr-2"
                       >
                         <p className="text-xs text-gray-300">{c.text}</p>
                         <p className="mt-0.5 text-[9px] text-gray-600">
@@ -516,7 +518,7 @@ export default function AktivitaetenPage() {
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Kommentar..."
-                      className="flex-1 rounded border border-gray-800 bg-white/5 px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+                      className="flex-1 rounded border border-gray-800 bg-white/5 px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:border-blue-400 focus:outline-none"
                     />
                     <button
                       type="submit"

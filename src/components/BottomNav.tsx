@@ -38,6 +38,7 @@ function KalenderIcon() {
 }
 
 function AktivitaetIcon() {
+  // Pilz (Fliegenpilz-Stil, monochrom)
   return (
     <svg
       width="20"
@@ -45,11 +46,18 @@ function AktivitaetIcon() {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="1.6"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />
+      {/* Hut */}
+      <path d="M3 12a9 6 0 0118 0z" />
+      {/* Stiel */}
+      <path d="M10 12v6a2 2 0 004 0v-6" />
+      {/* Punkte auf dem Hut */}
+      <circle cx="8" cy="9" r="0.8" fill="currentColor" />
+      <circle cx="12" cy="7.5" r="0.8" fill="currentColor" />
+      <circle cx="16" cy="9" r="0.8" fill="currentColor" />
     </svg>
   );
 }
