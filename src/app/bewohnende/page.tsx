@@ -37,7 +37,8 @@ export default function BewohnendePage() {
         Uebersicht Zimmer, Bewohnende und Arbeiten
       </p>
 
-      {/* WG-Auswahl als gestaffelte Buttons (wie Schnitt) */}
+      {/* WG-Auswahl als gestaffelte Buttons (wie Schnitt). Die
+          Staffelung ist responsive via max-w statt fixer Margins. */}
       <div className="mb-6 space-y-1">
         {wgOrder.map((wg) => {
           const isActive = wg.slug === selectedWg.slug;
@@ -46,17 +47,15 @@ export default function BewohnendePage() {
             <button
               key={wg.slug}
               onClick={() => setSelectedWg(wg)}
-              className={`flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-left font-mono text-sm transition-all ${
+              className={`flex w-[88%] items-center justify-between rounded-lg border px-4 py-2.5 text-left font-mono text-sm transition-all ${
+                isNord ? "mr-auto" : "ml-auto"
+              } ${
                 isActive
                   ? isNord
                     ? "border-accent bg-accent/10 text-accent"
                     : "border-secondary bg-secondary/10 text-secondary"
                   : "border-gray-800 bg-gray-900/40 text-gray-400 hover:border-gray-600"
               }`}
-              style={{
-                marginLeft: isNord ? "0" : "24px",
-                marginRight: isNord ? "24px" : "0",
-              }}
             >
               <span className="font-bold">{wg.name}</span>
               <span className="text-xs opacity-70">{wg.floor}</span>

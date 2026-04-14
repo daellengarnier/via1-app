@@ -85,6 +85,7 @@ model User {
   activeAufgabenWorker AufgabeActiveWorker[]
   createdBookings      Booking[]             @relation("BookingCreator")
   bookingComments      BookingComment[]
+  hausbuchArticlesCreated HausbuchArticle[]  @relation("HausbuchCreatedBy")
   hausbuchArticlesUpdated HausbuchArticle[]  @relation("HausbuchUpdatedBy")
   createdFlohmi        FlohmiInserat[]       @relation("FlohmiCreator")
   takenFlohmi          FlohmiInserat[]       @relation("FlohmiTaker")
@@ -356,6 +357,8 @@ model HausbuchArticle {
   category    String
   // Owner als freier Name-String (analog zum UI-Eingabefeld)
   owner       String
+  createdBy   User?    @relation("HausbuchCreatedBy", fields: [createdById], references: [id])
+  createdById String?
   updatedBy   User     @relation("HausbuchUpdatedBy", fields: [updatedById], references: [id])
   updatedById String
   createdAt   DateTime @default(now())

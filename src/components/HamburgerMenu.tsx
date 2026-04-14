@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { useCurrentKaffee } from "@/lib/kaffee-store";
 
 interface MehrItem {
   id: string;
@@ -78,6 +79,7 @@ export function HamburgerMenu() {
   const [showNotifs, setShowNotifs] = useState(false);
   const [pinned, setPinned] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [kaffeeState] = useCurrentKaffee();
   const notifCount = notifications.length;
 
   // Notifications laden
@@ -321,9 +323,18 @@ export function HamburgerMenu() {
                 className="menu-item-icon glow-amber"
                 loading="eager"
               />
-              <div>
-                <p className="font-medium text-amber-200">Kaffee-Abo</p>
-                <p className="text-xs text-gray-500">1 Doppio / Tag · Bohnen</p>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-amber-200">
+                  {kaffeeState.kaffee.name}
+                </p>
+                <p className="truncate text-xs text-gray-500">
+                  {kaffeeState.kaffee.duftnotizen}
+                </p>
+                {kaffeeState.changedBy && (
+                  <p className="mt-0.5 font-mono text-[9px] text-gray-600">
+                    Eingefüllt von {kaffeeState.changedBy}
+                  </p>
+                )}
               </div>
             </Link>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 
@@ -103,10 +104,12 @@ const rastSortiment: RastKaffee[] = [
 ];
 
 export default function KaffeePage() {
+  const { data: session } = useSession();
   const [abo, setAbo] = useState<AboType>("1-doppio");
-  const [currentKaffee, setCurrentKaffee] = useCurrentKaffee();
-  const [changedBy] = useState("Sophie");
-  const [changedAt] = useState("2026-04-09");
+  const [state, setCurrentKaffee] = useCurrentKaffee();
+  const currentKaffee = state.kaffee;
+  const changedBy = state.changedBy;
+  const changedAt = state.changedAt;
   const [showSelect, setShowSelect] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -163,13 +166,15 @@ export default function KaffeePage() {
             )}
           </div>
         )}
-        <p className="mt-2 text-xs text-gray-600">
-          Eingefüllt von {changedBy} ·{" "}
-          {new Date(changedAt).toLocaleDateString("de-CH", {
-            day: "numeric",
-            month: "long",
-          })}
-        </p>
+        {changedBy && changedAt && (
+          <p className="mt-2 text-xs text-gray-600">
+            Eingefüllt von {changedBy} ·{" "}
+            {new Date(changedAt).toLocaleDateString("de-CH", {
+              day: "numeric",
+              month: "long",
+            })}
+          </p>
+        )}
 
         <button
           onClick={() => setShowSelect(!showSelect)}
@@ -184,7 +189,7 @@ export default function KaffeePage() {
               <button
                 key={k.name}
                 onClick={() => {
-                  setCurrentKaffee(k);
+                  setCurrentKaffee(k, session?.user?.name ?? "");
                   setShowSelect(false);
                   // Nur benachrichtigen wenn wirklich ein anderer
                   if (currentBeans !== k.name) {

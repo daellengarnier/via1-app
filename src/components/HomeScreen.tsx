@@ -64,11 +64,12 @@ function weatherSummary(code: number, willRainTonight: boolean): string {
 export default function HomeScreen() {
   const router = useRouter();
   const { data: session } = useSession();
-  const userName = session?.user?.name ?? "";
   const userId = session?.user?.id ?? "";
   const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const hasKaffeeAbo = true;
-  const [currentKaffee] = useCurrentKaffee();
+  const [userName, setUserName] = useState(session?.user?.name ?? "");
+  const [kaffeeState] = useCurrentKaffee();
+  const currentKaffee = kaffeeState.kaffee;
   const [, , putzCurrentWg] = usePutzplan();
   const [openAufgabenCount, setOpenAufgabenCount] = useState<number | null>(
     null
@@ -112,6 +113,17 @@ export default function HomeScreen() {
       .then((r) => (r.ok ? r.json() : []))
       .then((data: { done: boolean }[]) => {
         setOpenAufgabenCount(data.filter((a) => !a.done).length);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Aktuellen Anzeigenamen aus dem Profil holen (der in der Session
+  // ist nur der beim Login gecachte Name)
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { displayName?: string } | null) => {
+        if (data?.displayName) setUserName(data.displayName);
       })
       .catch(() => {});
   }, []);
@@ -353,16 +365,16 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Kaffee (nur für Abo) — kompakte runde Pille */}
+      {/* Kaffee (nur für Abo) — Pille */}
       {hasKaffeeAbo && (
         <div
-          className="mb-5 cursor-pointer rounded-full border border-amber-600/30 bg-gradient-to-r from-amber-700/10 to-transparent px-4 py-2.5 transition-all hover:border-amber-500/50"
+          className="mb-5 cursor-pointer rounded-2xl border border-amber-600/30 bg-gradient-to-r from-amber-700/10 to-transparent px-4 py-3 transition-all hover:border-amber-500/50"
           onClick={() => router.push("/kaffee")}
         >
-          <div className="flex items-center gap-3">
-            <span className="text-xl">☕</span>
-            <div className="flex-1 min-w-0">
-              <p className="truncate text-sm font-semibold text-amber-200">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 text-xl">☕</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-amber-200">
                 {currentKaffee.name}
                 {currentKaffee.fairtrade && (
                   <span className="ml-1 text-[9px] text-emerald-400">
@@ -370,9 +382,21 @@ export default function HomeScreen() {
                   </span>
                 )}
               </p>
-              <p className="truncate text-[10px] text-gray-500">
-                {currentKaffee.duftnotizen} · {currentKaffee.herkunft}
+              <p className="mt-0.5 text-[10px] leading-snug text-gray-400">
+                {currentKaffee.duftnotizen}
               </p>
+              <p className="mt-0.5 text-[10px] leading-snug text-gray-500">
+                {currentKaffee.herkunft}
+              </p>
+              {kaffeeState.changedBy && kaffeeState.changedAt && (
+                <p className="mt-1 font-mono text-[9px] text-gray-600">
+                  Eingefüllt von {kaffeeState.changedBy} ·{" "}
+                  {new Date(kaffeeState.changedAt).toLocaleDateString(
+                    "de-CH",
+                    { day: "numeric", month: "short" }
+                  )}
+                </p>
+              )}
             </div>
           </div>
         </div>

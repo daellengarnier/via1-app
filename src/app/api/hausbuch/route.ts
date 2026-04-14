@@ -12,7 +12,10 @@ export async function GET() {
 
   const articles = await prisma.hausbuchArticle.findMany({
     orderBy: [{ category: "asc" }, { title: "asc" }],
-    include: { updatedBy: { select: { id: true, name: true } } },
+    include: {
+      updatedBy: { select: { id: true, name: true } },
+      createdBy: { select: { id: true, name: true } },
+    },
   });
 
   return NextResponse.json(
@@ -22,6 +25,8 @@ export async function GET() {
       content: a.content,
       category: a.category,
       owner: a.owner,
+      createdBy: a.createdBy?.name ?? null,
+      createdById: a.createdBy?.id ?? null,
       updatedBy: a.updatedBy.name,
       updatedAt: a.updatedAt.toISOString(),
     }))
@@ -45,13 +50,24 @@ export async function POST(req: Request) {
   const content = typeof body.content === "string" ? body.content : "";
   const category =
     typeof body.category === "string" ? body.category.trim() : "";
-  const owner = typeof body.owner === "string" ? body.owner.trim() : "";
 
-  if (!title || !content || !category || !owner) {
+  if (!title || !content || !category) {
     return NextResponse.json(
-      { error: "title, content, category, owner erforderlich" },
+      { error: "title, content, category erforderlich" },
       { status: 400 }
     );
+  }
+
+  // Owner wird automatisch auf den Ersteller gesetzt (ausser Admin
+  // gibt explizit einen abweichenden Owner mit).
+  const isAdmin = (session.user.roles || []).includes("ADMIN");
+  let owner =
+    typeof body.owner === "string" && body.owner.trim() !== ""
+      ? body.owner.trim()
+      : "";
+  if (!owner || !isAdmin) {
+    // Non-admin kann den Owner nicht aendern — es ist immer der Ersteller
+    owner = session.user.name ?? "";
   }
 
   const created = await prisma.hausbuchArticle.create({
@@ -60,9 +76,13 @@ export async function POST(req: Request) {
       content,
       category,
       owner,
+      createdById: session.user.id,
       updatedById: session.user.id,
     },
-    include: { updatedBy: { select: { id: true, name: true } } },
+    include: {
+      updatedBy: { select: { id: true, name: true } },
+      createdBy: { select: { id: true, name: true } },
+    },
   });
 
   return NextResponse.json({
@@ -71,6 +91,8 @@ export async function POST(req: Request) {
     content: created.content,
     category: created.category,
     owner: created.owner,
+    createdBy: created.createdBy?.name ?? null,
+    createdById: created.createdBy?.id ?? null,
     updatedBy: created.updatedBy.name,
     updatedAt: created.updatedAt.toISOString(),
   });

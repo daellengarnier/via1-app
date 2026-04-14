@@ -1,7 +1,13 @@
 // Mock-Daten fuer die Bewohnende-Uebersicht
 // Spaeter: aus der DB laden
 
-export type RoomType = "zimmer" | "bad" | "wc" | "bad_wc" | "wohnkueche";
+export type RoomType =
+  | "zimmer"
+  | "bad"
+  | "wc"
+  | "bad_wc"
+  | "wohnkueche"
+  | "balkon";
 
 export interface Resident {
   id: string;
@@ -58,19 +64,22 @@ export interface Wg {
   rooms: Room[];
 }
 
-// Hilfsfunktion fuer Mock-Raeume
+// Hilfsfunktion fuer Mock-Raeume. 'prefix' ist 2 Zeichen wie "N0",
+// "N1", "O2" etc. und setzt sich zusammen aus Seite (N/O) und
+// Stockwerk (0/1/2). Die Raum-Nummer wird einfach angehaengt, was
+// Raum-Keys wie N01, N11, O21 ergibt — passend zur Seed-Daten-DB.
 function makeRooms(
   prefix: string,
   zimmerCount: number,
-  combinedBadWc: boolean
+  combinedBadWc: boolean,
+  withBalkon: boolean
 ): Room[] {
   const rooms: Room[] = [];
 
-  // Schlafzimmer
   for (let i = 1; i <= zimmerCount; i++) {
     rooms.push({
-      id: `${prefix}${String(i).padStart(2, "0")}`,
-      keyNumber: `${prefix}${String(i).padStart(2, "0")}`,
+      id: `${prefix}${i}`,
+      keyNumber: `${prefix}${i}`,
       label: `Zimmer ${i}`,
       type: "zimmer",
       keyCount: 2,
@@ -88,7 +97,6 @@ function makeRooms(
     });
   }
 
-  // Bad & WC
   if (combinedBadWc) {
     rooms.push({
       id: `${prefix}-badwc`,
@@ -126,7 +134,6 @@ function makeRooms(
     });
   }
 
-  // Wohnkueche (Wohnzimmer + Kueche kombiniert)
   rooms.push({
     id: `${prefix}-wk`,
     keyNumber: `${prefix}-WK`,
@@ -139,6 +146,20 @@ function makeRooms(
     damages: [],
   });
 
+  if (withBalkon) {
+    rooms.push({
+      id: `${prefix}-balkon`,
+      keyNumber: `${prefix}-BAL`,
+      label: "Balkon / Terrasse",
+      type: "balkon",
+      keyCount: 0,
+      residentHistory: [],
+      handovers: [],
+      works: [],
+      damages: [],
+    });
+  }
+
   return rooms;
 }
 
@@ -149,7 +170,7 @@ export const wgs: Wg[] = [
     floor: "EG Nord",
     floorNum: 0,
     side: "nord",
-    rooms: makeRooms("N0", 5, false),
+    rooms: makeRooms("N0", 5, false, false),
   },
   {
     slug: "ostblock",
@@ -157,7 +178,7 @@ export const wgs: Wg[] = [
     floor: "EG Ost",
     floorNum: 0,
     side: "ost",
-    rooms: makeRooms("O0", 5, false),
+    rooms: makeRooms("O0", 5, false, false),
   },
   {
     slug: "dreiecksbar",
@@ -165,7 +186,7 @@ export const wgs: Wg[] = [
     floor: "1. OG Nord",
     floorNum: 1,
     side: "nord",
-    rooms: makeRooms("N1", 5, false),
+    rooms: makeRooms("N1", 5, false, false),
   },
   {
     slug: "kleenex",
@@ -173,7 +194,7 @@ export const wgs: Wg[] = [
     floor: "1. OG Ost",
     floorNum: 1,
     side: "ost",
-    rooms: makeRooms("O1", 5, false),
+    rooms: makeRooms("O1", 5, false, false),
   },
   {
     slug: "family-wg",
@@ -181,7 +202,7 @@ export const wgs: Wg[] = [
     floor: "2. OG Nord",
     floorNum: 2,
     side: "nord",
-    rooms: makeRooms("N2", 5, true), // kombiniertes Bad/WC
+    rooms: makeRooms("N2", 5, true, true),
   },
   {
     slug: "bonzen",
@@ -189,7 +210,7 @@ export const wgs: Wg[] = [
     floor: "2. OG Ost",
     floorNum: 2,
     side: "ost",
-    rooms: makeRooms("O2", 4, true), // kombiniertes Bad/WC, nur 4 Zimmer
+    rooms: makeRooms("O2", 4, true, true),
   },
 ];
 
@@ -199,6 +220,7 @@ export const roomTypeLabels: Record<RoomType, string> = {
   wc: "WC",
   bad_wc: "Bad & WC",
   wohnkueche: "Wohnkueche",
+  balkon: "Balkon / Terrasse",
 };
 
 export const roomTypeIcons: Record<RoomType, string> = {
@@ -207,6 +229,7 @@ export const roomTypeIcons: Record<RoomType, string> = {
   wc: "🚽",
   bad_wc: "🛁",
   wohnkueche: "🍳",
+  balkon: "🌿",
 };
 
 export const workTypeLabels: Record<Work["type"], string> = {

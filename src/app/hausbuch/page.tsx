@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 interface Artikel {
@@ -9,6 +10,8 @@ interface Artikel {
   content: string;
   category: string;
   owner: string;
+  createdBy: string | null;
+  createdById: string | null;
   updatedBy: string;
   updatedAt: string;
 }
@@ -24,6 +27,9 @@ const initialCategories = [
 
 
 export default function HausbuchPage() {
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id ?? "";
+  const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Alle");
   const [articles, setArticles] = useState<Artikel[]>([]);
@@ -37,6 +43,13 @@ export default function HausbuchPage() {
   const [newOwner, setNewOwner] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editOwner, setEditOwner] = useState("");
 
   // Kategorien werden aus den Artikeln abgeleitet + Basis-Kategorien
   const categories = Array.from(
@@ -73,7 +86,7 @@ export default function HausbuchPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!newTitle.trim() || !newContent.trim() || !newOwner.trim()) return;
+    if (!newTitle.trim() || !newContent.trim()) return;
     try {
       const res = await fetch("/api/hausbuch", {
         method: "POST",
@@ -82,7 +95,8 @@ export default function HausbuchPage() {
           title: newTitle,
           content: newContent,
           category: newCategory,
-          owner: newOwner,
+          // Owner nur senden falls Admin explizit einen vergibt
+          ...(isAdmin && newOwner.trim() !== "" ? { owner: newOwner } : {}),
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -95,6 +109,63 @@ export default function HausbuchPage() {
     } catch (err) {
       console.error("Hausbuch erstellen", err);
       alert("Konnte Artikel nicht speichern.");
+    }
+  }
+
+  function openEdit(a: Artikel) {
+    setEditingId(a.id);
+    setEditTitle(a.title);
+    setEditContent(a.content);
+    setEditCategory(a.category);
+    setEditOwner(a.owner);
+  }
+
+  function closeEdit() {
+    setEditingId(null);
+  }
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingId || !editTitle.trim() || !editContent.trim()) return;
+    try {
+      const res = await fetch(`/api/hausbuch/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editTitle,
+          content: editContent,
+          category: editCategory,
+          ...(isAdmin ? { owner: editOwner } : {}),
+        }),
+      });
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        throw new Error(err.error ?? `HTTP ${res.status}`);
+      }
+      const updated = (await res.json()) as Artikel;
+      setArticles((prev) =>
+        prev.map((a) => (a.id === editingId ? updated : a))
+      );
+      closeEdit();
+    } catch (err) {
+      console.error("Hausbuch speichern", err);
+      alert(
+        "Konnte nicht speichern: " +
+          (err instanceof Error ? err.message : "Fehler")
+      );
+    }
+  }
+
+  async function deleteArticle(id: string) {
+    if (!confirm("Diesen Artikel wirklich löschen?")) return;
+    try {
+      const res = await fetch(`/api/hausbuch/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setArticles((prev) => prev.filter((a) => a.id !== id));
+      closeEdit();
+    } catch (err) {
+      console.error("Hausbuch loeschen", err);
+      alert("Konnte nicht loeschen.");
     }
   }
 
@@ -243,22 +314,23 @@ export default function HausbuchPage() {
               </select>
             )}
           </div>
-          <div className="mb-3">
-            <label className="mb-1 block text-xs text-gray-400">
-              Owner{" "}
-              <span className="text-gray-600">
-                (verantwortlich für Aktualität)
-              </span>
-            </label>
-            <input
-              type="text"
-              value={newOwner}
-              onChange={(e) => setNewOwner(e.target.value)}
-              placeholder="z.B. Alain"
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-violet-400 focus:outline-none"
-              required
-            />
-          </div>
+          {isAdmin && (
+            <div className="mb-3">
+              <label className="mb-1 block text-xs text-gray-400">
+                Owner{" "}
+                <span className="text-gray-600">
+                  (optional — sonst Ersteller)
+                </span>
+              </label>
+              <input
+                type="text"
+                value={newOwner}
+                onChange={(e) => setNewOwner(e.target.value)}
+                placeholder="leer lassen = du bist Owner"
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-violet-400 focus:outline-none"
+              />
+            </div>
+          )}
           <div className="mb-3">
             <label className="mb-1 block text-xs text-gray-400">Inhalt</label>
             <textarea
@@ -313,7 +385,7 @@ export default function HausbuchPage() {
                 {expanded === a.id ? "▲" : "▼"}
               </span>
             </button>
-            {expanded === a.id && (
+            {expanded === a.id && editingId !== a.id && (
               <div className="border-t border-gray-800 px-4 pb-4 pt-3">
                 <p className="whitespace-pre-line text-sm text-gray-300">
                   {a.content}
@@ -335,7 +407,99 @@ export default function HausbuchPage() {
                     })}
                   </p>
                 </div>
+                {(a.createdById === currentUserId || isAdmin) && (
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => openEdit(a)}
+                      className="rounded border border-violet-500/50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-200 hover:bg-violet-500/10"
+                    >
+                      ✎ Bearbeiten
+                    </button>
+                    <button
+                      onClick={() => deleteArticle(a.id)}
+                      className="rounded border border-red-500/40 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10"
+                    >
+                      Löschen
+                    </button>
+                  </div>
+                )}
               </div>
+            )}
+            {expanded === a.id && editingId === a.id && (
+              <form
+                onSubmit={saveEdit}
+                className="border-t border-gray-800 px-4 pb-4 pt-3"
+              >
+                <div className="mb-2">
+                  <label className="mb-1 block text-xs text-gray-400">
+                    Titel
+                  </label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-violet-400 focus:outline-none"
+                    required
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="mb-1 block text-xs text-gray-400">
+                    Kategorie
+                  </label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-violet-400 focus:outline-none"
+                  >
+                    {categories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {isAdmin && (
+                  <div className="mb-2">
+                    <label className="mb-1 block text-xs text-gray-400">
+                      Owner{" "}
+                      <span className="text-gray-600">(nur Admin)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editOwner}
+                      onChange={(e) => setEditOwner(e.target.value)}
+                      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-violet-400 focus:outline-none"
+                    />
+                  </div>
+                )}
+                <div className="mb-3">
+                  <label className="mb-1 block text-xs text-gray-400">
+                    Inhalt
+                  </label>
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    rows={5}
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-violet-400 focus:outline-none"
+                    required
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="rounded bg-violet-500 px-4 py-2 font-mono text-xs font-bold text-dark"
+                  >
+                    Speichern
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeEdit}
+                    className="rounded px-4 py-2 text-xs text-gray-400 hover:text-white"
+                  >
+                    Abbrechen
+                  </button>
+                </div>
+              </form>
             )}
           </div>
         ))}
