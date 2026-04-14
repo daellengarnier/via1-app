@@ -49,6 +49,7 @@ export default function RootLayout({
         <link rel="preload" as="image" href="/pic-flohmi.webp" />
         <link rel="preload" as="image" href="/pic-hausbuch.webp" />
         <link rel="preload" as="image" href="/pic-kaffee.webp" />
+        <link rel="preload" as="image" href="/pic-aktivitaeten.webp" />
       </head>
       <body className="min-h-screen font-sans antialiased">
         <Providers>

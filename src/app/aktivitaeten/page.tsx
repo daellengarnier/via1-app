@@ -257,7 +257,14 @@ export default function AktivitaetenPage() {
     <div className="relative p-4 pb-20">
       <TabHeader icon="/pyramid.webp" color="green" showIcon={false} />
       <div className="mb-4 flex flex-col items-center gap-2">
-        <span className="text-5xl">⚡</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/pic-aktivitaeten.webp"
+          alt=""
+          className="tab-btn-icon"
+          loading="eager"
+          fetchPriority="high"
+        />
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="rounded-full border border-accent/50 bg-accent/15 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors hover:bg-accent/25"
