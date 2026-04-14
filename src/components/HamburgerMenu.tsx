@@ -17,6 +17,14 @@ interface MehrItem {
 
 const MEHR_ITEMS: MehrItem[] = [
   {
+    id: "gaesti",
+    href: "/gaesti",
+    icon: "/icon-gaesti.webp",
+    glowClass: "glow-blue",
+    title: "Gästewohnwagen",
+    subtitle: "Buchungen & Belegung",
+  },
+  {
     id: "hausbuch",
     href: "/hausbuch",
     icon: "/pic-hausbuch.webp",

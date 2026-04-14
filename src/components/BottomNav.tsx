@@ -37,24 +37,19 @@ function KalenderIcon() {
   );
 }
 
-function WohnwagenIcon() {
+function AktivitaetIcon() {
   return (
     <svg
       width="20"
       height="18"
-      viewBox="0 0 24 20"
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <rect x="2" y="5" width="16" height="10" rx="2" />
-      <path d="M18 9h3v4h-3" />
-      <circle cx="7" cy="17" r="2" />
-      <circle cx="15" cy="17" r="2" />
-      <path d="M5 8h4" />
-      <path d="M11 8h4" />
+      <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />
     </svg>
   );
 }
@@ -64,7 +59,7 @@ const navItems: { href: string; label: string; icon: ReactNode }[] = [
   { href: "/termine", label: "TERMINE", icon: <KalenderIcon /> },
   { href: "/aufgaben", label: "AUFGABEN", icon: <CheckIcon /> },
   { href: "/sauna", label: "SAUNA", icon: <SaunaIcon /> },
-  { href: "/gaesti", label: "GÄSTI", icon: <WohnwagenIcon /> },
+  { href: "/aktivitaeten", label: "AKTIVITÄT", icon: <AktivitaetIcon /> },
 ];
 
 export function BottomNav() {

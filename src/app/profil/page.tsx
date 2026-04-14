@@ -34,6 +34,8 @@ interface ProfileData {
     pinnwand: boolean;
     flohmi: boolean;
     bookingComment: boolean;
+    activity: boolean;
+    activityComment: boolean;
   };
 }
 
@@ -226,6 +228,8 @@ export default function ProfilPage() {
       pinnwand: true,
       flohmi: true,
       bookingComment: true,
+      activity: true,
+      activityComment: true,
     },
   });
 
@@ -491,6 +495,11 @@ export default function ProfilPage() {
             [
               { key: "sauna", label: "Sauna wird eingeheizt" },
               { key: "termine", label: "Neuer Termin" },
+              { key: "activity", label: "Neue spontane Aktivität" },
+              {
+                key: "activityComment",
+                label: "Kommentar auf meiner Aktivität",
+              },
               { key: "putzplan", label: "Putzämtli: meine WG ist dran" },
               { key: "kaffee", label: "Kaffeebohnen gewechselt" },
               { key: "pinnwand", label: "Neuer Pinnwand-Eintrag" },

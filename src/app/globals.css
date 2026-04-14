@@ -139,6 +139,7 @@ body {
 .menu-item-icon.glow-violet { animation-name: icon-glow-violet; }
 .menu-item-icon.glow-pink { animation-name: icon-glow-pink; }
 .menu-item-icon.glow-silver { animation-name: icon-glow-silver; }
+.menu-item-icon.glow-blue { animation-name: icon-glow-blue; }
 
 /* Glow-Spots */
 .via-glow {

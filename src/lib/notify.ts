@@ -39,6 +39,8 @@ const kindToPref: Record<NotificationKind, keyof PrefFields> = {
   AUFGABE_NEW: "notifyAufgaben",
   AUFGABE_STARTED: "notifyAufgabeStarted",
   BOOKING_COMMENT: "notifyBookingComment",
+  ACTIVITY_NEW: "notifyActivity",
+  ACTIVITY_COMMENT: "notifyActivityComment",
 };
 
 type PrefFields = {
@@ -51,6 +53,8 @@ type PrefFields = {
   notifyPinnwand: boolean;
   notifyFlohmi: boolean;
   notifyBookingComment: boolean;
+  notifyActivity: boolean;
+  notifyActivityComment: boolean;
 };
 
 interface NotifyParams {

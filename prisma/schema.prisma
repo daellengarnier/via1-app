@@ -46,6 +46,8 @@ enum NotificationKind {
   AUFGABE_NEW
   AUFGABE_STARTED
   BOOKING_COMMENT
+  ACTIVITY_NEW
+  ACTIVITY_COMMENT
 }
 
 model User {
@@ -70,6 +72,8 @@ model User {
   notifyPinnwand        Boolean @default(true)
   notifyFlohmi          Boolean @default(true)
   notifyBookingComment  Boolean @default(true)
+  notifyActivity        Boolean @default(true)
+  notifyActivityComment Boolean @default(true)
   room        Room?     @relation(fields: [roomId], references: [id])
   roomId      String?
   createdAt   DateTime  @default(now())
@@ -92,6 +96,9 @@ model User {
   flohmiComments       FlohmiComment[]
   notifications        Notification[]
   pushSubscriptions    PushSubscription[]
+  createdActivities    Activity[]            @relation("ActivityCreator")
+  activityParticipations ActivityParticipant[]
+  activityComments     ActivityComment[]
 
   @@map("users")
 }
@@ -348,6 +355,52 @@ model PushSubscription {
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+model Activity {
+  id           String                @id @default(cuid())
+  title        String
+  description  String                @default("")
+  location     String                @default("")
+  // Start-Zeitpunkt der Aktivitaet
+  startAt      DateTime
+  createdBy    User                  @relation("ActivityCreator", fields: [createdById], references: [id])
+  createdById  String
+  participants ActivityParticipant[]
+  comments     ActivityComment[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  @@index([startAt])
+  @@map("activities")
+}
+
+model ActivityParticipant {
+  id         String   @id @default(cuid())
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  // true = kommt, false = abgesagt
+  going      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([activityId, userId])
+  @@map("activity_participants")
+}
+
+model ActivityComment {
+  id         String   @id @default(cuid())
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityId String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId   String
+  text       String
+  createdAt  DateTime @default(now())
+
+  @@index([activityId])
+  @@map("activity_comments")
 }
 
 model HausbuchArticle {
