@@ -181,6 +181,7 @@ export default function BewohnendePage() {
   const [selectedWg, setSelectedWg] = useState<Wg>(wgs[0]!);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null);
+  const [showGrundrisse, setShowGrundrisse] = useState(false);
 
   useEffect(() => {
     fetch("/api/users")
@@ -244,14 +245,12 @@ export default function BewohnendePage() {
         Bewohnende, Zimmer, Schlüssel, Historie & Schäden
       </p>
       <div className="mb-5 flex justify-center">
-        <a
-          href="/bauplaene.pdf"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={() => setShowGrundrisse(true)}
           className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent/20"
         >
-          📐 Baupläne öffnen
-        </a>
+          📐 Grundrisse anzeigen
+        </button>
       </div>
 
       {/* WG-Auswahl als gestaffelte Buttons (wie Schnitt). */}
@@ -431,6 +430,50 @@ export default function BewohnendePage() {
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
         />
+      )}
+
+      {/* Grundrisse Modal — zoombar per Pinch */}
+      {showGrundrisse && (
+        <div
+          className="fixed inset-0 z-[100] flex flex-col bg-black/95 backdrop-blur-sm"
+          onClick={() => setShowGrundrisse(false)}
+        >
+          <div
+            className="flex items-center justify-between border-b border-gray-800 px-4 py-3"
+            style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top, 0px))" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+                GRUNDRISSE & SCHNITTE
+              </p>
+              <p className="text-[10px] text-gray-500">
+                Tippen zum Schliessen · Zwei Finger zum Zoomen
+              </p>
+            </div>
+            <button
+              onClick={() => setShowGrundrisse(false)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-white"
+              aria-label="Schliessen"
+            >
+              ×
+            </button>
+          </div>
+          <div
+            className="flex-1 overflow-auto"
+            style={{ touchAction: "pan-x pan-y pinch-zoom" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/grundrisse.webp"
+              alt="Grundrisse Via 1"
+              className="mx-auto h-auto w-full max-w-none select-none bg-white p-2"
+              draggable={false}
+              style={{ minWidth: "100%" }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
