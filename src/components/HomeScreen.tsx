@@ -156,7 +156,6 @@ export default function HomeScreen() {
             if (!data.fullName) missing.push("Vollständiger Name");
             if (!data.birthday) missing.push("Geburtstag");
             if (!data.favoriteAnimal) missing.push("Lieblingstier");
-            if (!data.profileImage) missing.push("Profilbild");
             if (!data.room) missing.push("Zimmer");
             setProfileMissing(missing);
           }
