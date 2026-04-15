@@ -241,23 +241,23 @@ export default function GaestiPage() {
             />
           </div>
           <div className="mb-3 grid grid-cols-2 gap-2">
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-xs text-gray-400">Von</label>
               <input
                 type="date"
                 value={newFrom}
                 onChange={(e) => setNewFrom(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
+                className="box-border block h-10 w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 text-xs text-white focus:border-blue-400 focus:outline-none"
                 required
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-xs text-gray-400">Bis</label>
               <input
                 type="date"
                 value={newTo}
                 onChange={(e) => setNewTo(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
+                className="box-border block h-10 w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 text-xs text-white focus:border-blue-400 focus:outline-none"
                 required
               />
             </div>

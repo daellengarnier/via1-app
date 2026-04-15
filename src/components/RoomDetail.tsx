@@ -334,6 +334,7 @@ function SubletSection({ roomKey }: { roomKey: string }) {
   const [newTo, setNewTo] = useState("");
   const [newNotes, setNewNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     fetch(`/api/rooms/${encodeURIComponent(roomKey)}/sublets`)
@@ -349,46 +350,83 @@ function SubletSection({ roomKey }: { roomKey: string }) {
     load();
   }, [load]);
 
-  async function createSublet(e: React.FormEvent) {
+  function resetForm() {
+    setNewName("");
+    setNewFullName("");
+    setNewPhone("");
+    setNewEmail("");
+    setNewFrom("");
+    setNewTo("");
+    setNewNotes("");
+    setEditingId(null);
+    setShowAdd(false);
+  }
+
+  function openEdit(s: LiveSublet) {
+    setEditingId(s.id);
+    setNewName(s.subtenantName);
+    setNewFullName(s.subtenantFullName);
+    setNewPhone(s.subtenantPhone);
+    setNewEmail(s.subtenantEmail);
+    setNewFrom(s.fromDate);
+    setNewTo(s.toDate);
+    setNewNotes(s.notes);
+    setShowAdd(true);
+  }
+
+  async function saveSublet(e: React.FormEvent) {
     e.preventDefault();
     if (!newName.trim() || !newFrom || !newTo) return;
     setSaving(true);
     try {
-      const res = await fetch(
-        `/api/rooms/${encodeURIComponent(roomKey)}/sublets`,
-        {
-          method: "POST",
+      const payload = {
+        subtenantName: newName,
+        subtenantFullName: newFullName,
+        subtenantPhone: newPhone,
+        subtenantEmail: newEmail,
+        fromDate: newFrom,
+        toDate: newTo,
+        notes: newNotes,
+      };
+      if (editingId) {
+        const res = await fetch(`/api/sublets/${editingId}`, {
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            subtenantName: newName,
-            subtenantFullName: newFullName,
-            subtenantPhone: newPhone,
-            subtenantEmail: newEmail,
-            fromDate: newFrom,
-            toDate: newTo,
-            notes: newNotes,
-          }),
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const err = (await res.json()) as { error?: string };
+          alert(err.error ?? "Konnte Untermiete nicht speichern.");
+          return;
         }
-      );
-      if (!res.ok) {
-        const err = (await res.json()) as { error?: string };
-        alert(err.error ?? "Konnte Untermiete nicht speichern.");
-        return;
+        const updated = (await res.json()) as LiveSublet;
+        setSublets((prev) =>
+          prev
+            .map((s) => (s.id === editingId ? updated : s))
+            .sort((a, b) => a.fromDate.localeCompare(b.fromDate))
+        );
+      } else {
+        const res = await fetch(
+          `/api/rooms/${encodeURIComponent(roomKey)}/sublets`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+        if (!res.ok) {
+          const err = (await res.json()) as { error?: string };
+          alert(err.error ?? "Konnte Untermiete nicht speichern.");
+          return;
+        }
+        const created = (await res.json()) as LiveSublet;
+        setSublets((prev) =>
+          [...prev, created].sort((a, b) => a.fromDate.localeCompare(b.fromDate))
+        );
       }
-      const created = (await res.json()) as LiveSublet;
-      setSublets((prev) =>
-        [...prev, created].sort((a, b) => a.fromDate.localeCompare(b.fromDate))
-      );
-      setNewName("");
-      setNewFullName("");
-      setNewPhone("");
-      setNewEmail("");
-      setNewFrom("");
-      setNewTo("");
-      setNewNotes("");
-      setShowAdd(false);
+      resetForm();
     } catch (err) {
-      console.error("sublet create", err);
+      console.error("sublet save", err);
       alert("Konnte Untermiete nicht speichern.");
     } finally {
       setSaving(false);
@@ -468,13 +506,22 @@ function SubletSection({ roomKey }: { roomKey: string }) {
               erfasst von {s.createdBy}
             </p>
           </div>
-          <button
-            onClick={() => deleteSublet(s.id)}
-            className="text-[11px] text-gray-600 hover:text-red-400"
-            aria-label="Loeschen"
-          >
-            ×
-          </button>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <button
+              onClick={() => openEdit(s)}
+              className="rounded px-1.5 py-0.5 text-[11px] text-amber-300/80 hover:bg-amber-500/10 hover:text-amber-200"
+              aria-label="Bearbeiten"
+            >
+              ✎
+            </button>
+            <button
+              onClick={() => deleteSublet(s.id)}
+              className="rounded px-1.5 py-0.5 text-[13px] text-gray-600 hover:text-red-400"
+              aria-label="Loeschen"
+            >
+              ×
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -503,11 +550,11 @@ function SubletSection({ roomKey }: { roomKey: string }) {
 
       {showAdd && (
         <form
-          onSubmit={createSublet}
+          onSubmit={saveSublet}
           className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3"
         >
           <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
-            NEUE UNTERMIETE
+            {editingId ? "UNTERMIETE BEARBEITEN" : "NEUE UNTERMIETE"}
           </p>
           <div className="mb-2">
             <label className="mb-1 block text-[10px] text-gray-400">
@@ -561,23 +608,23 @@ function SubletSection({ roomKey }: { roomKey: string }) {
             </div>
           </div>
           <div className="mb-2 grid grid-cols-2 gap-2">
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-[10px] text-gray-400">Von</label>
               <input
                 type="date"
                 value={newFrom}
                 onChange={(e) => setNewFrom(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-900 px-2 py-2 text-xs text-white focus:border-amber-400 focus:outline-none"
+                className="box-border block h-9 w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 text-xs text-white focus:border-amber-400 focus:outline-none"
                 required
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-[10px] text-gray-400">Bis</label>
               <input
                 type="date"
                 value={newTo}
                 onChange={(e) => setNewTo(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-gray-900 px-2 py-2 text-xs text-white focus:border-amber-400 focus:outline-none"
+                className="box-border block h-9 w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 text-xs text-white focus:border-amber-400 focus:outline-none"
                 required
               />
             </div>
@@ -604,16 +651,7 @@ function SubletSection({ roomKey }: { roomKey: string }) {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setShowAdd(false);
-                setNewName("");
-                setNewFullName("");
-                setNewPhone("");
-                setNewEmail("");
-                setNewFrom("");
-                setNewTo("");
-                setNewNotes("");
-              }}
+              onClick={resetForm}
               className="rounded px-3 py-2 text-xs text-gray-400 hover:text-white"
             >
               Abbrechen
@@ -1091,7 +1129,7 @@ function AddWorkModal({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              className="box-border block h-10 w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-3 text-sm text-white focus:border-accent focus:outline-none"
             />
           </div>
           <div>

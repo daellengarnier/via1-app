@@ -243,7 +243,7 @@ export default function RegistrierenPage() {
                 type="date"
                 value={birthday}
                 onChange={(e) => setBirthday(e.target.value)}
-                className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                className="box-border block h-10 w-full min-w-0 appearance-none rounded-lg border border-gray-700 bg-gray-900 px-3 text-sm text-white focus:border-accent focus:outline-none"
               />
             </div>
 

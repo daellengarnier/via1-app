@@ -378,6 +378,10 @@ export default function BewohnendePage() {
   const [damagesByRoom, setDamagesByRoom] = useState<Map<string, boolean>>(
     new Map()
   );
+  // Map roomKey -> aktive Untermiete
+  const [subletsByRoom, setSubletsByRoom] = useState<
+    Map<string, { subtenantName: string; fromDate: string; toDate: string }>
+  >(new Map());
 
   useEffect(() => {
     fetch("/api/users")
@@ -398,8 +402,34 @@ export default function BewohnendePage() {
       })
       .catch(() => {});
   };
+  const loadActiveSublets = () => {
+    fetch("/api/rooms/sublets")
+      .then((r) => (r.ok ? r.json() : null))
+      .then(
+        (
+          data: {
+            activeByRoom: Record<
+              string,
+              { subtenantName: string; fromDate: string; toDate: string }
+            >;
+          } | null
+        ) => {
+          if (!data) return;
+          const m = new Map<
+            string,
+            { subtenantName: string; fromDate: string; toDate: string }
+          >();
+          for (const [k, v] of Object.entries(data.activeByRoom)) {
+            m.set(k, v);
+          }
+          setSubletsByRoom(m);
+        }
+      )
+      .catch(() => {});
+  };
   useEffect(() => {
     loadDamages();
+    loadActiveSublets();
   }, []);
 
   // Springe in die WG des eingeloggten Users, sobald wir die Users haben
@@ -525,11 +555,12 @@ export default function BewohnendePage() {
             const user = usersByRoom.get(room.keyNumber) ?? null;
             const isMine = user?.id === currentUserId;
             const hasOpenDamage = damagesByRoom.get(room.keyNumber) ?? false;
+            const activeSublet = subletsByRoom.get(room.keyNumber) ?? null;
             return (
               <div
                 key={room.id}
                 onClick={() => setSelectedRoom(room)}
-                className={`flex w-full cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-left transition-all ${
+                className={`w-full cursor-pointer rounded-lg border px-3 py-2 text-left transition-all ${
                   isMine
                     ? "border-accent bg-accent/10 shadow-[0_0_12px_rgba(184,240,104,0.2)]"
                     : user
@@ -537,53 +568,74 @@ export default function BewohnendePage() {
                       : "border-gray-800 bg-gray-900/40 hover:border-gray-600"
                 }`}
               >
-                <span className="shrink-0 text-lg">
-                  {roomTypeIcons[room.type]}
-                </span>
-                <p className="shrink-0 text-sm text-gray-300">
-                  {room.label}
-                </p>
-                <p className="shrink-0 font-mono text-[10px] text-gray-600">
-                  {room.keyNumber}
-                </p>
-                {user && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedUser(user);
-                      }}
-                      className="shrink-0 rounded-full hover:ring-2 hover:ring-accent/50"
-                      title="Profil ansehen"
-                      aria-label={`Profil von ${user.name}`}
+                <div className="flex w-full items-center gap-2">
+                  <span className="shrink-0 text-lg">
+                    {roomTypeIcons[room.type]}
+                  </span>
+                  <p className="shrink-0 text-sm text-gray-300">
+                    {room.label}
+                  </p>
+                  <p className="shrink-0 font-mono text-[10px] text-gray-600">
+                    {room.keyNumber}
+                  </p>
+                  {user && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedUser(user);
+                        }}
+                        className="shrink-0 rounded-full hover:ring-2 hover:ring-accent/50"
+                        title="Profil ansehen"
+                        aria-label={`Profil von ${user.name}`}
+                      >
+                        <RoundAvatar user={user} size={22} />
+                      </button>
+                      <span className="min-w-0 flex-1 truncate text-xs font-medium text-white">
+                        {user.name}
+                        {isMine && (
+                          <span className="ml-1 text-[9px] text-accent">
+                            (du)
+                          </span>
+                        )}
+                      </span>
+                    </>
+                  )}
+                  {!user && (
+                    <span className="flex-1 text-[11px] text-gray-600">
+                      Frei
+                    </span>
+                  )}
+                  {hasOpenDamage && (
+                    <span
+                      className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-red-500/25 px-1.5 py-0.5 font-mono text-[10px] font-bold text-red-300 ring-1 ring-red-500/50"
+                      title="Offener Schaden"
                     >
-                      <RoundAvatar user={user} size={22} />
-                    </button>
-                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-white">
-                      {user.name}
-                      {isMine && (
-                        <span className="ml-1 text-[9px] text-accent">
-                          (du)
-                        </span>
+                      ⚠ Schaden
+                    </span>
+                  )}
+                  <span className="shrink-0 text-gray-600">›</span>
+                </div>
+                {/* Aktive Untermiete: zeigt Untermieter zusaetzlich an */}
+                {activeSublet && (
+                  <div className="ml-[1.75rem] mt-1 flex items-center gap-1.5 rounded border-l-2 border-amber-400/50 bg-amber-400/5 py-0.5 pl-2">
+                    <span className="text-[10px]">🔑</span>
+                    <span className="min-w-0 flex-1 truncate text-[11px] text-amber-200">
+                      <span className="text-amber-200/60">Untermiete: </span>
+                      <span className="font-medium">
+                        {activeSublet.subtenantName}
+                      </span>
+                    </span>
+                    <span className="shrink-0 font-mono text-[9px] text-amber-200/60">
+                      bis{" "}
+                      {new Date(activeSublet.toDate).toLocaleDateString(
+                        "de-CH",
+                        { day: "numeric", month: "short" }
                       )}
                     </span>
-                  </>
+                  </div>
                 )}
-                {!user && (
-                  <span className="flex-1 text-[11px] text-gray-600">
-                    Frei
-                  </span>
-                )}
-                {hasOpenDamage && (
-                  <span
-                    className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-red-500/25 px-1.5 py-0.5 font-mono text-[10px] font-bold text-red-300 ring-1 ring-red-500/50"
-                    title="Offener Schaden"
-                  >
-                    ⚠ Schaden
-                  </span>
-                )}
-                <span className="shrink-0 text-gray-600">›</span>
               </div>
             );
           })}
@@ -636,8 +688,9 @@ export default function BewohnendePage() {
           wgName={selectedWg.name}
           onClose={() => {
             setSelectedRoom(null);
-            // Schaeden-Indikatoren auffrischen (falls neu erfasst/erledigt)
+            // Schaeden- und Untermiete-Indikatoren auffrischen
             loadDamages();
+            loadActiveSublets();
           }}
         />
       )}

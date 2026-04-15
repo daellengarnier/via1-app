@@ -439,26 +439,30 @@ export default function AktivitaetenPage() {
               </button>
             ))}
           </div>
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="text-[10px] text-gray-500">oder Datum & Uhrzeit:</span>
-            <input
-              type="date"
-              value={customDate}
-              onChange={(e) => {
-                setCustomDate(e.target.value);
-                setQuickTimeMinutes(null);
-              }}
-              className="rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-blue-400 focus:outline-none"
-            />
-            <input
-              type="time"
-              value={customTime}
-              onChange={(e) => {
-                setCustomTime(e.target.value);
-                setQuickTimeMinutes(null);
-              }}
-              className="rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-blue-400 focus:outline-none"
-            />
+          <div className="mb-3">
+            <p className="mb-1 text-[10px] text-gray-500">
+              oder Datum & Uhrzeit:
+            </p>
+            <div className="grid grid-cols-[3fr_2fr] gap-2">
+              <input
+                type="date"
+                value={customDate}
+                onChange={(e) => {
+                  setCustomDate(e.target.value);
+                  setQuickTimeMinutes(null);
+                }}
+                className="box-border block h-9 w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 text-xs text-white focus:border-blue-400 focus:outline-none"
+              />
+              <input
+                type="time"
+                value={customTime}
+                onChange={(e) => {
+                  setCustomTime(e.target.value);
+                  setQuickTimeMinutes(null);
+                }}
+                className="box-border block h-9 w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 text-xs text-white focus:border-blue-400 focus:outline-none"
+              />
+            </div>
           </div>
 
           {/* Wiederholung */}
