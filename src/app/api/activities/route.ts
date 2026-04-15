@@ -46,8 +46,18 @@ export async function GET() {
     },
   });
 
+  // Serien reduzieren: pro recurrenceGroupId nur die naechste (frueheste)
+  // Instanz zeigen. Einmalige Aktivitaeten (groupId=null) bleiben alle.
+  const seenGroups = new Set<string>();
+  const filtered = activities.filter((a) => {
+    if (!a.recurrenceGroupId) return true;
+    if (seenGroups.has(a.recurrenceGroupId)) return false;
+    seenGroups.add(a.recurrenceGroupId);
+    return true;
+  });
+
   return NextResponse.json(
-    activities.map((a) => ({
+    filtered.map((a) => ({
       id: a.id,
       title: a.title,
       description: a.description,
