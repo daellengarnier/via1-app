@@ -55,7 +55,7 @@ export default function RegistrierenPage() {
     setStep(2);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (password.length < 8) {
@@ -67,10 +67,37 @@ export default function RegistrierenPage() {
       return;
     }
     setLoading(true);
-    // Demo-Modus: keine echte Registrierung, direkt zum Login
-    setTimeout(() => {
-      router.push("/login");
-    }, 600);
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          password,
+          fullName,
+          displayName,
+          email,
+          birthday,
+          wg,
+          room,
+          diet,
+          allergies,
+          hasKaffeeAbo,
+          favoriteAnimal,
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setError(data.error ?? "Registrierung fehlgeschlagen.");
+        setLoading(false);
+        return;
+      }
+      // Nach erfolgreicher Registrierung direkt einloggen
+      router.push("/login?registered=1");
+    } catch (err) {
+      console.error("register", err);
+      setError("Netzwerkfehler. Bitte erneut versuchen.");
+      setLoading(false);
+    }
   }
 
   return (

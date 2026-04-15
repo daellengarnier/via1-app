@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams?.get("registered") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -70,6 +72,12 @@ export default function LoginPage() {
           Via 1
         </h1>
         <p className="mb-8 text-center text-sm text-gray-500">Anmelden</p>
+
+        {justRegistered && (
+          <p className="mb-4 rounded-lg border border-accent/40 bg-accent/10 p-3 text-center text-xs text-accent">
+            ✓ Registrierung erfolgreich. Du kannst dich jetzt anmelden.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -138,5 +146,19 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="relative flex min-h-screen flex-col items-center justify-center px-4">
+          <p className="text-sm text-gray-500">Lade …</p>
+        </main>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }
