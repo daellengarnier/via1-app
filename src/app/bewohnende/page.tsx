@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import {
@@ -157,6 +157,198 @@ function UserProfileModal({
                 Noch keine weiteren Infos hinterlegt.
               </p>
             )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GrundrisseModal({ onClose }: { onClose: () => void }) {
+  const [scale, setScale] = useState(1);
+  const [tx, setTx] = useState(0);
+  const [ty, setTy] = useState(0);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const dragStart = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null);
+  const pinchStart = useRef<{ dist: number; scale: number } | null>(null);
+
+  const MIN = 1;
+  const MAX = 6;
+
+  function clampScale(s: number) {
+    return Math.min(MAX, Math.max(MIN, s));
+  }
+
+  function applyZoom(nextScale: number, centerX?: number, centerY?: number) {
+    const el = wrapRef.current;
+    if (!el) {
+      setScale(clampScale(nextScale));
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    const cx = centerX ?? rect.width / 2;
+    const cy = centerY ?? rect.height / 2;
+    const s = clampScale(nextScale);
+    // Punkt unter der Maus soll fix bleiben
+    const dx = (cx - tx) * (s / scale - 1);
+    const dy = (cy - ty) * (s / scale - 1);
+    setScale(s);
+    setTx(tx - dx);
+    setTy(ty - dy);
+  }
+
+  function reset() {
+    setScale(1);
+    setTx(0);
+    setTy(0);
+  }
+
+  function onPointerDown(e: React.PointerEvent) {
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 1) {
+      dragStart.current = { x: e.clientX, y: e.clientY, tx, ty };
+    } else if (pointers.current.size === 2) {
+      const pts = Array.from(pointers.current.values());
+      const dx = pts[0]!.x - pts[1]!.x;
+      const dy = pts[0]!.y - pts[1]!.y;
+      pinchStart.current = { dist: Math.hypot(dx, dy), scale };
+      dragStart.current = null;
+    }
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (!pointers.current.has(e.pointerId)) return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.current.size === 2 && pinchStart.current) {
+      const pts = Array.from(pointers.current.values());
+      const dx = pts[0]!.x - pts[1]!.x;
+      const dy = pts[0]!.y - pts[1]!.y;
+      const dist = Math.hypot(dx, dy);
+      const ratio = dist / pinchStart.current.dist;
+      const rect = wrapRef.current?.getBoundingClientRect();
+      const cx = rect
+        ? (pts[0]!.x + pts[1]!.x) / 2 - rect.left
+        : undefined;
+      const cy = rect
+        ? (pts[0]!.y + pts[1]!.y) / 2 - rect.top
+        : undefined;
+      applyZoom(pinchStart.current.scale * ratio, cx, cy);
+    } else if (pointers.current.size === 1 && dragStart.current) {
+      setTx(dragStart.current.tx + (e.clientX - dragStart.current.x));
+      setTy(dragStart.current.ty + (e.clientY - dragStart.current.y));
+    }
+  }
+
+  function onPointerUp(e: React.PointerEvent) {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size < 2) {
+      pinchStart.current = null;
+    }
+    if (pointers.current.size === 0) {
+      dragStart.current = null;
+    }
+  }
+
+  function onDoubleClick(e: React.MouseEvent) {
+    const el = wrapRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    if (scale < 2.5) {
+      applyZoom(3, cx, cy);
+    } else {
+      reset();
+    }
+  }
+
+  function onWheel(e: React.WheelEvent) {
+    const el = wrapRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    applyZoom(scale * delta, cx, cy);
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex flex-col bg-black/95 backdrop-blur-sm">
+      <div
+        className="flex items-center justify-between border-b border-gray-800 px-4 py-3"
+        style={{
+          paddingTop: "calc(0.75rem + env(safe-area-inset-top, 0px))",
+        }}
+      >
+        <div>
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+            GRUNDRISSE & SCHNITTE
+          </p>
+          <p className="text-[10px] text-gray-500">
+            Ziehen zum Verschieben · Doppeltipp zum Zoomen
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-white"
+          aria-label="Schliessen"
+        >
+          ×
+        </button>
+      </div>
+      <div
+        ref={wrapRef}
+        className="relative flex-1 overflow-hidden bg-white"
+        style={{ touchAction: "none", cursor: scale > 1 ? "grab" : "auto" }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onDoubleClick={onDoubleClick}
+        onWheel={onWheel}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/grundrisse.webp"
+          alt="Grundrisse Via 1"
+          draggable={false}
+          className="pointer-events-none absolute left-1/2 top-1/2 max-w-none select-none"
+          style={{
+            width: "auto",
+            height: "auto",
+            maxWidth: "100%",
+            maxHeight: "100%",
+            transform: `translate(-50%, -50%) translate(${tx}px, ${ty}px) scale(${scale})`,
+            transformOrigin: "center",
+            transition: pointers.current.size > 0 ? "none" : "transform 0.15s",
+          }}
+        />
+
+        {/* Zoom-Controls */}
+        <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+          <button
+            onClick={() => applyZoom(scale * 1.5)}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-700 bg-black/80 text-xl text-white shadow-lg hover:bg-black"
+            aria-label="Vergrössern"
+          >
+            +
+          </button>
+          <button
+            onClick={() => applyZoom(scale / 1.5)}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-700 bg-black/80 text-xl text-white shadow-lg hover:bg-black"
+            aria-label="Verkleinern"
+          >
+            −
+          </button>
+          <button
+            onClick={reset}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-700 bg-black/80 font-mono text-[10px] text-white shadow-lg hover:bg-black"
+            aria-label="Zurücksetzen"
+          >
+            1:1
+          </button>
         </div>
       </div>
     </div>
@@ -355,17 +547,20 @@ export default function BewohnendePage() {
                   {room.keyNumber}
                 </p>
                 {user && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedUser(user);
-                    }}
-                    className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2 hover:bg-white/5"
-                    title="Profil ansehen"
-                  >
-                    <RoundAvatar user={user} size={22} />
-                    <span className="truncate text-xs font-medium text-white">
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedUser(user);
+                      }}
+                      className="shrink-0 rounded-full hover:ring-2 hover:ring-accent/50"
+                      title="Profil ansehen"
+                      aria-label={`Profil von ${user.name}`}
+                    >
+                      <RoundAvatar user={user} size={22} />
+                    </button>
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-white">
                       {user.name}
                       {isMine && (
                         <span className="ml-1 text-[9px] text-accent">
@@ -373,7 +568,7 @@ export default function BewohnendePage() {
                         </span>
                       )}
                     </span>
-                  </button>
+                  </>
                 )}
                 {!user && (
                   <span className="flex-1 text-[11px] text-gray-600">
@@ -382,10 +577,10 @@ export default function BewohnendePage() {
                 )}
                 {hasOpenDamage && (
                   <span
-                    className="shrink-0 rounded-full bg-red-500/20 px-1.5 py-0.5 font-mono text-[9px] font-bold text-red-300 ring-1 ring-red-500/40"
+                    className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-red-500/25 px-1.5 py-0.5 font-mono text-[10px] font-bold text-red-300 ring-1 ring-red-500/50"
                     title="Offener Schaden"
                   >
-                    ⚠
+                    ⚠ Schaden
                   </span>
                 )}
                 <span className="shrink-0 text-gray-600">›</span>
@@ -421,10 +616,10 @@ export default function BewohnendePage() {
                 </span>
                 {hasOpenDamage && (
                   <span
-                    className="shrink-0 rounded-full bg-red-500/20 px-1.5 py-0.5 font-mono text-[9px] font-bold text-red-300 ring-1 ring-red-500/40"
+                    className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-red-500/25 px-1.5 py-0.5 font-mono text-[10px] font-bold text-red-300 ring-1 ring-red-500/50"
                     title="Offener Schaden"
                   >
-                    ⚠
+                    ⚠ Schaden
                   </span>
                 )}
                 <span className="shrink-0 text-gray-600">›</span>
@@ -439,7 +634,11 @@ export default function BewohnendePage() {
         <RoomDetail
           room={{ ...selectedRoom, currentResident: undefined }}
           wgName={selectedWg.name}
-          onClose={() => setSelectedRoom(null)}
+          onClose={() => {
+            setSelectedRoom(null);
+            // Schaeden-Indikatoren auffrischen (falls neu erfasst/erledigt)
+            loadDamages();
+          }}
         />
       )}
 
@@ -451,48 +650,9 @@ export default function BewohnendePage() {
         />
       )}
 
-      {/* Grundrisse Modal — zoombar per Pinch */}
+      {/* Grundrisse Modal — JS-Zoom (Buttons + Drag + Pinch) */}
       {showGrundrisse && (
-        <div
-          className="fixed inset-0 z-[100] flex flex-col bg-black/95 backdrop-blur-sm"
-          onClick={() => setShowGrundrisse(false)}
-        >
-          <div
-            className="flex items-center justify-between border-b border-gray-800 px-4 py-3"
-            style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top, 0px))" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div>
-              <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
-                GRUNDRISSE & SCHNITTE
-              </p>
-              <p className="text-[10px] text-gray-500">
-                Tippen zum Schliessen · Zwei Finger zum Zoomen
-              </p>
-            </div>
-            <button
-              onClick={() => setShowGrundrisse(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-white"
-              aria-label="Schliessen"
-            >
-              ×
-            </button>
-          </div>
-          <div
-            className="flex-1 overflow-auto"
-            style={{ touchAction: "pan-x pan-y pinch-zoom" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/grundrisse.webp"
-              alt="Grundrisse Via 1"
-              className="mx-auto h-auto w-full max-w-none select-none bg-white p-2"
-              draggable={false}
-              style={{ minWidth: "100%" }}
-            />
-          </div>
-        </div>
+        <GrundrisseModal onClose={() => setShowGrundrisse(false)} />
       )}
     </div>
   );

@@ -23,6 +23,9 @@ export async function GET(
     sublets.map((s) => ({
       id: s.id,
       subtenantName: s.subtenantName,
+      subtenantFullName: s.subtenantFullName,
+      subtenantPhone: s.subtenantPhone,
+      subtenantEmail: s.subtenantEmail,
       fromDate: s.fromDate.toISOString().split("T")[0],
       toDate: s.toDate.toISOString().split("T")[0],
       notes: s.notes,
@@ -43,12 +46,25 @@ export async function POST(
   }
   const body = (await req.json()) as {
     subtenantName?: unknown;
+    subtenantFullName?: unknown;
+    subtenantPhone?: unknown;
+    subtenantEmail?: unknown;
     fromDate?: unknown;
     toDate?: unknown;
     notes?: unknown;
   };
   const subtenantName =
     typeof body.subtenantName === "string" ? body.subtenantName.trim() : "";
+  const subtenantFullName =
+    typeof body.subtenantFullName === "string"
+      ? body.subtenantFullName.trim()
+      : "";
+  const subtenantPhone =
+    typeof body.subtenantPhone === "string" ? body.subtenantPhone.trim() : "";
+  const subtenantEmail =
+    typeof body.subtenantEmail === "string"
+      ? body.subtenantEmail.trim().toLowerCase()
+      : "";
   const fromDate = typeof body.fromDate === "string" ? body.fromDate : "";
   const toDate = typeof body.toDate === "string" ? body.toDate : "";
   if (!subtenantName) {
@@ -63,11 +79,23 @@ export async function POST(
       { status: 400 }
     );
   }
+  if (
+    subtenantEmail &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(subtenantEmail)
+  ) {
+    return NextResponse.json(
+      { error: "Ungültige E-Mail-Adresse" },
+      { status: 400 }
+    );
+  }
 
   const created = await prisma.sublet.create({
     data: {
       roomKey: params.roomKey,
       subtenantName,
+      subtenantFullName,
+      subtenantPhone,
+      subtenantEmail,
       fromDate: new Date(`${fromDate}T00:00:00.000Z`),
       toDate: new Date(`${toDate}T00:00:00.000Z`),
       notes: typeof body.notes === "string" ? body.notes : "",
@@ -81,6 +109,9 @@ export async function POST(
   return NextResponse.json({
     id: created.id,
     subtenantName: created.subtenantName,
+    subtenantFullName: created.subtenantFullName,
+    subtenantPhone: created.subtenantPhone,
+    subtenantEmail: created.subtenantEmail,
     fromDate: created.fromDate.toISOString().split("T")[0],
     toDate: created.toDate.toISOString().split("T")[0],
     notes: created.notes,

@@ -472,16 +472,19 @@ model RoomDamage {
 
 // Untermiete fuer ein Zimmer
 model Sublet {
-  id           String   @id @default(cuid())
-  roomKey      String
-  subtenantName String  // Name der Untermieter:in
-  fromDate     DateTime
-  toDate       DateTime
-  notes        String   @default("")
-  createdBy    User     @relation("SubletCreator", fields: [createdById], references: [id])
-  createdById  String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String   @id @default(cuid())
+  roomKey          String
+  subtenantName    String   // Anzeigename der Untermieter:in
+  subtenantFullName String  @default("")
+  subtenantPhone   String   @default("")
+  subtenantEmail   String   @default("")
+  fromDate         DateTime
+  toDate           DateTime
+  notes            String   @default("")
+  createdBy        User     @relation("SubletCreator", fields: [createdById], references: [id])
+  createdById      String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([roomKey])
   @@index([fromDate])

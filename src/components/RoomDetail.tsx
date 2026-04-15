@@ -22,6 +22,9 @@ interface LiveDamage {
 interface LiveSublet {
   id: string;
   subtenantName: string;
+  subtenantFullName: string;
+  subtenantPhone: string;
+  subtenantEmail: string;
   fromDate: string;
   toDate: string;
   notes: string;
@@ -29,7 +32,7 @@ interface LiveSublet {
   createdById: string;
 }
 
-type Tab = "info" | "historie" | "arbeiten" | "schaeden";
+type Tab = "info" | "historie" | "arbeiten" | "schaeden" | "untermiete";
 
 export function RoomDetail({
   room: initialRoom,
@@ -87,19 +90,27 @@ export function RoomDetail({
           </div>
 
           {/* Tabs */}
-          <div className="mt-4 flex gap-1">
+          <div className="mt-4 flex flex-wrap gap-1">
             {(
               [
                 { key: "info" as const, label: "Info" },
                 { key: "historie" as const, label: "Historie" },
                 { key: "arbeiten" as const, label: "Arbeiten" },
                 { key: "schaeden" as const, label: "Schäden" },
-              ] as const
+                ...(isPrivate
+                  ? [
+                      {
+                        key: "untermiete" as const,
+                        label: "Untermiete",
+                      },
+                    ]
+                  : []),
+              ]
             ).map((t) => (
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                className={`flex-1 rounded-lg px-2 py-1.5 font-mono text-xs font-bold transition-colors ${
+                className={`flex-1 rounded-lg px-2 py-1.5 font-mono text-[11px] font-bold transition-colors ${
                   tab === t.key
                     ? "bg-accent text-dark"
                     : "border border-gray-800 text-gray-400 hover:text-white"
@@ -130,6 +141,9 @@ export function RoomDetail({
             />
           )}
           {tab === "schaeden" && <LiveSchädenTab roomKey={room.keyNumber} />}
+          {tab === "untermiete" && isPrivate && (
+            <SubletSection roomKey={room.keyNumber} />
+          )}
         </div>
 
         {/* Modals */}
@@ -193,7 +207,6 @@ function InfoTab({
 }) {
   return (
     <div className="space-y-4">
-      {isPrivate && <SubletSection roomKey={room.keyNumber} />}
       {/* Aktuelle/r Bewohner:in - nur bei privaten Zimmern */}
       {isPrivate && (
         <section>
@@ -291,6 +304,9 @@ function SubletSection({ roomKey }: { roomKey: string }) {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newFullName, setNewFullName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newEmail, setNewEmail] = useState("");
   const [newFrom, setNewFrom] = useState("");
   const [newTo, setNewTo] = useState("");
   const [newNotes, setNewNotes] = useState("");
@@ -322,18 +338,28 @@ function SubletSection({ roomKey }: { roomKey: string }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             subtenantName: newName,
+            subtenantFullName: newFullName,
+            subtenantPhone: newPhone,
+            subtenantEmail: newEmail,
             fromDate: newFrom,
             toDate: newTo,
             notes: newNotes,
           }),
         }
       );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        alert(err.error ?? "Konnte Untermiete nicht speichern.");
+        return;
+      }
       const created = (await res.json()) as LiveSublet;
       setSublets((prev) =>
         [...prev, created].sort((a, b) => a.fromDate.localeCompare(b.fromDate))
       );
       setNewName("");
+      setNewFullName("");
+      setNewPhone("");
+      setNewEmail("");
       setNewFrom("");
       setNewTo("");
       setNewNotes("");
@@ -368,6 +394,11 @@ function SubletSection({ roomKey }: { roomKey: string }) {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <p className="font-medium text-amber-200">{s.subtenantName}</p>
+            {s.subtenantFullName && s.subtenantFullName !== s.subtenantName && (
+              <p className="text-[11px] text-amber-200/70">
+                {s.subtenantFullName}
+              </p>
+            )}
             <p className="mt-0.5 font-mono text-[10px] text-gray-500">
               {new Date(s.fromDate).toLocaleDateString("de-CH", {
                 day: "numeric",
@@ -381,8 +412,34 @@ function SubletSection({ roomKey }: { roomKey: string }) {
                 year: "numeric",
               })}
             </p>
+            {(s.subtenantPhone || s.subtenantEmail) && (
+              <div className="mt-1.5 space-y-0.5">
+                {s.subtenantPhone && (
+                  <p className="text-xs text-gray-300">
+                    📞{" "}
+                    <a
+                      href={`tel:${s.subtenantPhone}`}
+                      className="underline decoration-dotted hover:text-amber-200"
+                    >
+                      {s.subtenantPhone}
+                    </a>
+                  </p>
+                )}
+                {s.subtenantEmail && (
+                  <p className="text-xs text-gray-300">
+                    ✉{" "}
+                    <a
+                      href={`mailto:${s.subtenantEmail}`}
+                      className="break-all underline decoration-dotted hover:text-amber-200"
+                    >
+                      {s.subtenantEmail}
+                    </a>
+                  </p>
+                )}
+              </div>
+            )}
             {s.notes && (
-              <p className="mt-1 text-xs text-gray-400">{s.notes}</p>
+              <p className="mt-1.5 text-xs text-gray-400">{s.notes}</p>
             )}
             <p className="mt-1 text-[10px] text-gray-600">
               erfasst von {s.createdBy}
@@ -431,16 +488,54 @@ function SubletSection({ roomKey }: { roomKey: string }) {
           </p>
           <div className="mb-2">
             <label className="mb-1 block text-[10px] text-gray-400">
-              Name der Untermieter:in
+              Anzeigename
             </label>
             <input
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="z.B. Maria Beispiel"
+              placeholder="z.B. Maria"
               className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none"
               required
             />
+          </div>
+          <div className="mb-2">
+            <label className="mb-1 block text-[10px] text-gray-400">
+              Vollständiger Name
+            </label>
+            <input
+              type="text"
+              value={newFullName}
+              onChange={(e) => setNewFullName(e.target.value)}
+              placeholder="Vor- und Nachname"
+              className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none"
+            />
+          </div>
+          <div className="mb-2 grid grid-cols-2 gap-2">
+            <div>
+              <label className="mb-1 block text-[10px] text-gray-400">
+                Telefon
+              </label>
+              <input
+                type="tel"
+                value={newPhone}
+                onChange={(e) => setNewPhone(e.target.value)}
+                placeholder="+41 …"
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] text-gray-400">
+                E-Mail
+              </label>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="name@example.com"
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none"
+              />
+            </div>
           </div>
           <div className="mb-2 grid grid-cols-2 gap-2">
             <div>
@@ -489,6 +584,9 @@ function SubletSection({ roomKey }: { roomKey: string }) {
               onClick={() => {
                 setShowAdd(false);
                 setNewName("");
+                setNewFullName("");
+                setNewPhone("");
+                setNewEmail("");
                 setNewFrom("");
                 setNewTo("");
                 setNewNotes("");
