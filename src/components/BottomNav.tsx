@@ -14,17 +14,18 @@ function CheckIcon() {
 }
 
 function EinkaufIcon() {
-  // Einkaufskorb (Line-Art, monochrom)
+  // Einkaufskorb (Line-Art, monochrom) — etwas groesser
   return (
     <svg
-      width="20"
-      height="18"
+      width="24"
+      height="22"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.7"
       strokeLinecap="round"
       strokeLinejoin="round"
+      className="-mt-0.5"
     >
       {/* Bügel */}
       <path d="M7 10V8a5 5 0 0110 0v2" />
