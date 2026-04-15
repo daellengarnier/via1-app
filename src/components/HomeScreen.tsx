@@ -13,6 +13,15 @@ interface PinnwandEintrag {
   author: string;
   authorId: string;
   date: string;
+  commentCount: number;
+}
+
+interface PinnwandComment {
+  id: string;
+  text: string;
+  author: string;
+  authorId: string;
+  date: string;
 }
 
 interface NextTermin {
@@ -87,6 +96,14 @@ export default function HomeScreen() {
   const [nextTermin, setNextTermin] = useState<NextTermin | null>(null);
   const [nextActivity, setNextActivity] = useState<NextActivity | null>(null);
   const [pinnwand, setPinnwand] = useState<PinnwandEintrag[]>([]);
+  const [pinnwandCommentsOpen, setPinnwandCommentsOpen] = useState<
+    string | null
+  >(null);
+  const [pinnwandComments, setPinnwandComments] = useState<PinnwandComment[]>(
+    []
+  );
+  const [pinnwandCommentsLoading, setPinnwandCommentsLoading] = useState(false);
+  const [newPinnwandComment, setNewPinnwandComment] = useState("");
   const [pinnwandError, setPinnwandError] = useState<string | null>(null);
   const [pinnwandLoading, setPinnwandLoading] = useState(true);
   const [newNote, setNewNote] = useState("");
@@ -332,6 +349,72 @@ export default function HomeScreen() {
     } catch (err) {
       console.error("Bearbeiten fehlgeschlagen", err);
       alert("Konnte Aenderung nicht speichern.");
+    }
+  }
+
+  async function openPinnwandComments(id: string) {
+    setPinnwandCommentsOpen(id);
+    setPinnwandCommentsLoading(true);
+    setPinnwandComments([]);
+    try {
+      const res = await fetch(`/api/pinnwand/${id}/comments`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as PinnwandComment[];
+      setPinnwandComments(data);
+    } catch (err) {
+      console.error("comments laden", err);
+    } finally {
+      setPinnwandCommentsLoading(false);
+    }
+  }
+
+  async function addPinnwandComment(e: React.FormEvent) {
+    e.preventDefault();
+    const text = newPinnwandComment.trim();
+    if (!text || !pinnwandCommentsOpen) return;
+    try {
+      const res = await fetch(
+        `/api/pinnwand/${pinnwandCommentsOpen}/comments`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = (await res.json()) as PinnwandComment;
+      setPinnwandComments((prev) => [...prev, created]);
+      setNewPinnwandComment("");
+      // commentCount lokal in pinnwand erhoehen
+      setPinnwand((prev) =>
+        prev.map((p) =>
+          p.id === pinnwandCommentsOpen
+            ? { ...p, commentCount: (p.commentCount ?? 0) + 1 }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Kommentar speichern", err);
+      alert("Konnte Kommentar nicht speichern.");
+    }
+  }
+
+  async function deletePinnwandComment(cid: string) {
+    try {
+      const res = await fetch(`/api/pinnwand/comments/${cid}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setPinnwandComments((prev) => prev.filter((c) => c.id !== cid));
+      setPinnwand((prev) =>
+        prev.map((p) =>
+          p.id === pinnwandCommentsOpen
+            ? { ...p, commentCount: Math.max(0, (p.commentCount ?? 1) - 1) }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Kommentar loeschen", err);
     }
   }
 
@@ -704,11 +787,14 @@ export default function HomeScreen() {
                     </div>
                   </div>
                 ) : (
-                  <p
-                    className={`relative pt-1 text-xs leading-relaxed ${style.text}`}
+                  <button
+                    type="button"
+                    onClick={() => openPinnwandComments(p.id)}
+                    className={`relative block w-full cursor-pointer pt-1 text-left text-xs leading-relaxed ${style.text}`}
+                    aria-label="Kommentare ansehen"
                   >
                     {p.text}
-                  </p>
+                  </button>
                 )}
                 {!isEditing && (
                   <div
@@ -720,7 +806,18 @@ export default function HomeScreen() {
                         month: "short",
                       })}
                     </span>
-                    <span>— {p.author}</span>
+                    <div className="flex items-center gap-1.5">
+                      {(p.commentCount ?? 0) > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => openPinnwandComments(p.id)}
+                          className={`rounded px-1 ${style.meta} hover:bg-black/20`}
+                        >
+                          💬 {p.commentCount}
+                        </button>
+                      )}
+                      <span>— {p.author}</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -740,6 +837,126 @@ export default function HomeScreen() {
           <p className="text-center text-xs text-red-400">{pinnwandError}</p>
         )}
       </div>
+
+      {/* Pinnwand Kommentar-Modal */}
+      {pinnwandCommentsOpen && (() => {
+        const note = pinnwand.find((p) => p.id === pinnwandCommentsOpen);
+        return (
+          <div
+            className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)]"
+            onClick={() => {
+              setPinnwandCommentsOpen(null);
+              setPinnwandComments([]);
+              setNewPinnwandComment("");
+            }}
+          >
+            <div
+              className="my-4 w-full max-w-md rounded-2xl border border-gray-800 bg-dark pb-[env(safe-area-inset-bottom,0px)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 border-b border-gray-800 bg-dark/95 px-5 py-3 backdrop-blur-sm">
+                <div className="flex items-start justify-between">
+                  <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+                    PINNWAND-EINTRAG
+                  </p>
+                  <button
+                    onClick={() => {
+                      setPinnwandCommentsOpen(null);
+                      setPinnwandComments([]);
+                      setNewPinnwandComment("");
+                    }}
+                    className="text-gray-500 hover:text-white"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+              <div className="p-5">
+                {note && (
+                  <div className="mb-4 rounded-lg border border-gray-800 bg-white/5 p-3">
+                    <p className="text-sm leading-relaxed text-white">
+                      {note.text}
+                    </p>
+                    <p className="mt-2 font-mono text-[10px] text-gray-500">
+                      — {note.author} ·{" "}
+                      {new Date(note.date).toLocaleDateString("de-CH", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+                )}
+
+                <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+                  KOMMENTARE{" "}
+                  {pinnwandComments.length > 0 &&
+                    `(${pinnwandComments.length})`}
+                </p>
+
+                {pinnwandCommentsLoading ? (
+                  <p className="text-center text-xs text-gray-600">Laden…</p>
+                ) : pinnwandComments.length === 0 ? (
+                  <p className="text-center text-xs text-gray-600">
+                    Noch keine Kommentare
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {pinnwandComments.map((c) => {
+                      const canDeleteComment =
+                        c.authorId === userId || isAdmin;
+                      return (
+                        <div
+                          key={c.id}
+                          className="rounded border-l-2 border-accent/50 bg-white/5 px-2 py-1.5"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="flex-1 text-xs text-gray-200">
+                              {c.text}
+                            </p>
+                            {canDeleteComment && (
+                              <button
+                                onClick={() => deletePinnwandComment(c.id)}
+                                className="text-[10px] text-gray-600 hover:text-red-400"
+                                aria-label="Loeschen"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                          <p className="mt-0.5 font-mono text-[9px] text-gray-500">
+                            — {c.author} ·{" "}
+                            {new Date(c.date).toLocaleDateString("de-CH", {
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <form onSubmit={addPinnwandComment} className="mt-3 flex gap-2">
+                  <input
+                    type="text"
+                    value={newPinnwandComment}
+                    onChange={(e) => setNewPinnwandComment(e.target.value)}
+                    placeholder="Kommentar schreiben…"
+                    className="flex-1 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded bg-accent px-3 py-2 font-display text-[10px] font-bold text-dark"
+                  >
+                    OK
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

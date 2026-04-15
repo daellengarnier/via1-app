@@ -15,6 +15,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     include: {
       author: { select: { id: true, name: true } },
+      _count: { select: { comments: true } },
     },
   });
 
@@ -25,6 +26,7 @@ export async function GET() {
       author: n.author.name,
       authorId: n.author.id,
       date: n.createdAt.toISOString(),
+      commentCount: n._count.comments,
     }))
   );
 }
@@ -77,5 +79,6 @@ export async function POST(req: Request) {
     author: note.author.name,
     authorId: note.author.id,
     date: note.createdAt.toISOString(),
+    commentCount: 0,
   });
 }

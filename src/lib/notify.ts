@@ -35,11 +35,14 @@ const kindToPref: Record<NotificationKind, keyof PrefFields> = {
   PUTZPLAN_MY_WG: "notifyPutzplan",
   KAFFEE_CHANGED: "notifyKaffee",
   PINNWAND_NEW: "notifyPinnwand",
+  PINNWAND_COMMENT: "notifyPinnwand",
   FLOHMI_NEW: "notifyFlohmi",
+  FLOHMI_TAKEN: "notifyFlohmi",
   AUFGABE_NEW: "notifyAufgaben",
   AUFGABE_STARTED: "notifyAufgabeStarted",
   BOOKING_COMMENT: "notifyBookingComment",
   ACTIVITY_NEW: "notifyActivity",
+  // ACTIVITY_COMMENT deckt auch Anmeldungen auf meiner Aktivitaet ab
   ACTIVITY_COMMENT: "notifyActivityComment",
 };
 

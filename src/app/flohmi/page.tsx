@@ -32,6 +32,9 @@ export default function FlohmiPage() {
   const currentUserId = session?.user?.id ?? "";
   const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const [inserate, setInserate] = useState<Inserat[]>([]);
+  const [filter, setFilter] = useState<"zu-vergeben" | "vergeben">(
+    "zu-vergeben"
+  );
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -62,8 +65,10 @@ export default function FlohmiPage() {
     loadInserate();
   }, [loadInserate]);
 
-  // Server filtert bereits zu alte Inserate — wir zeigen einfach alles
-  const visible = inserate;
+  // Server filtert bereits zu alte Inserate — wir splitten nach Status
+  const toGive = inserate.filter((i) => !i.takenBy);
+  const given = inserate.filter((i) => i.takenBy);
+  const visible = filter === "zu-vergeben" ? toGive : given;
 
   const selected = selectedId
     ? inserate.find((i) => i.id === selectedId) ?? null
@@ -357,6 +362,30 @@ export default function FlohmiPage() {
           </div>
         </form>
       )}
+
+      {/* Tabs: Zu vergeben / Vergeben */}
+      <div className="mb-3 flex gap-2">
+        <button
+          onClick={() => setFilter("zu-vergeben")}
+          className={`flex-1 rounded-full px-3 py-1.5 font-mono text-[11px] font-bold transition-colors ${
+            filter === "zu-vergeben"
+              ? "bg-pink-500 text-dark"
+              : "border border-gray-700 text-gray-400 hover:text-white"
+          }`}
+        >
+          Zu vergeben ({toGive.length})
+        </button>
+        <button
+          onClick={() => setFilter("vergeben")}
+          className={`flex-1 rounded-full px-3 py-1.5 font-mono text-[11px] font-bold transition-colors ${
+            filter === "vergeben"
+              ? "bg-pink-500/60 text-dark"
+              : "border border-gray-700 text-gray-400 hover:text-white"
+          }`}
+        >
+          Vergeben ({given.length})
+        </button>
+      </div>
 
       {/* Inserate — 2 Spalten */}
       <div className="grid grid-cols-2 gap-3">

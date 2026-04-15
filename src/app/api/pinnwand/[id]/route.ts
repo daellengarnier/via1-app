@@ -43,6 +43,7 @@ export async function PATCH(
     data: { text },
     include: {
       author: { select: { id: true, name: true } },
+      _count: { select: { comments: true } },
     },
   });
 
@@ -52,6 +53,7 @@ export async function PATCH(
     author: updated.author.name,
     authorId: updated.author.id,
     date: updated.createdAt.toISOString(),
+    commentCount: updated._count.comments,
   });
 }
 

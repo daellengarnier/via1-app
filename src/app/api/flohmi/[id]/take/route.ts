@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notify } from "@/lib/notify";
 
 // POST /api/flohmi/[id]/take — aktueller User markiert das Inserat als
 // genommen
@@ -37,6 +38,18 @@ export async function POST(
       takenBy: { select: { id: true, name: true } },
     },
   });
+
+  // Besitzer:in benachrichtigen (ausser der User hat sein eigenes
+  // Inserat genommen)
+  if (inserat.createdById !== session.user.id) {
+    notify({
+      kind: "FLOHMI_TAKEN",
+      title: `${updated.takenBy?.name ?? "Jemand"} nimmt: ${inserat.title}`,
+      body: "Dein Flohmi-Gegenstand wurde genommen 🎉",
+      link: "/flohmi",
+      audience: [inserat.createdById],
+    }).catch((e) => console.error("notify", e));
+  }
 
   return NextResponse.json({
     takenBy: updated.takenBy?.name ?? null,

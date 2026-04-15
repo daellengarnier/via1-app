@@ -48,6 +48,8 @@ enum NotificationKind {
   BOOKING_COMMENT
   ACTIVITY_NEW
   ACTIVITY_COMMENT
+  FLOHMI_TAKEN
+  PINNWAND_COMMENT
 }
 
 model User {
@@ -103,6 +105,7 @@ model User {
   activityComments     ActivityComment[]
   reportedDamages      RoomDamage[]          @relation("DamageReporter")
   createdSublets       Sublet[]              @relation("SubletCreator")
+  pinnwandComments     PinnwandComment[]     @relation("PinnwandCommentAuthor")
 
   @@map("users")
 }
@@ -112,11 +115,25 @@ model PinnwandNote {
   text      String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  String
+  comments  PinnwandComment[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([createdAt])
   @@map("pinnwand_notes")
+}
+
+model PinnwandComment {
+  id        String       @id @default(cuid())
+  note      PinnwandNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  noteId    String
+  author    User         @relation("PinnwandCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  text      String
+  createdAt DateTime     @default(now())
+
+  @@index([noteId])
+  @@map("pinnwand_comments")
 }
 
 model Termin {

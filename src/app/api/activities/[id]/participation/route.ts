@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notify } from "@/lib/notify";
 
 // PUT /api/activities/[id]/participation
 // Body: { status: "going" | "not-going" | null }
@@ -37,7 +38,19 @@ export async function PUT(
     );
   }
 
+  // Vorherigen Status pruefen, um doppelte Push bei nochmaligem Klick
+  // zu vermeiden
+  const existing = await prisma.activityParticipant.findUnique({
+    where: {
+      activityId_userId: {
+        activityId: params.id,
+        userId: session.user.id,
+      },
+    },
+  });
+  const wasGoing = existing ? existing.going : false;
   const going = status === "going";
+
   await prisma.activityParticipant.upsert({
     where: {
       activityId_userId: {
@@ -52,6 +65,26 @@ export async function PUT(
     },
     update: { going },
   });
+
+  // Besitzer:in benachrichtigen wenn sich jemand neu anmeldet
+  // (nicht bei Abmeldung, nicht wenn schon angemeldet, nicht bei sich selbst)
+  if (
+    going &&
+    !wasGoing &&
+    activity.createdById !== session.user.id
+  ) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true },
+    });
+    notify({
+      kind: "ACTIVITY_COMMENT",
+      title: `${user?.name ?? "Jemand"} meldet sich an: ${activity.title}`,
+      body: "Neue Anmeldung auf deiner Aktivität 🙋",
+      link: "/aktivitaeten",
+      audience: [activity.createdById],
+    }).catch((e) => console.error("notify", e));
+  }
 
   return NextResponse.json({ status });
 }

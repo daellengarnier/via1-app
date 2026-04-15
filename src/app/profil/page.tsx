@@ -569,7 +569,7 @@ export default function ProfilPage() {
               { key: "activity", label: "Neue spontane Aktivität" },
               {
                 key: "activityComment",
-                label: "Kommentar auf meiner Aktivität",
+                label: "Anmeldung oder Kommentar auf meiner Aktivität",
               },
               { key: "putzplan", label: "Putzämtli: meine WG ist dran" },
               { key: "kaffee", label: "Kaffeebohnen gewechselt" },
