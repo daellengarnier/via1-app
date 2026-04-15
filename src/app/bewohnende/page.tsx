@@ -182,12 +182,32 @@ export default function BewohnendePage() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null);
   const [showGrundrisse, setShowGrundrisse] = useState(false);
+  // Map roomKey -> hat offenen Schaden?
+  const [damagesByRoom, setDamagesByRoom] = useState<Map<string, boolean>>(
+    new Map()
+  );
 
   useEffect(() => {
     fetch("/api/users")
       .then((r) => (r.ok ? r.json() : []))
       .then((u: ApiUser[]) => setApiUsers(u))
       .catch(() => {});
+  }, []);
+
+  // Schaeden-Indikatoren laden
+  const loadDamages = () => {
+    fetch("/api/rooms/damages")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { roomKeysWithOpenDamage: string[] } | null) => {
+        if (!data) return;
+        const m = new Map<string, boolean>();
+        for (const k of data.roomKeysWithOpenDamage) m.set(k, true);
+        setDamagesByRoom(m);
+      })
+      .catch(() => {});
+  };
+  useEffect(() => {
+    loadDamages();
   }, []);
 
   // Springe in die WG des eingeloggten Users, sobald wir die Users haben
@@ -303,7 +323,7 @@ export default function BewohnendePage() {
         </div>
       </div>
 
-      {/* Schlafzimmer — mit Bett-Icon, Avatar+Name drunter */}
+      {/* Schlafzimmer — Avatar inline nach Zimmer-Label */}
       <section className="mb-5">
         <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-accent">
           Schlafzimmer
@@ -312,18 +332,12 @@ export default function BewohnendePage() {
           {zimmer.map((room) => {
             const user = usersByRoom.get(room.keyNumber) ?? null;
             const isMine = user?.id === currentUserId;
-            const hasOpenDamage = room.damages.some((d) => !d.resolvedAt);
+            const hasOpenDamage = damagesByRoom.get(room.keyNumber) ?? false;
             return (
-              <button
+              <div
                 key={room.id}
-                onClick={() => {
-                  if (user) {
-                    setSelectedUser(user);
-                  } else {
-                    setSelectedRoom(room);
-                  }
-                }}
-                className={`flex w-full items-start gap-3 rounded-lg border px-3 py-2 text-left transition-all ${
+                onClick={() => setSelectedRoom(room)}
+                className={`flex w-full cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-left transition-all ${
                   isMine
                     ? "border-accent bg-accent/10 shadow-[0_0_12px_rgba(184,240,104,0.2)]"
                     : user
@@ -331,42 +345,51 @@ export default function BewohnendePage() {
                       : "border-gray-800 bg-gray-900/40 hover:border-gray-600"
                 }`}
               >
-                <span className="mt-0.5 shrink-0 text-lg">
+                <span className="shrink-0 text-lg">
                   {roomTypeIcons[room.type]}
                 </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-sm text-gray-300">{room.label}</p>
-                    <p className="font-mono text-[10px] text-gray-600">
-                      {room.keyNumber}
-                    </p>
-                    {hasOpenDamage && (
-                      <span
-                        className="inline-flex items-center gap-0.5 rounded-full bg-red-500/20 px-1.5 py-0.5 font-mono text-[8px] font-bold text-red-300 ring-1 ring-red-500/40"
-                        title="Offener Schaden"
-                      >
-                        ⚠ Schaden
-                      </span>
-                    )}
-                  </div>
-                  {user ? (
-                    <div className="mt-1.5 flex items-center gap-2">
-                      <RoundAvatar user={user} size={28} />
-                      <p className="truncate text-sm font-medium text-white">
-                        {user.name}
-                        {isMine && (
-                          <span className="ml-1 text-[10px] text-accent">
-                            (du)
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-gray-600">Frei</p>
-                  )}
-                </div>
-                <span className="shrink-0 self-center text-gray-600">›</span>
-              </button>
+                <p className="shrink-0 text-sm text-gray-300">
+                  {room.label}
+                </p>
+                <p className="shrink-0 font-mono text-[10px] text-gray-600">
+                  {room.keyNumber}
+                </p>
+                {user && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedUser(user);
+                    }}
+                    className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2 hover:bg-white/5"
+                    title="Profil ansehen"
+                  >
+                    <RoundAvatar user={user} size={22} />
+                    <span className="truncate text-xs font-medium text-white">
+                      {user.name}
+                      {isMine && (
+                        <span className="ml-1 text-[9px] text-accent">
+                          (du)
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                )}
+                {!user && (
+                  <span className="flex-1 text-[11px] text-gray-600">
+                    Frei
+                  </span>
+                )}
+                {hasOpenDamage && (
+                  <span
+                    className="shrink-0 rounded-full bg-red-500/20 px-1.5 py-0.5 font-mono text-[9px] font-bold text-red-300 ring-1 ring-red-500/40"
+                    title="Offener Schaden"
+                  >
+                    ⚠
+                  </span>
+                )}
+                <span className="shrink-0 text-gray-600">›</span>
+              </div>
             );
           })}
         </div>
@@ -379,35 +402,31 @@ export default function BewohnendePage() {
         </h3>
         <div className="space-y-1.5">
           {commonRooms.map((room) => {
-            const hasOpenDamage = room.damages.some((d) => !d.resolvedAt);
+            const hasOpenDamage = damagesByRoom.get(room.keyNumber) ?? false;
             return (
               <button
                 key={room.id}
                 onClick={() => setSelectedRoom(room)}
-                className="flex w-full items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2 text-left transition-all hover:border-gray-600"
+                className="flex w-full items-center gap-2 rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2 text-left transition-all hover:border-gray-600"
               >
                 <span className="shrink-0 text-lg">
                   {roomTypeIcons[room.type]}
                 </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-sm text-gray-300">{room.label}</p>
-                    <p className="font-mono text-[10px] text-gray-600">
-                      {room.keyNumber}
-                    </p>
-                    {hasOpenDamage && (
-                      <span
-                        className="inline-flex items-center gap-0.5 rounded-full bg-red-500/20 px-1.5 py-0.5 font-mono text-[8px] font-bold text-red-300 ring-1 ring-red-500/40"
-                        title="Offener Schaden"
-                      >
-                        ⚠ Schaden
-                      </span>
-                    )}
-                  </div>
-                  <p className="truncate text-xs text-gray-600">
-                    {roomTypeLabels[room.type]}
-                  </p>
-                </div>
+                <p className="shrink-0 text-sm text-gray-300">{room.label}</p>
+                <p className="shrink-0 font-mono text-[10px] text-gray-600">
+                  {room.keyNumber}
+                </p>
+                <span className="flex-1 truncate text-[11px] text-gray-600">
+                  {roomTypeLabels[room.type]}
+                </span>
+                {hasOpenDamage && (
+                  <span
+                    className="shrink-0 rounded-full bg-red-500/20 px-1.5 py-0.5 font-mono text-[9px] font-bold text-red-300 ring-1 ring-red-500/40"
+                    title="Offener Schaden"
+                  >
+                    ⚠
+                  </span>
+                )}
                 <span className="shrink-0 text-gray-600">›</span>
               </button>
             );

@@ -101,6 +101,8 @@ model User {
   createdActivities    Activity[]            @relation("ActivityCreator")
   activityParticipations ActivityParticipant[]
   activityComments     ActivityComment[]
+  reportedDamages      RoomDamage[]          @relation("DamageReporter")
+  createdSublets       Sublet[]              @relation("SubletCreator")
 
   @@map("users")
 }
@@ -445,4 +447,43 @@ model Room {
   users     User[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Schaeden an einem Raum (Zimmer oder Gemeinschaftsraum)
+// roomKey speichert die keyNumber (z.B. "N01", "N0-BAD") — Raeume aus
+// bewohnende-data.ts sind derzeit teilweise noch Mock, daher loose
+// verknuepft ueber einen String statt FK.
+model RoomDamage {
+  id           String    @id @default(cuid())
+  roomKey      String
+  description  String
+  severity     String    @default("klein") // "klein" | "mittel" | "gross"
+  reportedBy   User?     @relation("DamageReporter", fields: [reportedById], references: [id])
+  reportedById String?
+  reportedAt   DateTime  @default(now())
+  resolvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([roomKey])
+  @@index([resolvedAt])
+  @@map("room_damages")
+}
+
+// Untermiete fuer ein Zimmer
+model Sublet {
+  id           String   @id @default(cuid())
+  roomKey      String
+  subtenantName String  // Name der Untermieter:in
+  fromDate     DateTime
+  toDate       DateTime
+  notes        String   @default("")
+  createdBy    User     @relation("SubletCreator", fields: [createdById], references: [id])
+  createdById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([roomKey])
+  @@index([fromDate])
+  @@map("sublets")
 }
