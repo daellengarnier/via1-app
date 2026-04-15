@@ -59,9 +59,8 @@ export async function GET() {
       kaffee: user.notifyKaffee,
       pinnwand: user.notifyPinnwand,
       flohmi: user.notifyFlohmi,
-      bookingComment: user.notifyBookingComment,
       activity: user.notifyActivity,
-      activityComment: user.notifyActivityComment,
+      myPostsComment: user.notifyMyPostsComment,
     },
   });
 }
@@ -130,11 +129,10 @@ export async function PATCH(req: Request) {
     if (typeof n.kaffee === "boolean") data.notifyKaffee = n.kaffee;
     if (typeof n.pinnwand === "boolean") data.notifyPinnwand = n.pinnwand;
     if (typeof n.flohmi === "boolean") data.notifyFlohmi = n.flohmi;
-    if (typeof n.bookingComment === "boolean")
-      data.notifyBookingComment = n.bookingComment;
     if (typeof n.activity === "boolean") data.notifyActivity = n.activity;
-    if (typeof n.activityComment === "boolean")
-      data.notifyActivityComment = n.activityComment;
+    if (typeof n.myPostsComment === "boolean") {
+      data.notifyMyPostsComment = n.myPostsComment;
+    }
   }
 
   // Room-Update: Nur wenn 'room' (keyNumber) gesetzt ist — der Raum
@@ -204,9 +202,8 @@ export async function PATCH(req: Request) {
       kaffee: user.notifyKaffee,
       pinnwand: user.notifyPinnwand,
       flohmi: user.notifyFlohmi,
-      bookingComment: user.notifyBookingComment,
       activity: user.notifyActivity,
-      activityComment: user.notifyActivityComment,
+      myPostsComment: user.notifyMyPostsComment,
     },
   });
 }

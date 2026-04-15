@@ -47,6 +47,7 @@ export async function PATCH(
     include: {
       createdBy: { select: { id: true, name: true } },
       completedBy: { select: { id: true, name: true } },
+      _count: { select: { comments: true } },
     },
   });
 
@@ -61,6 +62,7 @@ export async function PATCH(
     completedById: updated.completedById,
     completedAt: updated.completedAt?.toISOString() ?? null,
     createdAt: updated.createdAt.toISOString(),
+    commentCount: updated._count.comments,
   });
 }
 

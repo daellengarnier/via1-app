@@ -9,22 +9,23 @@ interface AnimatedBackgroundProps {
 }
 
 // Vorgenerierte Partikel-Positionen (fix, damit Server/Client matchen)
+// blur-Varianten fuer unterschiedliche Weichheit
 const PARTICLES = [
-  { left: "10%", top: "85%", anim: "a", duration: 14, delay: 0 },
-  { left: "25%", top: "92%", anim: "b", duration: 18, delay: 2 },
-  { left: "45%", top: "80%", anim: "c", duration: 16, delay: 4 },
-  { left: "65%", top: "90%", anim: "d", duration: 20, delay: 1 },
-  { left: "80%", top: "85%", anim: "a", duration: 15, delay: 5 },
-  { left: "92%", top: "70%", anim: "b", duration: 17, delay: 3 },
-  { left: "15%", top: "60%", anim: "c", duration: 19, delay: 6 },
-  { left: "38%", top: "55%", anim: "d", duration: 16, delay: 2 },
-  { left: "58%", top: "65%", anim: "a", duration: 18, delay: 7 },
-  { left: "78%", top: "50%", anim: "b", duration: 14, delay: 4 },
-  { left: "20%", top: "40%", anim: "c", duration: 21, delay: 0 },
-  { left: "50%", top: "35%", anim: "d", duration: 17, delay: 5 },
-  { left: "85%", top: "30%", anim: "a", duration: 19, delay: 3 },
-  { left: "30%", top: "20%", anim: "b", duration: 15, delay: 6 },
-  { left: "70%", top: "15%", anim: "c", duration: 18, delay: 1 },
+  { left: "10%", top: "85%", anim: "a", duration: 16, delay: 0, blur: "blur-soft" },
+  { left: "25%", top: "92%", anim: "b", duration: 22, delay: 2, blur: "blur-heavy" },
+  { left: "45%", top: "80%", anim: "c", duration: 18, delay: 4, blur: "" },
+  { left: "65%", top: "90%", anim: "d", duration: 24, delay: 1, blur: "blur-soft" },
+  { left: "80%", top: "85%", anim: "a", duration: 17, delay: 5, blur: "blur-sharp" },
+  { left: "92%", top: "70%", anim: "b", duration: 20, delay: 3, blur: "blur-heavy" },
+  { left: "15%", top: "60%", anim: "c", duration: 23, delay: 6, blur: "blur-soft" },
+  { left: "38%", top: "55%", anim: "d", duration: 18, delay: 2, blur: "" },
+  { left: "58%", top: "65%", anim: "a", duration: 21, delay: 7, blur: "blur-heavy" },
+  { left: "78%", top: "50%", anim: "b", duration: 16, delay: 4, blur: "blur-sharp" },
+  { left: "20%", top: "40%", anim: "c", duration: 25, delay: 0, blur: "blur-soft" },
+  { left: "50%", top: "35%", anim: "d", duration: 19, delay: 5, blur: "" },
+  { left: "85%", top: "30%", anim: "a", duration: 22, delay: 3, blur: "blur-heavy" },
+  { left: "30%", top: "20%", anim: "b", duration: 17, delay: 6, blur: "blur-sharp" },
+  { left: "70%", top: "15%", anim: "c", duration: 20, delay: 1, blur: "blur-soft" },
 ];
 
 export function AnimatedBackground({
@@ -70,7 +71,7 @@ export function AnimatedBackground({
       {PARTICLES.map((p, i) => (
         <span
           key={i}
-          className="via-particle"
+          className={`via-particle ${p.blur}`}
           style={{
             left: p.left,
             top: p.top,

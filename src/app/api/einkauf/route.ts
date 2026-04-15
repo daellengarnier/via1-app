@@ -15,6 +15,7 @@ export async function GET() {
     include: {
       createdBy: { select: { id: true, name: true } },
       completedBy: { select: { id: true, name: true } },
+      _count: { select: { comments: true } },
     },
   });
 
@@ -30,6 +31,7 @@ export async function GET() {
       completedById: i.completedById,
       completedAt: i.completedAt?.toISOString() ?? null,
       createdAt: i.createdAt.toISOString(),
+      commentCount: i._count.comments,
     }))
   );
 }
@@ -69,5 +71,6 @@ export async function POST(req: Request) {
     completedById: null,
     completedAt: null,
     createdAt: created.createdAt.toISOString(),
+    commentCount: 0,
   });
 }

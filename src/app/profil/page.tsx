@@ -36,9 +36,8 @@ interface ProfileData {
     kaffee: boolean;
     pinnwand: boolean;
     flohmi: boolean;
-    bookingComment: boolean;
     activity: boolean;
-    activityComment: boolean;
+    myPostsComment: boolean;
   };
 }
 
@@ -232,9 +231,8 @@ export default function ProfilPage() {
       kaffee: true,
       pinnwand: true,
       flohmi: true,
-      bookingComment: true,
       activity: true,
-      activityComment: true,
+      myPostsComment: true,
     },
   });
 
@@ -568,8 +566,8 @@ export default function ProfilPage() {
               { key: "termine", label: "Neuer Termin" },
               { key: "activity", label: "Neue spontane Aktivität" },
               {
-                key: "activityComment",
-                label: "Anmeldung oder Kommentar auf meiner Aktivität",
+                key: "myPostsComment",
+                label: "Kommentare / Anmeldungen auf meinen Beiträgen",
               },
               { key: "putzplan", label: "Putzämtli: meine WG ist dran" },
               { key: "kaffee", label: "Kaffeebohnen gewechselt" },
@@ -577,10 +575,6 @@ export default function ProfilPage() {
               { key: "flohmi", label: "Neues Inserat im Flohmi" },
               { key: "aufgaben", label: "Neue Aufgabe" },
               { key: "aufgabeStarted", label: "Jemand packt eine Aufgabe an" },
-              {
-                key: "bookingComment",
-                label: "Kommentar auf meiner Gästi-Buchung",
-              },
             ] as const
           ).map(({ key, label }) => (
             <div

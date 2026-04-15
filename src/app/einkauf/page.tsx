@@ -15,6 +15,15 @@ interface ShoppingItem {
   completedById: string | null;
   completedAt: string | null;
   createdAt: string;
+  commentCount: number;
+}
+
+interface ShoppingComment {
+  id: string;
+  text: string;
+  author: string;
+  authorId: string;
+  date: string;
 }
 
 export default function EinkaufPage() {
@@ -24,10 +33,17 @@ export default function EinkaufPage() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newNotes, setNewNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<"offen" | "erledigt">("offen");
+
+  // Comment-Modal
+  const [commentsOpenId, setCommentsOpenId] = useState<string | null>(null);
+  const [comments, setComments] = useState<ShoppingComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [newComment, setNewComment] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -46,25 +62,50 @@ export default function EinkaufPage() {
     load();
   }, [load]);
 
-  async function createItem(e: React.FormEvent) {
+  function resetForm() {
+    setShowAdd(false);
+    setEditingId(null);
+    setNewTitle("");
+    setNewNotes("");
+  }
+
+  function openEdit(item: ShoppingItem) {
+    setEditingId(item.id);
+    setNewTitle(item.title);
+    setNewNotes(item.notes);
+    setShowAdd(true);
+  }
+
+  async function saveItem(e: React.FormEvent) {
     e.preventDefault();
     if (!newTitle.trim()) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/einkauf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle, notes: newNotes }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const created = (await res.json()) as ShoppingItem;
-      setItems((prev) => [created, ...prev]);
-      setNewTitle("");
-      setNewNotes("");
-      setShowAdd(false);
+      if (editingId) {
+        const res = await fetch(`/api/einkauf/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: newTitle, notes: newNotes }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const updated = (await res.json()) as ShoppingItem;
+        setItems((prev) =>
+          prev.map((i) => (i.id === editingId ? updated : i))
+        );
+      } else {
+        const res = await fetch("/api/einkauf", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: newTitle, notes: newNotes }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const created = (await res.json()) as ShoppingItem;
+        setItems((prev) => [created, ...prev]);
+      }
+      resetForm();
     } catch (err) {
-      console.error("einkauf erstellen", err);
-      alert("Konnte Eintrag nicht erstellen.");
+      console.error("einkauf speichern", err);
+      alert("Konnte Eintrag nicht speichern.");
     } finally {
       setSaving(false);
     }
@@ -96,9 +137,80 @@ export default function EinkaufPage() {
     }
   }
 
+  async function openComments(id: string) {
+    setCommentsOpenId(id);
+    setComments([]);
+    setCommentsLoading(true);
+    try {
+      const res = await fetch(`/api/einkauf/${id}/comments`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as ShoppingComment[];
+      setComments(data);
+    } catch (err) {
+      console.error("comments laden", err);
+    } finally {
+      setCommentsLoading(false);
+    }
+  }
+
+  function closeComments() {
+    setCommentsOpenId(null);
+    setComments([]);
+    setNewComment("");
+  }
+
+  async function addComment(e: React.FormEvent) {
+    e.preventDefault();
+    const text = newComment.trim();
+    if (!text || !commentsOpenId) return;
+    try {
+      const res = await fetch(`/api/einkauf/${commentsOpenId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const created = (await res.json()) as ShoppingComment;
+      setComments((prev) => [...prev, created]);
+      setNewComment("");
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === commentsOpenId
+            ? { ...i, commentCount: (i.commentCount ?? 0) + 1 }
+            : i
+        )
+      );
+    } catch (err) {
+      console.error("comment add", err);
+      alert("Konnte Kommentar nicht speichern.");
+    }
+  }
+
+  async function deleteComment(cid: string) {
+    try {
+      const res = await fetch(`/api/einkauf/comments/${cid}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setComments((prev) => prev.filter((c) => c.id !== cid));
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === commentsOpenId
+            ? { ...i, commentCount: Math.max(0, (i.commentCount ?? 1) - 1) }
+            : i
+        )
+      );
+    } catch (err) {
+      console.error("comment delete", err);
+    }
+  }
+
   const offen = items.filter((i) => !i.done);
   const erledigt = items.filter((i) => i.done);
   const visible = filter === "offen" ? offen : erledigt;
+  const activeItem = commentsOpenId
+    ? items.find((i) => i.id === commentsOpenId) ?? null
+    : null;
 
   return (
     <div className="relative p-4 pb-20">
@@ -107,7 +219,7 @@ export default function EinkaufPage() {
         glowClass="glow-violet"
         showIcon={false}
       />
-      <div className="mb-2 flex justify-center">
+      <div className="mb-4 flex flex-col items-center gap-2">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/icon-einkauf.webp"
@@ -116,25 +228,26 @@ export default function EinkaufPage() {
           loading="eager"
           fetchPriority="high"
         />
-      </div>
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-violet-300">
-        Einkauf
-      </h1>
-      <p className="mb-4 text-center text-sm text-violet-300/70">
-        Was noch gebraucht wird
-      </p>
-      <div className="mb-4 flex justify-center">
         <button
-          onClick={() => setShowAdd(!showAdd)}
-          className="rounded-full bg-violet-500 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
+          onClick={() => {
+            if (showAdd) {
+              resetForm();
+            } else {
+              setEditingId(null);
+              setNewTitle("");
+              setNewNotes("");
+              setShowAdd(true);
+            }
+          }}
+          className="rounded-full border border-violet-400/50 bg-violet-400/15 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-violet-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors hover:bg-violet-400/25"
         >
-          + Neuer Eintrag
+          {editingId ? "Eintrag bearbeiten" : "+ Neuer Eintrag"}
         </button>
       </div>
 
       {showAdd && (
         <form
-          onSubmit={createItem}
+          onSubmit={saveItem}
           className="mb-4 rounded-lg border border-violet-500/30 bg-violet-500/5 p-4"
         >
           <div className="mb-3">
@@ -169,15 +282,11 @@ export default function EinkaufPage() {
               disabled={saving}
               className="rounded bg-violet-500 px-4 py-2 font-mono text-xs font-bold text-dark disabled:opacity-50"
             >
-              {saving ? "…" : "Hinzufügen"}
+              {saving ? "…" : editingId ? "Speichern" : "Hinzufügen"}
             </button>
             <button
               type="button"
-              onClick={() => {
-                setShowAdd(false);
-                setNewTitle("");
-                setNewNotes("");
-              }}
+              onClick={resetForm}
               className="rounded px-4 py-2 text-xs text-gray-400 hover:text-white"
             >
               Abbrechen
@@ -213,7 +322,8 @@ export default function EinkaufPage() {
       {/* Liste */}
       <div className="space-y-2">
         {visible.map((item) => {
-          const canDelete = item.createdById === currentUserId || isAdmin;
+          const isOwn = item.createdById === currentUserId;
+          const canEdit = isOwn || isAdmin;
           return (
             <div
               key={item.id}
@@ -267,15 +377,36 @@ export default function EinkaufPage() {
                     )}
                   </p>
                 </div>
-                {canDelete && (
+                <div className="flex shrink-0 flex-col items-end gap-1">
                   <button
-                    onClick={() => deleteItem(item.id)}
-                    className="shrink-0 rounded px-1.5 text-[14px] leading-none text-gray-600 hover:text-red-400"
-                    aria-label="Loeschen"
+                    onClick={() => openComments(item.id)}
+                    className="rounded px-1.5 py-0.5 text-[11px] text-violet-300/80 hover:bg-violet-500/10 hover:text-violet-200"
+                    aria-label="Kommentare"
                   >
-                    ×
+                    💬
+                    {(item.commentCount ?? 0) > 0 && (
+                      <span className="ml-0.5">{item.commentCount}</span>
+                    )}
                   </button>
-                )}
+                  {canEdit && (
+                    <button
+                      onClick={() => openEdit(item)}
+                      className="rounded px-1.5 py-0.5 text-[11px] text-violet-300/80 hover:bg-violet-500/10 hover:text-violet-200"
+                      aria-label="Bearbeiten"
+                    >
+                      ✎
+                    </button>
+                  )}
+                  {canEdit && (
+                    <button
+                      onClick={() => deleteItem(item.id)}
+                      className="rounded px-1.5 text-[14px] leading-none text-gray-600 hover:text-red-400"
+                      aria-label="Loeschen"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -291,6 +422,112 @@ export default function EinkaufPage() {
             ? "Nichts auf der Liste 🎉"
             : "Noch nichts erledigt"}
         </p>
+      )}
+
+      {/* Kommentar-Modal */}
+      {commentsOpenId && (
+        <div
+          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)]"
+          onClick={closeComments}
+        >
+          <div
+            className="my-4 w-full max-w-md rounded-2xl border border-gray-800 bg-dark pb-[env(safe-area-inset-bottom,0px)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 border-b border-gray-800 bg-dark/95 px-5 py-3 backdrop-blur-sm">
+              <div className="flex items-start justify-between">
+                <p className="font-display text-[10px] font-bold uppercase tracking-widest text-violet-300">
+                  EINKAUF
+                </p>
+                <button
+                  onClick={closeComments}
+                  className="text-gray-500 hover:text-white"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div className="p-5">
+              {activeItem && (
+                <div className="mb-4 rounded-lg border border-gray-800 bg-white/5 p-3">
+                  <p className="text-sm font-medium text-white">
+                    {activeItem.title}
+                  </p>
+                  {activeItem.notes && (
+                    <p className="mt-0.5 text-xs text-gray-400">
+                      {activeItem.notes}
+                    </p>
+                  )}
+                  <p className="mt-2 font-mono text-[10px] text-gray-500">
+                    — {activeItem.createdBy}
+                  </p>
+                </div>
+              )}
+
+              <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-violet-300">
+                KOMMENTARE {comments.length > 0 && `(${comments.length})`}
+              </p>
+
+              {commentsLoading ? (
+                <p className="text-center text-xs text-gray-600">Laden…</p>
+              ) : comments.length === 0 ? (
+                <p className="text-center text-xs text-gray-600">
+                  Noch keine Kommentare
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {comments.map((c) => {
+                    const canDeleteComment = c.authorId === currentUserId || isAdmin;
+                    return (
+                      <div
+                        key={c.id}
+                        className="rounded border-l-2 border-violet-500/50 bg-white/5 px-2 py-1.5"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="flex-1 text-xs text-gray-200">
+                            {c.text}
+                          </p>
+                          {canDeleteComment && (
+                            <button
+                              onClick={() => deleteComment(c.id)}
+                              className="text-[10px] text-gray-600 hover:text-red-400"
+                              aria-label="Loeschen"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                        <p className="mt-0.5 font-mono text-[9px] text-gray-500">
+                          — {c.author} ·{" "}
+                          {new Date(c.date).toLocaleDateString("de-CH", {
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <form onSubmit={addComment} className="mt-3 flex gap-2">
+                <input
+                  type="text"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Kommentar schreiben…"
+                  className="flex-1 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-violet-400 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="rounded bg-violet-500 px-3 py-2 font-display text-[10px] font-bold text-dark"
+                >
+                  OK
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

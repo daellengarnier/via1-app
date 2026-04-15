@@ -50,6 +50,7 @@ enum NotificationKind {
   ACTIVITY_COMMENT
   FLOHMI_TAKEN
   PINNWAND_COMMENT
+  SHOPPING_COMMENT
 }
 
 model User {
@@ -76,6 +77,7 @@ model User {
   notifyBookingComment  Boolean @default(true)
   notifyActivity        Boolean @default(true)
   notifyActivityComment Boolean @default(true)
+  notifyMyPostsComment  Boolean @default(true)
   hasKaffeeAbo          Boolean @default(false)
   favoriteAnimal        String?
   room        Room?     @relation(fields: [roomId], references: [id])
@@ -108,6 +110,7 @@ model User {
   pinnwandComments     PinnwandComment[]     @relation("PinnwandCommentAuthor")
   createdShopping      ShoppingItem[]        @relation("ShoppingCreator")
   completedShopping    ShoppingItem[]        @relation("ShoppingCompleter")
+  shoppingComments     ShoppingItemComment[] @relation("ShoppingCommentAuthor")
 
   @@map("users")
 }
@@ -491,20 +494,34 @@ model RoomDamage {
 
 // Einkaufsliste fuer alles Moegliche (Anzuendwuerfel, Holzbriketts, Holz, …)
 model ShoppingItem {
-  id             String    @id @default(cuid())
+  id             String               @id @default(cuid())
   title          String
-  notes          String    @default("")
-  done           Boolean   @default(false)
-  createdBy      User      @relation("ShoppingCreator", fields: [createdById], references: [id])
+  notes          String               @default("")
+  done           Boolean              @default(false)
+  createdBy      User                 @relation("ShoppingCreator", fields: [createdById], references: [id])
   createdById    String
-  completedBy    User?     @relation("ShoppingCompleter", fields: [completedById], references: [id])
+  completedBy    User?                @relation("ShoppingCompleter", fields: [completedById], references: [id])
   completedById  String?
   completedAt    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  comments       ShoppingItemComment[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 
   @@index([done, createdAt])
   @@map("shopping_items")
+}
+
+model ShoppingItemComment {
+  id        String       @id @default(cuid())
+  item      ShoppingItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId    String
+  author    User         @relation("ShoppingCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  text      String
+  createdAt DateTime     @default(now())
+
+  @@index([itemId])
+  @@map("shopping_item_comments")
 }
 
 // Untermiete fuer ein Zimmer

@@ -29,21 +29,26 @@ async function getWebPush() {
 }
 
 // Mapping: welches User-Feld steuert welche Benachrichtigungs-Kind
+// Alle Kommentar-Benachrichtigungen (auf eigene Beitraege) laufen ueber
+// die Sammel-Pref notifyMyPostsComment. Einzige Ausnahme: Anmeldungen auf
+// Aktivitaeten nutzen auch ACTIVITY_COMMENT-kind (keine echten Kommentare)
+// und landen ebenfalls im notifyMyPostsComment-Topf, da der User beides
+// mit einer einzigen Einstellung kontrollieren soll.
 const kindToPref: Record<NotificationKind, keyof PrefFields> = {
   SAUNA: "notifySauna",
   TERMIN_NEW: "notifyTermine",
   PUTZPLAN_MY_WG: "notifyPutzplan",
   KAFFEE_CHANGED: "notifyKaffee",
   PINNWAND_NEW: "notifyPinnwand",
-  PINNWAND_COMMENT: "notifyPinnwand",
+  PINNWAND_COMMENT: "notifyMyPostsComment",
   FLOHMI_NEW: "notifyFlohmi",
   FLOHMI_TAKEN: "notifyFlohmi",
   AUFGABE_NEW: "notifyAufgaben",
   AUFGABE_STARTED: "notifyAufgabeStarted",
-  BOOKING_COMMENT: "notifyBookingComment",
+  BOOKING_COMMENT: "notifyMyPostsComment",
   ACTIVITY_NEW: "notifyActivity",
-  // ACTIVITY_COMMENT deckt auch Anmeldungen auf meiner Aktivitaet ab
-  ACTIVITY_COMMENT: "notifyActivityComment",
+  ACTIVITY_COMMENT: "notifyMyPostsComment",
+  SHOPPING_COMMENT: "notifyMyPostsComment",
 };
 
 type PrefFields = {
@@ -55,9 +60,8 @@ type PrefFields = {
   notifyKaffee: boolean;
   notifyPinnwand: boolean;
   notifyFlohmi: boolean;
-  notifyBookingComment: boolean;
   notifyActivity: boolean;
-  notifyActivityComment: boolean;
+  notifyMyPostsComment: boolean;
 };
 
 interface NotifyParams {
