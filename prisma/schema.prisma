@@ -366,6 +366,8 @@ model Activity {
   location     String                @default("")
   // Start-Zeitpunkt der Aktivitaet
   startAt      DateTime
+  // Serien-ID fuer wiederkehrende Aktivitaeten (null = einmalig)
+  recurrenceGroupId String?
   createdBy    User                  @relation("ActivityCreator", fields: [createdById], references: [id])
   createdById  String
   participants ActivityParticipant[]
@@ -374,6 +376,7 @@ model Activity {
   updatedAt    DateTime              @updatedAt
 
   @@index([startAt])
+  @@index([recurrenceGroupId])
   @@map("activities")
 }
 

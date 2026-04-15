@@ -24,12 +24,29 @@ interface Activity {
   description: string;
   location: string;
   startAt: string; // ISO
+  recurrenceGroupId: string | null;
   createdBy: string;
   createdById: string;
   participants: Participant[];
   myParticipation: "going" | "not-going" | null;
   comments: Comment[];
 }
+
+type Recurrence = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY";
+
+const RECURRENCE_LABELS: Record<Recurrence, string> = {
+  NONE: "Einmalig",
+  DAILY: "Täglich",
+  WEEKLY: "Wöchentlich",
+  MONTHLY: "Monatlich",
+};
+
+const DEFAULT_RECURRENCE_COUNT: Record<Recurrence, number> = {
+  NONE: 1,
+  DAILY: 14,
+  WEEKLY: 8,
+  MONTHLY: 6,
+};
 
 const TEMPLATES: { id: string; title: string; defaultLocation: string }[] = [
   { id: "aareschwumm", title: "Aareschwumm", defaultLocation: "Aare" },
@@ -110,6 +127,8 @@ export default function AktivitaetenPage() {
   const [customTime, setCustomTime] = useState("");
   const [customDate, setCustomDate] = useState("");
   const [quickTimeMinutes, setQuickTimeMinutes] = useState<number | null>(0);
+  const [recurrence, setRecurrence] = useState<Recurrence>("NONE");
+  const [recurrenceCount, setRecurrenceCount] = useState<number>(1);
   const [openCommentsId, setOpenCommentsId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
 
@@ -175,15 +194,24 @@ export default function AktivitaetenPage() {
           description: customDescription,
           location: template ? template.defaultLocation : customLocation,
           startAt,
+          recurrence,
+          recurrenceCount:
+            recurrence === "NONE" ? 1 : Math.max(1, recurrenceCount),
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const created = (await res.json()) as Activity;
-      setActivities((prev) =>
-        [...prev, created].sort((a, b) =>
-          a.startAt.localeCompare(b.startAt)
-        )
-      );
+      // Bei Serie ist die Response nur die erste Instanz — darum
+      // refetchen wir die Liste, um alle neuen Instanzen zu bekommen
+      if (recurrence !== "NONE") {
+        await loadActivities();
+      } else {
+        const created = (await res.json()) as Activity;
+        setActivities((prev) =>
+          [...prev, created].sort((a, b) =>
+            a.startAt.localeCompare(b.startAt)
+          )
+        );
+      }
       // Reset
       setShowCreate(false);
       setSelectedTemplate(null);
@@ -193,6 +221,8 @@ export default function AktivitaetenPage() {
       setCustomTime("");
       setCustomDate("");
       setQuickTimeMinutes(0);
+      setRecurrence("NONE");
+      setRecurrenceCount(1);
     } catch (err) {
       console.error("Activity erstellen", err);
       alert("Konnte Aktivität nicht erstellen.");
@@ -263,12 +293,42 @@ export default function AktivitaetenPage() {
     }
   }
 
-  async function deleteActivity(id: string) {
-    if (!confirm("Diese Aktivität wirklich löschen?")) return;
+  async function deleteActivity(activity: Activity) {
+    let scope: "one" | "all" = "one";
+    if (activity.recurrenceGroupId) {
+      // Mehrfach-Dialog: Serie oder einzelne Instanz
+      const all = confirm(
+        `Diese Aktivität gehört zu einer Serie.\n\n` +
+          `OK = alle kommenden Instanzen dieser Serie löschen\n` +
+          `Abbrechen = nur diese Instanz löschen`
+      );
+      if (all) {
+        scope = "all";
+      } else {
+        // User hat Abbrechen gewaehlt — nochmal bestaetigen fuer Einzelloeschung
+        if (!confirm("Nur diese eine Instanz löschen?")) return;
+      }
+    } else {
+      if (!confirm("Diese Aktivität wirklich löschen?")) return;
+    }
     try {
-      const res = await fetch(`/api/activities/${id}`, { method: "DELETE" });
+      const res = await fetch(
+        `/api/activities/${activity.id}?scope=${scope}`,
+        { method: "DELETE" }
+      );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setActivities((prev) => prev.filter((a) => a.id !== id));
+      if (scope === "all" && activity.recurrenceGroupId) {
+        // Alle Instanzen der Serie ab startAt entfernen
+        setActivities((prev) =>
+          prev.filter(
+            (a) =>
+              a.recurrenceGroupId !== activity.recurrenceGroupId ||
+              a.startAt < activity.startAt
+          )
+        );
+      } else {
+        setActivities((prev) => prev.filter((a) => a.id !== activity.id));
+      }
     } catch (err) {
       console.error("Activity loeschen", err);
     }
@@ -401,6 +461,57 @@ export default function AktivitaetenPage() {
             />
           </div>
 
+          {/* Wiederholung */}
+          <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-blue-300">
+            WIEDERHOLEN
+          </p>
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {(["NONE", "DAILY", "WEEKLY", "MONTHLY"] as Recurrence[]).map(
+              (r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => {
+                    setRecurrence(r);
+                    setRecurrenceCount(DEFAULT_RECURRENCE_COUNT[r]);
+                  }}
+                  className={`rounded-full px-3 py-1 font-mono text-[10px] font-bold transition-colors ${
+                    recurrence === r
+                      ? "bg-blue-400 text-dark"
+                      : "border border-gray-700 text-gray-400"
+                  }`}
+                >
+                  {RECURRENCE_LABELS[r]}
+                </button>
+              )
+            )}
+          </div>
+          {recurrence !== "NONE" && (
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-[10px] text-gray-500">Anzahl:</span>
+              <input
+                type="number"
+                min={1}
+                max={60}
+                value={recurrenceCount}
+                onChange={(e) => {
+                  const n = parseInt(e.target.value, 10);
+                  if (!Number.isNaN(n)) {
+                    setRecurrenceCount(Math.min(60, Math.max(1, n)));
+                  }
+                }}
+                className="w-16 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-blue-400 focus:outline-none"
+              />
+              <span className="text-[10px] text-gray-500">
+                {recurrence === "DAILY"
+                  ? "Tage"
+                  : recurrence === "WEEKLY"
+                    ? "Wochen"
+                    : "Monate"}
+              </span>
+            </div>
+          )}
+
           <div className="flex gap-2">
             <button
               onClick={createActivity}
@@ -452,8 +563,16 @@ export default function AktivitaetenPage() {
                       </span>
                     )}
                   </p>
-                  <h3 className="mt-0.5 text-sm font-semibold text-white">
-                    {a.title}
+                  <h3 className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-white">
+                    <span>{a.title}</span>
+                    {a.recurrenceGroupId && (
+                      <span
+                        className="text-[10px] text-blue-300/80"
+                        title="Wiederkehrende Aktivität"
+                      >
+                        🔁
+                      </span>
+                    )}
                   </h3>
                   {a.location && (
                     <p className="text-xs text-gray-500">📍 {a.location}</p>
@@ -474,7 +593,7 @@ export default function AktivitaetenPage() {
                 </div>
                 {isOwn && (
                   <button
-                    onClick={() => deleteActivity(a.id)}
+                    onClick={() => deleteActivity(a)}
                     className="text-[10px] text-gray-600 hover:text-red-400"
                     aria-label="Loeschen"
                   >

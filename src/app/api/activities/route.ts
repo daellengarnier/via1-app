@@ -1,8 +1,22 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { randomBytes } from "crypto";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notify";
+
+type Recurrence = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY";
+
+// Maximal-Anzahl Instanzen pro Serie — Sicherheitsnetz
+const MAX_RECURRENCE_COUNT = 60;
+
+function addInterval(date: Date, recurrence: Recurrence, step: number): Date {
+  const d = new Date(date);
+  if (recurrence === "DAILY") d.setDate(d.getDate() + step);
+  else if (recurrence === "WEEKLY") d.setDate(d.getDate() + 7 * step);
+  else if (recurrence === "MONTHLY") d.setMonth(d.getMonth() + step);
+  return d;
+}
 
 // GET /api/activities — alle aktuellen/zukuenftigen Aktivitaeten
 // (Activities die vor > 3 Stunden gestartet sind werden nicht mehr
@@ -39,6 +53,7 @@ export async function GET() {
       description: a.description,
       location: a.location,
       startAt: a.startAt.toISOString(),
+      recurrenceGroupId: a.recurrenceGroupId,
       createdBy: a.createdBy.name,
       createdById: a.createdBy.id,
       participants: a.participants.map((p) => ({
@@ -63,7 +78,7 @@ export async function GET() {
 }
 
 // POST /api/activities
-// Body: { title, description?, location?, startAt (ISO) }
+// Body: { title, description?, location?, startAt (ISO), recurrence?, recurrenceCount? }
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -75,6 +90,8 @@ export async function POST(req: Request) {
     description?: unknown;
     location?: unknown;
     startAt?: unknown;
+    recurrence?: unknown;
+    recurrenceCount?: unknown;
   };
 
   const title = typeof body.title === "string" ? body.title.trim() : "";
@@ -91,14 +108,36 @@ export async function POST(req: Request) {
     );
   }
 
-  const created = await prisma.activity.create({
+  const recurrence: Recurrence =
+    body.recurrence === "DAILY" ||
+    body.recurrence === "WEEKLY" ||
+    body.recurrence === "MONTHLY"
+      ? body.recurrence
+      : "NONE";
+
+  let recurrenceCount =
+    typeof body.recurrenceCount === "number" && body.recurrenceCount > 0
+      ? Math.floor(body.recurrenceCount)
+      : 1;
+  if (recurrence === "NONE") recurrenceCount = 1;
+  if (recurrenceCount > MAX_RECURRENCE_COUNT) {
+    recurrenceCount = MAX_RECURRENCE_COUNT;
+  }
+
+  const recurrenceGroupId =
+    recurrence !== "NONE" && recurrenceCount > 1
+      ? randomBytes(12).toString("base64url")
+      : null;
+
+  // Erste Instanz anlegen (nur hier erstellen wir direkt participants)
+  const first = await prisma.activity.create({
     data: {
       title,
       description,
       location,
       startAt,
+      recurrenceGroupId,
       createdById: session.user.id,
-      // Der Ersteller ist automatisch dabei
       participants: {
         create: {
           userId: session.user.id,
@@ -114,13 +153,44 @@ export async function POST(req: Request) {
     },
   });
 
-  const timeStr = created.startAt.toLocaleTimeString("de-CH", {
+  // Weitere Instanzen (2. bis N.) anlegen
+  if (recurrenceGroupId) {
+    for (let i = 1; i < recurrenceCount; i++) {
+      const nextDate = addInterval(startAt, recurrence, i);
+      await prisma.activity.create({
+        data: {
+          title,
+          description,
+          location,
+          startAt: nextDate,
+          recurrenceGroupId,
+          createdById: session.user.id,
+          participants: {
+            create: {
+              userId: session.user.id,
+              going: true,
+            },
+          },
+        },
+      });
+    }
+  }
+
+  const timeStr = first.startAt.toLocaleTimeString("de-CH", {
     hour: "2-digit",
     minute: "2-digit",
   });
+  const recurrenceLabel =
+    recurrence === "DAILY"
+      ? " (täglich)"
+      : recurrence === "WEEKLY"
+        ? " (wöchentlich)"
+        : recurrence === "MONTHLY"
+          ? " (monatlich)"
+          : "";
   notify({
     kind: "ACTIVITY_NEW",
-    title: `🌊 ${created.createdBy.name}: ${title}`,
+    title: `🌊 ${first.createdBy.name}: ${title}${recurrenceLabel}`,
     body: `${timeStr}${location ? " · " + location : ""}${
       description ? " · " + description : ""
     }`,
@@ -130,14 +200,15 @@ export async function POST(req: Request) {
   }).catch((e) => console.error("notify", e));
 
   return NextResponse.json({
-    id: created.id,
-    title: created.title,
-    description: created.description,
-    location: created.location,
-    startAt: created.startAt.toISOString(),
-    createdBy: created.createdBy.name,
-    createdById: created.createdBy.id,
-    participants: created.participants.map((p) => ({
+    id: first.id,
+    title: first.title,
+    description: first.description,
+    location: first.location,
+    startAt: first.startAt.toISOString(),
+    recurrenceGroupId: first.recurrenceGroupId,
+    createdBy: first.createdBy.name,
+    createdById: first.createdBy.id,
+    participants: first.participants.map((p) => ({
       userId: p.user.id,
       name: p.user.name,
       going: p.going,
