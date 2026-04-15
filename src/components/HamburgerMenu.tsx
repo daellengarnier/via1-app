@@ -282,11 +282,18 @@ export function HamburgerMenu() {
 
       {/* Slide-in Menu */}
       <div
-        className={`fixed right-0 top-0 z-50 h-full w-80 max-w-[85vw] transform border-l border-gray-800 bg-dark transition-transform duration-300 ${
+        className={`fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] transform border-l border-gray-800 bg-dark transition-transform duration-300 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex h-full flex-col overflow-y-auto p-5">
+        <div
+          className="flex h-full flex-col overflow-y-auto overscroll-contain p-5"
+          style={{
+            paddingTop: "calc(1.25rem + env(safe-area-inset-top, 0px))",
+            paddingBottom:
+              "calc(1.25rem + env(safe-area-inset-bottom, 0px))",
+          }}
+        >
           {/* Close */}
           <button
             onClick={() => setOpen(false)}
