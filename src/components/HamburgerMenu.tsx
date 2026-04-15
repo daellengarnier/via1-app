@@ -25,6 +25,14 @@ const MEHR_ITEMS: MehrItem[] = [
     subtitle: "Zimmer, Schluessel, Historie",
   },
   {
+    id: "sauna",
+    href: "/sauna",
+    icon: "/icon-sauna.webp",
+    glowClass: "glow-red",
+    title: "Sauna",
+    subtitle: "Heizen & Regeln",
+  },
+  {
     id: "gaesti",
     href: "/gaesti",
     icon: "/icon-gaesti.webp",

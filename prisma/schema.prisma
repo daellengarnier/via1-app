@@ -106,6 +106,8 @@ model User {
   reportedDamages      RoomDamage[]          @relation("DamageReporter")
   createdSublets       Sublet[]              @relation("SubletCreator")
   pinnwandComments     PinnwandComment[]     @relation("PinnwandCommentAuthor")
+  createdShopping      ShoppingItem[]        @relation("ShoppingCreator")
+  completedShopping    ShoppingItem[]        @relation("ShoppingCompleter")
 
   @@map("users")
 }
@@ -485,6 +487,24 @@ model RoomDamage {
   @@index([roomKey])
   @@index([resolvedAt])
   @@map("room_damages")
+}
+
+// Einkaufsliste fuer alles Moegliche (Anzuendwuerfel, Holzbriketts, Holz, …)
+model ShoppingItem {
+  id             String    @id @default(cuid())
+  title          String
+  notes          String    @default("")
+  done           Boolean   @default(false)
+  createdBy      User      @relation("ShoppingCreator", fields: [createdById], references: [id])
+  createdById    String
+  completedBy    User?     @relation("ShoppingCompleter", fields: [completedById], references: [id])
+  completedById  String?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([done, createdAt])
+  @@map("shopping_items")
 }
 
 // Untermiete fuer ein Zimmer

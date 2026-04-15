@@ -43,6 +43,7 @@ export default function RootLayout({
         <link rel="preload" as="image" href="/pyramid.webp" />
         <link rel="preload" as="image" href="/icon-termine.webp" />
         <link rel="preload" as="image" href="/icon-aufgaben.webp" />
+        <link rel="preload" as="image" href="/icon-einkauf.webp" />
         <link rel="preload" as="image" href="/icon-sauna.webp" />
         <link rel="preload" as="image" href="/icon-gaesti.webp" />
         <link rel="preload" as="image" href="/pic-bewohnende.webp" />

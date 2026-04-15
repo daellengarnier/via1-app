@@ -149,6 +149,9 @@ body {
 .menu-item-icon.glow-silver { animation-name: icon-glow-silver; }
 .menu-item-icon.glow-blue { animation-name: icon-glow-blue; }
 .menu-item-icon.glow-green { animation-name: icon-glow-green; }
+.menu-item-icon.glow-red { animation-name: icon-glow-red; }
+.menu-item-icon.glow-yellow { animation-name: icon-glow-yellow; }
+.menu-item-icon.glow-orange { animation-name: icon-glow-orange; }
 
 /* Glow-Spots */
 .via-glow {
