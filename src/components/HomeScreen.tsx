@@ -76,6 +76,7 @@ export default function HomeScreen() {
   const userId = session?.user?.id ?? "";
   const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const [hasKaffeeAbo, setHasKaffeeAbo] = useState(false);
+  const [profileMissing, setProfileMissing] = useState<string[]>([]);
   const [userName, setUserName] = useState(session?.user?.name ?? "");
   const [kaffeeState] = useCurrentKaffee();
   const currentKaffee = kaffeeState.kaffee;
@@ -135,12 +136,29 @@ export default function HomeScreen() {
       .then(
         (
           data:
-            | { displayName?: string; hasKaffeeAbo?: boolean }
+            | {
+                displayName?: string;
+                hasKaffeeAbo?: boolean;
+                fullName?: string;
+                birthday?: string;
+                favoriteAnimal?: string;
+                profileImage?: string | null;
+                room?: string;
+              }
             | null
         ) => {
           if (data?.displayName) setUserName(data.displayName);
           if (data && typeof data.hasKaffeeAbo === "boolean") {
             setHasKaffeeAbo(data.hasKaffeeAbo);
+          }
+          if (data) {
+            const missing: string[] = [];
+            if (!data.fullName) missing.push("Vollständiger Name");
+            if (!data.birthday) missing.push("Geburtstag");
+            if (!data.favoriteAnimal) missing.push("Lieblingstier");
+            if (!data.profileImage) missing.push("Profilbild");
+            if (!data.room) missing.push("Zimmer");
+            setProfileMissing(missing);
           }
         }
       )
@@ -550,6 +568,28 @@ export default function HomeScreen() {
 
         {/* Glassy Sticky Notes Grid */}
         <div className="grid grid-cols-2 gap-3">
+          {profileMissing.length > 0 && (
+            <button
+              onClick={() => router.push("/profil")}
+              className="relative overflow-hidden rounded-2xl border border-amber-400/40 bg-gradient-to-br from-amber-400/30 to-amber-600/10 rotate-1 p-3 pb-7 text-left shadow-lg backdrop-blur-md transition-transform hover:rotate-0 hover:scale-105"
+              style={{
+                boxShadow:
+                  "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
+              }}
+            >
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
+              <p className="relative pt-1 text-xs font-semibold leading-relaxed text-amber-100">
+                👤 Dein Profil ist noch nicht vollständig
+              </p>
+              <p className="relative mt-1 text-[10px] leading-snug text-amber-100/80">
+                Noch offen: {profileMissing.join(", ")}
+              </p>
+              <div className="absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[9px] text-amber-300/80">
+                <span>jetzt</span>
+                <span>— Via 1 ›</span>
+              </div>
+            </button>
+          )}
           {pinnwand.map((p, i) => {
             const styles = [
               {

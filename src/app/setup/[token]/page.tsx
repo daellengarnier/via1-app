@@ -33,6 +33,8 @@ export default function SetupPage() {
   const [room, setRoom] = useState("");
   const [diet, setDiet] = useState<Diet>("fleisch");
   const [allergies, setAllergies] = useState("");
+  const [hasKaffeeAbo, setHasKaffeeAbo] = useState(false);
+  const [favoriteAnimal, setFavoriteAnimal] = useState("");
 
   // Schritt 2: Passwort
   const [password, setPassword] = useState("");
@@ -101,6 +103,8 @@ export default function SetupPage() {
           room,
           diet,
           allergies,
+          hasKaffeeAbo,
+          favoriteAnimal,
         },
       }),
     });
@@ -304,6 +308,45 @@ export default function SetupPage() {
                 placeholder="z.B. Laktose, Nüsse..."
                 className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
               />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-gray-400">
+                Lieblingstier{" "}
+                <span className="text-gray-600">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={favoriteAnimal}
+                onChange={(e) => setFavoriteAnimal(e.target.value)}
+                placeholder="z.B. Fuchs, Pinguin, Wolf..."
+                className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              />
+              <p className="mt-1 text-[10px] text-gray-600">
+                Daraus werden später die Profilbild-Grafiken erstellt.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+              <div className="pr-3">
+                <p className="text-sm text-white">Kaffee-Abo</p>
+                <p className="mt-0.5 text-[10px] text-gray-500">
+                  Ich habe oder möchte das Kaffee-Abo.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHasKaffeeAbo(!hasKaffeeAbo)}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                  hasKaffeeAbo ? "bg-accent" : "bg-gray-700"
+                }`}
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                    hasKaffeeAbo ? "translate-x-5" : ""
+                  }`}
+                />
+              </button>
             </div>
 
             {error && <p className="text-sm text-red-400">{error}</p>}
