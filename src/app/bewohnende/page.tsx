@@ -35,7 +35,7 @@ function initials(name: string): string {
   );
 }
 
-function Avatar({
+function RoundAvatar({
   user,
   size = 40,
 }: {
@@ -48,7 +48,7 @@ function Avatar({
       <img
         src={user.avatar}
         alt={user.name}
-        className="shrink-0 rounded-full object-cover"
+        className="shrink-0 rounded-full object-cover ring-1 ring-accent/40"
         style={{ width: size, height: size }}
       />
     );
@@ -56,21 +56,14 @@ function Avatar({
   if (user) {
     return (
       <div
-        className="flex shrink-0 items-center justify-center rounded-full bg-accent/20 font-bold text-accent"
+        className="flex shrink-0 items-center justify-center rounded-full bg-accent/20 font-bold text-accent ring-1 ring-accent/40"
         style={{ width: size, height: size, fontSize: size * 0.4 }}
       >
         {initials(user.name)}
       </div>
     );
   }
-  return (
-    <div
-      className="flex shrink-0 items-center justify-center rounded-full border border-dashed border-gray-700 bg-gray-900/40 text-gray-600"
-      style={{ width: size, height: size, fontSize: size * 0.5 }}
-    >
-      🛏
-    </div>
-  );
+  return null;
 }
 
 function calcAge(birthday: string): number | null {
@@ -93,18 +86,18 @@ function UserProfileModal({
   const age = user.birthday ? calcAge(user.birthday) : null;
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)]"
       onClick={onClose}
     >
       <div
-        className="max-h-[100dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-gray-800 bg-dark pb-[env(safe-area-inset-bottom,0px)] sm:max-h-[92vh] sm:rounded-2xl"
+        className="my-4 w-full max-w-lg overflow-hidden rounded-2xl border border-gray-800 bg-dark pb-[env(safe-area-inset-bottom,0px)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="sticky top-0 z-10 border-b border-gray-800 bg-dark/95 px-5 py-4 backdrop-blur-sm">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <Avatar user={user} size={56} />
+              <RoundAvatar user={user} size={56} />
               <div>
                 <h2 className="text-xl font-bold text-accent">{user.name}</h2>
                 {user.fullName && user.fullName !== user.name && (
@@ -247,9 +240,19 @@ export default function BewohnendePage() {
       <h1 className="mb-1 text-center font-cinzel text-3xl text-accent">
         WGs & Bewohnende
       </h1>
-      <p className="mb-5 text-center text-sm text-accent/70">
-        Zimmer, Schlüssel, Historie
+      <p className="mb-4 text-center text-sm text-accent/70">
+        Bewohnende, Zimmer, Schlüssel, Historie & Schäden
       </p>
+      <div className="mb-5 flex justify-center">
+        <a
+          href="/bauplaene.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent/20"
+        >
+          📐 Baupläne öffnen
+        </a>
+      </div>
 
       {/* WG-Auswahl als gestaffelte Buttons (wie Schnitt). */}
       <div className="mb-6 space-y-1">
@@ -301,7 +304,7 @@ export default function BewohnendePage() {
         </div>
       </div>
 
-      {/* Schlafzimmer — mit Avatar + Name */}
+      {/* Schlafzimmer — mit Bett-Icon, Avatar+Name drunter */}
       <section className="mb-5">
         <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-accent">
           Schlafzimmer
@@ -310,6 +313,7 @@ export default function BewohnendePage() {
           {zimmer.map((room) => {
             const user = usersByRoom.get(room.keyNumber) ?? null;
             const isMine = user?.id === currentUserId;
+            const hasOpenDamage = room.damages.some((d) => !d.resolvedAt);
             return (
               <button
                 key={room.id}
@@ -320,7 +324,7 @@ export default function BewohnendePage() {
                     setSelectedRoom(room);
                   }
                 }}
-                className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-all ${
+                className={`flex w-full items-start gap-3 rounded-lg border px-3 py-2 text-left transition-all ${
                   isMine
                     ? "border-accent bg-accent/10 shadow-[0_0_12px_rgba(184,240,104,0.2)]"
                     : user
@@ -328,28 +332,41 @@ export default function BewohnendePage() {
                       : "border-gray-800 bg-gray-900/40 hover:border-gray-600"
                 }`}
               >
-                <Avatar user={user} size={40} />
+                <span className="mt-0.5 shrink-0 text-lg">
+                  {roomTypeIcons[room.type]}
+                </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
                     <p className="text-sm text-gray-300">{room.label}</p>
                     <p className="font-mono text-[10px] text-gray-600">
                       {room.keyNumber}
                     </p>
-                  </div>
-                  <p
-                    className={`truncate text-sm ${
-                      user ? "font-medium text-white" : "text-gray-600"
-                    }`}
-                  >
-                    {user?.name ?? "Frei"}
-                    {isMine && (
-                      <span className="ml-1 text-[10px] text-accent">
-                        (du)
+                    {hasOpenDamage && (
+                      <span
+                        className="inline-flex items-center gap-0.5 rounded-full bg-red-500/20 px-1.5 py-0.5 font-mono text-[8px] font-bold text-red-300 ring-1 ring-red-500/40"
+                        title="Offener Schaden"
+                      >
+                        ⚠ Schaden
                       </span>
                     )}
-                  </p>
+                  </div>
+                  {user ? (
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <RoundAvatar user={user} size={28} />
+                      <p className="truncate text-sm font-medium text-white">
+                        {user.name}
+                        {isMine && (
+                          <span className="ml-1 text-[10px] text-accent">
+                            (du)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-600">Frei</p>
+                  )}
                 </div>
-                <span className="shrink-0 text-gray-600">›</span>
+                <span className="shrink-0 self-center text-gray-600">›</span>
               </button>
             );
           })}
@@ -362,29 +379,40 @@ export default function BewohnendePage() {
           Gemeinschaftsräume
         </h3>
         <div className="space-y-1.5">
-          {commonRooms.map((room) => (
-            <button
-              key={room.id}
-              onClick={() => setSelectedRoom(room)}
-              className="flex w-full items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2 text-left transition-all hover:border-gray-600"
-            >
-              <span className="shrink-0 text-lg">
-                {roomTypeIcons[room.type]}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
-                  <p className="text-sm text-gray-300">{room.label}</p>
-                  <p className="font-mono text-[10px] text-gray-600">
-                    {room.keyNumber}
+          {commonRooms.map((room) => {
+            const hasOpenDamage = room.damages.some((d) => !d.resolvedAt);
+            return (
+              <button
+                key={room.id}
+                onClick={() => setSelectedRoom(room)}
+                className="flex w-full items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2 text-left transition-all hover:border-gray-600"
+              >
+                <span className="shrink-0 text-lg">
+                  {roomTypeIcons[room.type]}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-sm text-gray-300">{room.label}</p>
+                    <p className="font-mono text-[10px] text-gray-600">
+                      {room.keyNumber}
+                    </p>
+                    {hasOpenDamage && (
+                      <span
+                        className="inline-flex items-center gap-0.5 rounded-full bg-red-500/20 px-1.5 py-0.5 font-mono text-[8px] font-bold text-red-300 ring-1 ring-red-500/40"
+                        title="Offener Schaden"
+                      >
+                        ⚠ Schaden
+                      </span>
+                    )}
+                  </div>
+                  <p className="truncate text-xs text-gray-600">
+                    {roomTypeLabels[room.type]}
                   </p>
                 </div>
-                <p className="truncate text-xs text-gray-600">
-                  {roomTypeLabels[room.type]}
-                </p>
-              </div>
-              <span className="shrink-0 text-gray-600">›</span>
-            </button>
-          ))}
+                <span className="shrink-0 text-gray-600">›</span>
+              </button>
+            );
+          })}
         </div>
       </section>
 

@@ -31,6 +31,7 @@ export default function AdminUsersPage() {
     url: string;
   } | null>(null);
   const [resetting, setResetting] = useState<string | null>(null);
+  const [seedingHausbuch, setSeedingHausbuch] = useState(false);
 
   // Neuen User anlegen
   const [showCreate, setShowCreate] = useState(false);
@@ -132,6 +133,37 @@ export default function AdminUsersPage() {
       setCreateError("Netzwerkfehler.");
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function seedHausbuch() {
+    if (
+      !confirm(
+        "Basis-Hausbuch-Eintraege anlegen?\n\n" +
+          "Es werden nur Eintraege erstellt, die noch nicht existieren."
+      )
+    ) {
+      return;
+    }
+    setSeedingHausbuch(true);
+    try {
+      const res = await fetch("/api/admin/hausbuch-seed", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as {
+        created: number;
+        skipped: number;
+        total: number;
+      };
+      alert(
+        `${data.created} Eintraege erstellt, ${data.skipped} bereits vorhanden (von ${data.total}).`
+      );
+    } catch (err) {
+      console.error("hausbuch seed", err);
+      alert("Konnte Hausbuch-Eintraege nicht anlegen.");
+    } finally {
+      setSeedingHausbuch(false);
     }
   }
 
@@ -301,6 +333,27 @@ export default function AdminUsersPage() {
             </p>
           </form>
         )}
+      </div>
+
+      {/* Hausbuch seed */}
+      <div className="mb-4 rounded-lg border border-violet-500/30 bg-violet-500/5 p-3">
+        <p className="mb-1 font-display text-[10px] font-bold uppercase tracking-widest text-violet-300">
+          HAUSBUCH BASIS-EINTRAEGE
+        </p>
+        <p className="mb-2 text-[11px] text-gray-400">
+          Erstellt 15 Standard-Eintraege (Biodiversitaet, Spinnerei,
+          Hauskiosk, Recycling, Haltungspapier, Geschichte, Architektur,
+          Pyramidstage, Garten, Abwartsdienst, Biotop, Gemeinschaftsladen,
+          Genossenschaft, Organisation Via 1, Aemtlis). Bestehende Eintraege
+          werden nicht ueberschrieben.
+        </p>
+        <button
+          onClick={seedHausbuch}
+          disabled={seedingHausbuch}
+          className="rounded-full border border-violet-400/50 bg-violet-500/15 px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-violet-200 hover:bg-violet-500/25 disabled:opacity-50"
+        >
+          {seedingHausbuch ? "Wird erstellt …" : "Hausbuch-Eintraege anlegen"}
+        </button>
       </div>
 
       <div className="space-y-2">
