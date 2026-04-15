@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 type Diet = "fleisch" | "vegi" | "vegan";
@@ -43,8 +43,43 @@ export default function SetupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
+  const [isReset, setIsReset] = useState(false);
+  const [tokenChecked, setTokenChecked] = useState(false);
+  const [tokenInvalid, setTokenInvalid] = useState(false);
 
   const selectedWg = wgOptions.find((w) => w.name === wg);
+
+  // Token pruefen und Erstanmeldung vs. Reset unterscheiden
+  useEffect(() => {
+    if (!params.token) return;
+    fetch(`/api/setup/${params.token}`)
+      .then(async (r) => {
+        if (!r.ok) {
+          setTokenInvalid(true);
+          setTokenChecked(true);
+          return;
+        }
+        const data = (await r.json()) as {
+          valid: boolean;
+          isReset: boolean;
+          displayName?: string;
+          email?: string;
+        };
+        if (data.isReset) {
+          setIsReset(true);
+          // Passwort direkt setzen, Profil-Schritt ueberspringen
+          setStep(2);
+          if (data.displayName) setDisplayName(data.displayName);
+          if (data.email) setEmail(data.email);
+        }
+        setTokenChecked(true);
+      })
+      .catch(() => {
+        setTokenInvalid(true);
+        setTokenChecked(true);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.token]);
 
   function handleNext(e: React.FormEvent) {
     e.preventDefault();
@@ -94,18 +129,22 @@ export default function SetupPage() {
       body: JSON.stringify({
         token: params.token,
         password,
-        profile: {
-          fullName,
-          displayName,
-          email,
-          birthday,
-          wg,
-          room,
-          diet,
-          allergies,
-          hasKaffeeAbo,
-          favoriteAnimal,
-        },
+        // Beim Passwort-Reset schicken wir keine Profildaten —
+        // das Profil bleibt wie es war.
+        profile: isReset
+          ? undefined
+          : {
+              fullName,
+              displayName,
+              email,
+              birthday,
+              wg,
+              room,
+              diet,
+              allergies,
+              hasKaffeeAbo,
+              favoriteAnimal,
+            },
       }),
     });
 
@@ -153,21 +192,38 @@ export default function SetupPage() {
         </div>
 
         <h1 className="mb-1 text-center font-cinzel text-3xl text-emerald-300">
-          Willkommen bei Via 1
+          {isReset ? "Passwort zurücksetzen" : "Willkommen bei Via 1"}
         </h1>
         <p className="mb-6 text-center text-sm text-gray-500">
-          {step === 1 ? "Dein Profil" : "Passwort einrichten"}
+          {isReset
+            ? email
+              ? `Neues Passwort für ${email}`
+              : "Neues Passwort setzen"
+            : step === 1
+              ? "Dein Profil"
+              : "Passwort einrichten"}
         </p>
 
-        {/* Fortschritt */}
-        <div className="mb-6 flex gap-2">
-          <div
-            className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-accent" : "bg-gray-800"}`}
-          />
-          <div
-            className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-accent" : "bg-gray-800"}`}
-          />
-        </div>
+        {/* Token ungueltig */}
+        {tokenInvalid && (
+          <p className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-center text-xs text-red-300">
+            Dieser Link ist ungültig oder bereits verwendet.
+            <br />
+            Bitte kontaktiere einen Admin für einen neuen Link.
+          </p>
+        )}
+
+        {/* Fortschritt — nur bei Erstanmeldung */}
+        {!isReset && tokenChecked && !tokenInvalid && (
+          <div className="mb-6 flex gap-2">
+            <div
+              className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-accent" : "bg-gray-800"}`}
+            />
+            <div
+              className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-accent" : "bg-gray-800"}`}
+            />
+          </div>
+        )}
 
         {step === 1 && (
           <form onSubmit={handleNext} className="space-y-4">
@@ -395,19 +451,25 @@ export default function SetupPage() {
             {error && <p className="text-sm text-red-400">{error}</p>}
 
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="rounded-lg border border-gray-700 px-4 py-2.5 text-xs text-gray-400 hover:text-white"
-              >
-                ← Zurück
-              </button>
+              {!isReset && (
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="rounded-lg border border-gray-700 px-4 py-2.5 text-xs text-gray-400 hover:text-white"
+                >
+                  ← Zurück
+                </button>
+              )}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || tokenInvalid}
                 className="flex-1 rounded-lg bg-accent py-2.5 font-display text-[11px] font-bold uppercase tracking-wider text-dark transition hover:brightness-110 disabled:opacity-50"
               >
-                {loading ? "Wird eingerichtet..." : "Registrierung abschliessen"}
+                {loading
+                  ? "Wird eingerichtet..."
+                  : isReset
+                    ? "Neues Passwort speichern"
+                    : "Registrierung abschliessen"}
               </button>
             </div>
           </form>

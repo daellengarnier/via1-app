@@ -129,6 +129,13 @@ export default function LoginPage() {
             Registrieren
           </button>
         </form>
+
+        <p className="mt-6 text-center text-[11px] text-gray-500">
+          Passwort vergessen? Bitte bei{" "}
+          <span className="text-accent">Alain</span> oder{" "}
+          <span className="text-accent">Yves</span> melden — sie können
+          einen neuen Setup-Link für dich erzeugen.
+        </p>
       </div>
     </main>
   );

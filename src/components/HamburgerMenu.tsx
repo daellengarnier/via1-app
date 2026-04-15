@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 
 interface MehrItem {
@@ -76,6 +76,8 @@ function formatAge(iso: string): string {
 }
 
 export function HamburgerMenu() {
+  const { data: session } = useSession();
+  const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const [open, setOpen] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
   const [pinned, setPinned] = useState<string[]>([]);
@@ -415,6 +417,17 @@ export function HamburgerMenu() {
           >
             IDEE ODER BUG MELDEN
           </Link>
+
+          {/* Admin — nur fuer Admins */}
+          {isAdmin && (
+            <Link
+              href="/admin/users"
+              onClick={() => setOpen(false)}
+              className="mt-3 block rounded-lg border border-orange-500/40 bg-orange-500/10 py-3 text-center font-display text-[10px] font-bold uppercase tracking-widest text-orange-300 transition-colors hover:bg-orange-500/20"
+            >
+              ADMIN · USER-VERWALTUNG
+            </Link>
+          )}
 
           {/* Abmelden */}
           <button
