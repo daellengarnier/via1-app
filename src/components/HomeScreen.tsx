@@ -169,9 +169,14 @@ export default function HomeScreen() {
     fetch("/api/termine")
       .then((r) => (r.ok ? r.json() : []))
       .then((data: NextTermin[]) => {
-        const todayStr = new Date().toISOString().split("T")[0]!;
+        // Vergleich auf Minuten-Basis: ein Termin ist "durch", sobald
+        // sein Startzeitpunkt in der Vergangenheit liegt
+        const now = Date.now();
         const upcoming = data
-          .filter((t) => t.date >= todayStr)
+          .filter((t) => {
+            const ts = new Date(`${t.date}T${t.time}:00`).getTime();
+            return !Number.isNaN(ts) && ts >= now;
+          })
           .sort((a, b) =>
             a.date === b.date
               ? a.time.localeCompare(b.time)
