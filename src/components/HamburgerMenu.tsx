@@ -177,7 +177,7 @@ export function HamburgerMenu() {
         className="fixed left-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-accent"
         aria-label="Benachrichtigungen"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b8f068" strokeWidth="1.5">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5">
           <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M13.73 21a2 2 0 01-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -195,7 +195,7 @@ export function HamburgerMenu() {
         aria-label="Menu öffnen"
       >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M3 5h14M3 10h14M3 15h14" stroke="#b8f068" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M3 5h14M3 10h14M3 15h14" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       </button>
 

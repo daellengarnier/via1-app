@@ -488,15 +488,6 @@ export default function HomeScreen() {
                   <span className="text-emerald-400">● Fair</span>
                 )}
               </div>
-              {kaffeeState.changedBy && kaffeeState.changedAt && (
-                <p className="mt-1 truncate font-mono text-[9px] text-gray-600">
-                  {kaffeeState.changedBy} ·{" "}
-                  {new Date(kaffeeState.changedAt).toLocaleDateString("de-CH", {
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </p>
-              )}
             </div>
             <a
               href="https://kulturspinnerei.ch"
@@ -513,14 +504,11 @@ export default function HomeScreen() {
               <p className="truncate text-sm font-semibold text-orange-200">
                 Soirée Tropicale
               </p>
-              <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-gray-400">
-                Latin Beats, Cocktails & Tanzfieber im Hinterhof
+              <p className="mt-0.5 font-mono text-[10px] text-gray-500">
+                Fr 25. Apr
               </p>
-              <div className="mt-1 text-[9px] text-gray-500">
-                Kulturspinnerei
-              </div>
-              <p className="mt-1 truncate font-mono text-[9px] text-gray-600">
-                Fr 25. Apr · 21:00
+              <p className="font-mono text-[10px] text-gray-500">
+                20:00 – 02:30
               </p>
             </a>
           </div>

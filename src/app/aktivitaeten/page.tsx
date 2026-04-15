@@ -81,12 +81,21 @@ function relativeTime(iso: string): string {
   const now = Date.now();
   const then = new Date(iso).getTime();
   const diffMin = Math.round((then - now) / 60000);
-  if (diffMin < -5) return "";
+  // Laeuft jetzt: ab Startzeitpunkt bis 60min danach
+  if (diffMin <= 0 && diffMin > -60) return "läuft jetzt";
+  if (diffMin < -60) return "";
   if (diffMin < 1) return "jetzt";
   if (diffMin < 60) return `in ${diffMin} Min`;
   const hrs = Math.floor(diffMin / 60);
   if (hrs < 24) return `in ${hrs} Std`;
   return "";
+}
+
+function isRunning(iso: string): boolean {
+  const now = Date.now();
+  const then = new Date(iso).getTime();
+  const diffMin = Math.round((then - now) / 60000);
+  return diffMin <= 0 && diffMin > -60;
 }
 
 export default function AktivitaetenPage() {
@@ -99,6 +108,7 @@ export default function AktivitaetenPage() {
   const [customDescription, setCustomDescription] = useState("");
   const [customLocation, setCustomLocation] = useState("");
   const [customTime, setCustomTime] = useState("");
+  const [customDate, setCustomDate] = useState("");
   const [quickTimeMinutes, setQuickTimeMinutes] = useState<number | null>(0);
   const [openCommentsId, setOpenCommentsId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
@@ -133,13 +143,20 @@ export default function AktivitaetenPage() {
     // Zeit bestimmen
     let startAt: string;
     if (customTime) {
-      // z.B. "19:30" fuer heute
+      // z.B. "19:30" — optional auf gewaehltem Datum
       const [hh, mm] = customTime.split(":").map(Number);
-      const d = new Date();
-      d.setHours(hh ?? 0, mm ?? 0, 0, 0);
-      // Falls die Zeit in der Vergangenheit liegt, auf morgen schieben
-      if (d.getTime() < Date.now() - 60000) {
-        d.setDate(d.getDate() + 1);
+      let d: Date;
+      if (customDate) {
+        // customDate im Format YYYY-MM-DD
+        d = new Date(`${customDate}T00:00:00`);
+        d.setHours(hh ?? 0, mm ?? 0, 0, 0);
+      } else {
+        d = new Date();
+        d.setHours(hh ?? 0, mm ?? 0, 0, 0);
+        // Falls die Zeit heute schon vorbei ist, auf morgen schieben
+        if (d.getTime() < Date.now() - 60000) {
+          d.setDate(d.getDate() + 1);
+        }
       }
       startAt = d.toISOString();
     } else if (quickTimeMinutes !== null) {
@@ -174,6 +191,7 @@ export default function AktivitaetenPage() {
       setCustomDescription("");
       setCustomLocation("");
       setCustomTime("");
+      setCustomDate("");
       setQuickTimeMinutes(0);
     } catch (err) {
       console.error("Activity erstellen", err);
@@ -361,8 +379,17 @@ export default function AktivitaetenPage() {
               </button>
             ))}
           </div>
-          <div className="mb-3 flex items-center gap-2">
-            <span className="text-[10px] text-gray-500">oder Uhrzeit:</span>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="text-[10px] text-gray-500">oder Datum & Uhrzeit:</span>
+            <input
+              type="date"
+              value={customDate}
+              onChange={(e) => {
+                setCustomDate(e.target.value);
+                setQuickTimeMinutes(null);
+              }}
+              className="rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-blue-400 focus:outline-none"
+            />
             <input
               type="time"
               value={customTime}
@@ -400,18 +427,29 @@ export default function AktivitaetenPage() {
           const isOwn = a.createdById === session?.user?.id;
           const isCommentsOpen = openCommentsId === a.id;
           const rel = relativeTime(a.startAt);
+          const running = isRunning(a.startAt);
 
           return (
             <div
               key={a.id}
-              className="rounded-lg border border-gray-800 bg-white/5 p-3"
+              className={`rounded-lg border p-3 ${
+                running
+                  ? "border-blue-400/70 bg-blue-400/10 shadow-[0_0_20px_rgba(96,165,250,0.2)]"
+                  : "border-gray-800 bg-white/5"
+              }`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-blue-300">
                     {formatTime(a.startAt)}
-                    {rel && (
+                    {rel && !running && (
                       <span className="ml-1 text-gray-500">· {rel}</span>
+                    )}
+                    {running && (
+                      <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-blue-400/20 px-1.5 py-0.5 text-[9px] font-bold text-blue-200 ring-1 ring-blue-400/50">
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-300" />
+                        LÄUFT
+                      </span>
                     )}
                   </p>
                   <h3 className="mt-0.5 text-sm font-semibold text-white">
