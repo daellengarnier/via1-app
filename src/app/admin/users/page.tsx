@@ -32,6 +32,13 @@ export default function AdminUsersPage() {
   } | null>(null);
   const [resetting, setResetting] = useState<string | null>(null);
 
+  // Neuen User anlegen
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
   const isAdmin = (session?.user?.roles || []).includes("ADMIN");
 
   const loadUsers = useCallback(async () => {
@@ -89,6 +96,42 @@ export default function AdminUsersPage() {
       alert("Konnte Passwort-Reset nicht erzeugen.");
     } finally {
       setResetting(null);
+    }
+  }
+
+  async function createUser(e: React.FormEvent) {
+    e.preventDefault();
+    setCreateError(null);
+    if (!newName.trim() || !newEmail.trim()) return;
+    setCreating(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName, email: newEmail }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setCreateError(data.error ?? "Konnte User nicht anlegen.");
+        setCreating(false);
+        return;
+      }
+      const data = (await res.json()) as {
+        id: string;
+        path: string;
+      };
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
+      setResetResult({ userId: data.id, url: `${origin}${data.path}` });
+      setNewName("");
+      setNewEmail("");
+      setShowCreate(false);
+      loadUsers();
+    } catch (err) {
+      console.error("createUser", err);
+      setCreateError("Netzwerkfehler.");
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -180,8 +223,85 @@ export default function AdminUsersPage() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Suchen (Name, E-Mail)..."
-        className="mb-4 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+        className="mb-3 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
       />
+
+      <div className="mb-4">
+        {!showCreate ? (
+          <button
+            onClick={() => {
+              setShowCreate(true);
+              setCreateError(null);
+            }}
+            className="w-full rounded-lg border border-accent/40 bg-accent/10 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-accent hover:bg-accent/20"
+          >
+            + Neuen User anlegen
+          </button>
+        ) : (
+          <form
+            onSubmit={createUser}
+            className="rounded-lg border border-accent/40 bg-accent/5 p-3"
+          >
+            <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
+              NEUER USER
+            </p>
+            <div className="mb-2">
+              <label className="mb-1 block text-[10px] text-gray-400">
+                Anzeigename
+              </label>
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="z.B. Ambar"
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                required
+              />
+            </div>
+            <div className="mb-2">
+              <label className="mb-1 block text-[10px] text-gray-400">
+                E-Mail
+              </label>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="z.B. ambar.conca@gmail.com"
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                required
+              />
+            </div>
+            {createError && (
+              <p className="mb-2 text-xs text-red-400">{createError}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={creating}
+                className="flex-1 rounded bg-accent py-2 font-mono text-xs font-bold text-dark disabled:opacity-50"
+              >
+                {creating ? "…" : "Anlegen & Setup-Link erzeugen"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreate(false);
+                  setNewName("");
+                  setNewEmail("");
+                  setCreateError(null);
+                }}
+                className="rounded px-3 py-2 text-xs text-gray-400 hover:text-white"
+              >
+                Abbrechen
+              </button>
+            </div>
+            <p className="mt-2 text-[10px] text-gray-500">
+              Der User bekommt einen Setup-Link, mit dem er sein Passwort
+              und Profil einrichten kann.
+            </p>
+          </form>
+        )}
+      </div>
 
       <div className="space-y-2">
         {filtered.map((u) => {
