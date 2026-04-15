@@ -205,6 +205,17 @@ function InfoTab({
   onAddResident: () => void;
   onHandover: () => void;
 }) {
+  const [openDamageCount, setOpenDamageCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/rooms/${encodeURIComponent(room.keyNumber)}/damages`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: { resolvedAt: string | null }[]) => {
+        setOpenDamageCount(data.filter((d) => !d.resolvedAt).length);
+      })
+      .catch(() => setOpenDamageCount(0));
+  }, [room.keyNumber]);
+
   return (
     <div className="space-y-4">
       {/* Aktuelle/r Bewohner:in - nur bei privaten Zimmern */}
@@ -280,9 +291,21 @@ function InfoTab({
           </p>
           <p className="text-xs text-gray-500">Arbeiten</p>
         </div>
-        <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3 text-center">
-          <p className="font-mono text-xl font-bold text-secondary">
-            {room.damages.filter((d) => !d.resolvedAt).length}
+        <div
+          className={`rounded-lg border p-3 text-center ${
+            openDamageCount && openDamageCount > 0
+              ? "border-red-500/40 bg-red-500/10"
+              : "border-gray-800 bg-gray-900/40"
+          }`}
+        >
+          <p
+            className={`font-mono text-xl font-bold ${
+              openDamageCount && openDamageCount > 0
+                ? "text-red-300"
+                : "text-gray-400"
+            }`}
+          >
+            {openDamageCount === null ? "–" : openDamageCount}
           </p>
           <p className="text-xs text-gray-500">Offene Schäden</p>
         </div>
