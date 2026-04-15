@@ -113,8 +113,50 @@ export default function KaffeePage() {
   const [showSelect, setShowSelect] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Eigenen Kaffee erfassen
+  const [showCustom, setShowCustom] = useState(false);
+  const [customName, setCustomName] = useState("");
+  const [customHerkunft, setCustomHerkunft] = useState("");
+  const [customDuftnotizen, setCustomDuftnotizen] = useState("");
+  const [customFairtrade, setCustomFairtrade] = useState(false);
+
   const currentBeans = currentKaffee.name;
   const currentInfo = rastSortiment.find((k) => k.name === currentBeans) ?? currentKaffee;
+
+  function applyKaffee(k: RastKaffee) {
+    setCurrentKaffee(k, session?.user?.name ?? "");
+    setShowSelect(false);
+    setShowCustom(false);
+    if (currentBeans !== k.name) {
+      fetch("/api/notifications/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "KAFFEE_CHANGED",
+          title: `Neue Kaffeebohnen: ${k.name}`,
+          body: k.duftnotizen,
+          link: "/kaffee",
+        }),
+      }).catch(() => {});
+    }
+  }
+
+  function saveCustomKaffee(e: React.FormEvent) {
+    e.preventDefault();
+    const name = customName.trim();
+    if (!name) return;
+    applyKaffee({
+      name,
+      herkunft: customHerkunft.trim(),
+      duftnotizen: customDuftnotizen.trim(),
+      fairtrade: customFairtrade,
+    });
+    // Form zuruecksetzen
+    setCustomName("");
+    setCustomHerkunft("");
+    setCustomDuftnotizen("");
+    setCustomFairtrade(false);
+  }
 
   function handleSaveAbo() {
     setSaved(true);
@@ -188,23 +230,7 @@ export default function KaffeePage() {
             {rastSortiment.map((k) => (
               <button
                 key={k.name}
-                onClick={() => {
-                  setCurrentKaffee(k, session?.user?.name ?? "");
-                  setShowSelect(false);
-                  // Nur benachrichtigen wenn wirklich ein anderer
-                  if (currentBeans !== k.name) {
-                    fetch("/api/notifications/trigger", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        kind: "KAFFEE_CHANGED",
-                        title: `Neue Kaffeebohnen: ${k.name}`,
-                        body: k.duftnotizen,
-                        link: "/kaffee",
-                      }),
-                    }).catch(() => {});
-                  }
-                }}
+                onClick={() => applyKaffee(k)}
                 className={`flex w-full items-start justify-between rounded-lg border p-3 text-left transition-colors ${
                   currentBeans === k.name
                     ? "border-amber-600/50 bg-amber-600/10"
@@ -226,6 +252,100 @@ export default function KaffeePage() {
                 )}
               </button>
             ))}
+
+            {/* Eigenen Kaffee erfassen */}
+            {!showCustom ? (
+              <button
+                onClick={() => setShowCustom(true)}
+                className="flex w-full items-center justify-center rounded-lg border border-dashed border-amber-600/40 bg-amber-600/5 p-3 text-xs font-semibold text-amber-200 transition-colors hover:border-amber-500 hover:bg-amber-600/10"
+              >
+                + Eigenen Kaffee erfassen
+              </button>
+            ) : (
+              <form
+                onSubmit={saveCustomKaffee}
+                className="rounded-lg border border-amber-600/40 bg-amber-600/5 p-3"
+              >
+                <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
+                  EIGENER KAFFEE
+                </p>
+                <div className="mb-2">
+                  <label className="mb-1 block text-[10px] text-gray-400">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                    placeholder="z.B. Mocca Supremo"
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none"
+                    required
+                    autoFocus
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="mb-1 block text-[10px] text-gray-400">
+                    Herkunft
+                  </label>
+                  <input
+                    type="text"
+                    value={customHerkunft}
+                    onChange={(e) => setCustomHerkunft(e.target.value)}
+                    placeholder="z.B. Äthiopien, Blend..."
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none"
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="mb-1 block text-[10px] text-gray-400">
+                    Duftnoten
+                  </label>
+                  <input
+                    type="text"
+                    value={customDuftnotizen}
+                    onChange={(e) => setCustomDuftnotizen(e.target.value)}
+                    placeholder="z.B. Schokolade, Nüsse, wenig Säure"
+                    className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none"
+                  />
+                </div>
+                <label className="mb-3 flex items-center justify-between rounded border border-gray-800 bg-gray-900/40 p-2">
+                  <span className="text-[11px] text-gray-300">Fair Trade</span>
+                  <button
+                    type="button"
+                    onClick={() => setCustomFairtrade(!customFairtrade)}
+                    className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+                      customFairtrade ? "bg-emerald-500" : "bg-gray-700"
+                    }`}
+                  >
+                    <span
+                      className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                        customFairtrade ? "translate-x-4" : ""
+                      }`}
+                    />
+                  </button>
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 rounded bg-amber-500 py-2 text-xs font-bold text-dark hover:brightness-110"
+                  >
+                    Einfüllen & speichern
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCustom(false);
+                      setCustomName("");
+                      setCustomHerkunft("");
+                      setCustomDuftnotizen("");
+                      setCustomFairtrade(false);
+                    }}
+                    className="rounded px-3 py-2 text-xs text-gray-400 hover:text-white"
+                  >
+                    Abbrechen
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         )}
       </div>

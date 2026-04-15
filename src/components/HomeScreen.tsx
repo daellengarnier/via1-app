@@ -518,7 +518,13 @@ export default function HomeScreen() {
               className="cursor-pointer rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 to-transparent p-3 transition-all hover:border-secondary/60"
             >
               <div className="mb-1 flex items-center gap-1.5">
-                <span className="text-base">🎭</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/spinnerei-logo.webp"
+                  alt=""
+                  className="h-4 w-4 animate-[spin_8s_linear_infinite]"
+                  loading="eager"
+                />
                 <p className="font-display text-[9px] font-bold uppercase tracking-widest text-secondary">
                   SPINNEREI
                 </p>
