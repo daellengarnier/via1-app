@@ -19,6 +19,10 @@ export async function GET() {
       name: true,
       fullName: true,
       favoriteAnimal: true,
+      avatar: true,
+      birthday: true,
+      diet: true,
+      allergies: true,
       room: {
         select: {
           id: true,
@@ -30,12 +34,22 @@ export async function GET() {
     },
   });
 
+  const dietMap = {
+    FLEISCH: "Fleisch",
+    VEGI: "Vegetarisch",
+    VEGAN: "Vegan",
+  } as const;
+
   return NextResponse.json(
     users.map((u) => ({
       id: u.id,
       name: u.name,
       fullName: u.fullName ?? "",
       favoriteAnimal: u.favoriteAnimal ?? "",
+      avatar: u.avatar ?? null,
+      birthday: u.birthday ? u.birthday.toISOString().split("T")[0] : null,
+      diet: u.diet ? dietMap[u.diet] : null,
+      allergies: u.allergies ?? "",
       roomKey: u.room?.keyNumber ?? null,
       roomNumber: u.room?.number ?? null,
       wgName: u.room?.wg.name ?? null,

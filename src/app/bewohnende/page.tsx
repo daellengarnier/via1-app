@@ -16,9 +16,169 @@ interface ApiUser {
   name: string;
   fullName: string;
   favoriteAnimal: string;
+  avatar: string | null;
+  birthday: string | null;
+  diet: string | null;
+  allergies: string;
   roomKey: string | null;
   roomNumber: number | null;
   wgName: string | null;
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0 || !parts[0]) return "?";
+  if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase();
+  return (
+    parts[0]!.charAt(0).toUpperCase() +
+    parts[parts.length - 1]!.charAt(0).toUpperCase()
+  );
+}
+
+function Avatar({
+  user,
+  size = 40,
+}: {
+  user: ApiUser | null;
+  size?: number;
+}) {
+  if (user?.avatar) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={user.avatar}
+        alt={user.name}
+        className="shrink-0 rounded-full object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  if (user) {
+    return (
+      <div
+        className="flex shrink-0 items-center justify-center rounded-full bg-accent/20 font-bold text-accent"
+        style={{ width: size, height: size, fontSize: size * 0.4 }}
+      >
+        {initials(user.name)}
+      </div>
+    );
+  }
+  return (
+    <div
+      className="flex shrink-0 items-center justify-center rounded-full border border-dashed border-gray-700 bg-gray-900/40 text-gray-600"
+      style={{ width: size, height: size, fontSize: size * 0.5 }}
+    >
+      🛏
+    </div>
+  );
+}
+
+function calcAge(birthday: string): number | null {
+  const d = new Date(birthday);
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+}
+
+function UserProfileModal({
+  user,
+  onClose,
+}: {
+  user: ApiUser;
+  onClose: () => void;
+}) {
+  const age = user.birthday ? calcAge(user.birthday) : null;
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[100dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-gray-800 bg-dark pb-[env(safe-area-inset-bottom,0px)] sm:max-h-[92vh] sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 z-10 border-b border-gray-800 bg-dark/95 px-5 py-4 backdrop-blur-sm">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar user={user} size={56} />
+              <div>
+                <h2 className="text-xl font-bold text-accent">{user.name}</h2>
+                {user.fullName && user.fullName !== user.name && (
+                  <p className="text-xs text-gray-500">{user.fullName}</p>
+                )}
+                {user.wgName && user.roomKey && (
+                  <p className="mt-0.5 font-mono text-[10px] text-gray-600">
+                    {user.wgName} · {user.roomKey}
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-white"
+              aria-label="Schliessen"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M6 6l12 12M6 18L18 6"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-4 p-5">
+          {user.diet && (
+            <InfoRow label="Isst" value={user.diet} />
+          )}
+          {user.allergies && user.allergies.trim() !== "" && (
+            <InfoRow label="Allergien" value={user.allergies} />
+          )}
+          {user.favoriteAnimal && (
+            <InfoRow label="Lieblingstier" value={user.favoriteAnimal} />
+          )}
+          {user.birthday && (
+            <InfoRow
+              label="Geburtstag"
+              value={
+                new Date(user.birthday).toLocaleDateString("de-CH", {
+                  day: "numeric",
+                  month: "long",
+                }) + (age !== null ? ` (${age})` : "")
+              }
+            />
+          )}
+          {!user.diet &&
+            !user.allergies &&
+            !user.favoriteAnimal &&
+            !user.birthday && (
+              <p className="text-center text-sm text-gray-600">
+                Noch keine weiteren Infos hinterlegt.
+              </p>
+            )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+      <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
+        {label}
+      </p>
+      <p className="mt-0.5 text-sm text-white">{value}</p>
+    </div>
+  );
 }
 
 export default function BewohnendePage() {
@@ -27,6 +187,7 @@ export default function BewohnendePage() {
   const [apiUsers, setApiUsers] = useState<ApiUser[]>([]);
   const [selectedWg, setSelectedWg] = useState<Wg>(wgs[0]!);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null);
 
   useEffect(() => {
     fetch("/api/users")
@@ -140,19 +301,25 @@ export default function BewohnendePage() {
         </div>
       </div>
 
-      {/* Schlafzimmer — kompakt als Liste */}
+      {/* Schlafzimmer — mit Avatar + Name */}
       <section className="mb-5">
         <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-accent">
           Schlafzimmer
         </h3>
         <div className="space-y-1.5">
           {zimmer.map((room) => {
-            const user = usersByRoom.get(room.keyNumber);
+            const user = usersByRoom.get(room.keyNumber) ?? null;
             const isMine = user?.id === currentUserId;
             return (
               <button
                 key={room.id}
-                onClick={() => setSelectedRoom(room)}
+                onClick={() => {
+                  if (user) {
+                    setSelectedUser(user);
+                  } else {
+                    setSelectedRoom(room);
+                  }
+                }}
                 className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-all ${
                   isMine
                     ? "border-accent bg-accent/10 shadow-[0_0_12px_rgba(184,240,104,0.2)]"
@@ -161,9 +328,7 @@ export default function BewohnendePage() {
                       : "border-gray-800 bg-gray-900/40 hover:border-gray-600"
                 }`}
               >
-                <span className="shrink-0 text-lg">
-                  {roomTypeIcons[room.type]}
-                </span>
+                <Avatar user={user} size={40} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
                     <p className="text-sm text-gray-300">{room.label}</p>
@@ -172,13 +337,15 @@ export default function BewohnendePage() {
                     </p>
                   </div>
                   <p
-                    className={`truncate text-xs ${
+                    className={`truncate text-sm ${
                       user ? "font-medium text-white" : "text-gray-600"
                     }`}
                   >
                     {user?.name ?? "Frei"}
                     {isMine && (
-                      <span className="ml-1 text-[9px] text-accent">(du)</span>
+                      <span className="ml-1 text-[10px] text-accent">
+                        (du)
+                      </span>
                     )}
                   </p>
                 </div>
@@ -221,25 +388,20 @@ export default function BewohnendePage() {
         </div>
       </section>
 
-      {/* Room Detail Modal */}
+      {/* Room Detail Modal (leere Zimmer + Gemeinschaftsraeume) */}
       {selectedRoom && (
         <RoomDetail
-          room={(() => {
-            const user = usersByRoom.get(selectedRoom.keyNumber);
-            if (!user) {
-              return { ...selectedRoom, currentResident: undefined };
-            }
-            return {
-              ...selectedRoom,
-              currentResident: {
-                id: user.id,
-                name: user.name,
-                movedIn: "",
-              },
-            };
-          })()}
+          room={{ ...selectedRoom, currentResident: undefined }}
           wgName={selectedWg.name}
           onClose={() => setSelectedRoom(null)}
+        />
+      )}
+
+      {/* User Profile Modal (belegtes Zimmer) */}
+      {selectedUser && (
+        <UserProfileModal
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
         />
       )}
     </div>
