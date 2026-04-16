@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
+interface LeaderboardEntry {
+  name: string;
+  score: number;
+  isMe: boolean;
+}
+
 const COLS = 10;
 const ROWS = 20;
 const CELL = 28;
@@ -142,7 +148,23 @@ export default function TetrisPage() {
   const [gameOver, setGameOver] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isNewRecord, setIsNewRecord] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const rafRef = useRef<number>(0);
+
+  const loadLeaderboard = useCallback(() => {
+    fetch("/api/game/highscore")
+      .then((r) => (r.ok ? r.json() : null))
+      .then(
+        (data: { leaderboard?: LeaderboardEntry[] } | null) => {
+          if (data?.leaderboard) setLeaderboard(data.leaderboard);
+        }
+      )
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    loadLeaderboard();
+  }, [loadLeaderboard]);
 
   const spawnPiece = useCallback(() => {
     const g = gameRef.current;
@@ -350,6 +372,7 @@ export default function TetrisPage() {
       if (res.ok) {
         const data = (await res.json()) as { isNewRecord: boolean };
         setIsNewRecord(data.isNewRecord);
+        loadLeaderboard();
       }
     } catch {
       // ignore
@@ -478,6 +501,62 @@ export default function TetrisPage() {
       <p className="mt-3 text-center text-[10px] text-gray-600">
         Swipe links/rechts · Swipe runter = Drop · Tap = Drehen
       </p>
+
+      {/* Rangliste */}
+      {leaderboard.length > 0 && (
+        <div className="mt-6 w-full max-w-[280px]">
+          <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
+            🏆 RANGLISTE
+          </p>
+          <div className="rounded-xl border border-gray-800 bg-black/60 p-2">
+            {leaderboard.map((entry, i) => (
+              <div
+                key={`${entry.name}-${i}`}
+                className={`flex items-center gap-2 rounded-lg px-2 py-1.5 ${
+                  entry.isMe
+                    ? "bg-accent/10 ring-1 ring-accent/30"
+                    : i % 2 === 0
+                      ? "bg-white/[0.02]"
+                      : ""
+                }`}
+              >
+                <span
+                  className={`w-5 shrink-0 text-right font-mono text-[11px] font-bold ${
+                    i === 0
+                      ? "text-amber-300"
+                      : i === 1
+                        ? "text-gray-300"
+                        : i === 2
+                          ? "text-amber-600"
+                          : "text-gray-600"
+                  }`}
+                >
+                  {i + 1}.
+                </span>
+                <span
+                  className={`min-w-0 flex-1 truncate text-xs ${
+                    entry.isMe ? "font-semibold text-accent" : "text-gray-300"
+                  }`}
+                >
+                  {entry.name}
+                  {entry.isMe && (
+                    <span className="ml-1 text-[9px] text-accent/70">
+                      (du)
+                    </span>
+                  )}
+                </span>
+                <span
+                  className={`shrink-0 font-mono text-xs font-bold ${
+                    i === 0 ? "text-amber-300" : "text-gray-400"
+                  }`}
+                >
+                  {entry.score.toLocaleString("de-CH")}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

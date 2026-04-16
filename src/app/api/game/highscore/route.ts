@@ -18,7 +18,7 @@ export async function GET() {
     prisma.user.findMany({
       where: { gameHighScore: { gt: 0 } },
       orderBy: { gameHighScore: "desc" },
-      take: 10,
+      take: 20,
       select: { id: true, name: true, gameHighScore: true },
     }),
   ]);
