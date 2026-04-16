@@ -13,13 +13,13 @@ const COLS = 10;
 const ROWS = 20;
 const CELL = 28;
 const COLORS = [
-  "#b8f068", // I — accent green
-  "#ff6b2b", // O — secondary orange
-  "#a78bfa", // T — violet
-  "#60a5fa", // J — blue
-  "#f472b6", // S — pink
-  "#fbbf24", // Z — amber
-  "#f87171", // L — red
+  "#b8f068",
+  "#ff6b2b",
+  "#a78bfa",
+  "#60a5fa",
+  "#f472b6",
+  "#fbbf24",
+  "#f87171",
 ];
 
 const PIECES = [
@@ -113,18 +113,9 @@ function merge(
   return g;
 }
 
-function clearRows(grid: Grid): { grid: Grid; cleared: number } {
-  const remaining = grid.filter((row) => row.some((c) => c === 0));
-  const cleared = ROWS - remaining.length;
-  const empty = Array.from({ length: cleared }, () =>
-    Array(COLS).fill(0) as number[]
-  );
-  return { grid: [...empty, ...remaining], cleared };
-}
-
 function scoreForLines(lines: number, level: number): number {
-  const base = [0, 100, 300, 500, 800];
-  return (base[lines] ?? 800) * (level + 1);
+  const base = [0, 40, 100, 150, 200];
+  return (base[lines] ?? 200) * (level + 1);
 }
 
 export default function TetrisPage() {
@@ -143,22 +134,25 @@ export default function TetrisPage() {
     paused: false,
     dropTimer: 0,
     lastTime: 0,
+    // Reihen-Flash: welche Reihen gerade aufloesen
+    flashRows: [] as number[],
+    flashTimer: 0,
   });
   const [score, setScore] = useState(0);
+  const [level, setLevel] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isNewRecord, setIsNewRecord] = useState(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const rafRef = useRef<number>(0);
 
   const loadLeaderboard = useCallback(() => {
     fetch("/api/game/highscore")
       .then((r) => (r.ok ? r.json() : null))
-      .then(
-        (data: { leaderboard?: LeaderboardEntry[] } | null) => {
-          if (data?.leaderboard) setLeaderboard(data.leaderboard);
-        }
-      )
+      .then((data: { leaderboard?: LeaderboardEntry[] } | null) => {
+        if (data?.leaderboard) setLeaderboard(data.leaderboard);
+      })
       .catch(() => {});
   }, []);
 
@@ -179,39 +173,51 @@ export default function TetrisPage() {
     }
   }, []);
 
-  const drop = useCallback(() => {
+  const lockPiece = useCallback(() => {
     const g = gameRef.current;
-    if (g.gameOver || g.paused) return;
-    if (!collides(g.grid, g.piece, g.px, g.py + 1)) {
-      g.py++;
+    g.grid = merge(g.grid, g.piece, g.px, g.py, g.colorIdx);
+
+    // Volle Reihen finden
+    const fullRows: number[] = [];
+    for (let r = 0; r < ROWS; r++) {
+      if (g.grid[r]!.every((c) => c !== 0)) fullRows.push(r);
+    }
+
+    if (fullRows.length > 0) {
+      // Flash starten (Reihen blinken bevor sie verschwinden)
+      g.flashRows = fullRows;
+      g.flashTimer = 400; // ms
+      g.score += scoreForLines(fullRows.length, g.level);
+      g.lines += fullRows.length;
+      g.level = Math.floor(g.lines / 10);
+      setScore(g.score);
+      setLevel(g.level);
     } else {
-      g.grid = merge(g.grid, g.piece, g.px, g.py, g.colorIdx);
-      const { grid, cleared } = clearRows(g.grid);
-      g.grid = grid;
-      if (cleared > 0) {
-        g.lines += cleared;
-        g.score += scoreForLines(cleared, g.level);
-        g.level = Math.floor(g.lines / 10);
-        setScore(g.score);
-      }
       spawnPiece();
     }
   }, [spawnPiece]);
 
-  const move = useCallback(
-    (dx: number) => {
-      const g = gameRef.current;
-      if (g.gameOver || g.paused) return;
-      if (!collides(g.grid, g.piece, g.px + dx, g.py)) {
-        g.px += dx;
-      }
-    },
-    []
-  );
+  const drop = useCallback(() => {
+    const g = gameRef.current;
+    if (g.gameOver || g.paused || g.flashRows.length > 0) return;
+    if (!collides(g.grid, g.piece, g.px, g.py + 1)) {
+      g.py++;
+    } else {
+      lockPiece();
+    }
+  }, [lockPiece]);
+
+  const move = useCallback((dx: number) => {
+    const g = gameRef.current;
+    if (g.gameOver || g.paused || g.flashRows.length > 0) return;
+    if (!collides(g.grid, g.piece, g.px + dx, g.py)) {
+      g.px += dx;
+    }
+  }, []);
 
   const rotatePiece = useCallback(() => {
     const g = gameRef.current;
-    if (g.gameOver || g.paused) return;
+    if (g.gameOver || g.paused || g.flashRows.length > 0) return;
     const rotated = rotate(g.piece);
     if (!collides(g.grid, rotated, g.px, g.py)) {
       g.piece = rotated;
@@ -226,14 +232,14 @@ export default function TetrisPage() {
 
   const hardDrop = useCallback(() => {
     const g = gameRef.current;
-    if (g.gameOver || g.paused) return;
+    if (g.gameOver || g.paused || g.flashRows.length > 0) return;
     while (!collides(g.grid, g.piece, g.px, g.py + 1)) {
       g.py++;
-      g.score += 2;
+      g.score += 1;
     }
     setScore(g.score);
-    drop();
-  }, [drop]);
+    lockPiece();
+  }, [lockPiece]);
 
   // Game loop
   useEffect(() => {
@@ -246,7 +252,10 @@ export default function TetrisPage() {
     g.paused = false;
     g.lastTime = 0;
     g.dropTimer = 0;
+    g.flashRows = [];
+    g.flashTimer = 0;
     setScore(0);
+    setLevel(0);
     setGameOver(false);
     setSubmitted(false);
     setIsNewRecord(false);
@@ -261,11 +270,24 @@ export default function TetrisPage() {
       const h = ROWS * CELL;
       ctx.clearRect(0, 0, w, h);
 
-      // Grid
+      const isFlashing = g.flashRows.length > 0;
+      const flashOn =
+        isFlashing && Math.floor(g.flashTimer / 80) % 2 === 0;
+
       for (let r = 0; r < ROWS; r++) {
+        const isFlashRow = g.flashRows.includes(r);
         for (let c = 0; c < COLS; c++) {
           const val = g.grid[r]![c]!;
-          if (val) {
+          if (isFlashRow && isFlashing) {
+            // Blinkender Flash-Effekt
+            ctx.fillStyle = flashOn
+              ? "rgba(255,255,255,0.9)"
+              : "rgba(184,240,104,0.6)";
+            ctx.shadowColor = flashOn ? "#fff" : "#b8f068";
+            ctx.shadowBlur = flashOn ? 16 : 8;
+            ctx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
+            ctx.shadowBlur = 0;
+          } else if (val) {
             const color = COLORS[val - 1] ?? "#fff";
             ctx.fillStyle = color;
             ctx.shadowColor = color;
@@ -279,8 +301,8 @@ export default function TetrisPage() {
         }
       }
 
-      // Current piece
-      if (!g.gameOver) {
+      // Current piece (nur wenn nicht im Flash)
+      if (!g.gameOver && !isFlashing) {
         const color = COLORS[g.colorIdx] ?? "#fff";
         ctx.fillStyle = color;
         ctx.shadowColor = color;
@@ -304,7 +326,23 @@ export default function TetrisPage() {
       const dt = time - g.lastTime;
       g.lastTime = time;
 
-      if (!g.gameOver && !g.paused) {
+      // Flash-Phase (Reihen blinken bevor sie verschwinden)
+      if (g.flashRows.length > 0) {
+        g.flashTimer -= dt;
+        if (g.flashTimer <= 0) {
+          // Reihen tatsaechlich entfernen
+          const remaining = g.grid.filter(
+            (_, i) => !g.flashRows.includes(i)
+          );
+          const empty = Array.from({ length: g.flashRows.length }, () =>
+            Array(COLS).fill(0) as number[]
+          );
+          g.grid = [...empty, ...remaining];
+          g.flashRows = [];
+          g.flashTimer = 0;
+          spawnPiece();
+        }
+      } else if (!g.gameOver && !g.paused) {
         g.dropTimer += dt;
         const speed = Math.max(100, 800 - g.level * 70);
         if (g.dropTimer >= speed) {
@@ -324,6 +362,7 @@ export default function TetrisPage() {
   // Keyboard
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      e.preventDefault();
       if (e.key === "ArrowLeft") move(-1);
       else if (e.key === "ArrowRight") move(1);
       else if (e.key === "ArrowUp") rotatePiece();
@@ -334,15 +373,17 @@ export default function TetrisPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [move, rotatePiece, drop, hardDrop]);
 
-  // Touch
+  // Touch — improved for no-scroll
   const touchRef = useRef<{ x: number; y: number; time: number } | null>(
     null
   );
   function onTouchStart(e: React.TouchEvent) {
+    e.preventDefault();
     const t = e.touches[0];
     if (t) touchRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
   }
   function onTouchEnd(e: React.TouchEvent) {
+    e.preventDefault();
     if (!touchRef.current) return;
     const t = e.changedTouches[0];
     if (!t) return;
@@ -389,17 +430,31 @@ export default function TetrisPage() {
     g.paused = false;
     g.lastTime = 0;
     g.dropTimer = 0;
+    g.flashRows = [];
+    g.flashTimer = 0;
     setScore(0);
+    setLevel(0);
     setGameOver(false);
     setSubmitted(false);
     setIsNewRecord(false);
     spawnPiece();
   }
 
+  // Prevent page scroll entirely
+  useEffect(() => {
+    const prevent = (e: TouchEvent) => e.preventDefault();
+    document.body.style.overflow = "hidden";
+    document.addEventListener("touchmove", prevent, { passive: false });
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("touchmove", prevent);
+    };
+  }, []);
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4 py-6">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-black">
       {/* Header */}
-      <div className="mb-3 flex w-full max-w-[280px] items-center justify-between">
+      <div className="mb-2 flex w-full max-w-[280px] items-center justify-between px-1">
         <button
           onClick={() => router.back()}
           className="text-sm text-gray-500 hover:text-white"
@@ -409,7 +464,7 @@ export default function TetrisPage() {
         <div className="text-right">
           <p className="font-mono text-2xl font-bold text-accent">{score}</p>
           <p className="font-mono text-[9px] uppercase tracking-wider text-gray-500">
-            Level {gameRef.current.level}
+            Level {level}
           </p>
         </div>
       </div>
@@ -424,15 +479,13 @@ export default function TetrisPage() {
           ref={canvasRef}
           width={COLS * CELL}
           height={ROWS * CELL}
-          className="block"
+          className="block touch-none"
         />
 
         {/* Game Over Overlay */}
         {gameOver && (
           <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-black/85 backdrop-blur-sm">
-            <p className="mb-1 font-cinzel text-2xl text-accent">
-              Game Over
-            </p>
+            <p className="mb-1 font-cinzel text-2xl text-accent">Game Over</p>
             <p className="mb-1 font-mono text-3xl font-bold text-white">
               {score}
             </p>
@@ -451,7 +504,7 @@ export default function TetrisPage() {
             )}
             {submitted && (
               <p className="mb-2 text-xs text-accent">
-                {isNewRecord ? "✓ Neuer Rekord gespeichert!" : "✓ Gespeichert"}
+                {isNewRecord ? "✓ Neuer Rekord!" : "✓ Gespeichert"}
               </p>
             )}
             <button
@@ -465,54 +518,55 @@ export default function TetrisPage() {
       </div>
 
       {/* Controls */}
-      <div className="mt-4 flex gap-3">
+      <div className="mt-3 flex gap-2">
         <button
           onClick={() => move(-1)}
-          className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-700 bg-gray-900/60 text-lg text-white active:bg-accent/20"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-700 bg-gray-900/60 text-lg text-white active:bg-accent/20"
         >
           ◀
         </button>
         <button
           onClick={() => drop()}
-          className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-700 bg-gray-900/60 text-lg text-white active:bg-accent/20"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-700 bg-gray-900/60 text-lg text-white active:bg-accent/20"
         >
           ▼
         </button>
         <button
           onClick={rotatePiece}
-          className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-700 bg-gray-900/60 text-lg text-white active:bg-accent/20"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-700 bg-gray-900/60 text-lg text-white active:bg-accent/20"
         >
           ↻
         </button>
         <button
           onClick={() => move(1)}
-          className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-700 bg-gray-900/60 text-lg text-white active:bg-accent/20"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-700 bg-gray-900/60 text-lg text-white active:bg-accent/20"
         >
           ▶
         </button>
         <button
           onClick={hardDrop}
-          className="flex h-12 w-12 items-center justify-center rounded-xl border border-accent/50 bg-accent/10 text-lg text-accent active:bg-accent/30"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-accent/50 bg-accent/10 text-lg text-accent active:bg-accent/30"
         >
           ⏬
         </button>
       </div>
 
-      <p className="mt-3 text-center text-[10px] text-gray-600">
-        Swipe links/rechts · Swipe runter = Drop · Tap = Drehen
-      </p>
+      {/* Rangliste Toggle */}
+      <button
+        onClick={() => setShowLeaderboard(!showLeaderboard)}
+        className="mt-3 font-display text-[10px] font-bold uppercase tracking-wider text-amber-300/80 hover:text-amber-200"
+      >
+        {showLeaderboard ? "Rangliste ausblenden" : "🏆 Rangliste anzeigen"}
+      </button>
 
-      {/* Rangliste */}
-      {leaderboard.length > 0 && (
-        <div className="mt-6 w-full max-w-[280px]">
-          <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
-            🏆 RANGLISTE
-          </p>
-          <div className="rounded-xl border border-gray-800 bg-black/60 p-2">
+      {/* Rangliste (toggle) */}
+      {showLeaderboard && leaderboard.length > 0 && (
+        <div className="mt-2 w-full max-w-[280px]">
+          <div className="max-h-[30vh] overflow-y-auto rounded-xl border border-gray-800 bg-black/60 p-2">
             {leaderboard.map((entry, i) => (
               <div
                 key={`${entry.name}-${i}`}
-                className={`flex items-center gap-2 rounded-lg px-2 py-1.5 ${
+                className={`flex items-center gap-2 rounded-lg px-2 py-1 ${
                   entry.isMe
                     ? "bg-accent/10 ring-1 ring-accent/30"
                     : i % 2 === 0
@@ -535,7 +589,9 @@ export default function TetrisPage() {
                 </span>
                 <span
                   className={`min-w-0 flex-1 truncate text-xs ${
-                    entry.isMe ? "font-semibold text-accent" : "text-gray-300"
+                    entry.isMe
+                      ? "font-semibold text-accent"
+                      : "text-gray-300"
                   }`}
                 >
                   {entry.name}
