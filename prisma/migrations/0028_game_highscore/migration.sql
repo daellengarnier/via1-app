@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN "gameHighScore" INTEGER NOT NULL DEFAULT 0;

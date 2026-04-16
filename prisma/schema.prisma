@@ -80,6 +80,7 @@ model User {
   notifyMyPostsComment  Boolean @default(true)
   hasKaffeeAbo          Boolean @default(false)
   favoriteAnimal        String?
+  gameHighScore         Int     @default(0)
   room        Room?     @relation(fields: [roomId], references: [id])
   roomId      String?
   createdAt   DateTime  @default(now())

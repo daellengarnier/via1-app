@@ -90,6 +90,7 @@ export function HamburgerMenu() {
   const [pinned, setPinned] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [hasKaffeeAbo, setHasKaffeeAbo] = useState(false);
+  const [topScore, setTopScore] = useState<number | null>(null);
   const notifCount = notifications.length;
 
   // Kaffee-Abo Status vom Profil laden
@@ -109,6 +110,18 @@ export function HamburgerMenu() {
       cancelled = true;
     };
   }, [open]);
+
+  // Highscore laden
+  useEffect(() => {
+    fetch("/api/game/highscore")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { topScore?: number } | null) => {
+        if (data && typeof data.topScore === "number") {
+          setTopScore(data.topScore);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Notifications laden
   const loadNotifications = async () => {
@@ -195,6 +208,20 @@ export function HamburgerMenu() {
           </span>
         )}
       </button>
+
+      {/* Highscore Badge — unter der Glocke */}
+      {topScore !== null && topScore > 0 && (
+        <button
+          onClick={() => (window.location.href = "/tetris")}
+          className="fixed left-4 top-16 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/50 bg-black/80 backdrop-blur-sm transition-colors hover:border-amber-400"
+          aria-label="Highscore"
+          title={`Highscore: ${topScore}`}
+        >
+          <span className="font-mono text-[11px] font-bold text-amber-300">
+            {topScore > 9999 ? `${Math.floor(topScore / 1000)}k` : topScore}
+          </span>
+        </button>
+      )}
 
       {/* Hamburger Button — RECHTS */}
       <button
