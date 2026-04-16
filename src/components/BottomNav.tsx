@@ -84,7 +84,7 @@ const navItems: { href: string; label: string; icon: ReactNode }[] = [
   { href: "/", label: "HOME", icon: <HomeIcon /> },
   { href: "/termine", label: "TERMINE", icon: <KalenderIcon /> },
   { href: "/aufgaben", label: "AUFGABEN", icon: <CheckIcon /> },
-  { href: "/einkauf", label: "EINKAUF", icon: <EinkaufIcon /> },
+  { href: "/einkauf", label: "BESCHAFFUNG", icon: <EinkaufIcon /> },
   { href: "/aktivitaeten", label: "AKTIVITÄT", icon: <AktivitaetIcon /> },
 ];
 
