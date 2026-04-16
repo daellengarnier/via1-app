@@ -209,19 +209,27 @@ export function HamburgerMenu() {
         )}
       </button>
 
-      {/* Highscore Badge — unter der Glocke */}
-      {topScore !== null && topScore > 0 && (
-        <button
-          onClick={() => (window.location.href = "/tetris")}
-          className="fixed left-4 top-16 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/50 bg-black/80 backdrop-blur-sm transition-colors hover:border-amber-400"
-          aria-label="Highscore"
-          title={`Highscore: ${topScore}`}
-        >
+      {/* Game Badge — unter der Glocke */}
+      <button
+        onClick={() => (window.location.href = "/tetris")}
+        className="fixed left-4 top-16 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/50 bg-black/80 backdrop-blur-sm transition-colors hover:border-amber-400"
+        aria-label="Block-Puzzle spielen"
+        title={
+          topScore && topScore > 0
+            ? `🏆 Highscore: ${topScore}`
+            : "Block-Puzzle spielen"
+        }
+      >
+        {topScore !== null && topScore > 0 ? (
           <span className="font-mono text-[11px] font-bold text-amber-300">
-            {topScore > 9999 ? `${Math.floor(topScore / 1000)}k` : topScore}
+            {topScore > 9999
+              ? `${Math.floor(topScore / 1000)}k`
+              : topScore}
           </span>
-        </button>
-      )}
+        ) : (
+          <span className="text-sm">🎮</span>
+        )}
+      </button>
 
       {/* Hamburger Button — RECHTS */}
       <button

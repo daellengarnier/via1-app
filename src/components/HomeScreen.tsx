@@ -558,12 +558,42 @@ export default function HomeScreen() {
         </div>
       </div>
 
+      {/* Animierte Wellenlinie als Trenner */}
+      <div className="mb-4 flex justify-center overflow-hidden">
+        <svg
+          viewBox="0 0 400 20"
+          className="h-4 w-full max-w-lg"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M0 10 Q25 0 50 10 T100 10 T150 10 T200 10 T250 10 T300 10 T350 10 T400 10"
+            fill="none"
+            stroke="url(#wave-grad)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          >
+            <animate
+              attributeName="d"
+              values="M0 10 Q25 0 50 10 T100 10 T150 10 T200 10 T250 10 T300 10 T350 10 T400 10;M0 10 Q25 20 50 10 T100 10 T150 10 T200 10 T250 10 T300 10 T350 10 T400 10;M0 10 Q25 0 50 10 T100 10 T150 10 T200 10 T250 10 T300 10 T350 10 T400 10"
+              dur="3s"
+              repeatCount="indefinite"
+            />
+          </path>
+          <defs>
+            <linearGradient id="wave-grad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="transparent" />
+              <stop offset="20%" stopColor="rgba(184,240,104,0.3)" />
+              <stop offset="50%" stopColor="rgba(184,240,104,0.5)" />
+              <stop offset="80%" stopColor="rgba(184,240,104,0.3)" />
+              <stop offset="100%" stopColor="transparent" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
       {/* Kaffee (nur für Abo) + Spinnerei — 2-Spalten */}
       {hasKaffeeAbo ? (
         <div className="mb-5">
-          <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
-            AKTUELL
-          </p>
           <div className="grid grid-cols-2 gap-3">
             <div
               className="cursor-pointer rounded-2xl border border-amber-600/30 bg-gradient-to-br from-amber-700/15 to-transparent p-3 transition-all hover:border-amber-500/50"
@@ -646,7 +676,7 @@ export default function HomeScreen() {
 
       {/* Pinnwand als Sticky Notes */}
       <div className="relative">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-col items-center gap-1">
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
             PINNWAND
           </p>
