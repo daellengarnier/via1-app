@@ -11,12 +11,16 @@ export async function GET() {
   }
 
   const articles = await prisma.hausbuchArticle.findMany({
-    orderBy: [{ category: "asc" }, { title: "asc" }],
     include: {
       updatedBy: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true } },
     },
   });
+  // Lokale alphabetische Sortierung (inkl. Umlaute) — Prisma/Postgres
+  // default asc ist nicht Locale-aware
+  articles.sort((a, b) =>
+    a.title.localeCompare(b.title, "de-CH", { sensitivity: "base" })
+  );
 
   return NextResponse.json(
     articles.map((a) => ({
