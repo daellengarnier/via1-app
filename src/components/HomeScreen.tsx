@@ -424,6 +424,7 @@ export default function HomeScreen() {
         title={`${getGreeting()}, ${userName}`}
         icon="/pyramid.webp"
         color="green"
+        scrollable
       />
 
       {/* Wetter + Aare */}
@@ -676,16 +677,19 @@ export default function HomeScreen() {
 
       {/* Pinnwand als Sticky Notes */}
       <div className="relative">
-        <div className="mb-3 flex flex-col items-center gap-1">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex-1" />
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
             PINNWAND
           </p>
-          <button
-            onClick={() => setShowNoteForm(!showNoteForm)}
-            className="font-display text-[10px] font-bold uppercase tracking-wider text-gray-500 hover:text-accent"
-          >
-            + NEU
-          </button>
+          <div className="flex flex-1 justify-end">
+            <button
+              onClick={() => setShowNoteForm(!showNoteForm)}
+              className="font-display text-[10px] font-bold uppercase tracking-wider text-gray-500 hover:text-accent"
+            >
+              + NEU
+            </button>
+          </div>
         </div>
 
         {showNoteForm && (

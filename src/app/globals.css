@@ -21,6 +21,9 @@ body {
   overflow: hidden;
   pointer-events: none;
 }
+.via-bg.via-bg-scroll {
+  position: absolute;
+}
 
 /* Tab-Icon oben (einheitliche Grösse & Position für alle Tabs) */
 .via-tab-icon {

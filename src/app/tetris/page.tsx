@@ -11,154 +11,167 @@ interface LeaderboardEntry {
 
 const COLS = 10;
 const ROWS = 20;
-const CELL = 28;
+
 const COLORS = [
-  "#b8f068",
-  "#ff6b2b",
-  "#a78bfa",
-  "#60a5fa",
-  "#f472b6",
-  "#fbbf24",
-  "#f87171",
+  "#b8f068", "#ff6b2b", "#a78bfa", "#60a5fa",
+  "#f472b6", "#fbbf24", "#f87171",
 ];
 
 const PIECES = [
   [[1, 1, 1, 1]],
-  [
-    [1, 1],
-    [1, 1],
-  ],
-  [
-    [0, 1, 0],
-    [1, 1, 1],
-  ],
-  [
-    [1, 0],
-    [1, 0],
-    [1, 1],
-  ],
-  [
-    [0, 1],
-    [1, 1],
-    [1, 0],
-  ],
-  [
-    [1, 0],
-    [1, 1],
-    [0, 1],
-  ],
-  [
-    [0, 1],
-    [0, 1],
-    [1, 1],
-  ],
+  [[1, 1], [1, 1]],
+  [[0, 1, 0], [1, 1, 1]],
+  [[1, 0], [1, 0], [1, 1]],
+  [[0, 1], [1, 1], [1, 0]],
+  [[1, 0], [1, 1], [0, 1]],
+  [[0, 1], [0, 1], [1, 1]],
 ];
 
 type Grid = number[][];
-
 function createGrid(): Grid {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(0) as number[]);
 }
-
-function rotate(piece: number[][]): number[][] {
-  const rows = piece.length;
-  const cols = piece[0]!.length;
-  const rotated: number[][] = [];
-  for (let c = 0; c < cols; c++) {
+function rotate(p: number[][]): number[][] {
+  const r: number[][] = [];
+  for (let c = 0; c < p[0]!.length; c++) {
     const row: number[] = [];
-    for (let r = rows - 1; r >= 0; r--) {
-      row.push(piece[r]![c]!);
-    }
-    rotated.push(row);
+    for (let ri = p.length - 1; ri >= 0; ri--) row.push(p[ri]![c]!);
+    r.push(row);
   }
-  return rotated;
+  return r;
 }
-
-function collides(
-  grid: Grid,
-  piece: number[][],
-  px: number,
-  py: number
-): boolean {
-  for (let r = 0; r < piece.length; r++) {
-    for (let c = 0; c < piece[r]!.length; c++) {
-      if (!piece[r]![c]) continue;
-      const nx = px + c;
-      const ny = py + r;
+function collides(g: Grid, p: number[][], px: number, py: number): boolean {
+  for (let r = 0; r < p.length; r++)
+    for (let c = 0; c < p[r]!.length; c++) {
+      if (!p[r]![c]) continue;
+      const nx = px + c, ny = py + r;
       if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
-      if (ny >= 0 && grid[ny]![nx]) return true;
+      if (ny >= 0 && g[ny]![nx]) return true;
     }
-  }
   return false;
 }
-
-function merge(
-  grid: Grid,
-  piece: number[][],
-  px: number,
-  py: number,
-  colorIdx: number
-): Grid {
-  const g = grid.map((row) => [...row]);
-  for (let r = 0; r < piece.length; r++) {
-    for (let c = 0; c < piece[r]!.length; c++) {
-      if (!piece[r]![c]) continue;
-      const ny = py + r;
-      const nx = px + c;
-      if (ny >= 0 && ny < ROWS && nx >= 0 && nx < COLS) {
-        g[ny]![nx] = colorIdx + 1;
-      }
+function merge(g: Grid, p: number[][], px: number, py: number, ci: number): Grid {
+  const ng = g.map((r) => [...r]);
+  for (let r = 0; r < p.length; r++)
+    for (let c = 0; c < p[r]!.length; c++) {
+      if (!p[r]![c]) continue;
+      const ny = py + r, nx = px + c;
+      if (ny >= 0 && ny < ROWS && nx >= 0 && nx < COLS) ng[ny]![nx] = ci + 1;
     }
-  }
-  return g;
+  return ng;
+}
+function scoreForLines(n: number, lvl: number): number {
+  return ([0, 40, 100, 150, 200][n] ?? 200) * (lvl + 1);
 }
 
-function scoreForLines(lines: number, level: number): number {
-  const base = [0, 40, 100, 150, 200];
-  return (base[lines] ?? 200) * (level + 1);
+// Korobeiniki (Tetris Theme) — Noten als [freq, duration]
+const MELODY: [number, number][] = [
+  [659, 0.4], [494, 0.2], [523, 0.2], [587, 0.4], [523, 0.2], [494, 0.2],
+  [440, 0.4], [440, 0.2], [523, 0.2], [659, 0.4], [587, 0.2], [523, 0.2],
+  [494, 0.4], [494, 0.2], [523, 0.2], [587, 0.4], [659, 0.4],
+  [523, 0.4], [440, 0.4], [440, 0.4], [0, 0.2],
+  [587, 0.4], [698, 0.2], [880, 0.4], [784, 0.2], [698, 0.2],
+  [659, 0.4], [523, 0.2], [659, 0.4], [587, 0.2], [523, 0.2],
+  [494, 0.4], [494, 0.2], [523, 0.2], [587, 0.4], [659, 0.4],
+  [523, 0.4], [440, 0.4], [440, 0.4], [0, 0.4],
+];
+
+function useTetrisMusic() {
+  const ctxRef = useRef<AudioContext | null>(null);
+  const playingRef = useRef(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const stop = useCallback(() => {
+    playingRef.current = false;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    ctxRef.current?.close().catch(() => {});
+    ctxRef.current = null;
+  }, []);
+
+  const start = useCallback(() => {
+    if (playingRef.current) return;
+    try {
+      const ctx = new AudioContext();
+      ctxRef.current = ctx;
+      playingRef.current = true;
+      let noteIdx = 0;
+
+      function playNext() {
+        if (!playingRef.current || !ctxRef.current) return;
+        const [freq, dur] = MELODY[noteIdx % MELODY.length]!;
+        if (freq > 0) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "square";
+          osc.frequency.value = freq;
+          gain.gain.value = 0.06;
+          gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            ctx.currentTime + dur * 0.9
+          );
+          osc.connect(gain).connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + dur);
+        }
+        noteIdx++;
+        timeoutRef.current = setTimeout(playNext, dur * 1000);
+      }
+      playNext();
+    } catch {
+      // Audio not supported
+    }
+  }, []);
+
+  useEffect(() => stop, [stop]);
+  return { start, stop, playing: playingRef };
 }
 
 export default function TetrisPage() {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [cellSize, setCellSize] = useState(28);
   const gameRef = useRef({
     grid: createGrid(),
     piece: PIECES[0]!,
     colorIdx: 0,
-    px: 3,
-    py: -2,
-    score: 0,
-    lines: 0,
-    level: 0,
-    gameOver: false,
-    paused: false,
-    dropTimer: 0,
-    lastTime: 0,
-    // Reihen-Flash: welche Reihen gerade aufloesen
+    px: 3, py: -2,
+    score: 0, lines: 0, level: 0,
+    gameOver: false, paused: false,
+    dropTimer: 0, lastTime: 0,
     flashRows: [] as number[],
     flashTimer: 0,
   });
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [isNewRecord, setIsNewRecord] = useState(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showLB, setShowLB] = useState(false);
+  const [musicOn, setMusicOn] = useState(false);
+  const music = useTetrisMusic();
   const rafRef = useRef<number>(0);
 
-  const loadLeaderboard = useCallback(() => {
+  // Responsive cell size
+  useEffect(() => {
+    function calc() {
+      const h = window.innerHeight;
+      const avail = h - 160;
+      setCellSize(Math.max(16, Math.min(32, Math.floor(avail / ROWS))));
+    }
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
+
+  const loadLB = useCallback(() => {
     fetch("/api/game/highscore")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { leaderboard?: LeaderboardEntry[] } | null) => {
-        if (data?.leaderboard) setLeaderboard(data.leaderboard);
+      .then((d: { leaderboard?: LeaderboardEntry[] } | null) => {
+        if (d?.leaderboard) setLeaderboard(d.leaderboard);
       })
       .catch(() => {});
   }, []);
-
-  useEffect(() => {
-    loadLeaderboard();
-  }, [loadLeaderboard]);
+  useEffect(() => { loadLB(); }, [loadLB]);
 
   const spawnPiece = useCallback(() => {
     const g = gameRef.current;
@@ -170,25 +183,34 @@ export default function TetrisPage() {
     if (collides(g.grid, g.piece, g.px, g.py + 1) && g.py >= -1) {
       g.gameOver = true;
       setGameOver(true);
+      // Auto-save score
+      if (g.score > 0) {
+        fetch("/api/game/highscore", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ score: g.score }),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d: { isNewRecord?: boolean } | null) => {
+            if (d?.isNewRecord) setIsNewRecord(true);
+            loadLB();
+          })
+          .catch(() => {});
+      }
     }
-  }, []);
+  }, [loadLB]);
 
   const lockPiece = useCallback(() => {
     const g = gameRef.current;
     g.grid = merge(g.grid, g.piece, g.px, g.py, g.colorIdx);
-
-    // Volle Reihen finden
-    const fullRows: number[] = [];
-    for (let r = 0; r < ROWS; r++) {
-      if (g.grid[r]!.every((c) => c !== 0)) fullRows.push(r);
-    }
-
-    if (fullRows.length > 0) {
-      // Flash starten (Reihen blinken bevor sie verschwinden)
-      g.flashRows = fullRows;
-      g.flashTimer = 400; // ms
-      g.score += scoreForLines(fullRows.length, g.level);
-      g.lines += fullRows.length;
+    const full: number[] = [];
+    for (let r = 0; r < ROWS; r++)
+      if (g.grid[r]!.every((c) => c !== 0)) full.push(r);
+    if (full.length > 0) {
+      g.flashRows = full;
+      g.flashTimer = 400;
+      g.score += scoreForLines(full.length, g.level);
+      g.lines += full.length;
       g.level = Math.floor(g.lines / 10);
       setScore(g.score);
       setLevel(g.level);
@@ -200,169 +222,116 @@ export default function TetrisPage() {
   const drop = useCallback(() => {
     const g = gameRef.current;
     if (g.gameOver || g.paused || g.flashRows.length > 0) return;
-    if (!collides(g.grid, g.piece, g.px, g.py + 1)) {
-      g.py++;
-    } else {
-      lockPiece();
-    }
+    if (!collides(g.grid, g.piece, g.px, g.py + 1)) g.py++;
+    else lockPiece();
   }, [lockPiece]);
 
   const move = useCallback((dx: number) => {
     const g = gameRef.current;
     if (g.gameOver || g.paused || g.flashRows.length > 0) return;
-    if (!collides(g.grid, g.piece, g.px + dx, g.py)) {
-      g.px += dx;
-    }
+    if (!collides(g.grid, g.piece, g.px + dx, g.py)) g.px += dx;
   }, []);
 
   const rotatePiece = useCallback(() => {
     const g = gameRef.current;
     if (g.gameOver || g.paused || g.flashRows.length > 0) return;
-    const rotated = rotate(g.piece);
-    if (!collides(g.grid, rotated, g.px, g.py)) {
-      g.piece = rotated;
-    } else if (!collides(g.grid, rotated, g.px - 1, g.py)) {
-      g.piece = rotated;
-      g.px--;
-    } else if (!collides(g.grid, rotated, g.px + 1, g.py)) {
-      g.piece = rotated;
-      g.px++;
-    }
+    const rot = rotate(g.piece);
+    if (!collides(g.grid, rot, g.px, g.py)) g.piece = rot;
+    else if (!collides(g.grid, rot, g.px - 1, g.py)) { g.piece = rot; g.px--; }
+    else if (!collides(g.grid, rot, g.px + 1, g.py)) { g.piece = rot; g.px++; }
   }, []);
 
   const hardDrop = useCallback(() => {
     const g = gameRef.current;
     if (g.gameOver || g.paused || g.flashRows.length > 0) return;
-    while (!collides(g.grid, g.piece, g.px, g.py + 1)) {
-      g.py++;
-      g.score += 1;
-    }
+    while (!collides(g.grid, g.piece, g.px, g.py + 1)) { g.py++; g.score += 1; }
     setScore(g.score);
     lockPiece();
   }, [lockPiece]);
 
+  function toggleMusic() {
+    if (musicOn) { music.stop(); setMusicOn(false); }
+    else { music.start(); setMusicOn(true); }
+  }
+
   // Game loop
   useEffect(() => {
     const g = gameRef.current;
-    g.grid = createGrid();
-    g.score = 0;
-    g.lines = 0;
-    g.level = 0;
-    g.gameOver = false;
-    g.paused = false;
-    g.lastTime = 0;
-    g.dropTimer = 0;
-    g.flashRows = [];
-    g.flashTimer = 0;
-    setScore(0);
-    setLevel(0);
-    setGameOver(false);
-    setSubmitted(false);
-    setIsNewRecord(false);
+    g.grid = createGrid(); g.score = 0; g.lines = 0; g.level = 0;
+    g.gameOver = false; g.paused = false; g.lastTime = 0; g.dropTimer = 0;
+    g.flashRows = []; g.flashTimer = 0;
+    setScore(0); setLevel(0); setGameOver(false); setIsNewRecord(false);
     spawnPiece();
 
-    function draw() {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      const w = COLS * CELL;
-      const h = ROWS * CELL;
-      ctx.clearRect(0, 0, w, h);
-
-      const isFlashing = g.flashRows.length > 0;
-      const flashOn =
-        isFlashing && Math.floor(g.flashTimer / 80) % 2 === 0;
-
-      for (let r = 0; r < ROWS; r++) {
-        const isFlashRow = g.flashRows.includes(r);
-        for (let c = 0; c < COLS; c++) {
-          const val = g.grid[r]![c]!;
-          if (isFlashRow && isFlashing) {
-            // Blinkender Flash-Effekt
-            ctx.fillStyle = flashOn
-              ? "rgba(255,255,255,0.9)"
-              : "rgba(184,240,104,0.6)";
-            ctx.shadowColor = flashOn ? "#fff" : "#b8f068";
-            ctx.shadowBlur = flashOn ? 16 : 8;
-            ctx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
-            ctx.shadowBlur = 0;
-          } else if (val) {
-            const color = COLORS[val - 1] ?? "#fff";
-            ctx.fillStyle = color;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = 8;
-            ctx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
-            ctx.shadowBlur = 0;
-          } else {
-            ctx.fillStyle = "rgba(255,255,255,0.03)";
-            ctx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
-          }
-        }
-      }
-
-      // Current piece (nur wenn nicht im Flash)
-      if (!g.gameOver && !isFlashing) {
-        const color = COLORS[g.colorIdx] ?? "#fff";
-        ctx.fillStyle = color;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 12;
-        for (let r = 0; r < g.piece.length; r++) {
-          for (let c = 0; c < g.piece[r]!.length; c++) {
-            if (!g.piece[r]![c]) continue;
-            const x = (g.px + c) * CELL;
-            const y = (g.py + r) * CELL;
-            if (y >= 0) {
-              ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
-            }
-          }
-        }
-        ctx.shadowBlur = 0;
-      }
-    }
-
     function loop(time: number) {
+      const cs = cellSize;
       if (!g.lastTime) g.lastTime = time;
-      const dt = time - g.lastTime;
-      g.lastTime = time;
+      const dt = time - g.lastTime; g.lastTime = time;
 
-      // Flash-Phase (Reihen blinken bevor sie verschwinden)
       if (g.flashRows.length > 0) {
         g.flashTimer -= dt;
         if (g.flashTimer <= 0) {
-          // Reihen tatsaechlich entfernen
-          const remaining = g.grid.filter(
-            (_, i) => !g.flashRows.includes(i)
-          );
-          const empty = Array.from({ length: g.flashRows.length }, () =>
-            Array(COLS).fill(0) as number[]
-          );
-          g.grid = [...empty, ...remaining];
-          g.flashRows = [];
-          g.flashTimer = 0;
+          const rem = g.grid.filter((_, i) => !g.flashRows.includes(i));
+          const emp = Array.from({ length: g.flashRows.length }, () => Array(COLS).fill(0) as number[]);
+          g.grid = [...emp, ...rem]; g.flashRows = []; g.flashTimer = 0;
           spawnPiece();
         }
       } else if (!g.gameOver && !g.paused) {
         g.dropTimer += dt;
-        const speed = Math.max(100, 800 - g.level * 70);
-        if (g.dropTimer >= speed) {
-          g.dropTimer = 0;
-          drop();
-        }
+        const speed = Math.max(80, 800 - g.level * 80);
+        if (g.dropTimer >= speed) { g.dropTimer = 0; drop(); }
       }
 
-      draw();
+      // Draw
+      const canvas = canvasRef.current;
+      if (!canvas) { rafRef.current = requestAnimationFrame(loop); return; }
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { rafRef.current = requestAnimationFrame(loop); return; }
+      canvas.width = COLS * cs; canvas.height = ROWS * cs;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const isFlashing = g.flashRows.length > 0;
+      const flashOn = isFlashing && Math.floor(g.flashTimer / 80) % 2 === 0;
+
+      for (let r = 0; r < ROWS; r++) {
+        const isFR = g.flashRows.includes(r);
+        for (let c = 0; c < COLS; c++) {
+          const v = g.grid[r]![c]!;
+          if (isFR && isFlashing) {
+            ctx.fillStyle = flashOn ? "rgba(255,255,255,0.9)" : "rgba(184,240,104,0.6)";
+            ctx.shadowColor = flashOn ? "#fff" : "#b8f068"; ctx.shadowBlur = flashOn ? 16 : 8;
+            ctx.fillRect(c * cs + 1, r * cs + 1, cs - 2, cs - 2); ctx.shadowBlur = 0;
+          } else if (v) {
+            const col = COLORS[v - 1] ?? "#fff";
+            ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 6;
+            ctx.fillRect(c * cs + 1, r * cs + 1, cs - 2, cs - 2); ctx.shadowBlur = 0;
+          } else {
+            ctx.fillStyle = "rgba(255,255,255,0.03)";
+            ctx.fillRect(c * cs + 1, r * cs + 1, cs - 2, cs - 2);
+          }
+        }
+      }
+      if (!g.gameOver && !isFlashing) {
+        const col = COLORS[g.colorIdx] ?? "#fff";
+        ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 10;
+        for (let r = 0; r < g.piece.length; r++)
+          for (let c = 0; c < g.piece[r]!.length; c++) {
+            if (!g.piece[r]![c]) continue;
+            const x = (g.px + c) * cs, y = (g.py + r) * cs;
+            if (y >= 0) ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2);
+          }
+        ctx.shadowBlur = 0;
+      }
       rafRef.current = requestAnimationFrame(loop);
     }
-
     rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [drop, spawnPiece]);
+  }, [drop, spawnPiece, cellSize]);
 
   // Keyboard
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      e.preventDefault();
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].includes(e.key)) e.preventDefault();
       if (e.key === "ArrowLeft") move(-1);
       else if (e.key === "ArrowRight") move(1);
       else if (e.key === "ArrowUp") rotatePiece();
@@ -373,144 +342,89 @@ export default function TetrisPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [move, rotatePiece, drop, hardDrop]);
 
-  // Touch — improved for no-scroll
-  const touchRef = useRef<{ x: number; y: number; time: number } | null>(
-    null
-  );
-  function onTouchStart(e: React.TouchEvent) {
+  // Touch
+  const touchRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  function onTS(e: React.TouchEvent) {
     e.preventDefault();
     const t = e.touches[0];
-    if (t) touchRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
+    if (t) touchRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
   }
-  function onTouchEnd(e: React.TouchEvent) {
+  function onTE(e: React.TouchEvent) {
     e.preventDefault();
     if (!touchRef.current) return;
-    const t = e.changedTouches[0];
-    if (!t) return;
+    const t = e.changedTouches[0]; if (!t) return;
     const dx = t.clientX - touchRef.current.x;
     const dy = t.clientY - touchRef.current.y;
-    const dt = Date.now() - touchRef.current.time;
+    const dt = Date.now() - touchRef.current.t;
     touchRef.current = null;
-
-    if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && dt < 300) {
-      rotatePiece();
-    } else if (Math.abs(dy) > Math.abs(dx) && dy > 30) {
-      hardDrop();
-    } else if (Math.abs(dx) > 20) {
-      move(dx > 0 ? 1 : -1);
-    }
-  }
-
-  async function submitScore() {
-    if (submitted || score === 0) return;
-    setSubmitted(true);
-    try {
-      const res = await fetch("/api/game/highscore", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ score }),
-      });
-      if (res.ok) {
-        const data = (await res.json()) as { isNewRecord: boolean };
-        setIsNewRecord(data.isNewRecord);
-        loadLeaderboard();
-      }
-    } catch {
-      // ignore
-    }
+    if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && dt < 300) rotatePiece();
+    else if (Math.abs(dy) > Math.abs(dx) && dy > 30) hardDrop();
+    else if (Math.abs(dx) > 20) move(dx > 0 ? 1 : -1);
   }
 
   function restart() {
     const g = gameRef.current;
-    g.grid = createGrid();
-    g.score = 0;
-    g.lines = 0;
-    g.level = 0;
-    g.gameOver = false;
-    g.paused = false;
-    g.lastTime = 0;
-    g.dropTimer = 0;
-    g.flashRows = [];
-    g.flashTimer = 0;
-    setScore(0);
-    setLevel(0);
-    setGameOver(false);
-    setSubmitted(false);
-    setIsNewRecord(false);
+    g.grid = createGrid(); g.score = 0; g.lines = 0; g.level = 0;
+    g.gameOver = false; g.paused = false; g.lastTime = 0; g.dropTimer = 0;
+    g.flashRows = []; g.flashTimer = 0;
+    setScore(0); setLevel(0); setGameOver(false); setIsNewRecord(false);
     spawnPiece();
   }
 
-  // Prevent page scroll entirely
   useEffect(() => {
     const prevent = (e: TouchEvent) => e.preventDefault();
     document.body.style.overflow = "hidden";
     document.addEventListener("touchmove", prevent, { passive: false });
-    return () => {
-      document.body.style.overflow = "";
-      document.removeEventListener("touchmove", prevent);
-    };
+    return () => { document.body.style.overflow = ""; document.removeEventListener("touchmove", prevent); };
   }, []);
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-black">
+    <div className="fixed inset-0 flex flex-col items-center bg-black" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
       {/* Header */}
-      <div className="mb-2 flex w-full max-w-[280px] items-center justify-between px-1">
-        <button
-          onClick={() => router.back()}
-          className="text-sm text-gray-500 hover:text-white"
-        >
-          ← Zurück
+      <div className="flex w-full max-w-[320px] items-center justify-between px-2 py-2">
+        <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-white">
+          ←
         </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleMusic}
+            className={`rounded px-2 py-0.5 text-[10px] transition-colors ${musicOn ? "bg-accent/20 text-accent" : "text-gray-600 hover:text-gray-400"}`}
+          >
+            {musicOn ? "♫ ON" : "♫ OFF"}
+          </button>
+          <button
+            onClick={() => setShowLB(true)}
+            className="rounded px-2 py-0.5 text-[10px] text-amber-300/80 hover:text-amber-200"
+          >
+            🏆
+          </button>
+        </div>
         <div className="text-right">
-          <p className="font-mono text-2xl font-bold text-accent">{score}</p>
-          <p className="font-mono text-[9px] uppercase tracking-wider text-gray-500">
-            Level {level}
-          </p>
+          <p className="font-mono text-xl font-bold text-accent">{score}</p>
+          <p className="font-mono text-[9px] text-gray-500">Lv.{level}</p>
         </div>
       </div>
 
       {/* Canvas */}
       <div
-        className="relative rounded-xl border border-gray-800 bg-black/80 p-1 shadow-[0_0_30px_rgba(184,240,104,0.15)]"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
+        className="relative flex-shrink-0 rounded-lg border border-gray-800 bg-black/80"
+        onTouchStart={onTS}
+        onTouchEnd={onTE}
+        style={{ padding: 2 }}
       >
-        <canvas
-          ref={canvasRef}
-          width={COLS * CELL}
-          height={ROWS * CELL}
-          className="block touch-none"
-        />
+        <canvas ref={canvasRef} className="block touch-none" style={{ width: COLS * cellSize, height: ROWS * cellSize }} />
 
-        {/* Game Over Overlay */}
         {gameOver && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-black/85 backdrop-blur-sm">
-            <p className="mb-1 font-cinzel text-2xl text-accent">Game Over</p>
-            <p className="mb-1 font-mono text-3xl font-bold text-white">
-              {score}
-            </p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-lg bg-black/85 backdrop-blur-sm">
+            <p className="mb-1 font-cinzel text-xl text-accent">Game Over</p>
+            <p className="mb-1 font-mono text-3xl font-bold text-white">{score}</p>
             {isNewRecord && (
-              <p className="mb-3 font-display text-[11px] font-bold uppercase tracking-widest text-amber-300">
+              <p className="mb-2 font-display text-[11px] font-bold uppercase tracking-widest text-amber-300">
                 🏆 Neuer Highscore!
               </p>
             )}
-            {!submitted && score > 0 && (
-              <button
-                onClick={submitScore}
-                className="mb-2 rounded-full bg-accent px-6 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
-              >
-                Score speichern
-              </button>
-            )}
-            {submitted && (
-              <p className="mb-2 text-xs text-accent">
-                {isNewRecord ? "✓ Neuer Rekord!" : "✓ Gespeichert"}
-              </p>
-            )}
-            <button
-              onClick={restart}
-              className="rounded-full border border-accent/50 px-6 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-accent"
-            >
+            <p className="mb-3 text-[10px] text-accent/80">Score automatisch gespeichert</p>
+            <button onClick={restart} className="rounded-full bg-accent px-6 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark">
               Nochmal
             </button>
           </div>
@@ -518,98 +432,43 @@ export default function TetrisPage() {
       </div>
 
       {/* Controls */}
-      <div className="mt-3 flex gap-2">
-        <button
-          onClick={() => move(-1)}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-700 bg-gray-900/60 text-lg text-white active:bg-accent/20"
-        >
-          ◀
-        </button>
-        <button
-          onClick={() => drop()}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-700 bg-gray-900/60 text-lg text-white active:bg-accent/20"
-        >
-          ▼
-        </button>
-        <button
-          onClick={rotatePiece}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-700 bg-gray-900/60 text-lg text-white active:bg-accent/20"
-        >
-          ↻
-        </button>
-        <button
-          onClick={() => move(1)}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-700 bg-gray-900/60 text-lg text-white active:bg-accent/20"
-        >
-          ▶
-        </button>
-        <button
-          onClick={hardDrop}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-accent/50 bg-accent/10 text-lg text-accent active:bg-accent/30"
-        >
-          ⏬
-        </button>
+      <div className="mt-2 flex gap-2">
+        <button onClick={() => move(-1)} className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-gray-900/60 text-base text-white active:bg-accent/20">◀</button>
+        <button onClick={() => drop()} className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-gray-900/60 text-base text-white active:bg-accent/20">▼</button>
+        <button onClick={rotatePiece} className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-gray-900/60 text-base text-white active:bg-accent/20">↻</button>
+        <button onClick={() => move(1)} className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-gray-900/60 text-base text-white active:bg-accent/20">▶</button>
+        <button onClick={hardDrop} className="flex h-10 w-10 items-center justify-center rounded-lg border border-accent/50 bg-accent/10 text-base text-accent active:bg-accent/30">⏬</button>
       </div>
 
-      {/* Rangliste Toggle */}
-      <button
-        onClick={() => setShowLeaderboard(!showLeaderboard)}
-        className="mt-3 font-display text-[10px] font-bold uppercase tracking-wider text-amber-300/80 hover:text-amber-200"
-      >
-        {showLeaderboard ? "Rangliste ausblenden" : "🏆 Rangliste anzeigen"}
-      </button>
+      <p className="mt-1 text-[9px] text-gray-700">Swipe · Tap = Drehen · ⏬ = Drop</p>
 
-      {/* Rangliste (toggle) */}
-      {showLeaderboard && leaderboard.length > 0 && (
-        <div className="mt-2 w-full max-w-[280px]">
-          <div className="max-h-[30vh] overflow-y-auto rounded-xl border border-gray-800 bg-black/60 p-2">
-            {leaderboard.map((entry, i) => (
-              <div
-                key={`${entry.name}-${i}`}
-                className={`flex items-center gap-2 rounded-lg px-2 py-1 ${
-                  entry.isMe
-                    ? "bg-accent/10 ring-1 ring-accent/30"
-                    : i % 2 === 0
-                      ? "bg-white/[0.02]"
-                      : ""
-                }`}
-              >
-                <span
-                  className={`w-5 shrink-0 text-right font-mono text-[11px] font-bold ${
-                    i === 0
-                      ? "text-amber-300"
-                      : i === 1
-                        ? "text-gray-300"
-                        : i === 2
-                          ? "text-amber-600"
-                          : "text-gray-600"
-                  }`}
-                >
-                  {i + 1}.
-                </span>
-                <span
-                  className={`min-w-0 flex-1 truncate text-xs ${
-                    entry.isMe
-                      ? "font-semibold text-accent"
-                      : "text-gray-300"
-                  }`}
-                >
-                  {entry.name}
-                  {entry.isMe && (
-                    <span className="ml-1 text-[9px] text-accent/70">
-                      (du)
+      {/* Leaderboard Modal */}
+      {showLB && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowLB(false)}>
+          <div className="mx-4 w-full max-w-xs rounded-2xl border border-gray-800 bg-dark p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">🏆 RANGLISTE</p>
+              <button onClick={() => setShowLB(false)} className="text-gray-500 hover:text-white">×</button>
+            </div>
+            {leaderboard.length === 0 ? (
+              <p className="py-4 text-center text-xs text-gray-600">Noch keine Scores</p>
+            ) : (
+              <div className="max-h-[60vh] overflow-y-auto">
+                {leaderboard.map((e, i) => (
+                  <div key={`${e.name}-${i}`} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 ${e.isMe ? "bg-accent/10 ring-1 ring-accent/30" : i % 2 === 0 ? "bg-white/[0.02]" : ""}`}>
+                    <span className={`w-5 shrink-0 text-right font-mono text-[11px] font-bold ${i === 0 ? "text-amber-300" : i === 1 ? "text-gray-300" : i === 2 ? "text-amber-600" : "text-gray-600"}`}>
+                      {i + 1}.
                     </span>
-                  )}
-                </span>
-                <span
-                  className={`shrink-0 font-mono text-xs font-bold ${
-                    i === 0 ? "text-amber-300" : "text-gray-400"
-                  }`}
-                >
-                  {entry.score.toLocaleString("de-CH")}
-                </span>
+                    <span className={`min-w-0 flex-1 truncate text-xs ${e.isMe ? "font-semibold text-accent" : "text-gray-300"}`}>
+                      {e.name}{e.isMe && <span className="ml-1 text-[9px] text-accent/70">(du)</span>}
+                    </span>
+                    <span className={`shrink-0 font-mono text-xs font-bold ${i === 0 ? "text-amber-300" : "text-gray-400"}`}>
+                      {e.score.toLocaleString("de-CH")}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}

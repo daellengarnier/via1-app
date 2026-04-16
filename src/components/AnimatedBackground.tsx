@@ -6,6 +6,7 @@ interface AnimatedBackgroundProps {
   icon?: string;
   glowClass?: string;
   showIcon?: boolean;
+  scrollable?: boolean;
 }
 
 // Vorgenerierte Partikel-Positionen (fix, damit Server/Client matchen)
@@ -33,6 +34,7 @@ export function AnimatedBackground({
   icon = "/pyramid.webp",
   glowClass = "",
   showIcon = true,
+  scrollable = false,
 }: AnimatedBackgroundProps) {
   const colorMap: Record<string, string> = {
     "glow-orange": "255, 140, 30",
@@ -54,7 +56,11 @@ export function AnimatedBackground({
   } as CSSProperties;
 
   return (
-    <div className="via-bg" aria-hidden="true" style={bgStyle}>
+    <div
+      className={scrollable ? "via-bg via-bg-scroll" : "via-bg"}
+      aria-hidden="true"
+      style={bgStyle}
+    >
       {showIcon && (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img

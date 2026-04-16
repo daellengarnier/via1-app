@@ -17,9 +17,8 @@ interface TabHeaderProps {
   title?: string;
   icon: string;
   color: TabColor;
-  /** Wenn false, wird das grosse Tab-Icon ausgeblendet und der Abstand
-   *  verkleinert (fuer Tabs, die das Icon neben dem Button zeigen). */
   showIcon?: boolean;
+  scrollable?: boolean;
 }
 
 const colorMap: Record<TabColor, { text: string; glowClass: string }> = {
@@ -39,6 +38,7 @@ export function TabHeader({
   icon,
   color,
   showIcon = true,
+  scrollable = false,
 }: TabHeaderProps) {
   const { text, glowClass } = colorMap[color];
   return (
@@ -47,6 +47,7 @@ export function TabHeader({
         icon={icon}
         glowClass={glowClass}
         showIcon={showIcon}
+        scrollable={scrollable}
       />
       {/* Einheitlicher Abstand: gross mit Icon, minimal ohne */}
       {showIcon && <div className="h-36" />}
