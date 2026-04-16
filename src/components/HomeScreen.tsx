@@ -594,11 +594,15 @@ export default function HomeScreen() {
                 )}
               </div>
             </div>
-            <a
-              href="https://kulturspinnerei.ch"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cursor-pointer rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 to-transparent p-3 transition-all hover:border-secondary/60"
+            <div
+              className="group flex cursor-pointer flex-col rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 to-transparent p-3 transition-all hover:border-secondary/60"
+              onClick={() =>
+                window.open(
+                  "https://kulturspinnerei.ch",
+                  "_blank",
+                  "noopener,noreferrer"
+                )
+              }
             >
               <div className="mb-1 flex items-center gap-1.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -621,7 +625,21 @@ export default function HomeScreen() {
               <p className="font-mono text-[10px] text-gray-500">
                 20:00 – 02:30
               </p>
-            </a>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(
+                    "https://spinnplan-23.netlify.app",
+                    "_blank",
+                    "noopener,noreferrer"
+                  );
+                }}
+                className="mt-2 rounded-full border border-secondary/50 bg-secondary/20 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-wider text-orange-200 transition-colors hover:bg-secondary/30"
+              >
+                📋 Schichtplan →
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
