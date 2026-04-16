@@ -62,59 +62,61 @@ function scoreForLines(n: number, lvl: number): number {
   return ([0, 40, 100, 150, 200][n] ?? 200) * (lvl + 1);
 }
 
-// "By the Rivers of Babylon" — vollstaendige Melodie (Strophe + Refrain)
-// Vereinfacht transkribiert in G-Dur, Triangle-Wave Chiptune
+// "By the Rivers of Babylon" — Boney M. Version in F-Dur
+// F4=349 G4=392 A4=440 Bb4=466 C5=523 D5=587
 const MELODY: [number, number][] = [
-  // Intro / Strophe 1: "By the rivers of Babylon..."
-  [392, 0.4], [440, 0.3], [494, 0.3], [494, 0.5], [0, 0.1],
-  [494, 0.3], [494, 0.3], [440, 0.3], [494, 0.3], [523, 0.6],
-  [0, 0.2],
-  // "...there we sat down"
-  [523, 0.3], [494, 0.3], [440, 0.4], [440, 0.2], [392, 0.6],
+  // Chorus 1: "By the ri-vers of Ba-by-lon"
+  [349, 0.25], [349, 0.25], [392, 0.25], [440, 0.5],
+  [440, 0.25], [440, 0.25], [440, 0.25], [392, 0.25],
+  [440, 0.25], [466, 0.6],
+  // "there we sat down"
+  [466, 0.25], [440, 0.25], [392, 0.35], [392, 0.25], [349, 0.6],
+  [0, 0.15],
+  // "ye-ah we wept"
+  [349, 0.25], [349, 0.25], [392, 0.25], [440, 0.5],
+  [440, 0.25], [440, 0.25], [392, 0.25], [440, 0.25], [466, 0.6],
+  // "when we remembered Zion"
+  [466, 0.25], [440, 0.25], [392, 0.25], [349, 0.25], [349, 0.6],
   [0, 0.3],
-  // "yeah we wept, when we remembered Zion"
-  [392, 0.3], [440, 0.3], [494, 0.4], [494, 0.3], [494, 0.3],
-  [440, 0.3], [494, 0.3], [523, 0.6],
-  [523, 0.3], [494, 0.3], [440, 0.3], [392, 0.3], [392, 0.6],
-  [0, 0.4],
 
-  // Strophe 2: "For there they that carried us away..."
-  [494, 0.3], [494, 0.3], [523, 0.3], [587, 0.5], [0, 0.1],
-  [587, 0.3], [523, 0.3], [494, 0.3], [523, 0.5],
-  [0, 0.2],
-  // "...required of us a song"
-  [440, 0.3], [494, 0.3], [523, 0.4], [494, 0.3], [440, 0.5],
-  [0, 0.2],
-  // "How shall we sing the Lord's song..."
-  [392, 0.3], [440, 0.3], [494, 0.5], [494, 0.3],
-  [523, 0.3], [494, 0.3], [440, 0.3], [392, 0.5],
-  [0, 0.2],
-  // "...in a strange land"
-  [440, 0.3], [494, 0.3], [440, 0.3], [392, 0.3], [392, 0.6],
+  // Chorus 2 (Wiederholung)
+  [349, 0.25], [349, 0.25], [392, 0.25], [440, 0.5],
+  [440, 0.25], [440, 0.25], [440, 0.25], [392, 0.25],
+  [440, 0.25], [466, 0.6],
+  [466, 0.25], [440, 0.25], [392, 0.35], [392, 0.25], [349, 0.6],
+  [0, 0.15],
+  [349, 0.25], [349, 0.25], [392, 0.25], [440, 0.5],
+  [440, 0.25], [440, 0.25], [392, 0.25], [440, 0.25], [466, 0.6],
+  [466, 0.25], [440, 0.25], [392, 0.25], [349, 0.25], [349, 0.6],
   [0, 0.5],
 
-  // Refrain: "Let the words of our mouth..."
-  [523, 0.4], [587, 0.3], [659, 0.5], [0, 0.1],
-  [659, 0.3], [587, 0.3], [523, 0.3], [587, 0.5],
-  [0, 0.2],
-  // "...and the meditation of our heart"
-  [494, 0.3], [523, 0.3], [587, 0.4], [523, 0.3], [494, 0.5],
-  [0, 0.2],
-  // "be acceptable in thy sight"
-  [440, 0.3], [494, 0.3], [523, 0.5], [523, 0.3],
-  [494, 0.3], [440, 0.3], [392, 0.6],
-  [0, 0.2],
-  // "here tonight"
-  [392, 0.3], [440, 0.3], [494, 0.5], [392, 0.6],
-  [0, 0.6],
+  // Verse: "For the wicked carried us away captivity"
+  [523, 0.25], [523, 0.25], [466, 0.25], [440, 0.25],
+  [466, 0.25], [523, 0.5], [523, 0.25],
+  [523, 0.25], [466, 0.25], [440, 0.25], [392, 0.25], [440, 0.6],
+  [0, 0.15],
+  // "required from us a song"
+  [349, 0.25], [392, 0.25], [440, 0.35], [440, 0.25],
+  [466, 0.25], [440, 0.25], [392, 0.5],
+  [0, 0.15],
+  // "How shall we sing the Lord's song in a strange land"
+  [349, 0.25], [392, 0.25], [440, 0.35], [440, 0.25],
+  [440, 0.25], [392, 0.25], [440, 0.25], [466, 0.5],
+  [466, 0.25], [440, 0.25], [392, 0.25], [349, 0.25], [349, 0.6],
+  [0, 0.5],
 
-  // Bridge / Outro: melodische Variation
-  [523, 0.3], [587, 0.3], [659, 0.4], [587, 0.3], [523, 0.5],
-  [0, 0.2],
-  [494, 0.3], [523, 0.3], [494, 0.3], [440, 0.3], [392, 0.5],
-  [0, 0.2],
-  [392, 0.3], [440, 0.3], [494, 0.4], [523, 0.3], [494, 0.5],
-  [440, 0.3], [392, 0.3], [392, 0.6],
+  // Bridge: "Let the words of our mouth"
+  [523, 0.3], [523, 0.25], [587, 0.25], [523, 0.25],
+  [466, 0.25], [440, 0.5],
+  [0, 0.15],
+  // "and the meditation of our heart"
+  [440, 0.25], [466, 0.25], [523, 0.35], [466, 0.25],
+  [440, 0.25], [392, 0.25], [440, 0.5],
+  [0, 0.15],
+  // "be acceptable in thy sight here tonight"
+  [349, 0.25], [392, 0.25], [440, 0.35], [440, 0.25],
+  [466, 0.25], [440, 0.25], [392, 0.5],
+  [349, 0.25], [392, 0.25], [349, 0.6],
   [0, 0.8],
 ];
 
@@ -387,7 +389,7 @@ export default function TetrisPage() {
   useEffect(() => {
     function calc() {
       const h = window.innerHeight;
-      setCellSize(Math.max(16, Math.min(32, Math.floor((h - 170) / ROWS))));
+      setCellSize(Math.max(14, Math.min(30, Math.floor((h - 210) / ROWS))));
     }
     calc();
     window.addEventListener("resize", calc);
@@ -441,21 +443,19 @@ export default function TetrisPage() {
   }, []);
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center bg-black" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+    <div className="fixed inset-0 flex flex-col items-center bg-black" style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       {/* Header */}
       <div className="flex w-full max-w-[320px] items-center justify-between px-2 py-2">
-        <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-white">←</button>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={toggleMusic}
-            className={`rounded px-2 py-0.5 text-[10px] transition-colors ${musicOn ? "bg-accent/20 text-accent" : "animate-pulse text-amber-300 hover:text-amber-200"}`}
-          >
-            {musicOn ? "♫ ON" : "♫ OFF"}
-          </button>
-          <button onClick={() => setShowLB(true)} className="rounded px-2 py-0.5 text-[10px] text-amber-300/80 hover:text-amber-200">
-            🏆
-          </button>
-        </div>
+        <button onClick={() => router.back()} className="w-8 text-sm text-gray-500 hover:text-white">←</button>
+        <button onClick={() => setShowLB(true)} className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 font-display text-[10px] font-bold uppercase tracking-wider text-amber-300 hover:bg-amber-500/20">
+          🏆 Rangliste
+        </button>
+        <button
+          onClick={toggleMusic}
+          className={`w-8 rounded px-1 py-0.5 text-center text-[11px] transition-colors ${musicOn ? "bg-accent/20 text-accent" : "animate-pulse text-amber-300"}`}
+        >
+          {musicOn ? "♫" : "♪"}
+        </button>
       </div>
 
       {/* Start Screen */}
