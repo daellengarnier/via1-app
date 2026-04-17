@@ -7,12 +7,37 @@ import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 type AboType = "1-espresso" | "1-doppio" | "2-doppio" | "kein";
 
-const aboLabels: Record<AboType, string> = {
-  "1-espresso": "1 Espresso / Tag",
-  "1-doppio": "1 Doppio / Tag",
-  "2-doppio": "2 Doppio / Tag",
-  kein: "Kein Abo",
-};
+const aboOptions: {
+  type: AboType;
+  label: string;
+  price: string;
+  detail: string;
+}[] = [
+  {
+    type: "1-espresso",
+    label: "1 Espresso / Tag",
+    price: "CHF 9.–",
+    detail: "30 Rp. / Espresso",
+  },
+  {
+    type: "1-doppio",
+    label: "1 Doppio / Tag",
+    price: "CHF 18.–",
+    detail: "30 Rp. / Espresso (2 pro Doppio)",
+  },
+  {
+    type: "2-doppio",
+    label: "2 Doppio / Tag",
+    price: "CHF 36.–",
+    detail: "30 Rp. / Espresso (4 pro Tag)",
+  },
+  {
+    type: "kein",
+    label: "Kein Abo (Einzelkauf)",
+    price: "—",
+    detail: "50 Rp. / Espresso",
+  },
+];
 
 interface RastKaffee {
   name: string;
@@ -105,7 +130,20 @@ const rastSortiment: RastKaffee[] = [
 
 export default function KaffeePage() {
   const { data: session } = useSession();
-  const [abo, setAbo] = useState<AboType>("1-doppio");
+  const [abo, setAbo] = useState<AboType>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("via1-kaffee-abo-type");
+      if (
+        stored === "1-espresso" ||
+        stored === "1-doppio" ||
+        stored === "2-doppio" ||
+        stored === "kein"
+      ) {
+        return stored;
+      }
+    }
+    return "1-doppio";
+  });
   const [state, setCurrentKaffee] = useCurrentKaffee();
   const currentKaffee = state.kaffee;
   const changedBy = state.changedBy;
@@ -159,6 +197,13 @@ export default function KaffeePage() {
   }
 
   function handleSaveAbo() {
+    localStorage.setItem("via1-kaffee-abo-type", abo);
+    // hasKaffeeAbo im Profil setzen (true wenn nicht "kein")
+    fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hasKaffeeAbo: abo !== "kein" }),
+    }).catch(() => {});
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -350,13 +395,13 @@ export default function KaffeePage() {
         )}
       </div>
 
-      {/* Mein Abo */}
+      {/* Mein Abo — mit Preisen */}
       <section className="mb-6">
         <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
-          MEIN ABO
+          MONATS-ABO
         </h2>
         <div className="space-y-2">
-          {(Object.keys(aboLabels) as AboType[]).map((type) => (
+          {aboOptions.map(({ type, label, price, detail }) => (
             <button
               key={type}
               onClick={() => setAbo(type)}
@@ -368,20 +413,34 @@ export default function KaffeePage() {
                   : "border-gray-800 bg-black/20 hover:border-gray-700"
               }`}
             >
-              <span
-                className={`text-sm ${
-                  abo === type
-                    ? type === "kein"
-                      ? "text-gray-400"
-                      : "font-semibold text-amber-200"
-                    : "text-gray-400"
-                }`}
-              >
-                {aboLabels[type]}
-              </span>
-              {abo === type && (
-                <span className="text-xs text-amber-500">✓</span>
-              )}
+              <div>
+                <p
+                  className={`text-sm ${
+                    abo === type
+                      ? type === "kein"
+                        ? "text-gray-400"
+                        : "font-semibold text-amber-200"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {label}
+                </p>
+                <p className="text-[10px] text-gray-500">{detail}</p>
+              </div>
+              <div className="text-right">
+                {type !== "kein" && (
+                  <p
+                    className={`font-mono text-sm font-bold ${
+                      abo === type ? "text-amber-300" : "text-gray-500"
+                    }`}
+                  >
+                    {price}
+                  </p>
+                )}
+                {abo === type && (
+                  <span className="text-xs text-amber-500">✓</span>
+                )}
+              </div>
             </button>
           ))}
         </div>
@@ -425,11 +484,24 @@ export default function KaffeePage() {
         <p className="font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
           INFO
         </p>
-        <p className="mt-2 text-sm text-gray-400">
-          Das Kaffee-Abo deckt die Kosten für Bohnen und Unterhalt der
-          Kaffeemaschine. Wir beziehen den Kaffee von Rast Kaffee (Bern).
-          Anmeldung und Fragen bei Alain oder Sophie.
-        </p>
+        <div className="mt-2 space-y-2 text-sm text-gray-400">
+          <p>
+            Das Abo deckt die <strong className="text-white">Kosten der Kaffeebohnen</strong>.
+            Wir beziehen den Kaffee von Rast Kaffee (Ebikon).
+          </p>
+          <p>
+            Ca. 1× im Jahr geht die Maschine in die{" "}
+            <strong className="text-white">Revision</strong> — dieser Betrag kommt separat
+            dazu und wird untereinander abgerechnet.
+          </p>
+          <p>
+            Ohne Abo können einzelne Kaffees bezogen werden (50 Rp. / Espresso,
+            Bezahlung via Kässeli neben der Maschine).
+          </p>
+          <p className="text-xs text-amber-200/80">
+            Bei Fragen bei <strong>Dällen</strong> melden.
+          </p>
+        </div>
       </div>
     </div>
   );

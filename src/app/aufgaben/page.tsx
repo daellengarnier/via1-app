@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { TabHeader } from "@/components/TabHeader";
+import { WaveDivider } from "@/components/WaveDivider";
 
 interface Pin {
   lat: number;
@@ -367,6 +368,7 @@ export default function AufgabenPage() {
           loading="eager"
           fetchPriority="high"
         />
+        <WaveDivider color="yellow" variant={1} />
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="rounded-full border border-yellow-400/50 bg-yellow-400/15 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-yellow-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors hover:bg-yellow-400/25"

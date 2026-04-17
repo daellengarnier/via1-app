@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { TabHeader } from "@/components/TabHeader";
+import { WaveDivider } from "@/components/WaveDivider";
 
 type TerminType = "sitzung" | "essen" | "sonstige";
 
@@ -333,6 +334,7 @@ export default function TerminePage() {
           loading="eager"
           fetchPriority="high"
         />
+        <WaveDivider color="orange" variant={0} />
         <button
           onClick={() => {
             if (showCreate) {

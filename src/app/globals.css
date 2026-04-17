@@ -278,6 +278,23 @@ body {
   100% { transform: translate(-50px, -90px); opacity: 0; }
 }
 
+@keyframes wave-a {
+  0%,100% { d: path("M0 10 Q25 0 50 10 T100 10 T150 10 T200 10 T250 10 T300 10 T350 10 T400 10"); }
+  50% { d: path("M0 10 Q25 20 50 10 T100 10 T150 10 T200 10 T250 10 T300 10 T350 10 T400 10"); }
+}
+@keyframes wave-b {
+  0%,100% { d: path("M0 10 Q50 0 100 10 T200 10 T300 10 T400 10"); }
+  50% { d: path("M0 10 Q50 20 100 10 T200 10 T300 10 T400 10"); }
+}
+@keyframes wave-c {
+  0%,100% { d: path("M0 10 Q30 2 60 10 T120 10 T180 10 T240 10 T300 10 T360 10 T400 10"); }
+  50% { d: path("M0 10 Q30 18 60 10 T120 10 T180 10 T240 10 T300 10 T360 10 T400 10"); }
+}
+@keyframes wave-d {
+  0%,100% { d: path("M0 10 Q40 4 80 10 T160 10 T240 10 T320 10 T400 10"); }
+  50% { d: path("M0 10 Q40 16 80 10 T160 10 T240 10 T320 10 T400 10"); }
+}
+
 /* Leaflet z-index fix */
 .leaflet-pane,
 .leaflet-top,

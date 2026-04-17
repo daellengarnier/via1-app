@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { WaveDivider } from "@/components/WaveDivider";
 
 interface ShoppingItem {
   id: string;
@@ -228,6 +229,7 @@ export default function EinkaufPage() {
           loading="eager"
           fetchPriority="high"
         />
+        <WaveDivider color="violet" variant={2} />
         <button
           onClick={() => {
             if (showAdd) {

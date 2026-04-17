@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { WaveDivider } from "@/components/WaveDivider";
 
 interface Participant {
   userId: string;
@@ -131,6 +132,9 @@ export default function AktivitaetenPage() {
   const [recurrenceCount, setRecurrenceCount] = useState<number>(1);
   const [openCommentsId, setOpenCommentsId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(
+    null
+  );
 
   const loadActivities = useCallback(async () => {
     try {
@@ -293,6 +297,66 @@ export default function AktivitaetenPage() {
     }
   }
 
+  function openEditActivity(a: Activity) {
+    setEditingActivityId(a.id);
+    setSelectedTemplate(null);
+    setCustomTitle(a.title);
+    setCustomDescription(a.description);
+    setCustomLocation(a.location);
+    const d = new Date(a.startAt);
+    setCustomDate(d.toISOString().split("T")[0]!);
+    setCustomTime(
+      d.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })
+    );
+    setQuickTimeMinutes(null);
+    setRecurrence("NONE");
+    setShowCreate(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function saveEditActivity() {
+    if (!editingActivityId || !customTitle.trim()) return;
+    let startAt: string;
+    if (customTime && customDate) {
+      const [hh, mm] = customTime.split(":").map(Number);
+      const d = new Date(`${customDate}T00:00:00`);
+      d.setHours(hh ?? 0, mm ?? 0, 0, 0);
+      startAt = d.toISOString();
+    } else {
+      alert("Bitte Datum und Zeit angeben");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/activities/${editingActivityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: customTitle,
+          description: customDescription,
+          location: customLocation,
+          startAt,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = (await res.json()) as Activity;
+      setActivities((prev) =>
+        prev
+          .map((a) => (a.id === editingActivityId ? updated : a))
+          .sort((a, b) => a.startAt.localeCompare(b.startAt))
+      );
+      setShowCreate(false);
+      setEditingActivityId(null);
+      setCustomTitle("");
+      setCustomDescription("");
+      setCustomLocation("");
+      setCustomTime("");
+      setCustomDate("");
+    } catch (err) {
+      console.error("Activity bearbeiten", err);
+      alert("Konnte Aktivität nicht speichern.");
+    }
+  }
+
   async function deleteActivity(activity: Activity) {
     let scope: "one" | "all" = "one";
     if (activity.recurrenceGroupId) {
@@ -350,6 +414,7 @@ export default function AktivitaetenPage() {
           loading="eager"
           fetchPriority="high"
         />
+        <WaveDivider color="blue" variant={3} />
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="rounded-full border border-blue-400/50 bg-blue-400/15 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-blue-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors hover:bg-blue-400/25"
@@ -518,13 +583,18 @@ export default function AktivitaetenPage() {
 
           <div className="flex gap-2">
             <button
-              onClick={createActivity}
+              onClick={
+                editingActivityId ? saveEditActivity : createActivity
+              }
               className="rounded bg-accent px-4 py-2 font-mono text-xs font-bold text-dark"
             >
-              Starten
+              {editingActivityId ? "Speichern" : "Starten"}
             </button>
             <button
-              onClick={() => setShowCreate(false)}
+              onClick={() => {
+                setShowCreate(false);
+                setEditingActivityId(null);
+              }}
               className="rounded px-4 py-2 text-xs text-gray-400 hover:text-white"
             >
               Abbrechen
@@ -595,6 +665,15 @@ export default function AktivitaetenPage() {
                     )}
                   </p>
                 </div>
+                {isOwn && (
+                  <button
+                    onClick={() => openEditActivity(a)}
+                    className="text-[11px] text-blue-300/70 hover:text-blue-200"
+                    aria-label="Bearbeiten"
+                  >
+                    ✎
+                  </button>
+                )}
                 {isOwn && (
                   <button
                     onClick={() => deleteActivity(a)}

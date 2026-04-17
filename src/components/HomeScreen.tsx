@@ -491,9 +491,19 @@ export default function HomeScreen() {
       {(weather || aare) && (
         <div className="-mt-4 mb-6 space-y-0.5 text-center">
           {weather && (
-            <p className="text-sm text-gray-400">
-              {weather.summary} · {weather.temp}°C
-            </p>
+            <div className="text-center">
+              <p className="text-sm text-gray-400">
+                {weather.summary} · {weather.temp}°C
+              </p>
+              <p className="text-[9px] text-gray-600">
+                {(() => {
+                  const h = new Date().getHours();
+                  if (h < 12) return "Prognose für heute";
+                  if (h < 18) return "Aktuelles Wetter + Nachtprognose";
+                  return "Aktuelles Wetter + Nachtprognose";
+                })()}
+              </p>
+            </div>
           )}
           {aare && (
             <p className="font-mono text-xs text-cyan-300/80">
