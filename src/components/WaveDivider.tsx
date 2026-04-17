@@ -26,7 +26,7 @@ export function WaveDivider({
   const gradId = `wave-${color}-${variant}`;
 
   return (
-    <div className="my-3 flex justify-center overflow-hidden">
+    <div className="-my-1 flex justify-center overflow-hidden">
       <svg
         viewBox="0 0 400 20"
         className="h-4 w-full max-w-lg"
