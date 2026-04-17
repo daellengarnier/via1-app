@@ -11,7 +11,24 @@ const WAVE_COLORS: Record<string, string> = {
   amber: "rgba(180,120,60,",
 };
 
-const WAVE_ANIMS = ["wave-a", "wave-b", "wave-c", "wave-d"];
+const WAVE_PATHS = [
+  [
+    "M0 10 Q25 2 50 10 T100 10 T150 10 T200 10 T250 10 T300 10 T350 10 T400 10",
+    "M0 10 Q25 18 50 10 T100 10 T150 10 T200 10 T250 10 T300 10 T350 10 T400 10",
+  ],
+  [
+    "M0 10 Q50 2 100 10 T200 10 T300 10 T400 10",
+    "M0 10 Q50 18 100 10 T200 10 T300 10 T400 10",
+  ],
+  [
+    "M0 10 Q30 3 60 10 T120 10 T180 10 T240 10 T300 10 T360 10 T400 10",
+    "M0 10 Q30 17 60 10 T120 10 T180 10 T240 10 T300 10 T360 10 T400 10",
+  ],
+  [
+    "M0 10 Q40 4 80 10 T160 10 T240 10 T320 10 T400 10",
+    "M0 10 Q40 16 80 10 T160 10 T240 10 T320 10 T400 10",
+  ],
+];
 
 export function WaveDivider({
   color = "green",
@@ -21,12 +38,12 @@ export function WaveDivider({
   variant?: number;
 }) {
   const c = WAVE_COLORS[color] ?? "rgba(184,240,104,";
-  const anim = WAVE_ANIMS[variant % WAVE_ANIMS.length]!;
   const dur = 2.5 + variant * 0.7;
   const gradId = `wave-${color}-${variant}`;
+  const paths = WAVE_PATHS[variant % WAVE_PATHS.length]!;
 
   return (
-    <div className="-my-1 flex justify-center overflow-hidden">
+    <div className="flex justify-center overflow-hidden py-1">
       <svg
         viewBox="0 0 400 20"
         className="h-4 w-full max-w-lg"
@@ -42,13 +59,19 @@ export function WaveDivider({
           </linearGradient>
         </defs>
         <path
-          d="M0 10 Q25 0 50 10 T100 10 T150 10 T200 10 T250 10 T300 10 T350 10 T400 10"
+          d={paths[0]}
           fill="none"
           stroke={`url(#${gradId})`}
           strokeWidth="1.5"
           strokeLinecap="round"
-          style={{ animation: `${anim} ${dur}s ease-in-out infinite` }}
-        />
+        >
+          <animate
+            attributeName="d"
+            values={`${paths[0]};${paths[1]};${paths[0]}`}
+            dur={`${dur}s`}
+            repeatCount="indefinite"
+          />
+        </path>
       </svg>
     </div>
   );
