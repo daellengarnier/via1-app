@@ -61,22 +61,40 @@ function getGreeting(): string {
 }
 
 // WMO Weather Codes zu Text + Emoji
-function weatherSummary(code: number, willRainTonight: boolean): string {
-  let day = "";
-  if (code === 0) day = "☀️ Sonnig";
-  else if (code <= 2) day = "🌤️ Überwiegend sonnig";
-  else if (code === 3) day = "☁️ Bewölkt";
-  else if (code <= 48) day = "🌫️ Neblig";
-  else if (code <= 57) day = "🌦️ Nieselregen";
-  else if (code <= 67) day = "🌧️ Regen";
-  else if (code <= 77) day = "❄️ Schnee";
-  else if (code <= 82) day = "🌧️ Regenschauer";
-  else if (code <= 86) day = "🌨️ Schneeschauer";
-  else if (code >= 95) day = "⛈️ Gewitter";
-  else day = "Wetter";
+function codeToText(code: number): string {
+  if (code === 0) return "☀️ Sonnig";
+  if (code <= 2) return "🌤️ Überwiegend sonnig";
+  if (code === 3) return "☁️ Bewölkt";
+  if (code <= 48) return "🌫️ Neblig";
+  if (code <= 57) return "🌦️ Nieselregen";
+  if (code <= 67) return "🌧️ Regen";
+  if (code <= 77) return "❄️ Schnee";
+  if (code <= 82) return "🌧️ Regenschauer";
+  if (code <= 86) return "🌨️ Schneeschauer";
+  if (code >= 95) return "⛈️ Gewitter";
+  return "Wetter";
+}
 
-  if (willRainTonight) day += " · 🌙 Regen in der Nacht";
-  return day;
+function weatherSummary(
+  code: number,
+  willRainTonight: boolean,
+  willRainDaytime: boolean
+): string {
+  const hour = new Date().getHours();
+  let text = codeToText(code);
+  // Morgens (bis 12): Tagesprognose
+  if (hour < 12 && willRainDaytime) {
+    text += " · 🌧️ Regen tagsüber";
+  }
+  // Abends (ab 18): Nachtprognose
+  if (hour >= 18 && willRainTonight) {
+    text += " · 🌙 Regen in der Nacht";
+  }
+  // Nachmittag: beides moeglich
+  if (hour >= 12 && hour < 18) {
+    if (willRainTonight) text += " · 🌙 Regen heute Nacht";
+  }
+  return text;
 }
 
 export default function HomeScreen() {
@@ -90,6 +108,7 @@ export default function HomeScreen() {
   const [kaffeeState] = useCurrentKaffee();
   const currentKaffee = kaffeeState.kaffee;
   const [, , putzCurrentWg] = usePutzplan();
+  const [saunaTemp, setSaunaTemp] = useState<number | null>(null);
   const [openAufgabenCount, setOpenAufgabenCount] = useState<number | null>(
     null
   );
@@ -134,6 +153,36 @@ export default function HomeScreen() {
   useEffect(() => {
     loadPinnwand();
   }, [loadPinnwand]);
+
+  // Sauna-Temperatur berechnen: localStorage speichert Aufheiz-Startzeit.
+  // 30min bis 80°C, danach konstant. Reset nach Mitternacht.
+  useEffect(() => {
+    function calcTemp(): number {
+      const outsideTemp = weather?.temp ?? 15;
+      const stored = localStorage.getItem("via1-sauna-start");
+      if (!stored) return outsideTemp;
+      const startTime = parseInt(stored, 10);
+      if (Number.isNaN(startTime)) return outsideTemp;
+      // Nacht-Reset: wenn Start vor Mitternacht und jetzt nach 6 Uhr
+      const startDate = new Date(startTime);
+      const now = new Date();
+      if (
+        startDate.getDate() !== now.getDate() &&
+        now.getHours() >= 6
+      ) {
+        localStorage.removeItem("via1-sauna-start");
+        return outsideTemp;
+      }
+      const elapsed = (Date.now() - startTime) / 60000; // Minuten
+      if (elapsed < 0) return outsideTemp;
+      const target = 80;
+      const progress = Math.min(1, elapsed / 30);
+      return Math.round(outsideTemp + (target - outsideTemp) * progress);
+    }
+    setSaunaTemp(calcTemp());
+    const id = setInterval(() => setSaunaTemp(calcTemp()), 30000);
+    return () => clearInterval(id);
+  }, [weather]);
 
   // Aufgaben-Count fuer die Tile
   useEffect(() => {
@@ -250,21 +299,32 @@ export default function HomeScreen() {
         if (!data.current) return;
         const now = new Date();
         const currentHour = now.getHours();
-        // Nacht = 20:00 bis 06:00 Uhr
         let willRainTonight = false;
+        let willRainDaytime = false;
         if (data.hourly) {
           data.hourly.time.forEach((t, i) => {
             const d = new Date(t);
             const h = d.getHours();
-            if ((h >= 20 || h < 6) && h >= currentHour && data.hourly!.precipitation[i]! > 0.2) {
+            const precip = data.hourly!.precipitation[i] ?? 0;
+            if (precip < 0.2) return;
+            // Nacht: 20-06 Uhr
+            if ((h >= 20 || h < 6) && h >= currentHour) {
               willRainTonight = true;
+            }
+            // Tag: 06-20 Uhr
+            if (h >= 6 && h < 20 && h >= currentHour) {
+              willRainDaytime = true;
             }
           });
         }
         setWeather({
           temp: Math.round(data.current.temperature_2m),
           code: data.current.weather_code,
-          summary: weatherSummary(data.current.weather_code, willRainTonight),
+          summary: weatherSummary(
+            data.current.weather_code,
+            willRainTonight,
+            willRainDaytime
+          ),
         });
       })
       .catch(() => {});
@@ -531,8 +591,12 @@ export default function HomeScreen() {
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-red-400">
             SAUNA
           </p>
-          <p className="mt-1 font-mono text-2xl font-bold text-white">62°C</p>
-          <p className="mt-1 text-[10px] text-gray-500">geheizt</p>
+          <p className="mt-1 font-mono text-2xl font-bold text-white">
+            {saunaTemp ?? "–"}°C
+          </p>
+          <p className="mt-1 text-[10px] text-gray-500">
+            {(saunaTemp ?? 0) >= 60 ? "geheizt 🔥" : "kalt"}
+          </p>
         </div>
         <div
           className="cursor-pointer rounded-xl border border-yellow-400/15 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-yellow-400/30 hover:shadow-[0_0_20px_rgba(255,220,50,0.1)]"

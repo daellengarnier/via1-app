@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { TabHeader } from "@/components/TabHeader";
 
 const saunaSections = [
@@ -104,17 +105,83 @@ const saunaSections = [
   },
 ];
 
-// Mock Temperaturverlauf
-const tempHistory = [20, 25, 32, 38, 44, 49, 53, 56, 59, 61, 62, 62];
+
+const SAUNA_KEY = "via1-sauna-start";
+const SAUNA_BY_KEY = "via1-sauna-by";
+
+function calcSaunaTemp(outsideTemp: number): {
+  temp: number;
+  heating: boolean;
+  startedBy: string | null;
+  minutesAgo: number;
+} {
+  const stored = localStorage.getItem(SAUNA_KEY);
+  if (!stored) return { temp: outsideTemp, heating: false, startedBy: null, minutesAgo: 0 };
+  const startTime = parseInt(stored, 10);
+  if (Number.isNaN(startTime)) return { temp: outsideTemp, heating: false, startedBy: null, minutesAgo: 0 };
+  const now = new Date();
+  const start = new Date(startTime);
+  if (start.getDate() !== now.getDate() && now.getHours() >= 6) {
+    localStorage.removeItem(SAUNA_KEY);
+    localStorage.removeItem(SAUNA_BY_KEY);
+    return { temp: outsideTemp, heating: false, startedBy: null, minutesAgo: 0 };
+  }
+  const elapsed = (Date.now() - startTime) / 60000;
+  const progress = Math.min(1, elapsed / 30);
+  const temp = Math.round(outsideTemp + (80 - outsideTemp) * progress);
+  const by = localStorage.getItem(SAUNA_BY_KEY) ?? null;
+  return { temp, heating: true, startedBy: by, minutesAgo: Math.round(elapsed) };
+}
 
 export default function SaunaPage() {
-  const [heating, setHeating] = useState(true);
-  const [temperature] = useState(62);
+  const { data: session } = useSession();
   const [showReglement, setShowReglement] = useState(false);
+  const [outsideTemp, setOutsideTemp] = useState(15);
+  const [sauna, setSauna] = useState({ temp: 15, heating: false, startedBy: null as string | null, minutesAgo: 0 });
 
-  // SVG Linie für Temperaturverlauf
+  const refresh = useCallback(() => {
+    setSauna(calcSaunaTemp(outsideTemp));
+  }, [outsideTemp]);
+
+  useEffect(() => {
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=46.9480&longitude=7.4474&current=temperature_2m&timezone=Europe%2FZurich")
+      .then((r) => r.json())
+      .then((d: { current?: { temperature_2m: number } }) => {
+        if (d.current) setOutsideTemp(Math.round(d.current.temperature_2m));
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => { refresh(); const id = setInterval(refresh, 15000); return () => clearInterval(id); }, [refresh]);
+
+  function startHeating() {
+    localStorage.setItem(SAUNA_KEY, String(Date.now()));
+    localStorage.setItem(SAUNA_BY_KEY, session?.user?.name ?? "");
+    refresh();
+    fetch("/api/notifications/trigger", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: "SAUNA",
+        title: "Die Sauna wird eingeheizt 🔥",
+        body: `${session?.user?.name ?? "Jemand"} heizt ein — in ~30 Min. bereit`,
+        link: "/sauna",
+      }),
+    }).catch(() => {});
+  }
+
+  function stopHeating() {
+    localStorage.removeItem(SAUNA_KEY);
+    localStorage.removeItem(SAUNA_BY_KEY);
+    refresh();
+  }
+
   const svgWidth = 300;
   const svgHeight = 40;
+  const tempHistory = Array.from({ length: 12 }, (_, i) => {
+    const progress = Math.min(1, i / 10);
+    return Math.round(outsideTemp + (80 - outsideTemp) * progress);
+  });
   const points = tempHistory
     .map((t, i) => {
       const x = (i / (tempHistory.length - 1)) * svgWidth;
@@ -139,40 +206,31 @@ export default function SaunaPage() {
         />
         <button
           onClick={() => {
-            const wasOff = !heating;
-            setHeating(!heating);
-            // Beim Einheizen Benachrichtigung an alle
-            if (wasOff) {
-              fetch("/api/notifications/trigger", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  kind: "SAUNA",
-                  title: "Die Sauna wird eingeheizt 🔥",
-                  body: "Bald aufheizen!",
-                  link: "/sauna",
-                }),
-              }).catch(() => {});
-            }
+            if (sauna.heating) stopHeating();
+            else startHeating();
           }}
           className={`rounded-full border px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors ${
-            heating
+            sauna.heating
               ? "border-gray-600/60 bg-gray-700/30 text-white hover:bg-gray-700/50"
               : "border-red-500/50 bg-red-500/20 text-red-200 hover:bg-red-500/30"
           }`}
         >
-          {heating ? "× Heizung stoppen" : "+ Sauna einheizen"}
+          {sauna.heating ? "× Heizung stoppen" : "+ Sauna einheizen"}
         </button>
       </div>
 
       {/* Temperatur */}
       <div className="mb-6 flex flex-col items-center rounded-lg border border-gray-800 bg-white/5 p-5">
         <p className="font-mono text-4xl font-bold text-red-400">
-          {temperature}°C
+          {sauna.temp}°C
         </p>
-        <p className="mt-1 text-xs text-gray-400">Aktuelle Temperatur</p>
-        {heating && (
-          <p className="mt-1 text-sm text-secondary">🔥 Wird geheizt · Gestartet von Alain vor 45 Min.</p>
+        <p className="mt-1 text-xs text-gray-400">
+          {sauna.heating ? "Wird geheizt" : `Aussentemperatur (${outsideTemp}°C)`}
+        </p>
+        {sauna.heating && (
+          <p className="mt-1 text-sm text-secondary">
+            🔥 {sauna.startedBy ? `von ${sauna.startedBy}` : "Eingeheizt"} · vor {sauna.minutesAgo} Min.
+          </p>
         )}
 
         {/* Temperaturverlauf als dezente Linie */}

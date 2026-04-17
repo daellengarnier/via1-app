@@ -62,105 +62,37 @@ function scoreForLines(n: number, lvl: number): number {
   return ([0, 40, 100, 150, 200][n] ?? 200) * (lvl + 1);
 }
 
-// "By the Rivers of Babylon" — Boney M. Version in F-Dur
-// F4=349 G4=392 A4=440 Bb4=466 C5=523 D5=587
-const MELODY: [number, number][] = [
-  // Chorus 1: "By the ri-vers of Ba-by-lon"
-  [349, 0.25], [349, 0.25], [392, 0.25], [440, 0.5],
-  [440, 0.25], [440, 0.25], [440, 0.25], [392, 0.25],
-  [440, 0.25], [466, 0.6],
-  // "there we sat down"
-  [466, 0.25], [440, 0.25], [392, 0.35], [392, 0.25], [349, 0.6],
-  [0, 0.15],
-  // "ye-ah we wept"
-  [349, 0.25], [349, 0.25], [392, 0.25], [440, 0.5],
-  [440, 0.25], [440, 0.25], [392, 0.25], [440, 0.25], [466, 0.6],
-  // "when we remembered Zion"
-  [466, 0.25], [440, 0.25], [392, 0.25], [349, 0.25], [349, 0.6],
-  [0, 0.3],
-
-  // Chorus 2 (Wiederholung)
-  [349, 0.25], [349, 0.25], [392, 0.25], [440, 0.5],
-  [440, 0.25], [440, 0.25], [440, 0.25], [392, 0.25],
-  [440, 0.25], [466, 0.6],
-  [466, 0.25], [440, 0.25], [392, 0.35], [392, 0.25], [349, 0.6],
-  [0, 0.15],
-  [349, 0.25], [349, 0.25], [392, 0.25], [440, 0.5],
-  [440, 0.25], [440, 0.25], [392, 0.25], [440, 0.25], [466, 0.6],
-  [466, 0.25], [440, 0.25], [392, 0.25], [349, 0.25], [349, 0.6],
-  [0, 0.5],
-
-  // Verse: "For the wicked carried us away captivity"
-  [523, 0.25], [523, 0.25], [466, 0.25], [440, 0.25],
-  [466, 0.25], [523, 0.5], [523, 0.25],
-  [523, 0.25], [466, 0.25], [440, 0.25], [392, 0.25], [440, 0.6],
-  [0, 0.15],
-  // "required from us a song"
-  [349, 0.25], [392, 0.25], [440, 0.35], [440, 0.25],
-  [466, 0.25], [440, 0.25], [392, 0.5],
-  [0, 0.15],
-  // "How shall we sing the Lord's song in a strange land"
-  [349, 0.25], [392, 0.25], [440, 0.35], [440, 0.25],
-  [440, 0.25], [392, 0.25], [440, 0.25], [466, 0.5],
-  [466, 0.25], [440, 0.25], [392, 0.25], [349, 0.25], [349, 0.6],
-  [0, 0.5],
-
-  // Bridge: "Let the words of our mouth"
-  [523, 0.3], [523, 0.25], [587, 0.25], [523, 0.25],
-  [466, 0.25], [440, 0.5],
-  [0, 0.15],
-  // "and the meditation of our heart"
-  [440, 0.25], [466, 0.25], [523, 0.35], [466, 0.25],
-  [440, 0.25], [392, 0.25], [440, 0.5],
-  [0, 0.15],
-  // "be acceptable in thy sight here tonight"
-  [349, 0.25], [392, 0.25], [440, 0.35], [440, 0.25],
-  [466, 0.25], [440, 0.25], [392, 0.5],
-  [349, 0.25], [392, 0.25], [349, 0.6],
-  [0, 0.8],
-];
-
-function useTetrisMusic() {
-  const ctxRef = useRef<AudioContext | null>(null);
-  const playingRef = useRef(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const stop = useCallback(() => {
-    playingRef.current = false;
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    ctxRef.current?.close().catch(() => {});
-    ctxRef.current = null;
-  }, []);
+// Musik: spielt /game-music.mp3 (oder .ogg/.wav) aus dem public-Ordner
+// Falls die Datei nicht existiert, passiert einfach nichts.
+function useGameMusic() {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const start = useCallback(() => {
-    if (playingRef.current) return;
-    try {
-      const ctx = new AudioContext();
-      ctxRef.current = ctx;
-      playingRef.current = true;
-      let noteIdx = 0;
-      function playNext() {
-        if (!playingRef.current || !ctxRef.current) return;
-        const [freq, dur] = MELODY[noteIdx % MELODY.length]!;
-        if (freq > 0) {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = "triangle";
-          osc.frequency.value = freq;
-          gain.gain.value = 0.08;
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur * 0.85);
-          osc.connect(gain).connect(ctx.destination);
-          osc.start();
-          osc.stop(ctx.currentTime + dur);
-        }
-        noteIdx++;
-        timeoutRef.current = setTimeout(playNext, dur * 1000);
-      }
-      playNext();
-    } catch { /* Audio not supported */ }
+    if (audioRef.current) {
+      audioRef.current.play().catch(() => {});
+      return;
+    }
+    const audio = new Audio("/game-music.mp3");
+    audio.loop = true;
+    audio.volume = 0.3;
+    audioRef.current = audio;
+    audio.play().catch(() => {});
   }, []);
 
-  useEffect(() => stop, [stop]);
+  const stop = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
   return { start, stop };
 }
 
@@ -384,7 +316,7 @@ export default function TetrisPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [showLB, setShowLB] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
-  const music = useTetrisMusic();
+  const music = useGameMusic();
 
   useEffect(() => {
     function calc() {
@@ -501,7 +433,9 @@ export default function TetrisPage() {
         </div>
       )}
 
-      <p className="mt-1 text-[9px] text-gray-700">♫ By the Rivers of Babylon</p>
+      <p className="mt-1 text-[9px] text-gray-700">
+        {musicOn ? "♫ Musik läuft" : "Tap ♪ für Musik"}
+      </p>
 
       {/* Leaderboard Modal */}
       {showLB && (

@@ -5,12 +5,14 @@ import { BottomNav } from "@/components/BottomNav";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 
 const publicPaths = ["/login", "/setup"];
+const hiddenPaths = ["/tetris"];
 
 export function ConditionalNav() {
   const pathname = usePathname();
   const isPublicPage = publicPaths.some((p) => pathname.startsWith(p));
+  const isHidden = hiddenPaths.some((p) => pathname.startsWith(p));
 
-  if (isPublicPage) return null;
+  if (isPublicPage || isHidden) return null;
 
   return (
     <>
