@@ -198,7 +198,10 @@ function TetrisGame({
         }
       } else if (!g.gameOver) {
         g.dropTimer += dt;
-        const speed = Math.max(80, 800 - g.level * 80);
+        // Exponentielle Progression: wird mit jedem Level schneller,
+        // aber nie ganz unmoeglich (Floor bei 40ms).
+        // Level 0: 800ms, 5: 455ms, 10: 260ms, 15: 149ms, 20: 85ms, 25+: 40ms
+        const speed = Math.max(40, Math.round(800 * Math.pow(0.88, g.level)));
         if (g.dropTimer >= speed) { g.dropTimer = 0; drop(); }
       }
 
