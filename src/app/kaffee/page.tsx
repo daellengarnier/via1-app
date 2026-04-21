@@ -47,6 +47,11 @@ interface RastKaffee {
   fairtrade: boolean;
 }
 
+// Sucht den Kaffee auf rastshop.ch via WordPress-Suche.
+function rastShopUrl(name: string): string {
+  return `https://www.rastshop.ch/?s=${encodeURIComponent(name)}`;
+}
+
 // Sortiment Rast Kaffee (Ebikon) — nach rastshop.ch.
 // Falls eine Sorte fehlt, kann sie via Foto-Scan oder manuell erfasst werden.
 const rastSortiment: RastKaffee[] = [
@@ -66,7 +71,7 @@ const rastSortiment: RastKaffee[] = [
   {
     name: "Vesuvio",
     herkunft: "Brasilien, Guatemala, Indonesien",
-    duftnotizen: "Voll-feurig, intensiv, würzig",
+    duftnotizen: "Bittermandel, Schokolade",
     fairtrade: false,
   },
   {
@@ -267,6 +272,7 @@ export default function KaffeePage() {
 
   const currentBeans = currentKaffee.name;
   const currentInfo = rastSortiment.find((k) => k.name === currentBeans) ?? currentKaffee;
+  const isRastKaffee = rastSortiment.some((k) => k.name === currentBeans);
 
   function applyKaffee(k: RastKaffee) {
     setCurrentKaffee(k, session?.user?.name ?? "");
@@ -389,17 +395,25 @@ export default function KaffeePage() {
           {currentBeans}
         </p>
         {currentInfo && (
-          <div className="mt-2 space-y-1">
-            <p className="text-xs text-gray-400">
-              <span className="text-gray-600">Herkunft:</span>{" "}
-              {currentInfo.herkunft}
-            </p>
-            <p className="text-xs text-gray-400">
-              <span className="text-gray-600">Duftnotizen:</span>{" "}
-              {currentInfo.duftnotizen}
-            </p>
+          <div className="mt-3 space-y-2">
+            {currentInfo.duftnotizen && (
+              <div className="rounded-md border border-amber-600/20 bg-black/30 p-3">
+                <p className="font-display text-[9px] font-bold uppercase tracking-widest text-amber-400/80">
+                  Duftnoten
+                </p>
+                <p className="mt-1 text-sm italic text-amber-100">
+                  {currentInfo.duftnotizen}
+                </p>
+              </div>
+            )}
+            {currentInfo.herkunft && (
+              <p className="text-[11px] text-gray-500">
+                <span className="text-gray-600">Herkunft:</span>{" "}
+                {currentInfo.herkunft}
+              </p>
+            )}
             {currentInfo.fairtrade && (
-              <p className="text-xs text-emerald-500">Fair Trade</p>
+              <p className="text-[11px] text-emerald-500">Fair Trade</p>
             )}
           </div>
         )}
@@ -413,9 +427,20 @@ export default function KaffeePage() {
           </p>
         )}
 
+        {isRastKaffee && (
+          <a
+            href={rastShopUrl(currentBeans)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded border border-amber-600/40 bg-amber-600/5 py-2 text-xs font-semibold text-amber-200 transition-colors hover:bg-amber-600/15"
+          >
+            Mehr Infos zum Kaffee →
+          </a>
+        )}
+
         <button
           onClick={() => setShowSelect(!showSelect)}
-          className="mt-3 w-full rounded bg-amber-600/20 py-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-600/30"
+          className="mt-2 w-full rounded bg-amber-600/20 py-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-600/30"
         >
           Bohnen wechseln
         </button>

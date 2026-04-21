@@ -28,6 +28,13 @@ export default function PutzplanPage() {
   const [rotation, setRotation] = usePutzplan();
   const [confirmed, setConfirmed] = useState(false);
 
+  // Auto-Reset: wenn alle durch sind, neue Runde starten
+  useEffect(() => {
+    if (isRoundComplete(rotation)) {
+      setRotation(resetRound(rotation));
+    }
+  }, [rotation, setRotation]);
+
   const currentIndex = rotation.findIndex((r) => r.completedAt === null);
   const currentWg = currentIndex >= 0 ? rotation[currentIndex]! : null;
 
