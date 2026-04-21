@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { compressImage } from "@/lib/image-compress";
+import { animalAvatarUrl } from "@/lib/avatar-utils";
 
 type Diet = "fleisch" | "vegi" | "vegan";
 
@@ -508,17 +509,27 @@ export default function ProfilPage() {
         <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
           Lieblingstier
         </h2>
-        <input
-          type="text"
-          value={profile.favoriteAnimal}
-          onChange={(e) =>
-            setProfile({ ...profile, favoriteAnimal: e.target.value })
-          }
-          placeholder="z.B. Fuchs, Pinguin, Wolf..."
-          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
-        />
+        <div className="flex items-center gap-3">
+          {animalAvatarUrl(profile.favoriteAnimal) && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={animalAvatarUrl(profile.favoriteAnimal, 96)!}
+              alt={profile.favoriteAnimal}
+              className="h-12 w-12 shrink-0 rounded-full ring-1 ring-accent/40"
+            />
+          )}
+          <input
+            type="text"
+            value={profile.favoriteAnimal}
+            onChange={(e) =>
+              setProfile({ ...profile, favoriteAnimal: e.target.value })
+            }
+            placeholder="z.B. Fuchs, Pinguin, Wolf..."
+            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          />
+        </div>
         <p className="mt-1 text-xs text-gray-600">
-          Daraus werden später die Profilbild-Grafiken erstellt.
+          Dein Avatar wird automatisch aus dem Lieblingstier generiert.
         </p>
       </section>
 

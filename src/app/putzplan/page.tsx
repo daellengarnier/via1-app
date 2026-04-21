@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePutzplan } from "@/lib/putzplan-store";
+import { usePutzplan, isRoundComplete, resetRound } from "@/lib/putzplan-store";
 
 const funnyMessages = [
   "Das Treppenhaus versinkt im Dreck! 🧹",
@@ -48,11 +48,15 @@ export default function PutzplanPage() {
   useEffect(() => {
     if (!confirmed || currentIndex < 0) return;
     const timer = setTimeout(() => {
-      const newRotation = rotation.map((r, i) =>
+      let newRotation = rotation.map((r, i) =>
         i === currentIndex
           ? { ...r, completedAt: new Date().toISOString().split("T")[0]! }
           : r
       );
+      // Wenn alle durch: neue Runde starten
+      if (isRoundComplete(newRotation)) {
+        newRotation = resetRound(newRotation);
+      }
       setRotation(newRotation);
       setConfirmed(false);
       // Naechste WG ermitteln und benachrichtigen
@@ -65,7 +69,7 @@ export default function PutzplanPage() {
           body: JSON.stringify({
             kind: "PUTZPLAN_MY_WG",
             title: "Eure WG ist mit Putzen dran 🧹",
-            body: `${nextWg} — das gemeinsame Putzen wartet.`,
+            body: `${nextWg} — das gemeinsame Putzen wartet. (Neue Runde!)`,
             link: "/putzplan",
             wg: nextWg,
           }),

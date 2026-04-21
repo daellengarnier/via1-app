@@ -21,8 +21,19 @@ const EVENT_NAME = "via1-putzplan-updated";
 
 export function getCurrentWg(rotation: PutzRunde[]): string | null {
   const idx = rotation.findIndex((r) => r.completedAt === null);
-  if (idx < 0) return null;
-  return rotation[idx]!.wg;
+  if (idx >= 0) return rotation[idx]!.wg;
+  // Alle durch → neue Runde: erster WG ist wieder dran
+  return rotation[0]?.wg ?? null;
+}
+
+// Pruefen ob alle WGs durch sind (fuer Auto-Reset)
+export function isRoundComplete(rotation: PutzRunde[]): boolean {
+  return rotation.length > 0 && rotation.every((r) => r.completedAt !== null);
+}
+
+// Neue Runde: alle completedAt zuruecksetzen
+export function resetRound(rotation: PutzRunde[]): PutzRunde[] {
+  return rotation.map((r) => ({ ...r, completedAt: null }));
 }
 
 // Shared-State-Hook fuer den Putzplan (noch nicht DB-persistent,

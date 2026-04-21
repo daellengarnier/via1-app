@@ -10,6 +10,7 @@ import {
 } from "@/lib/bewohnende-data";
 import type { Room, Wg } from "@/lib/bewohnende-data";
 import { RoomDetail } from "@/components/RoomDetail";
+import { animalAvatarUrl } from "@/lib/avatar-utils";
 
 interface ApiUser {
   id: string;
@@ -48,6 +49,19 @@ function RoundAvatar({
       <img
         src={user.avatar}
         alt={user.name}
+        className="shrink-0 rounded-full object-cover ring-1 ring-accent/40"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  // DiceBear-Fallback wenn Lieblingstier vorhanden
+  const diceBear = user ? animalAvatarUrl(user.favoriteAnimal, size * 2) : null;
+  if (user && diceBear) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={diceBear}
+        alt={user.favoriteAnimal ?? user.name}
         className="shrink-0 rounded-full object-cover ring-1 ring-accent/40"
         style={{ width: size, height: size }}
       />
