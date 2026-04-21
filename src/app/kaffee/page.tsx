@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { compressImage } from "@/lib/image-compress";
 
 type AboType = "1-espresso" | "1-doppio" | "2-doppio" | "kein";
 
@@ -46,14 +47,66 @@ interface RastKaffee {
   fairtrade: boolean;
 }
 
-// Sortiment Rast Kaffee (Ebikon) — manuell gepflegt nach rastshop.ch
+// Sortiment Rast Kaffee (Ebikon) — nach rastshop.ch.
+// Falls eine Sorte fehlt, kann sie via Foto-Scan oder manuell erfasst werden.
 const rastSortiment: RastKaffee[] = [
+  // Italienische Espresso-Blends
   {
     name: "Milano",
     herkunft: "Guatemala, Costa Rica, Brasilien, Java",
     duftnotizen: "Kräftig, schokoladig, voller Körper",
     fairtrade: false,
   },
+  {
+    name: "Napoli",
+    herkunft: "Indonesien, Brasilien, Guatemala",
+    duftnotizen: "Dunkel geröstet, intensiv, kräftige Crema",
+    fairtrade: false,
+  },
+  {
+    name: "Vesuvio",
+    herkunft: "Brasilien, Guatemala, Indonesien",
+    duftnotizen: "Voll-feurig, intensiv, würzig",
+    fairtrade: false,
+  },
+  {
+    name: "Torino",
+    herkunft: "Brasilien, Guatemala, Costa Rica",
+    duftnotizen: "Rund, harmonisch, leichte Schokoladennote",
+    fairtrade: false,
+  },
+  {
+    name: "Roma",
+    herkunft: "Brasilien, Guatemala, Indien",
+    duftnotizen: "Klassisch italienisch, kräftig, schokoladig",
+    fairtrade: false,
+  },
+  {
+    name: "Sicilia",
+    herkunft: "Brasilien, Indonesien, Indien",
+    duftnotizen: "Dunkel, würzig, kräftiger Körper",
+    fairtrade: false,
+  },
+  {
+    name: "Firenze",
+    herkunft: "Brasilien, Guatemala, Costa Rica",
+    duftnotizen: "Mittelkräftig, nussig, fein",
+    fairtrade: false,
+  },
+  {
+    name: "Verona",
+    herkunft: "Brasilien, Kolumbien, Guatemala",
+    duftnotizen: "Ausgewogen, mild, süsslich",
+    fairtrade: false,
+  },
+  {
+    name: "Genova",
+    herkunft: "Brasilien, Kolumbien, Indien",
+    duftnotizen: "Mild, nussig, wenig Säure",
+    fairtrade: false,
+  },
+
+  // Bio / Fairtrade Blends
   {
     name: "Bologna Bio Fairtrade",
     herkunft: "Bio Arabica Blend",
@@ -73,11 +126,13 @@ const rastSortiment: RastKaffee[] = [
     fairtrade: true,
   },
   {
-    name: "Yirga Cheffe Bio",
-    herkunft: "Äthiopien (1500-2200m)",
-    duftnotizen: "Jasmin, Bergamotte, Blumen",
+    name: "Koffeinfrei Bio Fairtrade",
+    herkunft: "Bio Arabica",
+    duftnotizen: "Mild, rund, Schokolade",
     fairtrade: true,
   },
+
+  // Hausblends / spezielle
   {
     name: "Barista Espresso",
     herkunft: "Kenia, Guatemala, Indonesien, Indien, Brasilien",
@@ -121,10 +176,60 @@ const rastSortiment: RastKaffee[] = [
     fairtrade: false,
   },
   {
-    name: "Koffeinfrei Bio Fairtrade",
-    herkunft: "Bio Arabica",
-    duftnotizen: "Mild, rund, Schokolade",
+    name: "Crema Italia",
+    herkunft: "Brasilien, Indien, Guatemala",
+    duftnotizen: "Cremig, ausgewogen, leichte Schokoladennote",
+    fairtrade: false,
+  },
+
+  // Länder-Kaffees (Single Origin)
+  {
+    name: "Yirga Cheffe Bio",
+    herkunft: "Äthiopien (1500–2200m)",
+    duftnotizen: "Jasmin, Bergamotte, Blumen",
     fairtrade: true,
+  },
+  {
+    name: "Guatemala Huehuetenango",
+    herkunft: "Guatemala (Huehuetenango)",
+    duftnotizen: "Zart, fruchtig, Kakao, feine Säure",
+    fairtrade: false,
+  },
+  {
+    name: "Brasil Santos",
+    herkunft: "Brasilien (Santos)",
+    duftnotizen: "Nussig, mild, Karamell",
+    fairtrade: false,
+  },
+  {
+    name: "Colombia Supremo",
+    herkunft: "Kolumbien",
+    duftnotizen: "Ausgewogen, fruchtig, würzig",
+    fairtrade: false,
+  },
+  {
+    name: "Kenia AA",
+    herkunft: "Kenia (Hochland)",
+    duftnotizen: "Beerig, weinig, intensive Säure",
+    fairtrade: false,
+  },
+  {
+    name: "Costa Rica Tarrazu",
+    herkunft: "Costa Rica (Tarrazu)",
+    duftnotizen: "Hell, zitrusfrisch, klare Süsse",
+    fairtrade: false,
+  },
+  {
+    name: "Indonesia Mandheling",
+    herkunft: "Indonesien (Sumatra)",
+    duftnotizen: "Erdig, dunkel, wenig Säure",
+    fairtrade: false,
+  },
+  {
+    name: "India Monsooned Malabar",
+    herkunft: "Indien (Malabar)",
+    duftnotizen: "Würzig, erdig, wenig Säure, voller Körper",
+    fairtrade: false,
   },
 ];
 
@@ -153,6 +258,8 @@ export default function KaffeePage() {
 
   // Eigenen Kaffee erfassen
   const [showCustom, setShowCustom] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [customName, setCustomName] = useState("");
   const [customHerkunft, setCustomHerkunft] = useState("");
   const [customDuftnotizen, setCustomDuftnotizen] = useState("");
@@ -194,6 +301,49 @@ export default function KaffeePage() {
     setCustomHerkunft("");
     setCustomDuftnotizen("");
     setCustomFairtrade(false);
+  }
+
+  async function handleScanPhoto(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setScanError(null);
+    setScanning(true);
+    try {
+      // Komprimieren auf max 1200px damit API-Call schnell ist
+      const dataUrl = await compressImage(file, {
+        maxSize: 1200,
+        quality: 0.82,
+      });
+      const res = await fetch("/api/kaffee/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl }),
+      });
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        setScanError(err.error ?? "Scan fehlgeschlagen");
+        return;
+      }
+      const data = (await res.json()) as {
+        name: string;
+        herkunft: string;
+        duftnotizen: string;
+        fairtrade: boolean;
+      };
+      if (data.name) setCustomName(data.name);
+      if (data.herkunft) setCustomHerkunft(data.herkunft);
+      if (data.duftnotizen) setCustomDuftnotizen(data.duftnotizen);
+      setCustomFairtrade(data.fairtrade);
+      if (!showCustom) setShowCustom(true);
+    } catch (err) {
+      console.error("Scan", err);
+      setScanError("Bild konnte nicht verarbeitet werden.");
+    } finally {
+      setScanning(false);
+    }
   }
 
   function handleSaveAbo() {
@@ -300,20 +450,54 @@ export default function KaffeePage() {
 
             {/* Eigenen Kaffee erfassen */}
             {!showCustom ? (
-              <button
-                onClick={() => setShowCustom(true)}
-                className="flex w-full items-center justify-center rounded-lg border border-dashed border-amber-600/40 bg-amber-600/5 p-3 text-xs font-semibold text-amber-200 transition-colors hover:border-amber-500 hover:bg-amber-600/10"
-              >
-                + Eigenen Kaffee erfassen
-              </button>
+              <div className="flex flex-col gap-2">
+                <label className="flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-amber-600/40 bg-amber-600/5 p-3 text-xs font-semibold text-amber-200 transition-colors hover:border-amber-500 hover:bg-amber-600/10">
+                  {scanning ? "📷 Scannt…" : "📷 Etikette fotografieren"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleScanPhoto}
+                    disabled={scanning}
+                    className="hidden"
+                  />
+                </label>
+                <button
+                  onClick={() => setShowCustom(true)}
+                  className="flex w-full items-center justify-center rounded-lg border border-dashed border-amber-600/40 bg-amber-600/5 p-3 text-xs font-semibold text-amber-200 transition-colors hover:border-amber-500 hover:bg-amber-600/10"
+                >
+                  + Eigenen Kaffee manuell erfassen
+                </button>
+                {scanError && (
+                  <p className="text-center text-[11px] text-red-400">
+                    {scanError}
+                  </p>
+                )}
+              </div>
             ) : (
               <form
                 onSubmit={saveCustomKaffee}
                 className="rounded-lg border border-amber-600/40 bg-amber-600/5 p-3"
               >
-                <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
-                  EIGENER KAFFEE
-                </p>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
+                    EIGENER KAFFEE
+                  </p>
+                  <label className="cursor-pointer rounded border border-amber-600/40 bg-amber-600/10 px-2 py-0.5 text-[10px] font-semibold text-amber-200 hover:bg-amber-600/20">
+                    {scanning ? "📷 Scannt…" : "📷 Etikette scannen"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleScanPhoto}
+                      disabled={scanning}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                {scanError && (
+                  <p className="mb-2 text-[11px] text-red-400">{scanError}</p>
+                )}
                 <div className="mb-2">
                   <label className="mb-1 block text-[10px] text-gray-400">
                     Name

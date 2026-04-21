@@ -342,7 +342,7 @@ export default function TetrisPage() {
   }, []);
   useEffect(() => { loadLB(); }, [loadLB]);
 
-  function handleGameOver(score: number) {
+  const handleGameOver = useCallback((score: number) => {
     setFinalScore(score);
     if (score > 0) {
       fetch("/api/game/highscore", {
@@ -357,7 +357,7 @@ export default function TetrisPage() {
         })
         .catch(() => {});
     }
-  }
+  }, [loadLB]);
 
   function startGame() {
     setStarted(true);
@@ -388,9 +388,16 @@ export default function TetrisPage() {
         </button>
         <button
           onClick={toggleMusic}
-          className={`w-8 rounded px-1 py-0.5 text-center text-[11px] transition-colors ${musicOn ? "bg-accent/20 text-accent" : "animate-pulse text-amber-300"}`}
+          aria-label={musicOn ? "Musik aus" : "Musik an"}
+          className={`relative flex h-8 w-8 items-center justify-center rounded transition-colors ${musicOn ? "bg-accent/20 text-accent" : "animate-pulse text-amber-300"}`}
         >
-          {musicOn ? "♫" : "♪"}
+          <span className="text-[14px] leading-none">♫</span>
+          {!musicOn && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1 right-1 top-1/2 h-[1.5px] -translate-y-1/2 rotate-[-20deg] bg-amber-300"
+            />
+          )}
         </button>
       </div>
 
