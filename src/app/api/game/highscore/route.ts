@@ -3,39 +3,42 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// GET /api/game/highscore — globaler Highscore + eigener Score + Leaderboard
+// GET /api/game/highscore — Top 20 einzelne Spiele + eigener Bestwert
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [me, leaderboard] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { gameHighScore: true },
+  const [meBest, topScores] = await Promise.all([
+    prisma.gameScore.findFirst({
+      where: { userId: session.user.id },
+      orderBy: { score: "desc" },
+      select: { score: true },
     }),
-    prisma.user.findMany({
-      where: { gameHighScore: { gt: 0 } },
-      orderBy: { gameHighScore: "desc" },
+    prisma.gameScore.findMany({
+      orderBy: { score: "desc" },
       take: 20,
-      select: { id: true, name: true, gameHighScore: true },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
     }),
   ]);
 
   return NextResponse.json({
-    myScore: me?.gameHighScore ?? 0,
-    topScore: leaderboard[0]?.gameHighScore ?? 0,
-    topPlayer: leaderboard[0]?.name ?? null,
-    leaderboard: leaderboard.map((u) => ({
-      name: u.name,
-      score: u.gameHighScore,
-      isMe: u.id === session.user.id,
+    myScore: meBest?.score ?? 0,
+    topScore: topScores[0]?.score ?? 0,
+    topPlayer: topScores[0]?.user.name ?? null,
+    leaderboard: topScores.map((s) => ({
+      name: s.user.name,
+      score: s.score,
+      date: s.createdAt.toISOString(),
+      isMe: s.user.id === session.user.id,
     })),
   });
 }
 
-// POST /api/game/highscore — neuen Score melden (nur wenn hoeher)
+// POST /api/game/highscore — jeder Spielstand wird gespeichert
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -48,15 +51,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid score" }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { gameHighScore: true },
+  const prevBest = await prisma.gameScore.findFirst({
+    where: { userId: session.user.id },
+    orderBy: { score: "desc" },
+    select: { score: true },
   });
-  if (!user) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  const previousBest = prevBest?.score ?? 0;
+  const isNewRecord = score > previousBest;
 
-  const isNewRecord = score > user.gameHighScore;
+  await prisma.gameScore.create({
+    data: {
+      userId: session.user.id,
+      score,
+    },
+  });
+
+  // User.gameHighScore zusaetzlich aktualisieren (Badge auf Home)
   if (isNewRecord) {
     await prisma.user.update({
       where: { id: session.user.id },
@@ -67,6 +77,6 @@ export async function POST(req: Request) {
   return NextResponse.json({
     score,
     isNewRecord,
-    previousBest: user.gameHighScore,
+    previousBest,
   });
 }

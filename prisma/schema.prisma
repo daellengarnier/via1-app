@@ -112,8 +112,21 @@ model User {
   createdShopping      ShoppingItem[]        @relation("ShoppingCreator")
   completedShopping    ShoppingItem[]        @relation("ShoppingCompleter")
   shoppingComments     ShoppingItemComment[] @relation("ShoppingCommentAuthor")
+  gameScores           GameScore[]
 
   @@map("users")
+}
+
+model GameScore {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  score     Int
+  createdAt DateTime @default(now())
+
+  @@index([score(sort: Desc)])
+  @@index([userId])
+  @@map("game_scores")
 }
 
 model PinnwandNote {

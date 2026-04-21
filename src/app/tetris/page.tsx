@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 interface LeaderboardEntry {
   name: string;
   score: number;
+  date?: string;
   isMe: boolean;
 }
 
@@ -72,7 +73,7 @@ function useGameMusic() {
       audioRef.current.play().catch(() => {});
       return;
     }
-    const audio = new Audio("/game-music.mp3");
+    const audio = new Audio("/game-music.m4a");
     audio.loop = true;
     audio.volume = 0.3;
     audioRef.current = audio;
@@ -457,9 +458,16 @@ export default function TetrisPage() {
                     <span className={`w-5 shrink-0 text-right font-mono text-[11px] font-bold ${i === 0 ? "text-amber-300" : i === 1 ? "text-gray-300" : i === 2 ? "text-amber-600" : "text-gray-600"}`}>
                       {i + 1}.
                     </span>
-                    <span className={`min-w-0 flex-1 truncate text-xs ${e.isMe ? "font-semibold text-accent" : "text-gray-300"}`}>
-                      {e.name}{e.isMe && <span className="ml-1 text-[9px] text-accent/70">(du)</span>}
-                    </span>
+                    <div className="min-w-0 flex-1">
+                      <span className={`block truncate text-xs ${e.isMe ? "font-semibold text-accent" : "text-gray-300"}`}>
+                        {e.name}{e.isMe && <span className="ml-1 text-[9px] text-accent/70">(du)</span>}
+                      </span>
+                      {e.date && (
+                        <span className="block font-mono text-[9px] text-gray-600">
+                          {new Date(e.date).toLocaleDateString("de-CH", { day: "numeric", month: "short" })}
+                        </span>
+                      )}
+                    </div>
                     <span className={`shrink-0 font-mono text-xs font-bold ${i === 0 ? "text-amber-300" : "text-gray-400"}`}>
                       {e.score.toLocaleString("de-CH")}
                     </span>
