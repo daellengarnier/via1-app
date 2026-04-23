@@ -236,6 +236,12 @@ const rastSortiment: RastKaffee[] = [
     duftnotizen: "Würzig, erdig, wenig Säure, voller Körper",
     fairtrade: false,
   },
+  {
+    name: "APG Coatepec Veracruz",
+    herkunft: "Mexiko (Coatepec, Veracruz)",
+    duftnotizen: "Nussig, Karamell, milde Säure",
+    fairtrade: false,
+  },
 ];
 
 export default function KaffeePage() {
