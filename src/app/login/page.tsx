@@ -139,10 +139,9 @@ function LoginContent() {
         </form>
 
         <p className="mt-6 text-center text-[11px] text-gray-500">
-          Passwort vergessen? Bitte bei{" "}
-          <span className="text-accent">Alain</span> oder{" "}
-          <span className="text-accent">Yves</span> melden — sie können
-          einen neuen Setup-Link für dich erzeugen.
+          Noch kein Konto? Nutze oben &quot;Registrieren&quot;.
+          Passwort vergessen? Melde dich bei{" "}
+          <span className="text-accent">Dällen</span>.
         </p>
       </div>
     </main>

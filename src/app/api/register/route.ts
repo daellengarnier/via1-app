@@ -66,15 +66,43 @@ export async function POST(request: Request) {
   // Pruefen ob E-Mail schon existiert
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    // Mehr Info fuer Debugging/UX:
     if (!existing.passwordSet) {
-      return NextResponse.json(
-        {
-          error:
-            "Diese E-Mail ist bereits hinterlegt, aber noch kein Passwort gesetzt. Bitte bei einem Admin melden — der kann dir einen Setup-Link schicken.",
+      // User wurde vorab angelegt (Admin-Invite) aber hat noch kein Passwort.
+      // Registrierung schliesst das Setup ab — kein Admin-Link noetig.
+      const hashedPw = await bcrypt.hash(password, 12);
+      let roomIdUpdate: string | null = null;
+      if (typeof body.room === "string" && body.room) {
+        const room = await prisma.room.findUnique({
+          where: { keyNumber: body.room },
+        });
+        if (room) roomIdUpdate = room.id;
+      }
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          name: displayName,
+          fullName,
+          password: hashedPw,
+          passwordSet: true,
+          setupToken: null,
+          birthday:
+            typeof body.birthday === "string" && body.birthday
+              ? new Date(body.birthday)
+              : existing.birthday,
+          diet: dietFromApi(body.diet) ?? existing.diet,
+          allergies:
+            typeof body.allergies === "string" ? body.allergies : existing.allergies,
+          hasKaffeeAbo:
+            body.hasKaffeeAbo === true ? true : existing.hasKaffeeAbo,
+          favoriteAnimal:
+            typeof body.favoriteAnimal === "string" &&
+            body.favoriteAnimal.trim() !== ""
+              ? body.favoriteAnimal.trim()
+              : existing.favoriteAnimal,
+          ...(roomIdUpdate ? { roomId: roomIdUpdate } : {}),
         },
-        { status: 409 }
-      );
+      });
+      return NextResponse.json({ success: true });
     }
     return NextResponse.json(
       {
