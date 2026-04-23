@@ -238,7 +238,10 @@ export default function RegistrierenPage() {
             )}
 
             <div>
-              <label className="mb-1 block text-xs text-gray-400">Geburtstag</label>
+              <label className="mb-1 block text-xs text-gray-400">
+                Geburtstag{" "}
+                <span className="text-gray-600">(optional)</span>
+              </label>
               <input
                 type="date"
                 value={birthday}
