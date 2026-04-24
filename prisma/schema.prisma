@@ -250,6 +250,7 @@ model MealSignupGuest {
   id           String     @id @default(cuid())
   mealSignup   MealSignup @relation(fields: [mealSignupId], references: [id], onDelete: Cascade)
   mealSignupId String
+  name         String     @default("")
   diet         Diet
   allergies    String     @default("")
   createdAt    DateTime   @default(now())

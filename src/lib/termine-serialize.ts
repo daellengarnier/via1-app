@@ -58,6 +58,7 @@ export interface TraktandumDTO {
 }
 
 export interface GuestDTO {
+  name: string;
   diet: "Fleisch" | "Vegi" | "Vegan";
   allergies: string;
 }
@@ -326,6 +327,7 @@ export function serializeTerminDetail(
     diet: dietMap[s.diet],
     allergies: s.allergies,
     guestDetails: s.guests.map((g) => ({
+      name: g.name,
       diet: dietMap[g.diet],
       allergies: g.allergies,
     })),

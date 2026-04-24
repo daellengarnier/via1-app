@@ -135,6 +135,27 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function deleteUser(id: string, name: string) {
+    if (
+      !confirm(
+        `User "${name}" wirklich löschen?\n\nAlle von diesem User erstellten Inhalte (Termine, Aufgaben, Inserate etc.) werden ebenfalls gelöscht.`
+      )
+    )
+      return;
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        alert(data.error ?? "Löschen fehlgeschlagen.");
+        return;
+      }
+      loadUsers();
+    } catch (err) {
+      console.error("deleteUser", err);
+      alert("Netzwerkfehler.");
+    }
+  }
+
   async function copyToClipboard(text: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -361,13 +382,21 @@ export default function AdminUsersPage() {
                     })}
                   </p>
                 </div>
-                <button
-                  onClick={() => resetPassword(u)}
-                  disabled={resetting === u.id}
-                  className="shrink-0 rounded-lg border border-orange-500/40 bg-orange-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-orange-200 hover:bg-orange-500/20 disabled:opacity-50"
-                >
-                  {resetting === u.id ? "…" : "Reset"}
-                </button>
+                <div className="flex shrink-0 gap-1.5">
+                  <button
+                    onClick={() => resetPassword(u)}
+                    disabled={resetting === u.id}
+                    className="rounded-lg border border-orange-500/40 bg-orange-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-orange-200 hover:bg-orange-500/20 disabled:opacity-50"
+                  >
+                    {resetting === u.id ? "…" : "Reset"}
+                  </button>
+                  <button
+                    onClick={() => deleteUser(u.id, u.name)}
+                    className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-red-300 hover:bg-red-500/20"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
 
               {/* Reset-Resultat: Link anzeigen + Kopieren */}

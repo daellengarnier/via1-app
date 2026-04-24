@@ -14,6 +14,7 @@ interface Traktandum {
 }
 
 interface Guest {
+  name: string;
   diet: string;
   allergies: string;
 }
@@ -293,7 +294,7 @@ export default function TerminDetailPage() {
   function addGuest() {
     setSignupGuestDetails((prev) => [
       ...prev,
-      { diet: "Fleisch", allergies: "" },
+      { name: "", diet: "Fleisch", allergies: "" },
     ]);
   }
 
@@ -856,9 +857,15 @@ export default function TerminDetailPage() {
                   className="mb-2 rounded border border-secondary/20 bg-white/5 p-2"
                 >
                   <div className="mb-1.5 flex items-center justify-between">
-                    <span className="text-[10px] text-gray-500">
-                      Gast {i + 1}
-                    </span>
+                    <input
+                      type="text"
+                      value={g.name}
+                      onChange={(e) =>
+                        updateGuest(i, "name", e.target.value)
+                      }
+                      placeholder={`Gast ${i + 1}`}
+                      className="w-24 rounded border border-gray-700 bg-transparent px-1.5 py-0.5 text-[10px] text-white placeholder-gray-600 focus:border-secondary focus:outline-none"
+                    />
                     <button
                       type="button"
                       onClick={() => removeGuest(i)}
@@ -961,7 +968,7 @@ export default function TerminDetailPage() {
                           key={gi}
                           className="flex items-center justify-between text-xs text-gray-400"
                         >
-                          <span>+ Gast {gi + 1}</span>
+                          <span>+ {g.name || `Gast ${gi + 1}`}</span>
                           <span className="font-mono text-gray-600">
                             {g.diet}
                             {g.allergies && ` · ${g.allergies}`}

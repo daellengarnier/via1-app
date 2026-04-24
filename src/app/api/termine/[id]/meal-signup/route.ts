@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { toDiet } from "@/lib/termine-serialize";
 
 interface GuestInput {
+  name?: unknown;
   diet?: unknown;
   allergies?: unknown;
 }
@@ -54,11 +55,12 @@ export async function POST(
       const d = typeof g.diet === "string" ? toDiet(g.diet) : null;
       if (!d) return null;
       return {
+        name: typeof g.name === "string" ? g.name.trim() : "",
         diet: d,
         allergies: typeof g.allergies === "string" ? g.allergies : "",
       };
     })
-    .filter((g): g is { diet: "FLEISCH" | "VEGI" | "VEGAN"; allergies: string } => g !== null);
+    .filter((g): g is { name: string; diet: "FLEISCH" | "VEGI" | "VEGAN"; allergies: string } => g !== null);
 
   // Wenn goingSelf=false und keine Gaeste -> einfach DELETE fuer
   // "explizit abgemeldet" Zustand. Signup existiert trotzdem, aber
@@ -87,6 +89,7 @@ export async function POST(
     diet: dietToLabel(signup.diet),
     allergies: signup.allergies,
     guestDetails: signup.guests.map((g) => ({
+      name: g.name,
       diet: dietToLabel(g.diet),
       allergies: g.allergies,
     })),

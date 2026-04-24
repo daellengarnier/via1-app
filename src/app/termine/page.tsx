@@ -145,8 +145,12 @@ export default function TerminePage() {
 
   // Signup state (inline, per termin)
   type GuestDiet = "Fleisch" | "Vegi" | "Vegan";
+  interface SignupGuest {
+    name: string;
+    diet: GuestDiet;
+  }
   const [signupOpen, setSignupOpen] = useState<string | null>(null);
-  const [signupGuests, setSignupGuests] = useState<GuestDiet[]>([]);
+  const [signupGuests, setSignupGuests] = useState<SignupGuest[]>([]);
 
   // Create form state
   const [newType, setNewType] = useState<TerminType>("sitzung");
@@ -958,7 +962,7 @@ export default function TerminePage() {
                     <button
                       onClick={(e) => {
                         e.preventDefault();
-                        setSignupGuests((g) => [...g, "Fleisch"]);
+                        setSignupGuests((g) => [...g, { name: "", diet: "Fleisch" }]);
                       }}
                       className="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300 hover:bg-amber-400/30"
                     >
@@ -972,9 +976,20 @@ export default function TerminePage() {
                       className="mb-1.5 rounded border border-amber-400/20 bg-white/5 p-1.5"
                     >
                       <div className="mb-1 flex items-center justify-between">
-                        <span className="text-[10px] text-gray-500">
-                          Gast {gi + 1}
-                        </span>
+                        <input
+                          type="text"
+                          value={g.name}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSignupGuests((prev) =>
+                              prev.map((x, i) =>
+                                i === gi ? { ...x, name: val } : x
+                              )
+                            );
+                          }}
+                          placeholder={`Gast ${gi + 1}`}
+                          className="w-24 rounded border border-gray-700 bg-transparent px-1.5 py-0.5 text-[10px] text-white placeholder-gray-600 focus:border-amber-400 focus:outline-none"
+                        />
                         <button
                           onClick={(e) => {
                             e.preventDefault();
@@ -995,11 +1010,13 @@ export default function TerminePage() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 setSignupGuests((prev) =>
-                                  prev.map((x, i) => (i === gi ? d : x))
+                                  prev.map((x, i) =>
+                                    i === gi ? { ...x, diet: d } : x
+                                  )
                                 );
                               }}
                               className={`flex-1 rounded py-1 font-mono text-[10px] transition-colors ${
-                                g === d
+                                g.diet === d
                                   ? "bg-amber-400 text-dark"
                                   : "border border-gray-700 text-gray-400 hover:text-white"
                               }`}
@@ -1024,8 +1041,9 @@ export default function TerminePage() {
                             body: JSON.stringify({
                               diet: "Fleisch",
                               allergies: "",
-                              guests: signupGuests.map((d) => ({
-                                diet: d,
+                              guests: signupGuests.map((g) => ({
+                                name: g.name,
+                                diet: g.diet,
                                 allergies: "",
                               })),
                             }),
