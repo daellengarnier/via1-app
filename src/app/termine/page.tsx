@@ -711,157 +711,35 @@ export default function TerminePage() {
           const essenLocation =
             t.type === "essen" ? t.location : t.dinnerLocation ?? "";
           const diet = t.mealDietCount;
-          return (
-            <div
-              key={t.id}
-              className="rounded-lg border border-gray-800 bg-white/5 p-3 transition-colors hover:border-gray-700"
-            >
-              {/* Kopf: Datum + Aktionen */}
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-orange-300">
-                  {formatDateUpper(t.date)}
+          const essenFirst =
+            hasEssen && showSitzungBadge && essenTime < sitzungTime;
+
+          /* ─── Sitzung-Block ─── */
+          const sitzungBlock = showSitzungBadge && (
+            <div className="mt-2 rounded-lg border border-accent/20 bg-accent/5 p-2.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 font-mono text-[10px] font-bold text-accent ring-1 ring-accent/40">
+                SITZUNG · {sitzungTime}
+                {t.withAttendance && (
+                  <span className="font-normal text-accent/80">
+                    · {t.attendanceCount} dabei
+                  </span>
+                )}
+              </span>
+              {t.location && (
+                <p className="mt-1.5 text-[10px] text-gray-500">
+                  📍 {t.location}
                 </p>
-                <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    onClick={() => exportIcs(t)}
-                    className="rounded px-1.5 py-0.5 font-mono text-[9px] text-gray-500 hover:text-orange-300"
-                    title="In Kalender exportieren"
-                  >
-                    📅
-                  </button>
-                  {canEdit && (
-                    <>
-                      <button
-                        onClick={() => openEditTermin(t)}
-                        className="rounded px-1.5 py-0.5 text-[12px] text-gray-500 hover:text-orange-300"
-                        title="Bearbeiten"
-                        aria-label="Termin bearbeiten"
-                      >
-                        ✎
-                      </button>
-                      <button
-                        onClick={() => deleteTermin(t.id)}
-                        className="rounded px-1.5 py-0.5 text-[14px] leading-none text-gray-500 hover:text-red-400"
-                        title="Löschen"
-                        aria-label="Termin löschen"
-                      >
-                        ×
-                      </button>
-                    </>
+              )}
+              {(t.agendaCount > 0 || t.commentCount > 0) && (
+                <div className="mt-1 flex items-center gap-3 text-[10px] text-gray-600">
+                  {t.agendaCount > 0 && (
+                    <span>{t.agendaCount} Traktanden</span>
                   )}
+                  {t.commentCount > 0 && <span>💬 {t.commentCount}</span>}
                 </div>
-              </div>
-
-              <Link href={`/termine/${t.id}`} className="block">
-                {/* Titel */}
-                <h3 className="mt-0.5 text-sm font-medium text-white">
-                  {t.title}
-                  {t.type === "sitzung" && t.withDinner && (
-                    <> inkl. Nachtessen</>
-                  )}
-                </h3>
-                {/* Organisator (eigene Zeile) */}
-                {t.organizer && (
-                  <p className="mt-0.5 text-[10px] text-gray-500">
-                    organisiert von {t.organizer}
-                  </p>
-                )}
-                {t.type === "sonstige" && t.createdBy && !t.organizer && (
-                  <p className="mt-0.5 text-[10px] text-gray-500">
-                    erstellt von {t.createdBy}
-                  </p>
-                )}
-
-                {/* Badges mit Zeit + Anmeldezahlen */}
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {showSitzungBadge && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 font-mono text-[10px] font-bold text-accent ring-1 ring-accent/40">
-                      SITZUNG · {sitzungTime}
-                      {t.withAttendance && (
-                        <span className="font-normal text-accent/80">
-                          · {t.attendanceCount} dabei
-                        </span>
-                      )}
-                    </span>
-                  )}
-                  {hasEssen && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-2.5 py-0.5 font-mono text-[10px] font-bold text-amber-300 ring-1 ring-amber-400/40">
-                      ESSEN · {essenTime}
-                      <span className="font-normal text-amber-200/90">
-                        · {t.mealSignupCount}
-                      </span>
-                      {t.mealSignupCount > 0 && (
-                        <span className="font-normal text-amber-200/70">
-                          ({diet.fleisch} 🍖 {diet.vegi} 🥗 {diet.vegan} 🌱)
-                        </span>
-                      )}
-                    </span>
-                  )}
-                  {t.type === "sonstige" && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-600/20 px-2.5 py-0.5 font-mono text-[10px] font-bold text-gray-300 ring-1 ring-gray-600/40">
-                      {t.time}
-                      {t.withAttendance && (
-                        <span className="font-normal text-gray-400">
-                          · {t.attendanceCount} dabei
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </div>
-
-                {/* Ort(e) */}
-                {(t.location || essenLocation) && (
-                  <p className="mt-1 text-[10px] text-gray-500">
-                    {showSitzungBadge && t.location && (
-                      <>📍 Sitzung: {t.location}</>
-                    )}
-                    {showSitzungBadge &&
-                      t.location &&
-                      hasEssen &&
-                      essenLocation && <> · </>}
-                    {hasEssen && essenLocation && (
-                      <>
-                        {!showSitzungBadge && "📍 "}
-                        {showSitzungBadge ? "Essen: " : "Essen: "}
-                        {essenLocation}
-                      </>
-                    )}
-                    {!showSitzungBadge && !hasEssen && t.location && (
-                      <>📍 {t.location}</>
-                    )}
-                  </p>
-                )}
-                {t.dinnerMenu && (
-                  <p className="mt-0.5 text-[10px] italic text-gray-500">
-                    🍽 {t.dinnerMenu}
-                  </p>
-                )}
-
-                {/* Allergien */}
-                {hasEssen && t.mealAllergies.length > 0 && (
-                  <p className="mt-1 text-[10px] text-amber-200/70">
-                    ⚠ {t.mealAllergies.join(", ")}
-                  </p>
-                )}
-
-                {(t.agendaCount > 0 || t.commentCount > 0) && (
-                  <div className="mt-1 flex items-center gap-3 text-[10px] text-gray-600">
-                    {t.agendaCount > 0 && (
-                      <span>{t.agendaCount} Traktanden</span>
-                    )}
-                    {t.commentCount > 0 && (
-                      <span>💬 {t.commentCount}</span>
-                    )}
-                  </div>
-                )}
-              </Link>
-
-              {/* Sitzungs-Teilnahme (bei Termin mit Attendance) */}
+              )}
               {t.withAttendance && (
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="w-16 shrink-0 font-display text-[9px] font-bold uppercase tracking-wider text-accent">
-                    Sitzung
-                  </span>
                   <button
                     onClick={() =>
                       setAttendance(
@@ -896,22 +774,47 @@ export default function TerminePage() {
                   </button>
                 </div>
               )}
+            </div>
+          );
 
-              {/* Essens-Anmeldung */}
-              {hasEssen && signupOpen !== t.id && (
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="w-16 shrink-0 font-display text-[9px] font-bold uppercase tracking-wider text-amber-300">
-                    Essen
+          /* ─── Essen-Block ─── */
+          const essenBlock = hasEssen && (
+            <div className="mt-2 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-2.5 py-0.5 font-mono text-[10px] font-bold text-amber-300 ring-1 ring-amber-400/40">
+                ESSEN · {essenTime}
+                <span className="font-normal text-amber-200/90">
+                  · {t.mealSignupCount}
+                </span>
+                {t.mealSignupCount > 0 && (
+                  <span className="font-normal text-amber-200/70">
+                    ({diet.fleisch} 🍖 {diet.vegi} 🥗 {diet.vegan} 🌱)
                   </span>
+                )}
+              </span>
+              {essenLocation && (
+                <p className="mt-1.5 text-[10px] text-gray-500">
+                  📍 {essenLocation}
+                </p>
+              )}
+              {t.dinnerMenu && (
+                <p className="mt-0.5 text-[10px] italic text-gray-500">
+                  🍽 {t.dinnerMenu}
+                </p>
+              )}
+              {t.mealAllergies.length > 0 && (
+                <p className="mt-1 text-[10px] text-amber-200/70">
+                  ⚠ {t.mealAllergies.join(", ")}
+                </p>
+              )}
+
+              {/* Essen-Buttons */}
+              {signupOpen !== t.id && (
+                <div className="mt-2 flex items-center gap-2">
                   <button
                     onClick={async (e) => {
                       e.preventDefault();
-                      if (t.myMealSignup === "going") {
-                        // bereits angemeldet — nichts tun
-                        return;
-                      }
+                      if (t.myMealSignup === "going") return;
                       if (t.myMealSignup === "not-going") {
-                        // Re-aktivieren via PATCH goingSelf=true
                         try {
                           const res = await fetch(
                             `/api/termine/${t.id}/meal-signup`,
@@ -929,7 +832,6 @@ export default function TerminePage() {
                         }
                         return;
                       }
-                      // Noch keine Entscheidung — Gaste-Formular oeffnen
                       setSignupOpen(t.id);
                       setSignupGuests([]);
                     }}
@@ -944,11 +846,7 @@ export default function TerminePage() {
                   <button
                     onClick={async (e) => {
                       e.preventDefault();
-                      // Wenn bereits abgemeldet, nichts tun (oder Toggle)
                       if (t.myMealSignup === "not-going") return;
-
-                      // Wenn angemeldet und Gaeste vorhanden — fragen ob
-                      // auch Gaeste abmelden
                       if (
                         t.myMealSignup === "going" &&
                         t.myMealGuestsCount > 0
@@ -960,14 +858,12 @@ export default function TerminePage() {
                         );
                         try {
                           if (scope) {
-                            // Alles loeschen
                             const res = await fetch(
                               `/api/termine/${t.id}/meal-signup`,
                               { method: "DELETE" }
                             );
                             if (!res.ok) throw new Error(`HTTP ${res.status}`);
                           } else {
-                            // Nur mich abmelden
                             const res = await fetch(
                               `/api/termine/${t.id}/meal-signup`,
                               {
@@ -987,12 +883,8 @@ export default function TerminePage() {
                         }
                         return;
                       }
-
-                      // Angemeldet ohne Gaeste: einfach DELETE
                       if (t.myMealSignup === "going") {
-                        if (
-                          !confirm("Dich wirklich vom Essen abmelden?")
-                        )
+                        if (!confirm("Dich wirklich vom Essen abmelden?"))
                           return;
                         try {
                           const res = await fetch(
@@ -1007,9 +899,6 @@ export default function TerminePage() {
                         }
                         return;
                       }
-
-                      // Noch keine Entscheidung — direkt als "nicht dabei"
-                      // markieren (PATCH anlegen mit goingSelf=false)
                       try {
                         const res = await fetch(
                           `/api/termine/${t.id}/meal-signup`,
@@ -1040,8 +929,8 @@ export default function TerminePage() {
               )}
 
               {/* Inline-Form für Essens-Anmeldung */}
-              {hasEssen && signupOpen === t.id && (
-                <div className="mt-2 rounded-lg border border-amber-400/30 bg-amber-400/5 p-2.5">
+              {signupOpen === t.id && (
+                <div className="mt-2 rounded border border-amber-400/30 bg-amber-400/5 p-2">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="font-display text-[10px] font-bold uppercase tracking-wider text-amber-300">
                       Anmeldung
@@ -1099,24 +988,26 @@ export default function TerminePage() {
                         </button>
                       </div>
                       <div className="flex gap-1">
-                        {(["Fleisch", "Vegi", "Vegan"] as GuestDiet[]).map((d) => (
-                          <button
-                            key={d}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setSignupGuests((prev) =>
-                                prev.map((x, i) => (i === gi ? d : x))
-                              );
-                            }}
-                            className={`flex-1 rounded py-1 font-mono text-[10px] transition-colors ${
-                              g === d
-                                ? "bg-amber-400 text-dark"
-                                : "border border-gray-700 text-gray-400 hover:text-white"
-                            }`}
-                          >
-                            {d}
-                          </button>
-                        ))}
+                        {(["Fleisch", "Vegi", "Vegan"] as GuestDiet[]).map(
+                          (d) => (
+                            <button
+                              key={d}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setSignupGuests((prev) =>
+                                  prev.map((x, i) => (i === gi ? d : x))
+                                );
+                              }}
+                              className={`flex-1 rounded py-1 font-mono text-[10px] transition-colors ${
+                                g === d
+                                  ? "bg-amber-400 text-dark"
+                                  : "border border-gray-700 text-gray-400 hover:text-white"
+                              }`}
+                            >
+                              {d}
+                            </button>
+                          )
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1141,8 +1032,6 @@ export default function TerminePage() {
                           }
                         );
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        // Refetch um myMealSignup + Count korrekt zu
-                        // bekommen
                         await loadTermine();
                         setSignupOpen(null);
                         setSignupGuests([]);
@@ -1154,9 +1043,155 @@ export default function TerminePage() {
                     className="mt-1 w-full rounded-full bg-amber-400 py-1.5 text-[10px] font-bold uppercase tracking-wider text-dark"
                   >
                     Anmelden
-                    {signupGuests.length > 0 && ` (+${signupGuests.length})`}
+                    {signupGuests.length > 0 &&
+                      ` (+${signupGuests.length})`}
                   </button>
                 </div>
+              )}
+            </div>
+          );
+
+          return (
+            <div
+              key={t.id}
+              className="rounded-lg border border-gray-800 bg-white/5 p-3 transition-colors hover:border-gray-700"
+            >
+              {/* Kopf: Datum + Aktionen */}
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-orange-300">
+                  {formatDateUpper(t.date)}
+                </p>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => exportIcs(t)}
+                    className="rounded px-1.5 py-0.5 font-mono text-[9px] text-gray-500 hover:text-orange-300"
+                    title="In Kalender exportieren"
+                  >
+                    📅
+                  </button>
+                  {canEdit && (
+                    <>
+                      <button
+                        onClick={() => openEditTermin(t)}
+                        className="rounded px-1.5 py-0.5 text-[12px] text-gray-500 hover:text-orange-300"
+                        title="Bearbeiten"
+                        aria-label="Termin bearbeiten"
+                      >
+                        ✎
+                      </button>
+                      <button
+                        onClick={() => deleteTermin(t.id)}
+                        className="rounded px-1.5 py-0.5 text-[14px] leading-none text-gray-500 hover:text-red-400"
+                        title="Löschen"
+                        aria-label="Termin löschen"
+                      >
+                        ×
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Titel + Organisator — klickbar */}
+              <Link href={`/termine/${t.id}`} className="block">
+                <h3 className="mt-0.5 text-sm font-medium text-white">
+                  {t.title}
+                  {t.type === "sitzung" && t.withDinner && (
+                    <span className="ml-1 text-[10px] font-normal text-gray-500">
+                      inkl. Nachtessen
+                    </span>
+                  )}
+                </h3>
+                {t.organizer && (
+                  <p className="mt-0.5 text-[10px] text-gray-500">
+                    organisiert von {t.organizer}
+                  </p>
+                )}
+                {t.type === "sonstige" && t.createdBy && !t.organizer && (
+                  <p className="mt-0.5 text-[10px] text-gray-500">
+                    erstellt von {t.createdBy}
+                  </p>
+                )}
+              </Link>
+
+              {/* Sonstige: einfacher Block */}
+              {t.type === "sonstige" && (
+                <div className="mt-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-600/20 px-2.5 py-0.5 font-mono text-[10px] font-bold text-gray-300 ring-1 ring-gray-600/40">
+                    {t.time}
+                    {t.withAttendance && (
+                      <span className="font-normal text-gray-400">
+                        · {t.attendanceCount} dabei
+                      </span>
+                    )}
+                  </span>
+                  {t.location && (
+                    <p className="mt-1.5 text-[10px] text-gray-500">
+                      📍 {t.location}
+                    </p>
+                  )}
+                  {(t.agendaCount > 0 || t.commentCount > 0) && (
+                    <div className="mt-1 flex items-center gap-3 text-[10px] text-gray-600">
+                      {t.agendaCount > 0 && (
+                        <span>{t.agendaCount} Traktanden</span>
+                      )}
+                      {t.commentCount > 0 && <span>💬 {t.commentCount}</span>}
+                    </div>
+                  )}
+                  {t.withAttendance && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        onClick={() =>
+                          setAttendance(
+                            t.id,
+                            t.myAttendance === "going" ? null : "going"
+                          )
+                        }
+                        className={`flex-1 rounded-full py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                          t.myAttendance === "going"
+                            ? "bg-accent text-dark"
+                            : "border border-accent/40 text-accent hover:bg-accent/10"
+                        }`}
+                      >
+                        {t.myAttendance === "going" ? "✓ Dabei" : "Anmelden"}
+                      </button>
+                      <button
+                        onClick={() =>
+                          setAttendance(
+                            t.id,
+                            t.myAttendance === "not-going" ? null : "not-going"
+                          )
+                        }
+                        className={`flex-1 rounded-full py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                          t.myAttendance === "not-going"
+                            ? "bg-gray-600 text-white"
+                            : "border border-gray-700 text-gray-500 hover:bg-white/5"
+                        }`}
+                      >
+                        {t.myAttendance === "not-going"
+                          ? "✗ Abgemeldet"
+                          : "Abmelden"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Sitzung + Essen: zwei eigenständige Blöcke, zeitlich sortiert */}
+              {t.type !== "sonstige" && (
+                <>
+                  {essenFirst ? (
+                    <>
+                      {essenBlock}
+                      {sitzungBlock}
+                    </>
+                  ) : (
+                    <>
+                      {sitzungBlock}
+                      {essenBlock}
+                    </>
+                  )}
+                </>
               )}
             </div>
           );
