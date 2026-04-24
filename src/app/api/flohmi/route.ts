@@ -40,6 +40,7 @@ export async function GET() {
       id: i.id,
       title: i.title,
       description: i.description,
+      price: i.price ?? null,
       images: i.images.map((img) => img.data),
       createdBy: i.createdBy.name,
       createdById: i.createdBy.id,
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
   const body = (await req.json()) as {
     title?: unknown;
     description?: unknown;
+    price?: unknown;
     images?: unknown;
   };
   const title = typeof body.title === "string" ? body.title.trim() : "";
@@ -76,6 +78,10 @@ export async function POST(req: Request) {
   }
   const description =
     typeof body.description === "string" ? body.description : "";
+  const price =
+    typeof body.price === "string" && body.price.trim() !== ""
+      ? body.price.trim()
+      : null;
 
   const imagesInput = Array.isArray(body.images)
     ? (body.images as unknown[]).filter((x): x is string => typeof x === "string")
@@ -101,6 +107,7 @@ export async function POST(req: Request) {
     data: {
       title,
       description,
+      price,
       image: imagesInput[0] ?? null,
       createdById: session.user.id,
       images: {
@@ -126,6 +133,7 @@ export async function POST(req: Request) {
     id: created.id,
     title: created.title,
     description: created.description,
+    price: created.price ?? null,
     images: created.images.map((img) => img.data),
     createdBy: created.createdBy.name,
     createdById: created.createdBy.id,

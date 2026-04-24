@@ -325,6 +325,7 @@ model FlohmiInserat {
   id          String           @id @default(cuid())
   title       String
   description String           @default("")
+  price       String?
   // Erstes Bild (Backwards-Compat / Thumbnail)
   image       String?
   images      FlohmiImage[]

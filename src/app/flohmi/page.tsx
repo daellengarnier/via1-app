@@ -17,6 +17,7 @@ interface Inserat {
   id: string;
   title: string;
   description: string;
+  price: string | null;
   images: string[];
   createdBy: string;
   createdById: string;
@@ -40,6 +41,8 @@ export default function FlohmiPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [newPrice, setNewPrice] = useState("");
+  const [newPriceType, setNewPriceType] = useState<"gratis" | "preis">("gratis");
   const [newImages, setNewImages] = useState<string[]>([]);
 
   // Detail-Modal
@@ -78,6 +81,7 @@ export default function FlohmiPage() {
     e.preventDefault();
     if (!newTitle.trim()) return;
     try {
+      const priceValue = newPriceType === "gratis" ? "Gratis" : newPrice.trim();
       if (editingId) {
         const res = await fetch(`/api/flohmi/${editingId}`, {
           method: "PATCH",
@@ -85,6 +89,7 @@ export default function FlohmiPage() {
           body: JSON.stringify({
             title: newTitle,
             description: newDesc,
+            price: priceValue || null,
             images: newImages,
           }),
         });
@@ -100,6 +105,7 @@ export default function FlohmiPage() {
           body: JSON.stringify({
             title: newTitle,
             description: newDesc,
+            price: priceValue || null,
             images: newImages,
           }),
         });
@@ -109,6 +115,8 @@ export default function FlohmiPage() {
       }
       setNewTitle("");
       setNewDesc("");
+      setNewPrice("");
+      setNewPriceType("gratis");
       setNewImages([]);
       setEditingId(null);
       setShowCreate(false);
@@ -122,6 +130,13 @@ export default function FlohmiPage() {
     setEditingId(ins.id);
     setNewTitle(ins.title);
     setNewDesc(ins.description);
+    if (ins.price && ins.price !== "Gratis") {
+      setNewPriceType("preis");
+      setNewPrice(ins.price);
+    } else {
+      setNewPriceType("gratis");
+      setNewPrice("");
+    }
     setNewImages([...ins.images]);
     setShowCreate(true);
     setSelectedId(null);
@@ -298,6 +313,45 @@ export default function FlohmiPage() {
             />
           </div>
           <div className="mb-3">
+            <label className="mb-1 block text-xs text-gray-400">Preis</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setNewPriceType("gratis");
+                  setNewPrice("");
+                }}
+                className={`flex-1 rounded py-1.5 font-mono text-xs font-bold transition-colors ${
+                  newPriceType === "gratis"
+                    ? "bg-pink-400 text-dark"
+                    : "border border-gray-700 text-gray-400 hover:text-white"
+                }`}
+              >
+                Gratis
+              </button>
+              <button
+                type="button"
+                onClick={() => setNewPriceType("preis")}
+                className={`flex-1 rounded py-1.5 font-mono text-xs font-bold transition-colors ${
+                  newPriceType === "preis"
+                    ? "bg-pink-400 text-dark"
+                    : "border border-gray-700 text-gray-400 hover:text-white"
+                }`}
+              >
+                Preis
+              </button>
+            </div>
+            {newPriceType === "preis" && (
+              <input
+                type="text"
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+                placeholder="z.B. CHF 10.–"
+                className="mt-2 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-pink-400 focus:outline-none"
+              />
+            )}
+          </div>
+          <div className="mb-3">
             <label className="mb-1 block text-xs text-gray-400">
               Fotos{" "}
               <span className="text-gray-600">
@@ -432,6 +486,17 @@ export default function FlohmiPage() {
                 >
                   {ins.title}
                 </h3>
+                {ins.price && (
+                  <span
+                    className={`mt-0.5 inline-block rounded px-1.5 py-0.5 font-mono text-[9px] font-bold ${
+                      ins.price === "Gratis"
+                        ? "bg-accent/15 text-accent"
+                        : "bg-pink-500/15 text-pink-300"
+                    }`}
+                  >
+                    {ins.price}
+                  </span>
+                )}
                 <p className="mt-0.5 line-clamp-2 text-[10px] text-gray-500">
                   {ins.description}
                 </p>
@@ -548,6 +613,17 @@ export default function FlohmiPage() {
                   <h2 className="text-lg font-semibold text-white">
                     {selected.title}
                   </h2>
+                  {selected.price && (
+                    <span
+                      className={`mt-1 inline-block rounded px-2 py-0.5 font-mono text-xs font-bold ${
+                        selected.price === "Gratis"
+                          ? "bg-accent/15 text-accent"
+                          : "bg-pink-500/15 text-pink-300"
+                      }`}
+                    >
+                      {selected.price}
+                    </span>
+                  )}
                   <p className="mt-1 text-sm text-gray-400">
                     {selected.description}
                   </p>

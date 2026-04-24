@@ -29,6 +29,7 @@ export async function PATCH(
   const body = (await req.json()) as {
     title?: unknown;
     description?: unknown;
+    price?: unknown;
     images?: unknown;
   };
 
@@ -38,6 +39,12 @@ export async function PATCH(
   }
   if (typeof body.description === "string") {
     data.description = body.description;
+  }
+  if (body.price !== undefined) {
+    data.price =
+      typeof body.price === "string" && body.price.trim() !== ""
+        ? body.price.trim()
+        : null;
   }
 
   // Bilder: wenn gesetzt, alte loeschen und neue anlegen
@@ -85,6 +92,7 @@ export async function PATCH(
     id: updated.id,
     title: updated.title,
     description: updated.description,
+    price: updated.price ?? null,
     images: updated.images.map((i) => i.data),
     createdBy: updated.createdBy.name,
     createdById: updated.createdById,

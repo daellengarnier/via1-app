@@ -193,43 +193,45 @@ export function HamburgerMenu() {
   return (
     <>
       {/* Notification Bell — LINKS */}
-      <button
-        onClick={() => setShowNotifs(!showNotifs)}
-        className="fixed left-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-accent"
-        aria-label="Benachrichtigungen"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5">
-          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M13.73 21a2 2 0 01-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        {notifCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-secondary text-[9px] font-bold text-white">
-            {notifCount}
-          </span>
-        )}
-      </button>
+      <div className="fixed left-4 top-4 z-40 flex items-center gap-2">
+        <button
+          onClick={() => setShowNotifs(!showNotifs)}
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-accent"
+          aria-label="Benachrichtigungen"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M13.73 21a2 2 0 01-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {notifCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-secondary text-[9px] font-bold text-white">
+              {notifCount}
+            </span>
+          )}
+        </button>
 
-      {/* Game Badge — unter der Glocke */}
-      <button
-        onClick={() => (window.location.href = "/tetris")}
-        className="fixed left-4 top-16 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-accent"
-        aria-label="Block-Puzzle spielen"
-        title={
-          topScore && topScore > 0
-            ? `🏆 Highscore: ${topScore}`
-            : "Block-Puzzle spielen"
-        }
-      >
-        {topScore !== null && topScore > 0 ? (
-          <span className="font-mono text-[11px] font-bold text-white">
-            {topScore > 9999
-              ? `${Math.floor(topScore / 1000)}k`
-              : topScore}
-          </span>
-        ) : (
-          <span className="text-sm text-white">🎮</span>
-        )}
-      </button>
+        {/* Game Badge — neben der Glocke */}
+        <button
+          onClick={() => (window.location.href = "/tetris")}
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-accent"
+          aria-label="Block-Puzzle spielen"
+          title={
+            topScore && topScore > 0
+              ? `🏆 Highscore: ${topScore}`
+              : "Block-Puzzle spielen"
+          }
+        >
+          {topScore !== null && topScore > 0 ? (
+            <span className="font-mono text-[11px] font-bold text-white">
+              {topScore > 9999
+                ? `${Math.floor(topScore / 1000)}k`
+                : topScore}
+            </span>
+          ) : (
+            <span className="text-sm text-white">🎮</span>
+          )}
+        </button>
+      </div>
 
       {/* Hamburger Button — RECHTS */}
       <button
@@ -246,7 +248,7 @@ export function HamburgerMenu() {
       {showNotifs && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setShowNotifs(false)} />
-          <div className="fixed left-4 top-16 z-50 w-72 rounded-lg border border-gray-800 bg-black/95 p-3 shadow-xl backdrop-blur-sm">
+          <div className="fixed left-4 top-[60px] z-50 w-72 rounded-lg border border-gray-800 bg-black/95 p-3 shadow-xl backdrop-blur-sm">
             <div className="mb-2 flex items-center justify-between">
               <p className="font-display text-[10px] font-bold uppercase tracking-widest text-accent">
                 BENACHRICHTIGUNGEN
