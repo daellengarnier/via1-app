@@ -275,9 +275,17 @@ export default function FlohmiPage() {
               setShowCreate(true);
             }
           }}
-          className="rounded-full bg-pink-500 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-dark"
+          className={`rounded-full px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider ${
+            showCreate
+              ? "border border-gray-700 text-gray-400"
+              : "bg-pink-500 text-dark"
+          }`}
         >
-          {editingId ? "Inserat bearbeiten" : "+ Neues Inserat"}
+          {showCreate
+            ? "Abbrechen"
+            : editingId
+              ? "Inserat bearbeiten"
+              : "+ Neues Inserat"}
         </button>
       </div>
 
@@ -407,6 +415,8 @@ export default function FlohmiPage() {
                 setEditingId(null);
                 setNewTitle("");
                 setNewDesc("");
+                setNewPrice("");
+                setNewPriceType("gratis");
                 setNewImages([]);
               }}
               className="rounded px-4 py-2 text-xs text-gray-400 hover:text-white"

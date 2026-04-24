@@ -351,9 +351,17 @@ export default function TerminePage() {
               setShowCreate(true);
             }
           }}
-          className="rounded-full border border-orange-400/50 bg-orange-400/15 px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-orange-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors hover:bg-orange-400/25"
+          className={`rounded-full px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider transition-colors ${
+            showCreate
+              ? "border border-gray-700 text-gray-400"
+              : "border border-orange-400/50 bg-orange-400/15 text-orange-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md hover:bg-orange-400/25"
+          }`}
         >
-          {editingId ? "Termin bearbeiten" : "+ Neuer Termin"}
+          {showCreate
+            ? "Abbrechen"
+            : editingId
+              ? "Termin bearbeiten"
+              : "+ Neuer Termin"}
         </button>
       </div>
 

@@ -93,9 +93,15 @@ function calcAge(birthday: string): number | null {
 function UserProfileModal({
   user,
   onClose,
+  isAdmin,
+  currentUserId,
+  onDelete,
 }: {
   user: ApiUser;
   onClose: () => void;
+  isAdmin: boolean;
+  currentUserId: string;
+  onDelete: (id: string, name: string) => void;
 }) {
   const age = user.birthday ? calcAge(user.birthday) : null;
   return (
@@ -171,6 +177,14 @@ function UserProfileModal({
                 Noch keine weiteren Infos hinterlegt.
               </p>
             )}
+          {isAdmin && user.id !== currentUserId && (
+            <button
+              onClick={() => onDelete(user.id, user.name)}
+              className="mt-4 w-full rounded-lg border border-red-500/40 bg-red-500/10 py-2 font-mono text-[10px] font-bold uppercase tracking-wider text-red-300 hover:bg-red-500/20"
+            >
+              User löschen
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -383,6 +397,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 export default function BewohnendePage() {
   const { data: session } = useSession();
   const currentUserId = session?.user?.id ?? "";
+  const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const [apiUsers, setApiUsers] = useState<ApiUser[]>([]);
   const [selectedWg, setSelectedWg] = useState<Wg>(wgs[0]!);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
@@ -397,12 +412,37 @@ export default function BewohnendePage() {
     Map<string, { subtenantName: string; fromDate: string; toDate: string }>
   >(new Map());
 
-  useEffect(() => {
+  function loadUsers() {
     fetch("/api/users")
       .then((r) => (r.ok ? r.json() : []))
       .then((u: ApiUser[]) => setApiUsers(u))
       .catch(() => {});
+  }
+
+  useEffect(() => {
+    loadUsers();
   }, []);
+
+  async function deleteUser(id: string, name: string) {
+    if (
+      !confirm(
+        `"${name}" wirklich löschen?\n\nAlle von diesem User erstellten Inhalte werden ebenfalls gelöscht.`
+      )
+    )
+      return;
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        alert(data.error ?? "Löschen fehlgeschlagen.");
+        return;
+      }
+      setSelectedUser(null);
+      loadUsers();
+    } catch {
+      alert("Netzwerkfehler.");
+    }
+  }
 
   // Schaeden-Indikatoren laden
   const loadDamages = () => {
@@ -714,6 +754,9 @@ export default function BewohnendePage() {
         <UserProfileModal
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
+          isAdmin={isAdmin}
+          currentUserId={currentUserId}
+          onDelete={deleteUser}
         />
       )}
 
