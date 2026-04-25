@@ -1047,8 +1047,6 @@ export default function TerminePage() {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
-                              diet: "Fleisch",
-                              allergies: "",
                               guests: signupGuests.map((g) => ({
                                 name: g.name,
                                 diet: g.diet,

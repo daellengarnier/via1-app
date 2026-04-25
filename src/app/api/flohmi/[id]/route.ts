@@ -96,10 +96,12 @@ export async function PATCH(
     images: updated.images.map((i) => i.data),
     createdBy: updated.createdBy.name,
     createdById: updated.createdById,
-    createdAt: updated.createdAt.toISOString(),
+    createdAt: updated.createdAt.toISOString().split("T")[0],
     takenBy: updated.takenBy?.name ?? null,
     takenById: updated.takenById,
-    takenAt: updated.takenAt?.toISOString() ?? null,
+    takenAt: updated.takenAt
+      ? updated.takenAt.toISOString().split("T")[0]
+      : null,
     comments: updated.comments.map((c) => ({
       id: c.id,
       author: c.author.name,

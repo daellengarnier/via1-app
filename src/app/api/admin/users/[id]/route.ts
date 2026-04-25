@@ -49,9 +49,6 @@ export async function DELETE(
       data: { createdById: null },
     });
     await tx.hausbuchArticle.deleteMany({
-      where: { updatedById: userId, createdById: { not: null } },
-    });
-    await tx.hausbuchArticle.deleteMany({
       where: { updatedById: userId },
     });
     await tx.roomDamage.updateMany({

@@ -233,8 +233,6 @@ export default function TerminDetailPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          diet: myDiet,
-          allergies: "",
           guests: signupGuestDetails,
         }),
       });

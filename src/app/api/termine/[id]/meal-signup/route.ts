@@ -169,6 +169,7 @@ export async function PATCH(
     diet: dietToLabel(updated.diet),
     allergies: updated.allergies,
     guestDetails: updated.guests.map((g) => ({
+      name: g.name,
       diet: dietToLabel(g.diet),
       allergies: g.allergies,
     })),
