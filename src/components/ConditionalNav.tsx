@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 
-const publicPaths = ["/login", "/setup"];
+const publicPaths = ["/login", "/setup", "/registrieren"];
 const hiddenPaths = ["/tetris"];
 
 export function ConditionalNav() {

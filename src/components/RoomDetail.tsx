@@ -1295,7 +1295,7 @@ function HandoverModal({
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-400">
-            Schäden fotografiert (Mock: {damageCount})
+            Schäden fotografiert ({damageCount})
           </label>
           <button
             type="button"

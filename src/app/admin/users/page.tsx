@@ -12,7 +12,6 @@ interface AdminUser {
   roles: string[];
   passwordSet: boolean;
   hasSetupToken: boolean;
-  setupToken: string | null;
   createdAt: string;
   updatedAt: string;
   wgName: string | null;

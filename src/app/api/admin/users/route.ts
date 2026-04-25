@@ -45,7 +45,6 @@ export async function GET() {
       roles: u.roles,
       passwordSet: u.passwordSet,
       hasSetupToken: !!u.setupToken,
-      setupToken: u.setupToken,
       createdAt: u.createdAt.toISOString(),
       updatedAt: u.updatedAt.toISOString(),
       wgName: u.room?.wg.name ?? null,
