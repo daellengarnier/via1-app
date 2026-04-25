@@ -52,3 +52,23 @@ export async function PUT(
 
   return NextResponse.json({ status });
 }
+
+// DELETE /api/termine/[id]/attendance — Admin: User-Attendance entfernen
+// Body: { userId: string }
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.roles?.includes("ADMIN")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const body = (await req.json()) as { userId?: string };
+  if (!body.userId) {
+    return NextResponse.json({ error: "userId erforderlich" }, { status: 400 });
+  }
+  await prisma.attendance.deleteMany({
+    where: { terminId: params.id, userId: body.userId },
+  });
+  return NextResponse.json({ ok: true });
+}

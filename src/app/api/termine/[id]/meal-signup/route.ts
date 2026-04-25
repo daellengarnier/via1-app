@@ -180,7 +180,7 @@ export async function PATCH(
 // (inkl. aller Gaeste). Fuer "nur mich abmelden aber Gaeste bleiben"
 // bitte PATCH mit { goingSelf: false } verwenden.
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
@@ -188,8 +188,19 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Admin kann anderen User entfernen via { userId: "..." }
+  let targetUserId = session.user.id;
+  try {
+    const body = (await req.json()) as { userId?: string };
+    if (body.userId && session.user.roles?.includes("ADMIN")) {
+      targetUserId = body.userId;
+    }
+  } catch {
+    // Kein Body = eigener User
+  }
+
   await prisma.mealSignup.deleteMany({
-    where: { terminId: params.id, userId: session.user.id },
+    where: { terminId: params.id, userId: targetUserId },
   });
   return NextResponse.json({ ok: true });
 }

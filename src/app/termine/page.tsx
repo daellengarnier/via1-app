@@ -152,6 +152,42 @@ export default function TerminePage() {
   const [signupOpen, setSignupOpen] = useState<string | null>(null);
   const [signupGuests, setSignupGuests] = useState<SignupGuest[]>([]);
 
+  // Detail-Popup für Anmeldungen
+  interface DetailPopupData {
+    terminId: string;
+    type: "sitzung" | "essen";
+    title: string;
+    anwesend: { id: string; name: string }[];
+    abgemeldet: { id: string; name: string }[];
+    mealSignups: {
+      userId: string;
+      name: string;
+      goingSelf: boolean;
+      diet: string;
+      allergies: string;
+      guestDetails: { name: string; diet: string }[];
+    }[];
+  }
+  const [detailPopup, setDetailPopup] = useState<DetailPopupData | null>(null);
+
+  async function openDetailPopup(terminId: string, type: "sitzung" | "essen", title: string) {
+    try {
+      const res = await fetch(`/api/termine/${terminId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setDetailPopup({
+        terminId,
+        type,
+        title,
+        anwesend: data.anwesend ?? [],
+        abgemeldet: data.abgemeldet ?? [],
+        mealSignups: data.mealSignups ?? [],
+      });
+    } catch {
+      // ignore
+    }
+  }
+
   // Create form state
   const [newType, setNewType] = useState<TerminType>("sitzung");
   const [newTitle, setNewTitle] = useState("");
@@ -729,14 +765,18 @@ export default function TerminePage() {
           /* ─── Sitzung-Block ─── */
           const sitzungBlock = showSitzungBadge && (
             <div className="mt-2 rounded-lg border border-accent/20 bg-accent/5 p-2.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 font-mono text-[10px] font-bold text-accent ring-1 ring-accent/40">
+              <button
+                type="button"
+                onClick={() => t.withAttendance && openDetailPopup(t.id, "sitzung", t.title)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 font-mono text-[10px] font-bold text-accent ring-1 ring-accent/40 transition-colors hover:bg-accent/25"
+              >
                 SITZUNG · {sitzungTime}
                 {t.withAttendance && (
                   <span className="font-normal text-accent/80">
                     · {t.attendanceCount} dabei
                   </span>
                 )}
-              </span>
+              </button>
               {t.location && (
                 <p className="mt-1.5 text-[10px] text-gray-500">
                   📍 {t.location}
@@ -792,7 +832,11 @@ export default function TerminePage() {
           /* ─── Essen-Block ─── */
           const essenBlock = hasEssen && (
             <div className="mt-2 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-2.5 py-0.5 font-mono text-[10px] font-bold text-amber-300 ring-1 ring-amber-400/40">
+              <button
+                type="button"
+                onClick={() => openDetailPopup(t.id, "essen", t.title)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-2.5 py-0.5 font-mono text-[10px] font-bold text-amber-300 ring-1 ring-amber-400/40 transition-colors hover:bg-amber-400/25"
+              >
                 ESSEN · {essenTime}
                 <span className="font-normal text-amber-200/90">
                   · {t.mealSignupCount}
@@ -802,7 +846,7 @@ export default function TerminePage() {
                     ({diet.fleisch} 🍖 {diet.vegi} 🥗 {diet.vegan} 🌱)
                   </span>
                 )}
-              </span>
+              </button>
               {essenLocation && (
                 <p className="mt-1.5 text-[10px] text-gray-500">
                   📍 {essenLocation}
@@ -1232,6 +1276,166 @@ export default function TerminePage() {
         <p className="mt-8 text-center text-gray-600">
           Keine Termine in dieser Ansicht.
         </p>
+      )}
+
+      {/* Detail-Popup: Anmeldungen */}
+      {detailPopup && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            onClick={() => setDetailPopup(null)}
+          />
+          <div className="fixed inset-x-4 top-[15vh] z-50 mx-auto max-w-md rounded-xl border border-gray-800 bg-dark p-4 shadow-xl">
+            <div className="mb-3 flex items-start justify-between">
+              <div>
+                <p className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                  {detailPopup.type === "sitzung" ? "Sitzung" : "Essen"} — {detailPopup.title}
+                </p>
+              </div>
+              <button
+                onClick={() => setDetailPopup(null)}
+                className="text-gray-500 hover:text-white"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="max-h-[55vh] overflow-y-auto">
+              {detailPopup.type === "sitzung" && (
+                <>
+                  {detailPopup.anwesend.length > 0 && (
+                    <div className="mb-3">
+                      <p className="mb-1 font-mono text-[9px] font-bold uppercase tracking-wider text-accent">
+                        Dabei ({detailPopup.anwesend.length})
+                      </p>
+                      <div className="space-y-1">
+                        {detailPopup.anwesend.map((u) => (
+                          <div
+                            key={u.name}
+                            className="flex items-center justify-between rounded bg-accent/5 px-2.5 py-1.5"
+                          >
+                            <span className="text-xs text-white">{u.name}</span>
+                            {isAdmin && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const res = await fetch(
+                                      `/api/termine/${detailPopup.terminId}/attendance`,
+                                      {
+                                        method: "DELETE",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ userId: (u as { id?: string }).id }),
+                                      }
+                                    );
+                                    if (res.ok) {
+                                      await loadTermine();
+                                      openDetailPopup(detailPopup.terminId, "sitzung", detailPopup.title);
+                                    }
+                                  } catch { /* ignore */ }
+                                }}
+                                className="text-[9px] text-gray-600 hover:text-red-400"
+                              >
+                                entfernen
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {detailPopup.abgemeldet.length > 0 && (
+                    <div>
+                      <p className="mb-1 font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500">
+                        Abgemeldet ({detailPopup.abgemeldet.length})
+                      </p>
+                      <div className="space-y-1">
+                        {detailPopup.abgemeldet.map((u) => (
+                          <div
+                            key={u.name}
+                            className="rounded bg-white/5 px-2.5 py-1.5"
+                          >
+                            <span className="text-xs text-gray-500 line-through">{u.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {detailPopup.anwesend.length === 0 && detailPopup.abgemeldet.length === 0 && (
+                    <p className="text-center text-xs text-gray-600">
+                      Noch keine Anmeldungen.
+                    </p>
+                  )}
+                </>
+              )}
+
+              {detailPopup.type === "essen" && (
+                <>
+                  {detailPopup.mealSignups.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {detailPopup.mealSignups.map((s) => (
+                        <div
+                          key={s.name}
+                          className={`rounded px-2.5 py-1.5 ${
+                            s.goingSelf ? "bg-amber-400/5" : "bg-white/5 opacity-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`text-xs ${s.goingSelf ? "text-white" : "text-gray-500 line-through"}`}>
+                              {s.name}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-[9px] text-gray-500">
+                                {s.diet}
+                                {s.allergies ? ` · ${s.allergies}` : ""}
+                              </span>
+                              {isAdmin && s.goingSelf && (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const res = await fetch(
+                                        `/api/termine/${detailPopup.terminId}/meal-signup`,
+                                        {
+                                          method: "DELETE",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ userId: (s as { userId?: string }).userId }),
+                                        }
+                                      );
+                                      if (res.ok) {
+                                        await loadTermine();
+                                        openDetailPopup(detailPopup.terminId, "essen", detailPopup.title);
+                                      }
+                                    } catch { /* ignore */ }
+                                  }}
+                                  className="text-[9px] text-gray-600 hover:text-red-400"
+                                >
+                                  entfernen
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          {s.guestDetails.length > 0 && (
+                            <div className="mt-1 space-y-0.5 border-t border-gray-800/50 pt-1">
+                              {s.guestDetails.map((g, gi) => (
+                                <div key={gi} className="flex items-center justify-between text-[10px] text-gray-400">
+                                  <span>+ {g.name || `Gast ${gi + 1}`}</span>
+                                  <span className="font-mono text-gray-600">{g.diet}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-xs text-gray-600">
+                      Noch keine Anmeldungen.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
