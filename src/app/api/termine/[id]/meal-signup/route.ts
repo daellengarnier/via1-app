@@ -43,10 +43,14 @@ export async function POST(
     goingSelf?: unknown;
   };
   const goingSelf = body.goingSelf !== false; // default true
-  const dietStr = typeof body.diet === "string" ? body.diet : "Fleisch";
-  const diet = toDiet(dietStr) ?? "FLEISCH";
-  const allergies =
-    typeof body.allergies === "string" ? body.allergies : "";
+
+  // Diet und Allergien aus dem User-Profil laden (nicht vom Client)
+  const profile = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { diet: true, allergies: true },
+  });
+  const diet = profile?.diet ?? "FLEISCH";
+  const allergies = profile?.allergies ?? "";
   const guestsInput = Array.isArray(body.guests)
     ? (body.guests as GuestInput[])
     : [];
@@ -125,13 +129,18 @@ export async function PATCH(
   });
 
   if (!existing) {
-    // Nicht existent -> anlegen mit default diet und goingSelf
+    // Nicht existent -> anlegen mit Profil-Diet und goingSelf
+    const profile = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { diet: true, allergies: true },
+    });
     const created = await prisma.mealSignup.create({
       data: {
         terminId: params.id,
         userId: session.user.id,
         goingSelf: body.goingSelf,
-        diet: "FLEISCH",
+        diet: profile?.diet ?? "FLEISCH",
+        allergies: profile?.allergies ?? "",
       },
       include: { user: true, guests: true },
     });

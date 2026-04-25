@@ -100,8 +100,16 @@ export default function TerminDetailPage() {
   const [locationMode, setLocationMode] = useState<"wg" | "custom">("wg");
   const [newComment, setNewComment] = useState("");
 
-  // Aus Profil (Mock — bis wir ein echtes Profil haben)
-  const myDiet = "Fleisch";
+  const [myDiet, setMyDiet] = useState("Fleisch");
+
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { diet?: string } | null) => {
+        if (data?.diet) setMyDiet(data.diet);
+      })
+      .catch(() => {});
+  }, []);
 
   const WG_OPTIONS = [
     "Nordwind",
