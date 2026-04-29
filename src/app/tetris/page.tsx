@@ -372,7 +372,15 @@ export default function TetrisPage() {
   }
 
   useEffect(() => {
-    const prevent = (e: TouchEvent) => e.preventDefault();
+    const prevent = (e: TouchEvent) => {
+      let el = e.target as HTMLElement | null;
+      while (el) {
+        const ov = getComputedStyle(el).overflowY;
+        if (ov === "auto" || ov === "scroll") return;
+        el = el.parentElement;
+      }
+      e.preventDefault();
+    };
     document.body.style.overflow = "hidden";
     document.addEventListener("touchmove", prevent, { passive: false });
     return () => { document.body.style.overflow = ""; document.removeEventListener("touchmove", prevent); };
