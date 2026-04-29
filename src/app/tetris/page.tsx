@@ -14,7 +14,11 @@ const COLS = 10;
 const ROWS = 20;
 const COLORS = [
   "#b8f068", "#ff6b2b", "#a78bfa", "#60a5fa",
-  "#f472b6", "#fbbf24", "#f87171",
+  "#f472b6", "#fbbf24", "#f87171", "#34d399",
+  "#e879f9", "#22d3ee", "#fb923c", "#818cf8",
+  "#f43f5e", "#a3e635", "#2dd4bf", "#c084fc",
+  "#facc15", "#38bdf8", "#fb7185", "#4ade80",
+  "#e11d48", "#7c3aed", "#06b6d4", "#ea580c",
 ];
 const PIECES = [
   [[1, 1, 1, 1]],
@@ -127,7 +131,7 @@ function TetrisGame({
     const g = gameRef.current;
     const idx = Math.floor(Math.random() * PIECES.length);
     g.piece = PIECES[idx]!;
-    g.colorIdx = idx;
+    g.colorIdx = Math.floor(Math.random() * COLORS.length);
     g.px = Math.floor((COLS - g.piece[0]!.length) / 2);
     g.py = -g.piece.length;
     if (collides(g.grid, g.piece, g.px, 0)) {
