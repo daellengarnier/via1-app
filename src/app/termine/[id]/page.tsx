@@ -525,58 +525,63 @@ export default function TerminDetailPage() {
       {/* Header */}
       <button
         onClick={() => router.push("/termine")}
-        className="mb-4 ml-14 text-sm text-gray-500 hover:text-white"
+        className="mb-4 ml-28 text-sm text-gray-500 hover:text-white"
       >
         ← Termine
       </button>
 
-      <div className="mb-6">
-        <p className="font-mono text-[11px] font-bold uppercase tracking-wider text-orange-300">
+      <div className="mb-5">
+        <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-orange-300">
           {formatDate(termin.date).toUpperCase()}
         </p>
         <h1 className="mt-0.5 text-lg font-medium text-white">
           {termin.title}
           {termin.type === "sitzung" && termin.withDinner && (
-            <> inkl. Nachtessen</>
-          )}
-          {termin.organizer && (
-            <span className="text-gray-500">
-              {" "}(organisiert von {termin.organizer})
+            <span className="ml-1 text-[11px] font-normal text-gray-500">
+              inkl. Nachtessen
             </span>
           )}
         </h1>
-        {/* Zeiten */}
-        {termin.type === "sitzung" && termin.withDinner && termin.dinnerTime && (
-          <p className="mt-1 text-sm text-gray-400">
-            Essen: {termin.dinnerTime}
-            {termin.dinnerLocation && ` (${termin.dinnerLocation})`}
+        {termin.organizer && (
+          <p className="mt-0.5 text-[10px] text-gray-600">
+            organisiert von {termin.organizer}
           </p>
         )}
-        {termin.type === "sitzung" && (
-          <p className="text-sm text-gray-400">
-            Sitzung: {termin.time}
-            {termin.location && ` (${termin.location})`}
-          </p>
-        )}
-        {termin.type === "essen" && (
-          <p className="mt-1 text-sm text-gray-400">
-            Essen: {termin.time}
-            {termin.location && ` (${termin.location})`}
-          </p>
-        )}
-        {termin.type === "sonstige" && (
-          <p className="mt-1 text-sm text-gray-400">
-            {termin.time}
-            {termin.location && ` (${termin.location})`}
-          </p>
-        )}
+
+        {/* Zeiten — kompakt */}
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-0.5">
+          {termin.type === "sitzung" && termin.withDinner && termin.dinnerTime && (
+            <p className="text-xs text-gray-400">
+              🍽 {termin.dinnerTime}
+              {termin.dinnerLocation && ` · ${termin.dinnerLocation}`}
+            </p>
+          )}
+          {termin.type === "sitzung" && (
+            <p className="text-xs text-gray-400">
+              📋 {termin.time}
+              {termin.location && ` · ${termin.location}`}
+            </p>
+          )}
+          {termin.type === "essen" && (
+            <p className="text-xs text-gray-400">
+              🍽 {termin.time}
+              {termin.location && ` · ${termin.location}`}
+            </p>
+          )}
+          {termin.type === "sonstige" && (
+            <p className="text-xs text-gray-400">
+              {termin.time}
+              {termin.location && ` · ${termin.location}`}
+            </p>
+          )}
+        </div>
         {termin.dinnerMenu && (
-          <p className="mt-1 text-sm italic text-gray-500">
-            🍽 {termin.dinnerMenu}
+          <p className="mt-1 text-xs italic text-gray-500">
+            {termin.dinnerMenu}
           </p>
         )}
         {termin.type === "sonstige" && termin.createdBy && (
-          <p className="mt-1 text-xs text-gray-600">
+          <p className="mt-0.5 text-[10px] text-gray-600">
             erstellt von {termin.createdBy}
           </p>
         )}
@@ -586,9 +591,9 @@ export default function TerminDetailPage() {
       {isSitzung && (
         <>
           {/* Sitzungsleitung & Protokollführung */}
-          <div className="mb-4 grid grid-cols-2 gap-3">
+          <div className="mb-3 grid grid-cols-2 gap-2">
             <div>
-              <label className="mb-1 block font-mono text-xs text-gray-500">
+              <label className="mb-0.5 block text-[10px] text-gray-600">
                 Sitzungsleitung
               </label>
               <input
@@ -600,11 +605,12 @@ export default function TerminDetailPage() {
                 onBlur={(e) =>
                   patchTermin({ sitzungsleitung: e.target.value })
                 }
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                placeholder="Name…"
+                className="w-full rounded border border-gray-800 bg-gray-900/60 px-2.5 py-1.5 text-xs text-white placeholder-gray-700 focus:border-accent focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1 block font-mono text-xs text-gray-500">
+              <label className="mb-0.5 block text-[10px] text-gray-600">
                 Protokollführung
               </label>
               <input
@@ -616,25 +622,24 @@ export default function TerminDetailPage() {
                 onBlur={(e) =>
                   patchTermin({ protokollfuehrung: e.target.value })
                 }
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                placeholder="Name…"
+                className="w-full rounded border border-gray-800 bg-gray-900/60 px-2.5 py-1.5 text-xs text-white placeholder-gray-700 focus:border-accent focus:outline-none"
               />
             </div>
           </div>
 
           {/* Sitzungsort */}
-          <div className="mb-4">
-            <div className="mb-1 flex items-center justify-between">
-              <label className="block font-mono text-xs text-gray-500">
-                Sitzungsort
-              </label>
-              <div className="flex gap-1 text-[10px]">
+          <div className="mb-3">
+            <div className="mb-0.5 flex items-center justify-between">
+              <label className="text-[10px] text-gray-600">Sitzungsort</label>
+              <div className="flex gap-1">
                 <button
                   type="button"
                   onClick={() => setLocationMode("wg")}
-                  className={`rounded px-2 py-0.5 font-mono uppercase ${
+                  className={`rounded px-2 py-0.5 font-mono text-[9px] uppercase ${
                     locationMode === "wg"
                       ? "bg-accent text-dark"
-                      : "border border-gray-700 text-gray-500"
+                      : "border border-gray-800 text-gray-600"
                   }`}
                 >
                   WG
@@ -642,10 +647,10 @@ export default function TerminDetailPage() {
                 <button
                   type="button"
                   onClick={() => setLocationMode("custom")}
-                  className={`rounded px-2 py-0.5 font-mono uppercase ${
+                  className={`rounded px-2 py-0.5 font-mono text-[9px] uppercase ${
                     locationMode === "custom"
                       ? "bg-accent text-dark"
-                      : "border border-gray-700 text-gray-500"
+                      : "border border-gray-800 text-gray-600"
                   }`}
                 >
                   Anderer Ort
@@ -653,7 +658,7 @@ export default function TerminDetailPage() {
               </div>
             </div>
             {locationMode === "wg" ? (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 {WG_OPTIONS.map((wg) => (
                   <button
                     key={wg}
@@ -662,10 +667,10 @@ export default function TerminDetailPage() {
                       setTermin({ ...termin, location: wg });
                       patchTermin({ location: wg });
                     }}
-                    className={`rounded border px-2 py-2 text-xs transition-colors ${
+                    className={`rounded border px-2 py-1.5 text-[11px] transition-colors ${
                       termin.location === wg
                         ? "border-accent bg-accent/10 text-accent"
-                        : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
+                        : "border-gray-800 bg-gray-900/60 text-gray-500 hover:border-gray-700"
                     }`}
                   >
                     {wg}
@@ -681,22 +686,22 @@ export default function TerminDetailPage() {
                 }
                 onBlur={(e) => patchTermin({ location: e.target.value })}
                 placeholder="z.B. Innenhof, Pyramide, …"
-                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+                className="w-full rounded border border-gray-800 bg-gray-900/60 px-2.5 py-1.5 text-xs text-white placeholder-gray-700 focus:border-accent focus:outline-none"
               />
             )}
           </div>
 
           {/* Anwesend / Abgemeldet */}
-          <div className="mb-4 grid grid-cols-2 gap-3">
+          <div className="mb-3 grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setAttendanceMode("anwesend")}
-              className="rounded-lg border border-gray-800 bg-white/5 p-3 text-left transition-colors hover:border-accent/40"
+              className="rounded-lg border border-gray-800 bg-white/5 p-2.5 text-left transition-colors hover:border-accent/40"
             >
-              <p className="mb-1 font-mono text-xs text-accent">
+              <p className="mb-0.5 font-mono text-[10px] text-accent">
                 Anwesend ({termin.anwesend.length})
               </p>
-              <p className="line-clamp-3 text-xs text-gray-400">
+              <p className="line-clamp-2 text-[10px] leading-relaxed text-gray-500">
                 {termin.anwesend.map((p) => p.name).join(", ") ||
                   "Tippe zum Auswählen…"}
               </p>
@@ -704,12 +709,12 @@ export default function TerminDetailPage() {
             <button
               type="button"
               onClick={() => setAttendanceMode("abgemeldet")}
-              className="rounded-lg border border-gray-800 bg-white/5 p-3 text-left transition-colors hover:border-secondary/40"
+              className="rounded-lg border border-gray-800 bg-white/5 p-2.5 text-left transition-colors hover:border-secondary/40"
             >
-              <p className="mb-1 font-mono text-xs text-secondary">
+              <p className="mb-0.5 font-mono text-[10px] text-secondary">
                 Abgemeldet ({termin.abgemeldet.length})
               </p>
-              <p className="line-clamp-3 text-xs text-gray-400">
+              <p className="line-clamp-2 text-[10px] leading-relaxed text-gray-500">
                 {termin.abgemeldet.map((p) => p.name).join(", ") ||
                   "Tippe zum Auswählen…"}
               </p>
@@ -785,9 +790,16 @@ export default function TerminDetailPage() {
           {/* PDF Export */}
           <button
             onClick={exportPdf}
-            className="mb-6 w-full rounded-lg border border-accent/30 bg-accent/5 py-3 font-mono text-sm text-accent transition-colors hover:bg-accent/10"
+            className="mb-5 flex w-full items-center justify-center gap-2 rounded-lg border border-accent/30 bg-accent/5 py-2.5 text-xs font-semibold text-accent transition-colors hover:bg-accent/10"
           >
-            Protokoll exportieren (TXT)
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="12" y1="18" x2="12" y2="12" />
+              <line x1="9" y1="15" x2="12" y2="18" />
+              <line x1="15" y1="15" x2="12" y2="18" />
+            </svg>
+            Protokoll als PDF exportieren
           </button>
         </>
       )}
