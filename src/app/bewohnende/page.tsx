@@ -507,10 +507,14 @@ export default function BewohnendePage() {
   const zimmer = selectedWg.rooms.filter((r) => r.type === "zimmer");
   const commonRooms = selectedWg.rooms.filter((r) => r.type !== "zimmer");
 
-  // Mapping Zimmer-keyNumber -> API-User
-  const usersByRoom = new Map<string, ApiUser>();
+  // Mapping Zimmer-keyNumber -> API-Users (mehrere pro Zimmer möglich)
+  const usersByRoom = new Map<string, ApiUser[]>();
   for (const u of apiUsers) {
-    if (u.roomKey) usersByRoom.set(u.roomKey, u);
+    if (u.roomKey) {
+      const list = usersByRoom.get(u.roomKey) ?? [];
+      list.push(u);
+      usersByRoom.set(u.roomKey, list);
+    }
   }
 
   const occupiedCount = zimmer.filter((r) =>
@@ -606,8 +610,8 @@ export default function BewohnendePage() {
         </h3>
         <div className="space-y-1.5">
           {zimmer.map((room) => {
-            const user = usersByRoom.get(room.keyNumber) ?? null;
-            const isMine = user?.id === currentUserId;
+            const users = usersByRoom.get(room.keyNumber) ?? [];
+            const isMine = users.some((u) => u.id === currentUserId);
             const hasOpenDamage = damagesByRoom.get(room.keyNumber) ?? false;
             const activeSublet = subletsByRoom.get(room.keyNumber) ?? null;
             return (
@@ -617,7 +621,7 @@ export default function BewohnendePage() {
                 className={`w-full cursor-pointer rounded-lg border px-3 py-2 text-left transition-all ${
                   isMine
                     ? "border-accent bg-accent/10 shadow-[0_0_12px_rgba(184,240,104,0.2)]"
-                    : user
+                    : users.length > 0
                       ? "border-accent/30 bg-accent/5 hover:border-accent/60"
                       : "border-gray-800 bg-gray-900/40 hover:border-gray-600"
                 }`}
@@ -632,31 +636,34 @@ export default function BewohnendePage() {
                   <p className="shrink-0 font-mono text-[10px] text-gray-600">
                     {room.keyNumber}
                   </p>
-                  {user && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedUser(user);
-                        }}
-                        className="shrink-0 rounded-full hover:ring-2 hover:ring-accent/50"
-                        title="Profil ansehen"
-                        aria-label={`Profil von ${user.name}`}
-                      >
-                        <RoundAvatar user={user} size={22} />
-                      </button>
+                  {users.length > 0 && (
+                    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                      {users.map((user) => (
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedUser(user);
+                          }}
+                          className="shrink-0 rounded-full hover:ring-2 hover:ring-accent/50"
+                          title={`Profil von ${user.name}`}
+                          aria-label={`Profil von ${user.name}`}
+                        >
+                          <RoundAvatar user={user} size={22} />
+                        </button>
+                      ))}
                       <span className="min-w-0 flex-1 truncate text-xs font-medium text-white">
-                        {user.name}
+                        {users.map((u) => u.name).join(" & ")}
                         {isMine && (
                           <span className="ml-1 text-[9px] text-accent">
                             (du)
                           </span>
                         )}
                       </span>
-                    </>
+                    </div>
                   )}
-                  {!user && (
+                  {users.length === 0 && (
                     <span className="flex-1 text-[11px] text-gray-600">
                       Frei
                     </span>
@@ -740,6 +747,13 @@ export default function BewohnendePage() {
         <RoomDetail
           room={{ ...selectedRoom, currentResident: undefined }}
           wgName={selectedWg.name}
+          residents={(usersByRoom.get(selectedRoom.keyNumber) ?? []).map((u) => ({
+            id: u.id,
+            name: u.name,
+            fullName: u.fullName,
+            favoriteAnimal: u.favoriteAnimal,
+            avatar: u.avatar,
+          }))}
           onClose={() => {
             setSelectedRoom(null);
             // Schaeden- und Untermiete-Indikatoren auffrischen

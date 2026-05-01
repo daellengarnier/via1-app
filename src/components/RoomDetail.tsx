@@ -34,13 +34,23 @@ interface LiveSublet {
 
 type Tab = "info" | "historie" | "arbeiten" | "schaeden" | "untermiete";
 
+export interface RoomResident {
+  id: string;
+  name: string;
+  fullName: string;
+  favoriteAnimal: string;
+  avatar: string | null;
+}
+
 export function RoomDetail({
   room: initialRoom,
   wgName,
+  residents,
   onClose,
 }: {
   room: Room;
   wgName: string;
+  residents?: RoomResident[];
   onClose: () => void;
 }) {
   const [room, setRoom] = useState<Room>(initialRoom);
@@ -128,6 +138,7 @@ export function RoomDetail({
             <InfoTab
               room={room}
               isPrivate={isPrivate}
+              residents={residents}
               onUpdateKeys={(n) => updateRoom({ keyCount: n })}
               onAddResident={() => setShowAddResident(true)}
               onHandover={() => setShowHandover(true)}
@@ -195,12 +206,14 @@ export function RoomDetail({
 function InfoTab({
   room,
   isPrivate,
+  residents,
   onUpdateKeys,
   onAddResident,
   onHandover,
 }: {
   room: Room;
   isPrivate: boolean;
+  residents?: RoomResident[];
   onUpdateKeys: (n: number) => void;
   onAddResident: () => void;
   onHandover: () => void;
@@ -222,9 +235,39 @@ function InfoTab({
       {isPrivate && (
         <section>
           <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-accent">
-            Aktuelle Bewohner:in
+            {(residents?.length ?? 0) > 1 ? "Bewohner:innen" : "Bewohner:in"}
           </h3>
-          {room.currentResident ? (
+          {residents && residents.length > 0 ? (
+            <div className="space-y-2">
+              {residents.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 p-3"
+                >
+                  {r.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={r.avatar}
+                      alt={r.name}
+                      className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-accent/40"
+                    />
+                  ) : (
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">
+                      {r.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-white">{r.name}</p>
+                    {r.fullName && r.fullName !== r.name && (
+                      <p className="truncate text-[10px] text-gray-600">
+                        {r.fullName}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : room.currentResident ? (
             <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3">
               <div className="flex items-center justify-between">
                 <div>
