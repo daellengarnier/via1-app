@@ -332,12 +332,22 @@ function ArticleView({ article, canEdit, onEdit, onDelete }: { article: Artikel;
   const s = article.structured || {};
   const stepImages = (stepId: string) => article.images.filter((img) => img.stepId === stepId);
   const articleImages = article.images.filter((img) => !img.stepId);
+  const hasStructuredDetails = Boolean(
+    s.location ||
+    s.contact ||
+    s.rules ||
+    s.materials?.filter(Boolean).length ||
+    s.steps?.length ||
+    s.checklist?.filter(Boolean).length ||
+    s.tips?.filter(Boolean).length
+  );
+  const shouldShowFullContent = article.type === "INFO" || !hasStructuredDetails;
   return (
     <div className="border-t border-gray-800 px-4 pb-4 pt-3">
       {article.summary && <p className="mb-3 rounded-lg border border-violet-500/20 bg-violet-500/10 p-3 text-sm text-violet-100">{article.summary}</p>}
 
-      {article.type === "INFO" && <p className="whitespace-pre-line text-sm text-gray-300">{article.content}</p>}
-      {s.intro && article.type !== "INFO" && <p className="mb-3 whitespace-pre-line text-sm text-gray-300">{s.intro}</p>}
+      {shouldShowFullContent && <p className="whitespace-pre-line text-sm text-gray-300">{article.content}</p>}
+      {s.intro && article.type !== "INFO" && hasStructuredDetails && <p className="mb-3 whitespace-pre-line text-sm text-gray-300">{s.intro}</p>}
       {s.location && <InfoBlock title="Ort" text={s.location} />}
       {s.contact && <InfoBlock title="Kontakt / Zuständigkeit" text={s.contact} />}
       {s.materials?.filter(Boolean).length ? <ListBlock title="Material" items={s.materials} /> : null}

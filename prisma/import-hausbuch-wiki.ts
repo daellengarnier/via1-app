@@ -102,11 +102,11 @@ function build(raw: { title: string; lines: string[] }) {
 
 async function main() {
   if (!fs.existsSync(MD_PATH)) throw new Error(`Markdown export fehlt: ${MD_PATH}`);
-  const user = await prisma.user.findFirst({
+  const user = await prisma.user.findFirst({ where: { name: "Yves" } }) || await prisma.user.findFirst({
     where: { roles: { has: "ADMIN" } },
     orderBy: { createdAt: "asc" },
   });
-  if (!user) throw new Error("Kein ADMIN-User gefunden; Import braucht updatedById/createdById.");
+  if (!user) throw new Error("Kein Yves/Admin-User gefunden; Import braucht updatedById/createdById.");
 
   const articles = extractArticles(fs.readFileSync(MD_PATH, "utf8"));
   let created = 0;
