@@ -655,3 +655,17 @@ model KaffeeCurrent {
 
   @@map("kaffee_current")
 }
+
+model Feedback {
+  id          String   @id @default(cuid())
+  type        String
+  title       String
+  description String   @default("")
+  authorName  String
+  authorEmail String
+  githubIssue Int?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("feedbacks")
+}

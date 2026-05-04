@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 const GITHUB_REPO = "daellengarnier/via1-app";
 
@@ -27,55 +28,62 @@ export async function POST(request: Request) {
   }
 
   const githubToken = process.env.GITHUB_TOKEN;
+  let issueNumber: number | null = null;
 
-  if (!githubToken) {
-    return NextResponse.json(
-      { error: "GitHub-Integration nicht konfiguriert." },
-      { status: 500 }
-    );
-  }
+  if (githubToken) {
+    const label = type === "bug" ? "bug" : "idea";
+    const emoji = type === "bug" ? "🐛" : "💡";
 
-  const label = type === "bug" ? "bug" : "idea";
-  const emoji = type === "bug" ? "🐛" : "💡";
+    const issueBody = [
+      `${emoji} **${type === "bug" ? "Bug-Meldung" : "Idee"}** von **${session.user.name}**`,
+      "",
+      description || "_Keine weitere Beschreibung._",
+      "",
+      "---",
+      `_Gemeldet über die via1-app von ${session.user.name}_`,
+    ].join("\n");
 
-  const issueBody = [
-    `${emoji} **${type === "bug" ? "Bug-Meldung" : "Idee"}** von **${session.user.name}**`,
-    "",
-    description || "_Keine weitere Beschreibung._",
-    "",
-    "---",
-    `_Gemeldet über die via1-app von ${session.user.name} (${session.user.email})_`,
-  ].join("\n");
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${GITHUB_REPO}/issues`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${githubToken}`,
+            "Content-Type": "application/json",
+            Accept: "application/vnd.github.v3+json",
+          },
+          body: JSON.stringify({
+            title: `[${type === "bug" ? "Bug" : "Idee"}] ${title}`,
+            body: issueBody,
+            labels: [label],
+          }),
+        }
+      );
 
-  const response = await fetch(
-    `https://api.github.com/repos/${GITHUB_REPO}/issues`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${githubToken}`,
-        "Content-Type": "application/json",
-        Accept: "application/vnd.github.v3+json",
-      },
-      body: JSON.stringify({
-        title: `[${type === "bug" ? "Bug" : "Idee"}] ${title}`,
-        body: issueBody,
-        labels: [label],
-      }),
+      if (response.ok) {
+        const issue = (await response.json()) as { number: number };
+        issueNumber = issue.number;
+      }
+    } catch {
+      // GitHub nicht erreichbar — Feedback wird trotzdem in DB gespeichert
     }
-  );
-
-  if (!response.ok) {
-    return NextResponse.json(
-      { error: "GitHub Issue konnte nicht erstellt werden." },
-      { status: 500 }
-    );
   }
 
-  const issue = (await response.json()) as { number: number; html_url: string };
+  // Immer in der DB speichern
+  await prisma.feedback.create({
+    data: {
+      type,
+      title,
+      description: description || "",
+      authorName: session.user.name ?? "",
+      authorEmail: session.user.email ?? "",
+      githubIssue: issueNumber,
+    },
+  });
 
   return NextResponse.json({
     success: true,
-    issueNumber: issue.number,
-    url: issue.html_url,
+    issueNumber: issueNumber ?? 0,
   });
 }

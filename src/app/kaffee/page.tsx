@@ -267,6 +267,34 @@ export default function KaffeePage() {
   const [showSelect, setShowSelect] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Aktuellen Kaffee bearbeiten
+  const [showEditCurrent, setShowEditCurrent] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editHerkunft, setEditHerkunft] = useState("");
+  const [editDuftnotizen, setEditDuftnotizen] = useState("");
+  const [editFairtrade, setEditFairtrade] = useState(false);
+
+  function openEditCurrent() {
+    setEditName(currentInfo.name);
+    setEditHerkunft(currentInfo.herkunft);
+    setEditDuftnotizen(currentInfo.duftnotizen);
+    setEditFairtrade(currentInfo.fairtrade);
+    setShowEditCurrent(true);
+  }
+
+  function saveEditCurrent(e: React.FormEvent) {
+    e.preventDefault();
+    const name = editName.trim();
+    if (!name) return;
+    applyKaffee({
+      name,
+      herkunft: editHerkunft.trim(),
+      duftnotizen: editDuftnotizen.trim(),
+      fairtrade: editFairtrade,
+    });
+    setShowEditCurrent(false);
+  }
+
   // Eigenen Kaffee erfassen
   const [showCustom, setShowCustom] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -444,12 +472,91 @@ export default function KaffeePage() {
           </a>
         )}
 
-        <button
-          onClick={() => setShowSelect(!showSelect)}
-          className="mt-2 w-full rounded bg-amber-600/20 py-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-600/30"
-        >
-          Bohnen wechseln
-        </button>
+        <div className="mt-2 flex gap-2">
+          <button
+            onClick={() => { setShowSelect(!showSelect); setShowEditCurrent(false); }}
+            className="flex-1 rounded bg-amber-600/20 py-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-600/30"
+          >
+            Bohnen wechseln
+          </button>
+          <button
+            onClick={() => { openEditCurrent(); setShowSelect(false); }}
+            className="rounded border border-amber-600/30 bg-transparent px-3 py-2 text-xs text-amber-300 transition-colors hover:bg-amber-600/10"
+          >
+            ✎
+          </button>
+        </div>
+
+        {/* Aktuellen Kaffee bearbeiten */}
+        {showEditCurrent && (
+          <form
+            onSubmit={saveEditCurrent}
+            className="mt-3 rounded-lg border border-amber-600/40 bg-amber-600/5 p-3"
+          >
+            <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
+              KAFFEE BEARBEITEN
+            </p>
+            <div className="mb-2">
+              <label className="mb-0.5 block text-[10px] text-gray-400">Name</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none"
+                required
+              />
+            </div>
+            <div className="mb-2">
+              <label className="mb-0.5 block text-[10px] text-gray-400">Herkunft</label>
+              <input
+                type="text"
+                value={editHerkunft}
+                onChange={(e) => setEditHerkunft(e.target.value)}
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+            <div className="mb-2">
+              <label className="mb-0.5 block text-[10px] text-gray-400">Duftnoten</label>
+              <input
+                type="text"
+                value={editDuftnotizen}
+                onChange={(e) => setEditDuftnotizen(e.target.value)}
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+            <label className="mb-3 flex items-center justify-between rounded border border-gray-800 bg-gray-900/40 p-2">
+              <span className="text-[11px] text-gray-300">Fair Trade</span>
+              <button
+                type="button"
+                onClick={() => setEditFairtrade(!editFairtrade)}
+                className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+                  editFairtrade ? "bg-emerald-500" : "bg-gray-700"
+                }`}
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                    editFairtrade ? "translate-x-4" : ""
+                  }`}
+                />
+              </button>
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="flex-1 rounded bg-amber-500 py-2 text-xs font-bold text-dark hover:brightness-110"
+              >
+                Speichern
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowEditCurrent(false)}
+                className="rounded px-3 py-2 text-xs text-gray-400 hover:text-white"
+              >
+                Abbrechen
+              </button>
+            </div>
+          </form>
+        )}
 
         {showSelect && (
           <div className="mt-2 space-y-1">
