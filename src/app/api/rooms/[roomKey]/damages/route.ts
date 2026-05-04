@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { serializeDamage } from "@/lib/damages-serialize";
 
 // GET /api/rooms/[roomKey]/damages — alle Schaeden fuer dieses Zimmer
 export async function GET(
@@ -16,20 +17,11 @@ export async function GET(
     where: { roomKey: params.roomKey },
     orderBy: [{ resolvedAt: "asc" }, { reportedAt: "desc" }],
     include: {
-      reportedBy: { select: { id: true, name: true } },
+      reportedBy: true,
+      feedbacks: { orderBy: { createdAt: "asc" }, include: { author: true } },
     },
   });
-  return NextResponse.json(
-    damages.map((d) => ({
-      id: d.id,
-      description: d.description,
-      severity: d.severity,
-      reportedAt: d.reportedAt.toISOString(),
-      resolvedAt: d.resolvedAt?.toISOString() ?? null,
-      reportedBy: d.reportedBy?.name ?? null,
-      reportedById: d.reportedById,
-    }))
-  );
+  return NextResponse.json(damages.map(serializeDamage));
 }
 
 // POST /api/rooms/[roomKey]/damages — neuen Schaden melden
@@ -42,6 +34,7 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = (await req.json()) as {
+    title?: unknown;
     description?: unknown;
     severity?: unknown;
   };
@@ -63,22 +56,17 @@ export async function POST(
   const created = await prisma.roomDamage.create({
     data: {
       roomKey: params.roomKey,
+      location: params.roomKey,
+      title: typeof body.title === "string" && body.title.trim() ? body.title.trim() : description.slice(0, 60),
       description,
       severity,
       reportedById: session.user.id,
     },
     include: {
-      reportedBy: { select: { id: true, name: true } },
+      reportedBy: true,
+      feedbacks: { orderBy: { createdAt: "asc" }, include: { author: true } },
     },
   });
 
-  return NextResponse.json({
-    id: created.id,
-    description: created.description,
-    severity: created.severity,
-    reportedAt: created.reportedAt.toISOString(),
-    resolvedAt: null,
-    reportedBy: created.reportedBy?.name ?? null,
-    reportedById: created.reportedById,
-  });
+  return NextResponse.json(serializeDamage(created));
 }

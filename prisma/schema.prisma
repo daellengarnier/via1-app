@@ -107,6 +107,7 @@ model User {
   activityParticipations ActivityParticipant[]
   activityComments     ActivityComment[]
   reportedDamages      RoomDamage[]          @relation("DamageReporter")
+  damageFeedbacks      RoomDamageFeedback[]  @relation("DamageFeedbackAuthor")
   createdSublets       Sublet[]              @relation("SubletCreator")
   pinnwandComments     PinnwandComment[]     @relation("PinnwandCommentAuthor")
   createdShopping      ShoppingItem[]        @relation("ShoppingCreator")
@@ -533,20 +534,47 @@ model Room {
 // bewohnende-data.ts sind derzeit teilweise noch Mock, daher loose
 // verknuepft ueber einen String statt FK.
 model RoomDamage {
-  id           String    @id @default(cuid())
-  roomKey      String
-  description  String
-  severity     String    @default("klein") // "klein" | "mittel" | "gross"
-  reportedBy   User?     @relation("DamageReporter", fields: [reportedById], references: [id])
-  reportedById String?
-  reportedAt   DateTime  @default(now())
-  resolvedAt   DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  title         String    @default("")
+  roomKey       String    @default("")
+  location      String    @default("")
+  description   String
+  category      String    @default("allgemein") // "allgemein" | "sanierung" | "wasser" | "elektro" | ...
+  status        String    @default("gemeldet") // "gemeldet" | "in_bearbeitung" | "rueckmeldung" | "termin_gesetzt" | "erledigt"
+  severity      String    @default("klein") // "klein" | "mittel" | "gross"
+  pinLat        Float?
+  pinLng        Float?
+  imageData     String?
+  invoiceData   String?
+  invoiceName   String?
+  costCents     Int?
+  appointmentAt DateTime?
+  reportedBy    User?     @relation("DamageReporter", fields: [reportedById], references: [id])
+  reportedById  String?
+  reportedAt    DateTime  @default(now())
+  resolvedAt    DateTime?
+  feedbacks     RoomDamageFeedback[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
+  @@index([category])
+  @@index([status])
   @@index([roomKey])
   @@index([resolvedAt])
   @@map("room_damages")
+}
+
+model RoomDamageFeedback {
+  id        String     @id @default(cuid())
+  damage    RoomDamage @relation(fields: [damageId], references: [id], onDelete: Cascade)
+  damageId  String
+  author    User       @relation("DamageFeedbackAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  text      String
+  createdAt DateTime   @default(now())
+
+  @@index([damageId])
+  @@map("room_damage_feedbacks")
 }
 
 // Einkaufsliste fuer alles Moegliche (Anzuendwuerfel, Holzbriketts, Holz, …)

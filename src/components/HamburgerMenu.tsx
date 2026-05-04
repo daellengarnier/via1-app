@@ -48,6 +48,14 @@ const MEHR_ITEMS: MehrItem[] = [
     subtitle: "Wissen & Infos",
   },
   {
+    id: "schaeden",
+    href: "/schaeden",
+    icon: "🛠️",
+    glowClass: "glow-orange",
+    title: "Schäden",
+    subtitle: "Melden, Status & Kosten",
+  },
+  {
     id: "flohmi",
     href: "/flohmi",
     icon: "/pic-flohmi.webp",
