@@ -346,7 +346,7 @@ function ArticleView({ article, canEdit, onEdit, onDelete }: { article: Artikel;
     <div className="border-t border-gray-800 px-4 pb-4 pt-3">
       {article.summary && <p className="mb-3 rounded-lg border border-violet-500/20 bg-violet-500/10 p-3 text-sm text-violet-100">{article.summary}</p>}
 
-      {shouldShowFullContent && <p className="whitespace-pre-line text-sm text-gray-300">{article.content}</p>}
+      {shouldShowFullContent && <ContentBlock content={article.content} />}
       {s.intro && article.type !== "INFO" && hasStructuredDetails && <p className="mb-3 whitespace-pre-line text-sm text-gray-300">{s.intro}</p>}
       {s.location && <InfoBlock title="Ort" text={s.location} />}
       {s.contact && <InfoBlock title="Kontakt / Zuständigkeit" text={s.contact} />}
@@ -396,6 +396,29 @@ function ArticleView({ article, canEdit, onEdit, onDelete }: { article: Artikel;
           <button onClick={onDelete} className="rounded border border-red-500/40 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10">Löschen</button>
         </div>
       )}
+    </div>
+  );
+}
+
+function ContentBlock({ content }: { content: string }) {
+  const lines = content.split(/\r?\n/);
+  return (
+    <div className="space-y-2 text-sm text-gray-300">
+      {lines.map((line, index) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={index} className="h-1" />;
+        const heading = trimmed.match(/^(#{3,6})\s+(.+)$/);
+        if (heading) {
+          return <h4 key={index} className="pt-2 font-display text-xs font-bold uppercase tracking-wider text-violet-300">{heading[2]}</h4>;
+        }
+        if (trimmed.startsWith("- ")) {
+          return <p key={index} className="pl-3 text-gray-300">• {trimmed.slice(2)}</p>;
+        }
+        if (trimmed.startsWith("[Bild")) {
+          return <p key={index} className="rounded border border-gray-800 bg-black/20 px-3 py-2 text-xs text-gray-500">{trimmed}</p>;
+        }
+        return <p key={index} className="leading-relaxed text-gray-300">{trimmed}</p>;
+      })}
     </div>
   );
 }
