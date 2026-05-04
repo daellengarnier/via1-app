@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePutzplan, isRoundComplete, resetRound } from "@/lib/putzplan-store";
+import { useState } from "react";
+import { usePutzplan } from "@/lib/putzplan-store";
 
 const funnyMessages = [
   "Das Treppenhaus versinkt im Dreck! 🧹",
@@ -25,15 +25,8 @@ function getRandomMessage(seed: number): string {
 }
 
 export default function PutzplanPage() {
-  const [rotation, setRotation] = usePutzplan();
+  const [rotation, markComplete, , loading] = usePutzplan();
   const [confirmed, setConfirmed] = useState(false);
-
-  // Auto-Reset: wenn alle durch sind, neue Runde starten
-  useEffect(() => {
-    if (isRoundComplete(rotation)) {
-      setRotation(resetRound(rotation));
-    }
-  }, [rotation, setRotation]);
 
   const currentIndex = rotation.findIndex((r) => r.completedAt === null);
   const currentWg = currentIndex >= 0 ? rotation[currentIndex]! : null;
@@ -47,44 +40,45 @@ export default function PutzplanPage() {
     : 999;
   const overOneMonth = daysSinceLastClean > 30;
 
-  function handleComplete() {
+  async function handleComplete() {
     if (!currentWg || confirmed) return;
     setConfirmed(true);
-  }
+    await markComplete(currentWg.wg);
 
-  useEffect(() => {
-    if (!confirmed || currentIndex < 0) return;
-    const timer = setTimeout(() => {
-      let newRotation = rotation.map((r, i) =>
-        i === currentIndex
-          ? { ...r, completedAt: new Date().toISOString().split("T")[0]! }
-          : r
-      );
-      // Wenn alle durch: neue Runde starten
-      if (isRoundComplete(newRotation)) {
-        newRotation = resetRound(newRotation);
-      }
-      setRotation(newRotation);
-      setConfirmed(false);
-      // Naechste WG ermitteln und benachrichtigen
-      const nextIdx = newRotation.findIndex((r) => r.completedAt === null);
+    // Nächste WG benachrichtigen
+    const res = await fetch("/api/putzplan");
+    if (res.ok) {
+      const updated = (await res.json()) as { wg: string; completedAt: string | null }[];
+      const nextIdx = updated.findIndex((r) => r.completedAt === null);
       if (nextIdx >= 0) {
-        const nextWg = newRotation[nextIdx]!.wg;
+        const nextWg = updated[nextIdx]!.wg;
         fetch("/api/notifications/trigger", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             kind: "PUTZPLAN_MY_WG",
             title: "Eure WG ist mit Putzen dran 🧹",
-            body: `${nextWg} — das gemeinsame Putzen wartet. (Neue Runde!)`,
+            body: `${nextWg} — das gemeinsame Putzen wartet.`,
             link: "/putzplan",
             wg: nextWg,
           }),
         }).catch(() => {});
       }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [confirmed, currentIndex, rotation, setRotation]);
+    }
+
+    setTimeout(() => setConfirmed(false), 1500);
+  }
+
+  if (loading) {
+    return (
+      <div className="p-4 pb-20">
+        <h1 className="mb-6 text-center font-cinzel text-3xl text-accent">
+          Putzdienst
+        </h1>
+        <p className="text-center text-sm text-gray-600">Lade…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 pb-20">
@@ -145,11 +139,9 @@ export default function PutzplanPage() {
         </div>
       )}
 
-      {!currentWg && (
+      {!currentWg && rotation.length > 0 && (
         <div className="mb-6 rounded-lg border border-accent bg-accent/10 p-5 text-center">
-          <p className="text-xl font-bold text-accent">
-            Alle durch!
-          </p>
+          <p className="text-xl font-bold text-accent">Alle durch!</p>
           <p className="mt-1 text-sm text-gray-400">
             Neue Runde startet automatisch
           </p>

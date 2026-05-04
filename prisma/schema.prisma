@@ -629,3 +629,16 @@ model Sublet {
   @@index([fromDate])
   @@map("sublets")
 }
+
+model PutzplanEntry {
+  id          String   @id @default(cuid())
+  wg          String
+  order       Int
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([wg])
+  @@index([order])
+  @@map("putzplan_entries")
+}
