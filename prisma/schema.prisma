@@ -451,19 +451,60 @@ model ActivityComment {
 model HausbuchArticle {
   id          String   @id @default(cuid())
   title       String
+  summary     String?
   content     String
+  structured  Json?
+  type        String   @default("INFO")
   category    String
+  section     String?
+  tags        String[] @default([])
+  pinned      Boolean  @default(false)
+  status      String   @default("PUBLISHED")
   // Owner als freier Name-String (analog zum UI-Eingabefeld)
   owner       String
   createdBy   User?    @relation("HausbuchCreatedBy", fields: [createdById], references: [id])
   createdById String?
   updatedBy   User     @relation("HausbuchUpdatedBy", fields: [updatedById], references: [id])
   updatedById String
+  images      HausbuchImage[]
+  linksFrom   HausbuchArticleLink[] @relation("HausbuchLinksFrom")
+  linksTo     HausbuchArticleLink[] @relation("HausbuchLinksTo")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([type])
   @@index([category])
+  @@index([section])
   @@map("hausbuch_articles")
+}
+
+model HausbuchImage {
+  id        String          @id @default(cuid())
+  article   HausbuchArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId String
+  // Base64 Data-URL, analog zu Flohmi-Bildern
+  data      String
+  caption   String?
+  stepId    String?
+  order     Int             @default(0)
+  createdAt DateTime        @default(now())
+
+  @@index([articleId])
+  @@map("hausbuch_images")
+}
+
+model HausbuchArticleLink {
+  id        String          @id @default(cuid())
+  from      HausbuchArticle @relation("HausbuchLinksFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  fromId    String
+  to        HausbuchArticle @relation("HausbuchLinksTo", fields: [toId], references: [id], onDelete: Cascade)
+  toId      String
+  label     String?
+  createdAt DateTime        @default(now())
+
+  @@unique([fromId, toId])
+  @@index([toId])
+  @@map("hausbuch_article_links")
 }
 
 model Wg {

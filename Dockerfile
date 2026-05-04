@@ -31,6 +31,7 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/docs ./docs
 COPY --from=builder /app/prisma ./prisma
 
 # Copy Prisma CLI and engine for migrations (owned by nextjs)
