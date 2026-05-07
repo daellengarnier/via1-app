@@ -53,4 +53,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["sh", "-c", "node prisma/pre-migrate.js; node node_modules/prisma/build/index.js migrate deploy && node server.js"]
+CMD ["sh", "-c", "node prisma/pre-migrate.js; node node_modules/prisma/build/index.js migrate deploy || echo 'WARN: migration failed, starting app anyway'; node server.js"]
