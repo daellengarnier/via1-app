@@ -201,7 +201,7 @@ export const wgs: Wg[] = [
   },
   {
     slug: "bonzen",
-    name: "Bonzen",
+    name: "Bonzennest",
     floor: "2. OG Ost",
     floorNum: 2,
     side: "ost",

@@ -115,7 +115,7 @@ const wgData: Record<string, WgDetail> = {
     issues: [],
   },
   bonzen: {
-    name: "Bonzen",
+    name: "Bonzennest",
     floor: "2. OG",
     side: "ost",
     rooms: [

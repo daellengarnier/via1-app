@@ -494,7 +494,7 @@ export default function BewohnendePage() {
     if (wg) setSelectedWg(wg);
   }, [apiUsers, currentUserId]);
 
-  // Staffelung wie im Schnitt: Nordwind unten, Bonzen oben
+  // Staffelung wie im Schnitt: Nordwind unten, Bonzennest oben
   const wgOrder: Wg[] = [
     wgs.find((w) => w.slug === "bonzen")!,
     wgs.find((w) => w.slug === "family-wg")!,

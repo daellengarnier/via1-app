@@ -41,7 +41,7 @@ const wgNames = [
   "Dreiecksbar",
   "Kleenex",
   "Family-WG",
-  "Bonzen",
+  "Bonzennest",
   "Haus (alle)",
 ];
 
@@ -213,7 +213,7 @@ export default function TerminePage() {
     "Dreiecksbar",
     "Kleenex",
     "Family-WG",
-    "Bonzen",
+    "Bonzennest",
   ];
 
   const filtered =

@@ -117,7 +117,7 @@ export default function TerminDetailPage() {
     "Dreiecksbar",
     "Kleenex",
     "Family-WG",
-    "Bonzen",
+    "Bonzennest",
   ];
 
   const loadTermin = useCallback(async () => {

@@ -13,7 +13,7 @@ const wgOptions = [
   { name: "Dreiecksbar", rooms: ["N11", "N12", "N13", "N14", "N15"] },
   { name: "Kleenex", rooms: ["O11", "O12", "O13", "O14", "O15"] },
   { name: "Family-WG", rooms: ["N21", "N22", "N23", "N24", "N25"] },
-  { name: "Bonzen", rooms: ["O21", "O22", "O23", "O24"] },
+  { name: "Bonzennest", rooms: ["O21", "O22", "O23", "O24"] },
 ];
 
 interface ProfileData {

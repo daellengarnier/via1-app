@@ -22,7 +22,7 @@ const wgs: WgData[] = [
   },
   {
     slug: "bonzen",
-    name: "Bonzen",
+    name: "Bonzennest",
     floor: "2. OG",
     side: "ost",
     rooms: ["O21", "O22", "O23", "O24"],
@@ -200,7 +200,7 @@ export default function FloorPlan() {
   // Layout: Nord links, Ost rechts.
   // Nord-Fluegel ist einen halben Stock TIEFER versetzt als Ost (Hanglage).
   // Reihenfolge von unten nach oben:
-  // Nordwind, Ostblock, Dreiecksbar, Kleenex, Family-WG, Bonzen
+  // Nordwind, Ostblock, Dreiecksbar, Kleenex, Family-WG, Bonzennest
   const nordX = 10;
   const ostX = 215;
   const blockW = 185;
