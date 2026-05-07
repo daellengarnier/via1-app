@@ -1,5 +1,5 @@
--- CreateTable
-CREATE TABLE "feedbacks" (
+-- CreateTable (idempotent)
+CREATE TABLE IF NOT EXISTS "feedbacks" (
     "id" TEXT NOT NULL,
     "type" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -12,5 +12,5 @@ CREATE TABLE "feedbacks" (
     CONSTRAINT "feedbacks_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE INDEX "feedbacks_createdAt_idx" ON "feedbacks"("createdAt");
+-- CreateIndex (idempotent)
+CREATE INDEX IF NOT EXISTS "feedbacks_createdAt_idx" ON "feedbacks"("createdAt");

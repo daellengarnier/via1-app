@@ -1,5 +1,5 @@
--- CreateTable
-CREATE TABLE "kaffee_current" (
+-- CreateTable (idempotent)
+CREATE TABLE IF NOT EXISTS "kaffee_current" (
     "id" TEXT NOT NULL DEFAULT 'singleton',
     "name" TEXT NOT NULL,
     "herkunft" TEXT NOT NULL DEFAULT '',
@@ -12,6 +12,7 @@ CREATE TABLE "kaffee_current" (
     CONSTRAINT "kaffee_current_pkey" PRIMARY KEY ("id")
 );
 
--- Seed: Tropical Rainforest ist aktuell drin
+-- Seed only if empty
 INSERT INTO "kaffee_current" ("id", "name", "herkunft", "duftnotizen", "fairtrade", "changedBy", "changedAt", "updatedAt")
-VALUES ('singleton', 'Tropical Rainforest', '', '', false, '', NOW(), NOW());
+SELECT 'singleton', 'Tropical Rainforest', '', '', false, '', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM "kaffee_current" LIMIT 1);
