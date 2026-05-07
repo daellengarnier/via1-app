@@ -5,9 +5,42 @@ import { prisma } from "@/lib/prisma";
 
 const GITHUB_REPO = "daellengarnier/via1-app";
 
+// GET /api/feedback — alle Feedbacks laden
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const feedbacks = await prisma.feedback.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      comments: { orderBy: { createdAt: "asc" } },
+    },
+  });
+
+  return NextResponse.json(
+    feedbacks.map((f) => ({
+      id: f.id,
+      type: f.type,
+      title: f.title,
+      description: f.description,
+      authorName: f.authorName,
+      status: f.status,
+      createdAt: f.createdAt.toISOString().split("T")[0],
+      comments: f.comments.map((c) => ({
+        id: c.id,
+        authorName: c.authorName,
+        text: c.text,
+        createdAt: c.createdAt.toISOString().split("T")[0],
+      })),
+    }))
+  );
+}
+
+// POST /api/feedback — neues Feedback erstellen
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
-
   if (!session?.user) {
     return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
   }
@@ -19,7 +52,6 @@ export async function POST(request: Request) {
   };
 
   const { title, description, type } = body;
-
   if (!title || !type) {
     return NextResponse.json(
       { error: "Titel und Typ erforderlich." },
@@ -33,7 +65,6 @@ export async function POST(request: Request) {
   if (githubToken) {
     const label = type === "bug" ? "bug" : "idea";
     const emoji = type === "bug" ? "🐛" : "💡";
-
     const issueBody = [
       `${emoji} **${type === "bug" ? "Bug-Meldung" : "Idee"}** von **${session.user.name}**`,
       "",
@@ -60,17 +91,15 @@ export async function POST(request: Request) {
           }),
         }
       );
-
       if (response.ok) {
         const issue = (await response.json()) as { number: number };
         issueNumber = issue.number;
       }
     } catch {
-      // GitHub nicht erreichbar — Feedback wird trotzdem in DB gespeichert
+      // GitHub nicht erreichbar
     }
   }
 
-  // Immer in der DB speichern
   await prisma.feedback.create({
     data: {
       type,
@@ -82,8 +111,5 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json({
-    success: true,
-    issueNumber: issueNumber ?? 0,
-  });
+  return NextResponse.json({ success: true });
 }

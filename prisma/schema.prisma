@@ -657,15 +657,29 @@ model KaffeeCurrent {
 }
 
 model Feedback {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   type        String
   title       String
-  description String   @default("")
+  description String            @default("")
   authorName  String
   authorEmail String
   githubIssue Int?
-  createdAt   DateTime @default(now())
+  status      String            @default("offen")
+  comments    FeedbackComment[]
+  createdAt   DateTime          @default(now())
 
   @@index([createdAt])
   @@map("feedbacks")
+}
+
+model FeedbackComment {
+  id         String   @id @default(cuid())
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedbackId String
+  authorName String
+  text       String
+  createdAt  DateTime @default(now())
+
+  @@index([feedbackId])
+  @@map("feedback_comments")
 }
