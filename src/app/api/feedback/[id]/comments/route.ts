@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notify } from "@/lib/notify";
 
 export async function POST(
   req: Request,
@@ -18,6 +19,13 @@ export async function POST(
     return NextResponse.json({ error: "Text erforderlich" }, { status: 400 });
   }
 
+  const feedback = await prisma.feedback.findUnique({
+    where: { id: params.id },
+  });
+  if (!feedback) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const comment = await prisma.feedbackComment.create({
     data: {
       feedbackId: params.id,
@@ -25,6 +33,23 @@ export async function POST(
       text,
     },
   });
+
+  // Erfasser benachrichtigen (wenn nicht selbst kommentiert)
+  if (feedback.authorEmail !== session.user.email) {
+    const author = await prisma.user.findFirst({
+      where: { email: feedback.authorEmail },
+      select: { id: true },
+    });
+    if (author) {
+      notify({
+        kind: "FEEDBACK_COMMENT",
+        title: `Kommentar zu deinem Eintrag`,
+        body: `${session.user.name}: ${text.slice(0, 80)}`,
+        link: "/feedback",
+        audience: [author.id],
+      }).catch(() => {});
+    }
+  }
 
   return NextResponse.json({
     id: comment.id,

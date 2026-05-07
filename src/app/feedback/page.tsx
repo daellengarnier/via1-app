@@ -18,6 +18,7 @@ interface FeedbackItem {
   title: string;
   description: string;
   authorName: string;
+  authorEmail: string;
   status: string;
   createdAt: string;
   comments: FeedbackComment[];
@@ -25,8 +26,10 @@ interface FeedbackItem {
 
 export default function FeedbackPage() {
   const { data: session } = useSession();
+  const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [filter, setFilter] = useState<"alle" | "idea" | "bug">("alle");
+  const [showArchiv, setShowArchiv] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [type, setType] = useState<FeedbackType>("idea");
   const [title, setTitle] = useState("");
@@ -96,8 +99,39 @@ export default function FeedbackPage() {
     }
   }
 
+  async function deleteFeedback(id: string) {
+    if (!confirm("Eintrag wirklich löschen?")) return;
+    try {
+      const res = await fetch(`/api/feedback/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      if (expandedId === id) setExpandedId(null);
+    } catch {
+      alert("Löschen fehlgeschlagen.");
+    }
+  }
+
+  async function resolveFeedback(id: string) {
+    try {
+      const res = await fetch(`/api/feedback/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "erledigt" }),
+      });
+      if (!res.ok) throw new Error();
+      setItems((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, status: "erledigt" } : i))
+      );
+    } catch {
+      alert("Fehlgeschlagen.");
+    }
+  }
+
+  const offen = items.filter((i) => i.status !== "erledigt");
+  const archiv = items.filter((i) => i.status === "erledigt");
+  const visible = showArchiv ? archiv : offen;
   const filtered =
-    filter === "alle" ? items : items.filter((i) => i.type === filter);
+    filter === "alle" ? visible : visible.filter((i) => i.type === filter);
 
   return (
     <div className="p-4 pb-20">
@@ -189,25 +223,45 @@ export default function FeedbackPage() {
         </form>
       )}
 
-      {/* Filter */}
+      {/* Offen / Archiv Toggle */}
+      <div className="mb-3 flex gap-2">
+        <button
+          onClick={() => setShowArchiv(false)}
+          className={`flex-1 rounded-full py-1.5 font-mono text-[10px] font-bold uppercase transition-colors ${
+            !showArchiv
+              ? "bg-accent text-dark"
+              : "border border-gray-800 text-gray-500"
+          }`}
+        >
+          Offen ({offen.length})
+        </button>
+        <button
+          onClick={() => setShowArchiv(true)}
+          className={`flex-1 rounded-full py-1.5 font-mono text-[10px] font-bold uppercase transition-colors ${
+            showArchiv
+              ? "bg-gray-600 text-white"
+              : "border border-gray-800 text-gray-500"
+          }`}
+        >
+          Erledigt ({archiv.length})
+        </button>
+      </div>
+
+      {/* Typ-Filter */}
       <div className="mb-3 flex gap-2">
         {(["alle", "idea", "bug"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`flex-1 rounded-full py-1.5 font-mono text-[10px] font-bold uppercase transition-colors ${
+            className={`flex-1 rounded-full py-1 font-mono text-[9px] font-bold uppercase transition-colors ${
               filter === f
                 ? f === "bug"
                   ? "bg-secondary/80 text-white"
-                  : "bg-accent text-dark"
-                : "border border-gray-800 text-gray-500"
+                  : "bg-accent/80 text-dark"
+                : "border border-gray-800 text-gray-600"
             }`}
           >
-            {f === "alle"
-              ? `Alle (${items.length})`
-              : f === "idea"
-                ? `💡 Ideen (${items.filter((i) => i.type === "idea").length})`
-                : `🐛 Bugs (${items.filter((i) => i.type === "bug").length})`}
+            {f === "alle" ? "Alle" : f === "idea" ? "💡 Ideen" : "🐛 Bugs"}
           </button>
         ))}
       </div>
@@ -216,20 +270,25 @@ export default function FeedbackPage() {
       <div className="space-y-2">
         {filtered.map((item) => {
           const isExpanded = expandedId === item.id;
+          const canDelete =
+            isAdmin || item.authorEmail === session?.user?.email;
           return (
             <div
               key={item.id}
               className={`rounded-lg border p-3 ${
-                item.type === "bug"
-                  ? "border-secondary/30 bg-secondary/5"
-                  : "border-accent/20 bg-accent/5"
+                item.status === "erledigt"
+                  ? "border-gray-800 bg-white/[0.02] opacity-60"
+                  : item.type === "bug"
+                    ? "border-secondary/30 bg-secondary/5"
+                    : "border-accent/20 bg-accent/5"
               }`}
             >
               <button
                 type="button"
-                onClick={() =>
-                  setExpandedId(isExpanded ? null : item.id)
-                }
+                onClick={() => {
+                  setExpandedId(isExpanded ? null : item.id);
+                  setNewComment("");
+                }}
                 className="w-full text-left"
               >
                 <div className="flex items-start justify-between gap-2">
@@ -238,7 +297,13 @@ export default function FeedbackPage() {
                       <span className="text-xs">
                         {item.type === "bug" ? "🐛" : "💡"}
                       </span>
-                      <h3 className="text-sm font-medium text-white">
+                      <h3
+                        className={`text-sm font-medium ${
+                          item.status === "erledigt"
+                            ? "text-gray-500 line-through"
+                            : "text-white"
+                        }`}
+                      >
                         {item.title}
                       </h3>
                     </div>
@@ -248,6 +313,9 @@ export default function FeedbackPage() {
                         <span className="ml-2 text-gray-600">
                           💬 {item.comments.length}
                         </span>
+                      )}
+                      {item.status === "erledigt" && (
+                        <span className="ml-2 text-accent">✓ erledigt</span>
                       )}
                     </p>
                   </div>
@@ -283,11 +351,11 @@ export default function FeedbackPage() {
                   )}
 
                   {/* Kommentar schreiben */}
-                  {session?.user && (
-                    <div className="flex gap-1.5">
+                  {session?.user && item.status !== "erledigt" && (
+                    <div className="mb-2 flex gap-1.5">
                       <input
                         type="text"
-                        value={expandedId === item.id ? newComment : ""}
+                        value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
@@ -306,6 +374,26 @@ export default function FeedbackPage() {
                       </button>
                     </div>
                   )}
+
+                  {/* Aktionen */}
+                  <div className="flex gap-2">
+                    {isAdmin && item.status !== "erledigt" && (
+                      <button
+                        onClick={() => resolveFeedback(item.id)}
+                        className="rounded border border-accent/40 bg-accent/10 px-3 py-1 text-[10px] font-bold text-accent hover:bg-accent/20"
+                      >
+                        ✓ Erledigt
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => deleteFeedback(item.id)}
+                        className="rounded border border-red-500/40 bg-red-500/10 px-3 py-1 text-[10px] font-bold text-red-300 hover:bg-red-500/20"
+                      >
+                        Löschen
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -314,7 +402,9 @@ export default function FeedbackPage() {
 
         {filtered.length === 0 && (
           <p className="py-8 text-center text-sm text-gray-600">
-            Noch keine Einträge.
+            {showArchiv
+              ? "Noch keine erledigten Einträge."
+              : "Noch keine offenen Einträge."}
           </p>
         )}
       </div>

@@ -49,6 +49,8 @@ const kindToPref: Record<NotificationKind, keyof PrefFields> = {
   ACTIVITY_NEW: "notifyActivity",
   ACTIVITY_COMMENT: "notifyMyPostsComment",
   SHOPPING_COMMENT: "notifyMyPostsComment",
+  FEEDBACK_COMMENT: "notifyMyPostsComment",
+  FEEDBACK_RESOLVED: "notifyMyPostsComment",
 };
 
 type PrefFields = {

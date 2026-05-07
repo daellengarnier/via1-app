@@ -26,6 +26,7 @@ export async function GET() {
       title: f.title,
       description: f.description,
       authorName: f.authorName,
+      authorEmail: f.authorEmail,
       status: f.status,
       createdAt: f.createdAt.toISOString().split("T")[0],
       comments: f.comments.map((c) => ({
