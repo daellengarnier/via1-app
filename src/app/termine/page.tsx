@@ -216,21 +216,16 @@ export default function TerminePage() {
     "Bonzennest",
   ];
 
+  const todayStr = new Date().toISOString().split("T")[0]!;
+
   const filtered =
     filter === "alle"
       ? termine
       : termine.filter((t) => t.type === filter);
 
-  // Sortierung: bevorstehende Termine aufsteigend (naechster zuerst),
-  // vergangene Termine absteigend (juengster zuerst) darunter
-  const todayStr = new Date().toISOString().split("T")[0]!;
-  const sorted = [...filtered].sort((a, b) => {
-    const aUp = a.date >= todayStr;
-    const bUp = b.date >= todayStr;
-    if (aUp !== bUp) return aUp ? -1 : 1;
-    if (aUp) return a.date.localeCompare(b.date);
-    return b.date.localeCompare(a.date);
-  });
+  // Nur heutige und zukünftige Termine anzeigen
+  const upcoming = filtered.filter((t) => t.date >= todayStr);
+  const sorted = [...upcoming].sort((a, b) => a.date.localeCompare(b.date));
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
