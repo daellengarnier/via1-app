@@ -40,6 +40,7 @@ COPY --from=deps --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules/bcryptjs ./node_modules/bcryptjs
 COPY --from=builder /app/prisma/seed.js ./prisma/seed.js
+COPY --from=builder /app/prisma/pre-migrate.js ./prisma/pre-migrate.js
 
 # Standalone output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -52,4 +53,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]
+CMD ["sh", "-c", "node prisma/pre-migrate.js; node node_modules/prisma/build/index.js migrate deploy && node server.js"]

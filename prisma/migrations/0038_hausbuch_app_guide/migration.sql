@@ -1,12 +1,3 @@
--- Cleanup: alte fehlgeschlagene Migrationen entfernen (falls vorhanden)
-DELETE FROM _prisma_migrations WHERE migration_name IN (
-  '0033_hausbuch_app_guide',
-  '0034_putzplan_db',
-  '0035_kaffee_db',
-  '0036_feedback_table',
-  '0037_rename_bonzen'
-);
-
 -- Hausbuch-Artikel: App-Anleitung (safe INSERT with dollar-quoting)
 INSERT INTO hausbuch_articles (id, title, content, category, owner, "createdById", "updatedById", "createdAt", "updatedAt")
 SELECT
