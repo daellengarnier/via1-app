@@ -511,7 +511,7 @@ export function LaundryTimers() {
 
   return (
     <>
-      <div className="pointer-events-none absolute left-0 right-0 top-20 z-10 flex items-start justify-between px-3 sm:px-16">
+      <div className="pointer-events-none absolute left-0 right-0 top-14 z-10 flex scale-[0.8] items-start justify-between px-1 sm:px-12">
         {machines.map((machine) => {
           const active = Boolean(machine.timer);
           const remaining = machine.timer
