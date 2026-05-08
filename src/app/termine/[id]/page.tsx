@@ -284,11 +284,29 @@ export default function TerminDetailPage() {
 
   async function cancelMealSignup() {
     if (!termin) return;
-    if (!confirm("Dich (und deine Gäste) wirklich vom Essen abmelden?")) return;
+    const mySignup = termin.mealSignups.find((s) => s.userId === currentUserId);
+    const guestCount = mySignup?.guestDetails.length ?? 0;
+
+    let alsoRemoveGuests = true;
+    if (guestCount > 0) {
+      const label = guestCount === 1 ? "deinen Gast" : `deine ${guestCount} Gäste`;
+      alsoRemoveGuests = confirm(
+        `Du hast ${label} angemeldet.\n\n` +
+          `OK = dich UND ${label} abmelden\n` +
+          `Abbrechen = nur dich abmelden, ${label} bleiben angemeldet`
+      );
+    } else {
+      if (!confirm("Dich wirklich vom Essen abmelden?")) return;
+    }
+
     try {
-      const res = await fetch(`/api/termine/${id}/meal-signup`, {
-        method: "DELETE",
-      });
+      const res = alsoRemoveGuests
+        ? await fetch(`/api/termine/${id}/meal-signup`, { method: "DELETE" })
+        : await fetch(`/api/termine/${id}/meal-signup`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ goingSelf: false }),
+          });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       await loadTermin();
     } catch (err) {
