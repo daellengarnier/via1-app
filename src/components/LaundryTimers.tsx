@@ -351,32 +351,42 @@ function WashingMachineIcon({
           strokeWidth="0.95"
         />
       </svg>
-      {/* Schallwellen — nur bei aktiver Maschine */}
-      {active && (
-        <svg
-          className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
-          viewBox="0 0 72 88"
-        >
-          {/* Linke Schallwellen */}
-          <path d="M8 42 Q-2 50 8 58" fill="none" stroke="rgba(103,232,249,0.35)" strokeWidth="1" strokeLinecap="round">
-            <animate attributeName="opacity" values="0;0.6;0" dur="1.8s" repeatCount="indefinite" />
-            <animate attributeName="d" values="M8 44 Q2 50 8 56;M5 40 Q-5 50 5 60;M8 44 Q2 50 8 56" dur="1.8s" repeatCount="indefinite" />
+      {/* Schallwellen */}
+      <svg
+        className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+        viewBox="0 0 72 88"
+      >
+        {/* Linke Schallwellen */}
+        <path fill="none" stroke={active ? "rgba(103,232,249,0.6)" : "rgba(255,255,255,0.08)"} strokeWidth={active ? "1.5" : "0.8"} strokeLinecap="round">
+          <animate attributeName="d" values="M8 44 Q2 50 8 56;M3 38 Q-8 50 3 62;M8 44 Q2 50 8 56" dur={active ? "1.4s" : "4s"} repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0;1;0" dur={active ? "1.4s" : "4s"} repeatCount="indefinite" />
+        </path>
+        <path fill="none" stroke={active ? "rgba(103,232,249,0.4)" : "rgba(255,255,255,0.05)"} strokeWidth={active ? "1.2" : "0.6"} strokeLinecap="round">
+          <animate attributeName="d" values="M6 42 Q-2 50 6 58;M-2 34 Q-14 50 -2 66;M6 42 Q-2 50 6 58" dur={active ? "1.4s" : "4s"} begin="0.35s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0;0.7;0" dur={active ? "1.4s" : "4s"} begin="0.35s" repeatCount="indefinite" />
+        </path>
+        {active && (
+          <path fill="none" stroke="rgba(103,232,249,0.25)" strokeWidth="1" strokeLinecap="round">
+            <animate attributeName="d" values="M4 40 Q-6 50 4 60;M-6 30 Q-20 50 -6 70;M4 40 Q-6 50 4 60" dur="1.4s" begin="0.7s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.5;0" dur="1.4s" begin="0.7s" repeatCount="indefinite" />
           </path>
-          <path d="M4 40 Q-8 50 4 60" fill="none" stroke="rgba(103,232,249,0.2)" strokeWidth="0.8" strokeLinecap="round">
-            <animate attributeName="opacity" values="0;0.4;0" dur="1.8s" begin="0.4s" repeatCount="indefinite" />
-            <animate attributeName="d" values="M5 42 Q-2 50 5 58;M0 36 Q-12 50 0 64;M5 42 Q-2 50 5 58" dur="1.8s" begin="0.4s" repeatCount="indefinite" />
+        )}
+        {/* Rechte Schallwellen */}
+        <path fill="none" stroke={active ? "rgba(103,232,249,0.6)" : "rgba(255,255,255,0.08)"} strokeWidth={active ? "1.5" : "0.8"} strokeLinecap="round">
+          <animate attributeName="d" values="M64 44 Q70 50 64 56;M69 38 Q80 50 69 62;M64 44 Q70 50 64 56" dur={active ? "1.4s" : "4s"} begin="0.15s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0;1;0" dur={active ? "1.4s" : "4s"} begin="0.15s" repeatCount="indefinite" />
+        </path>
+        <path fill="none" stroke={active ? "rgba(103,232,249,0.4)" : "rgba(255,255,255,0.05)"} strokeWidth={active ? "1.2" : "0.6"} strokeLinecap="round">
+          <animate attributeName="d" values="M66 42 Q74 50 66 58;M74 34 Q86 50 74 66;M66 42 Q74 50 66 58" dur={active ? "1.4s" : "4s"} begin="0.5s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0;0.7;0" dur={active ? "1.4s" : "4s"} begin="0.5s" repeatCount="indefinite" />
+        </path>
+        {active && (
+          <path fill="none" stroke="rgba(103,232,249,0.25)" strokeWidth="1" strokeLinecap="round">
+            <animate attributeName="d" values="M68 40 Q78 50 68 60;M78 30 Q92 50 78 70;M68 40 Q78 50 68 60" dur="1.4s" begin="0.85s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.5;0" dur="1.4s" begin="0.85s" repeatCount="indefinite" />
           </path>
-          {/* Rechte Schallwellen */}
-          <path d="M64 42 Q74 50 64 58" fill="none" stroke="rgba(103,232,249,0.35)" strokeWidth="1" strokeLinecap="round">
-            <animate attributeName="opacity" values="0;0.6;0" dur="1.8s" begin="0.2s" repeatCount="indefinite" />
-            <animate attributeName="d" values="M64 44 Q70 50 64 56;M67 40 Q77 50 67 60;M64 44 Q70 50 64 56" dur="1.8s" begin="0.2s" repeatCount="indefinite" />
-          </path>
-          <path d="M68 40 Q80 50 68 60" fill="none" stroke="rgba(103,232,249,0.2)" strokeWidth="0.8" strokeLinecap="round">
-            <animate attributeName="opacity" values="0;0.4;0" dur="1.8s" begin="0.6s" repeatCount="indefinite" />
-            <animate attributeName="d" values="M67 42 Q74 50 67 58;M72 36 Q84 50 72 64;M67 42 Q74 50 67 58" dur="1.8s" begin="0.6s" repeatCount="indefinite" />
-          </path>
-        </svg>
-      )}
+        )}
+      </svg>
       <SevenSegmentDisplay value={active ? remaining : "--"} />
     </div>
   );
