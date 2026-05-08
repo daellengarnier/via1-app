@@ -351,6 +351,32 @@ function WashingMachineIcon({
           strokeWidth="0.95"
         />
       </svg>
+      {/* Schallwellen — nur bei aktiver Maschine */}
+      {active && (
+        <svg
+          className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+          viewBox="0 0 72 88"
+        >
+          {/* Linke Schallwellen */}
+          <path d="M8 42 Q-2 50 8 58" fill="none" stroke="rgba(103,232,249,0.35)" strokeWidth="1" strokeLinecap="round">
+            <animate attributeName="opacity" values="0;0.6;0" dur="1.8s" repeatCount="indefinite" />
+            <animate attributeName="d" values="M8 44 Q2 50 8 56;M5 40 Q-5 50 5 60;M8 44 Q2 50 8 56" dur="1.8s" repeatCount="indefinite" />
+          </path>
+          <path d="M4 40 Q-8 50 4 60" fill="none" stroke="rgba(103,232,249,0.2)" strokeWidth="0.8" strokeLinecap="round">
+            <animate attributeName="opacity" values="0;0.4;0" dur="1.8s" begin="0.4s" repeatCount="indefinite" />
+            <animate attributeName="d" values="M5 42 Q-2 50 5 58;M0 36 Q-12 50 0 64;M5 42 Q-2 50 5 58" dur="1.8s" begin="0.4s" repeatCount="indefinite" />
+          </path>
+          {/* Rechte Schallwellen */}
+          <path d="M64 42 Q74 50 64 58" fill="none" stroke="rgba(103,232,249,0.35)" strokeWidth="1" strokeLinecap="round">
+            <animate attributeName="opacity" values="0;0.6;0" dur="1.8s" begin="0.2s" repeatCount="indefinite" />
+            <animate attributeName="d" values="M64 44 Q70 50 64 56;M67 40 Q77 50 67 60;M64 44 Q70 50 64 56" dur="1.8s" begin="0.2s" repeatCount="indefinite" />
+          </path>
+          <path d="M68 40 Q80 50 68 60" fill="none" stroke="rgba(103,232,249,0.2)" strokeWidth="0.8" strokeLinecap="round">
+            <animate attributeName="opacity" values="0;0.4;0" dur="1.8s" begin="0.6s" repeatCount="indefinite" />
+            <animate attributeName="d" values="M67 42 Q74 50 67 58;M72 36 Q84 50 72 64;M67 42 Q74 50 67 58" dur="1.8s" begin="0.6s" repeatCount="indefinite" />
+          </path>
+        </svg>
+      )}
       <SevenSegmentDisplay value={active ? remaining : "--"} />
     </div>
   );
