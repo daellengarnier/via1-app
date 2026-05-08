@@ -351,41 +351,28 @@ function WashingMachineIcon({
           strokeWidth="0.95"
         />
       </svg>
-      {/* Schallwellen */}
+      {/* Schallwellen — konzentrische Kreise vom Zentrum */}
       <svg
         className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
         viewBox="0 0 72 88"
       >
-        {/* Linke Schallwellen */}
-        <path fill="none" stroke={active ? "rgba(103,232,249,0.6)" : "rgba(255,255,255,0.08)"} strokeWidth={active ? "1.5" : "0.8"} strokeLinecap="round">
-          <animate attributeName="d" values="M8 44 Q2 50 8 56;M3 38 Q-8 50 3 62;M8 44 Q2 50 8 56" dur={active ? "1.4s" : "4s"} repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0;1;0" dur={active ? "1.4s" : "4s"} repeatCount="indefinite" />
-        </path>
-        <path fill="none" stroke={active ? "rgba(103,232,249,0.4)" : "rgba(255,255,255,0.05)"} strokeWidth={active ? "1.2" : "0.6"} strokeLinecap="round">
-          <animate attributeName="d" values="M6 42 Q-2 50 6 58;M-2 34 Q-14 50 -2 66;M6 42 Q-2 50 6 58" dur={active ? "1.4s" : "4s"} begin="0.35s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0;0.7;0" dur={active ? "1.4s" : "4s"} begin="0.35s" repeatCount="indefinite" />
-        </path>
-        {active && (
-          <path fill="none" stroke="rgba(103,232,249,0.25)" strokeWidth="1" strokeLinecap="round">
-            <animate attributeName="d" values="M4 40 Q-6 50 4 60;M-6 30 Q-20 50 -6 70;M4 40 Q-6 50 4 60" dur="1.4s" begin="0.7s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;0.5;0" dur="1.4s" begin="0.7s" repeatCount="indefinite" />
-          </path>
-        )}
-        {/* Rechte Schallwellen */}
-        <path fill="none" stroke={active ? "rgba(103,232,249,0.6)" : "rgba(255,255,255,0.08)"} strokeWidth={active ? "1.5" : "0.8"} strokeLinecap="round">
-          <animate attributeName="d" values="M64 44 Q70 50 64 56;M69 38 Q80 50 69 62;M64 44 Q70 50 64 56" dur={active ? "1.4s" : "4s"} begin="0.15s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0;1;0" dur={active ? "1.4s" : "4s"} begin="0.15s" repeatCount="indefinite" />
-        </path>
-        <path fill="none" stroke={active ? "rgba(103,232,249,0.4)" : "rgba(255,255,255,0.05)"} strokeWidth={active ? "1.2" : "0.6"} strokeLinecap="round">
-          <animate attributeName="d" values="M66 42 Q74 50 66 58;M74 34 Q86 50 74 66;M66 42 Q74 50 66 58" dur={active ? "1.4s" : "4s"} begin="0.5s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0;0.7;0" dur={active ? "1.4s" : "4s"} begin="0.5s" repeatCount="indefinite" />
-        </path>
-        {active && (
-          <path fill="none" stroke="rgba(103,232,249,0.25)" strokeWidth="1" strokeLinecap="round">
-            <animate attributeName="d" values="M68 40 Q78 50 68 60;M78 30 Q92 50 78 70;M68 40 Q78 50 68 60" dur="1.4s" begin="0.85s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;0.5;0" dur="1.4s" begin="0.85s" repeatCount="indefinite" />
-          </path>
-        )}
+        {(active
+          ? [
+              { delay: "0s", dur: "2s" },
+              { delay: "0.5s", dur: "2s" },
+              { delay: "1s", dur: "2s" },
+              { delay: "1.5s", dur: "2s" },
+            ]
+          : [
+              { delay: "0s", dur: "5s" },
+              { delay: "2.5s", dur: "5s" },
+            ]
+        ).map((w, i) => (
+          <circle key={i} cx="36" cy="50" fill="none" stroke={active ? "rgba(103,232,249,0.7)" : "rgba(255,255,255,0.1)"} strokeWidth={active ? "1.2" : "0.6"}>
+            <animate attributeName="r" values="12;50" dur={w.dur} begin={w.delay} repeatCount="indefinite" />
+            <animate attributeName="opacity" values={active ? "0.7;0" : "0.12;0"} dur={w.dur} begin={w.delay} repeatCount="indefinite" />
+          </circle>
+        ))}
       </svg>
       <SevenSegmentDisplay value={active ? remaining : "--"} />
     </div>
