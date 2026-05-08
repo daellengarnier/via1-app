@@ -124,7 +124,7 @@ function SevenSegmentDigit({ char }: { char: string }) {
 
 function SevenSegmentDisplay({ value }: { value: string }) {
   return (
-    <div className="absolute left-[32px] top-[9px] flex h-[17px] w-[40px] items-center justify-center gap-[1px] overflow-hidden px-1">
+    <div className="absolute left-[29px] top-[8px] flex h-[15px] w-[36px] items-center justify-center gap-[1px] overflow-hidden px-0.5">
       {value.split("").map((char, index) => (
         <SevenSegmentDigit key={`${char}-${index}`} char={char} />
       ))}
@@ -163,7 +163,7 @@ function WashingMachineIcon({
   ];
   return (
     <div
-      className={`relative h-[96px] w-[81px] transition-opacity ${
+      className={`relative h-[86px] w-[73px] transition-opacity ${
         active ? "opacity-100" : "opacity-80"
       }`}
     >
@@ -185,10 +185,10 @@ function WashingMachineIcon({
           rx="5"
           fill="rgba(235,246,242,0.05)"
           stroke={stroke}
-          strokeWidth="1.45"
+          strokeWidth="1.1"
         />
-        <path d="M5 27h62" stroke={stroke} strokeWidth="1.45" />
-        <path d="M27 4v23" stroke={stroke} strokeWidth="1.45" />
+        <path d="M5 27h62" stroke={stroke} strokeWidth="1.1" />
+        <path d="M27 4v23" stroke={stroke} strokeWidth="1.1" />
         <rect
           x="10"
           y="11"
@@ -197,7 +197,7 @@ function WashingMachineIcon({
           rx="1"
           fill="rgba(0,0,0,0.2)"
           stroke={stroke}
-          strokeWidth="1.25"
+          strokeWidth="0.95"
         />
         <rect
           x="13"
@@ -231,7 +231,7 @@ function WashingMachineIcon({
           r="21.5"
           fill="rgba(0,0,0,0.22)"
           stroke={stroke}
-          strokeWidth="1.55"
+          strokeWidth="1.15"
         />
         <circle
           cx="36"
@@ -239,7 +239,7 @@ function WashingMachineIcon({
           r="18.6"
           fill="rgba(0,0,0,0.24)"
           stroke="rgba(255,255,255,0.16)"
-          strokeWidth="1"
+          strokeWidth="0.75"
         />
         <g clipPath="url(#laundry-drum-clip)">
           {spinFast ? (
@@ -277,7 +277,7 @@ function WashingMachineIcon({
                 r="11.5"
                 fill="none"
                 stroke="rgba(255,255,255,0.1)"
-                strokeWidth="1"
+                strokeWidth="0.75"
               />
             </g>
           ) : (
@@ -337,7 +337,7 @@ function WashingMachineIcon({
           fill="none"
           stroke="rgba(255,255,255,0.22)"
           strokeLinecap="round"
-          strokeWidth="1.4"
+          strokeWidth="1"
         />
         <circle
           cx="36"
@@ -348,7 +348,7 @@ function WashingMachineIcon({
           strokeDasharray="135"
           strokeDashoffset={Math.round((dash / 100) * 135)}
           strokeLinecap="round"
-          strokeWidth="1.25"
+          strokeWidth="0.95"
         />
       </svg>
       <SevenSegmentDisplay value={active ? remaining : "--"} />
@@ -511,7 +511,7 @@ export function LaundryTimers() {
 
   return (
     <>
-      <div className="pointer-events-none absolute left-0 right-0 top-24 z-10 flex items-start justify-between px-7 sm:px-20">
+      <div className="pointer-events-none absolute left-0 right-0 top-20 z-10 flex items-start justify-between px-3 sm:px-16">
         {machines.map((machine) => {
           const active = Boolean(machine.timer);
           const remaining = machine.timer
@@ -542,7 +542,7 @@ export function LaundryTimers() {
 
       {selected && (
         <div
-          className={`absolute top-44 z-50 w-[calc(100vw-1.5rem)] max-w-[19rem] rounded-xl border border-cyan-300/25 bg-slate-950/95 p-3 shadow-[0_0_32px_rgba(34,211,238,0.18)] backdrop-blur ${
+          className={`absolute top-36 z-50 w-[calc(100vw-1.5rem)] max-w-[19rem] rounded-xl border border-cyan-300/25 bg-slate-950/95 p-3 shadow-[0_0_32px_rgba(34,211,238,0.18)] backdrop-blur ${
             selected.key === "left" ? "left-3" : "right-3"
           }`}
         >
