@@ -39,6 +39,7 @@ interface ProfileData {
     flohmi: boolean;
     activity: boolean;
     myPostsComment: boolean;
+    laundry: boolean;
   };
 }
 
@@ -234,6 +235,7 @@ export default function ProfilPage() {
       flohmi: true,
       activity: true,
       myPostsComment: true,
+      laundry: true,
     },
   });
 
@@ -582,6 +584,7 @@ export default function ProfilPage() {
               },
               { key: "putzplan", label: "Putzämtli: meine WG ist dran" },
               { key: "kaffee", label: "Kaffeebohnen gewechselt" },
+              { key: "laundry", label: "Waschmaschine ist fertig" },
               { key: "pinnwand", label: "Neuer Pinnwand-Eintrag" },
               { key: "flohmi", label: "Neues Inserat im Flohmi" },
               { key: "aufgaben", label: "Neue Aufgabe" },

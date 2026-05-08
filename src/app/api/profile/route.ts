@@ -61,6 +61,7 @@ export async function GET() {
       flohmi: user.notifyFlohmi,
       activity: user.notifyActivity,
       myPostsComment: user.notifyMyPostsComment,
+      laundry: user.notifyLaundry,
     },
   });
 }
@@ -130,6 +131,7 @@ export async function PATCH(req: Request) {
     if (typeof n.pinnwand === "boolean") data.notifyPinnwand = n.pinnwand;
     if (typeof n.flohmi === "boolean") data.notifyFlohmi = n.flohmi;
     if (typeof n.activity === "boolean") data.notifyActivity = n.activity;
+    if (typeof n.laundry === "boolean") data.notifyLaundry = n.laundry;
     if (typeof n.myPostsComment === "boolean") {
       data.notifyMyPostsComment = n.myPostsComment;
     }
@@ -204,6 +206,7 @@ export async function PATCH(req: Request) {
       flohmi: user.notifyFlohmi,
       activity: user.notifyActivity,
       myPostsComment: user.notifyMyPostsComment,
+      laundry: user.notifyLaundry,
     },
   });
 }

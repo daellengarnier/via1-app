@@ -51,6 +51,7 @@ const kindToPref: Record<NotificationKind, keyof PrefFields> = {
   SHOPPING_COMMENT: "notifyMyPostsComment",
   FEEDBACK_COMMENT: "notifyMyPostsComment",
   FEEDBACK_RESOLVED: "notifyMyPostsComment",
+  LAUNDRY_DONE: "notifyLaundry",
 };
 
 type PrefFields = {
@@ -64,6 +65,7 @@ type PrefFields = {
   notifyFlohmi: boolean;
   notifyActivity: boolean;
   notifyMyPostsComment: boolean;
+  notifyLaundry: boolean;
 };
 
 interface NotifyParams {

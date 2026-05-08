@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { TabHeader } from "./TabHeader";
+import { LaundryTimers } from "./LaundryTimers";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { usePutzplan } from "@/lib/putzplan-store";
 
@@ -486,6 +487,7 @@ export default function HomeScreen() {
         color="green"
         scrollable
       />
+      <LaundryTimers />
 
       {/* Wetter + Aare */}
       {(weather || aare) && (

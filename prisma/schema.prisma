@@ -53,6 +53,7 @@ enum NotificationKind {
   SHOPPING_COMMENT
   FEEDBACK_COMMENT
   FEEDBACK_RESOLVED
+  LAUNDRY_DONE
 }
 
 model User {
@@ -80,6 +81,7 @@ model User {
   notifyActivity        Boolean @default(true)
   notifyActivityComment Boolean @default(true)
   notifyMyPostsComment  Boolean @default(true)
+  notifyLaundry         Boolean @default(true)
   hasKaffeeAbo          Boolean @default(false)
   favoriteAnimal        String?
   gameHighScore         Int     @default(0)
@@ -116,6 +118,8 @@ model User {
   completedShopping    ShoppingItem[]        @relation("ShoppingCompleter")
   shoppingComments     ShoppingItemComment[] @relation("ShoppingCommentAuthor")
   gameScores           GameScore[]
+  laundryTimers        LaundryTimer[]        @relation("LaundryTimerStarter")
+  laundryTimerWatches  LaundryTimerWatch[]
 
   @@map("users")
 }
@@ -400,6 +404,40 @@ model PushSubscription {
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+model LaundryTimer {
+  id                 String    @id @default(cuid())
+  machineKey         String
+  machineName        String
+  programName        String
+  durationMinutes    Int
+  startedAt          DateTime  @default(now())
+  endsAt             DateTime
+  stoppedAt          DateTime?
+  notificationSentAt DateTime?
+  starter            User      @relation("LaundryTimerStarter", fields: [starterId], references: [id], onDelete: Cascade)
+  starterId          String
+  watches            LaundryTimerWatch[]
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([machineKey, endsAt])
+  @@index([starterId])
+  @@map("laundry_timers")
+}
+
+model LaundryTimerWatch {
+  id        String       @id @default(cuid())
+  timer     LaundryTimer @relation(fields: [timerId], references: [id], onDelete: Cascade)
+  timerId   String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime     @default(now())
+
+  @@unique([timerId, userId])
+  @@index([userId])
+  @@map("laundry_timer_watches")
 }
 
 model Activity {
