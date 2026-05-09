@@ -13,6 +13,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Volle Historie, damit wir im Summary den Diff zum
+          # vorherigen main-Stand zeigen koennen.
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -35,6 +39,45 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Build summary
+        if: always()
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          AUTHOR: ${{ github.event.head_commit.author.name }}
+          SHA: ${{ github.sha }}
+          BEFORE: ${{ github.event.before }}
+          STATUS: ${{ job.status }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          ICON="✅"
+          [ "$STATUS" != "success" ] && ICON="❌"
+          SHORT="${SHA:0:7}"
+          {
+            echo "## $ICON Build — $STATUS"
+            echo ""
+            echo "**Commit:** [\`$SHORT\`]($REPO_URL/commit/$SHA)"
+            echo "**Autor:** $AUTHOR"
+            echo ""
+            echo "**Nachricht:**"
+            echo ""
+            echo '```'
+            echo "$COMMIT_MSG"
+            echo '```'
+            if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+              echo ""
+              echo "### Geänderte Dateien"
+              echo ""
+              echo '```'
+              git diff --stat "$BEFORE..$SHA" 2>/dev/null || echo "(Diff nicht verfügbar)"
+              echo '```'
+              echo ""
+              echo "### Commits in diesem Push"
+              echo ""
+              git log --pretty=format:"- \`%h\` %s — _%an_" "$BEFORE..$SHA" 2>/dev/null || git log -1 --pretty=format:"- \`%h\` %s — _%an_"
+              echo ""
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -54,3 +97,32 @@ jobs:
             docker compose restart nginx && \
             docker image prune -f
             echo "Deploy done"
+
+      - name: Deploy summary
+        if: always()
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          AUTHOR: ${{ github.event.head_commit.author.name }}
+          SHA: ${{ github.sha }}
+          STATUS: ${{ job.status }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          ICON="✅"
+          [ "$STATUS" != "success" ] && ICON="❌"
+          SHORT="${SHA:0:7}"
+          {
+            echo "## $ICON Deploy — $STATUS"
+            echo ""
+            if [ "$STATUS" = "success" ]; then
+              echo "🌐 **Live:** https://app.felsenau.org"
+              echo ""
+            fi
+            echo "**Commit:** [\`$SHORT\`]($REPO_URL/commit/$SHA)"
+            echo "**Autor:** $AUTHOR"
+            echo ""
+            echo "**Nachricht:**"
+            echo ""
+            echo '```'
+            echo "$COMMIT_MSG"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
