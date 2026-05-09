@@ -99,6 +99,7 @@ export function HamburgerMenu() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [hasKaffeeAbo, setHasKaffeeAbo] = useState(false);
   const [topScore, setTopScore] = useState<number | null>(null);
+  const [snakeTopScore, setSnakeTopScore] = useState<number | null>(null);
   const notifCount = notifications.length;
 
   // Kaffee-Abo Status vom Profil laden
@@ -119,13 +120,21 @@ export function HamburgerMenu() {
     };
   }, [open]);
 
-  // Highscore laden
+  // Highscores laden — Tetris + Snake getrennt
   useEffect(() => {
-    fetch("/api/game/highscore")
+    fetch("/api/game/highscore?game=tetris")
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { topScore?: number } | null) => {
         if (data && typeof data.topScore === "number") {
           setTopScore(data.topScore);
+        }
+      })
+      .catch(() => {});
+    fetch("/api/game/highscore?game=snake")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { topScore?: number } | null) => {
+        if (data && typeof data.topScore === "number") {
+          setSnakeTopScore(data.topScore);
         }
       })
       .catch(() => {});
@@ -225,7 +234,7 @@ export function HamburgerMenu() {
           aria-label="Block-Puzzle spielen"
           title={
             topScore && topScore > 0
-              ? `🏆 Highscore: ${topScore}`
+              ? `🏆 Tetris: ${topScore}`
               : "Block-Puzzle spielen"
           }
         >
@@ -237,6 +246,28 @@ export function HamburgerMenu() {
             </span>
           ) : (
             <span className="text-sm text-white">🎮</span>
+          )}
+        </button>
+
+        {/* Snake Badge */}
+        <button
+          onClick={() => (window.location.href = "/snake")}
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-cyan-400"
+          aria-label="Snake spielen"
+          title={
+            snakeTopScore && snakeTopScore > 0
+              ? `🐍 Snake: ${snakeTopScore}`
+              : "Snake spielen"
+          }
+        >
+          {snakeTopScore !== null && snakeTopScore > 0 ? (
+            <span className="font-mono text-[11px] font-bold text-cyan-300">
+              {snakeTopScore > 9999
+                ? `${Math.floor(snakeTopScore / 1000)}k`
+                : snakeTopScore}
+            </span>
+          ) : (
+            <span className="text-sm">🐍</span>
           )}
         </button>
       </div>

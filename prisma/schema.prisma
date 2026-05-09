@@ -129,10 +129,12 @@ model GameScore {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   score     Int
+  game      String   @default("tetris")
   createdAt DateTime @default(now())
 
   @@index([score(sort: Desc)])
   @@index([userId])
+  @@index([game, score(sort: Desc)])
   @@map("game_scores")
 }
 
