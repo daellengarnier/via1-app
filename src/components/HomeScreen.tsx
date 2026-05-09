@@ -568,10 +568,10 @@ export default function HomeScreen() {
               SPINNEREI
             </p>
             <p className="mt-0.5 truncate text-xs font-medium text-white">
-              Soirée Tropicale
+              Los Palms
             </p>
             <p className="font-mono text-[10px] text-gray-500">
-              Fr 25. Apr · 21:00
+              Sa 23. Mai · 21:00
             </p>
           </a>
         ) : (
@@ -717,13 +717,13 @@ export default function HomeScreen() {
                 </p>
               </div>
               <p className="truncate text-sm font-semibold text-orange-200">
-                Soirée Tropicale
+                Los Palms
               </p>
               <p className="mt-0.5 font-mono text-[10px] text-gray-500">
-                Fr 25. Apr
+                Sa 23. Mai
               </p>
               <p className="font-mono text-[10px] text-gray-500">
-                20:00 – 02:30
+                21:00 – 00:00
               </p>
               <button
                 type="button"
