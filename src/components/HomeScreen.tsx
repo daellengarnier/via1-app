@@ -132,6 +132,63 @@ export default function HomeScreen() {
   const [editNoteText, setEditNoteText] = useState("");
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [aare, setAare] = useState<AareData | null>(null);
+  const [spinnereiEvent, setSpinnereiEvent] = useState<{
+    title: string;
+    dateLabel: string;
+    startTime: string;
+    timeRange: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/spinnerei/next-event")
+      .then((r) => (r.ok ? r.json() : null))
+      .then(
+        (
+          data: {
+            event: {
+              title: string;
+              startAt: string;
+              endAt: string | null;
+            } | null;
+          } | null
+        ) => {
+          if (cancelled || !data?.event) return;
+          const start = new Date(data.event.startAt);
+          if (Number.isNaN(start.getTime())) return;
+          const end = data.event.endAt ? new Date(data.event.endAt) : null;
+          const dateLabel = start.toLocaleDateString("de-CH", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            timeZone: "Europe/Zurich",
+          });
+          const startTime = start.toLocaleTimeString("de-CH", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "Europe/Zurich",
+          });
+          const endTime =
+            end && !Number.isNaN(end.getTime())
+              ? end.toLocaleTimeString("de-CH", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  timeZone: "Europe/Zurich",
+                })
+              : null;
+          setSpinnereiEvent({
+            title: data.event.title,
+            dateLabel,
+            startTime,
+            timeRange: endTime ? `${startTime} – ${endTime}` : startTime,
+          });
+        }
+      )
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Pinnwand laden
   const loadPinnwand = useCallback(async () => {
@@ -568,10 +625,12 @@ export default function HomeScreen() {
               SPINNEREI
             </p>
             <p className="mt-0.5 truncate text-xs font-medium text-white">
-              Los Palms
+              {spinnereiEvent?.title ?? "Los Palms"}
             </p>
             <p className="font-mono text-[10px] text-gray-500">
-              Sa 23. Mai · 21:00
+              {spinnereiEvent
+                ? `${spinnereiEvent.dateLabel} · ${spinnereiEvent.startTime}`
+                : "Sa 23. Mai · 21:00"}
             </p>
           </a>
         ) : (
@@ -717,13 +776,13 @@ export default function HomeScreen() {
                 </p>
               </div>
               <p className="truncate text-sm font-semibold text-orange-200">
-                Los Palms
+                {spinnereiEvent?.title ?? "Los Palms"}
               </p>
               <p className="mt-0.5 font-mono text-[10px] text-gray-500">
-                Sa 23. Mai
+                {spinnereiEvent?.dateLabel ?? "Sa 23. Mai"}
               </p>
               <p className="font-mono text-[10px] text-gray-500">
-                21:00 – 00:00
+                {spinnereiEvent?.timeRange ?? "21:00 – 00:00"}
               </p>
               <button
                 type="button"
