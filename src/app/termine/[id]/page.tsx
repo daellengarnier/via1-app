@@ -164,6 +164,8 @@ export default function TerminDetailPage() {
 
   const isSitzung = termin.type === "sitzung";
   const hasEssen = termin.type === "essen" || termin.withDinner;
+  const mySignup = termin.mealSignups.find((s) => s.userId === currentUserId);
+  const isSignedUp = !!mySignup && (mySignup.goingSelf || mySignup.guestDetails.length > 0);
   const totalGuests = termin.mealSignups.reduce(
     (sum, s) => sum + 1 + s.guestDetails.length,
     0
@@ -282,9 +284,20 @@ export default function TerminDetailPage() {
     }
   }
 
+  function toggleSignupForm() {
+    if (!showSignup) {
+      // Beim Oeffnen vorhandene Gaeste vorausfuellen, damit man sie
+      // bearbeiten oder weitere hinzufuegen kann (POST ist ein Upsert,
+      // der bestehende Gaeste sonst ueberschreiben wuerde).
+      setSignupGuestDetails(
+        mySignup?.guestDetails.map((g) => ({ ...g })) ?? []
+      );
+    }
+    setShowSignup(!showSignup);
+  }
+
   async function cancelMealSignup() {
     if (!termin) return;
-    const mySignup = termin.mealSignups.find((s) => s.userId === currentUserId);
     const guestCount = mySignup?.guestDetails.length ?? 0;
 
     let alsoRemoveGuests = true;
@@ -830,10 +843,10 @@ export default function TerminDetailPage() {
               Essens-Anmeldung ({totalGuests} Personen)
             </h2>
             <button
-              onClick={() => setShowSignup(!showSignup)}
+              onClick={toggleSignupForm}
               className="rounded-full bg-secondary px-3 py-1 font-mono text-xs font-bold text-white"
             >
-              Anmelden
+              {isSignedUp ? "Bearbeiten" : "Anmelden"}
             </button>
           </div>
 
@@ -942,7 +955,7 @@ export default function TerminDetailPage() {
                 type="submit"
                 className="mt-2 rounded bg-secondary px-4 py-2 font-mono text-xs font-bold text-white"
               >
-                Anmelden
+                {isSignedUp ? "Speichern" : "Anmelden"}
               </button>
             </form>
           )}
