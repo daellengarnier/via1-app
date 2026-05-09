@@ -13,6 +13,6 @@ export const config = {
      * - /_next (Next.js internals)
      * - Alle statischen Dateien (mit Extension, z.B. .webp, .png, .ico, .svg)
      */
-    "/((?!login|registrieren|setup|api/auth|api/setup|api/register|_next|.*\\..*).*)",
+    "/((?!login|registrieren|setup|api/auth|api/setup|api/register|api/sauna|_next|.*\\..*).*)",
   ],
 };
