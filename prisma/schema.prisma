@@ -725,3 +725,13 @@ model FeedbackComment {
   @@index([feedbackId])
   @@map("feedback_comments")
 }
+
+model SaunaReading {
+  id          Int      @id @default(autoincrement())
+  tempC       Decimal  @db.Decimal(5, 2)
+  rssi        Int?
+  recordedAt  DateTime @default(now())
+
+  @@index([recordedAt])
+  @@map("sauna_readings")
+}

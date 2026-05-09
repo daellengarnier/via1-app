@@ -110,6 +110,8 @@ export default function HomeScreen() {
   const currentKaffee = kaffeeState.kaffee;
   const [, , putzCurrentWg] = usePutzplan();
   const [saunaTemp, setSaunaTemp] = useState<number | null>(null);
+  const [saunaLive, setSaunaLive] = useState(false);
+  const [saunaAgeSec, setSaunaAgeSec] = useState<number | null>(null);
   const [openAufgabenCount, setOpenAufgabenCount] = useState<number | null>(
     null
   );
@@ -212,35 +214,37 @@ export default function HomeScreen() {
     loadPinnwand();
   }, [loadPinnwand]);
 
-  // Sauna-Temperatur berechnen: localStorage speichert Aufheiz-Startzeit.
-  // 30min bis 80°C, danach konstant. Reset nach Mitternacht.
+  // Sauna-Temperatur: echter Sensor (ESP32 + DS18B20). Frisch = < 2 Min alt.
   useEffect(() => {
-    function calcTemp(): number {
-      const outsideTemp = weather?.temp ?? 15;
-      const stored = localStorage.getItem("via1-sauna-start");
-      if (!stored) return outsideTemp;
-      const startTime = parseInt(stored, 10);
-      if (Number.isNaN(startTime)) return outsideTemp;
-      // Nacht-Reset: wenn Start vor Mitternacht und jetzt nach 6 Uhr
-      const startDate = new Date(startTime);
-      const now = new Date();
-      if (
-        startDate.getDate() !== now.getDate() &&
-        now.getHours() >= 6
-      ) {
-        localStorage.removeItem("via1-sauna-start");
-        return outsideTemp;
+    let cancelled = false;
+    async function fetchSauna() {
+      try {
+        const res = await fetch("/api/sauna/current", { cache: "no-store" });
+        if (!res.ok) throw new Error(String(res.status));
+        const data: { tempC: number | null; ageSeconds: number | null } =
+          await res.json();
+        if (cancelled) return;
+        if (data.tempC === null || data.ageSeconds === null) {
+          setSaunaTemp(null);
+          setSaunaLive(false);
+          setSaunaAgeSec(null);
+          return;
+        }
+        setSaunaTemp(Math.round(data.tempC * 10) / 10);
+        setSaunaAgeSec(data.ageSeconds);
+        setSaunaLive(data.ageSeconds < 120);
+      } catch {
+        if (cancelled) return;
+        setSaunaLive(false);
       }
-      const elapsed = (Date.now() - startTime) / 60000; // Minuten
-      if (elapsed < 0) return outsideTemp;
-      const target = 80;
-      const progress = Math.min(1, elapsed / 30);
-      return Math.round(outsideTemp + (target - outsideTemp) * progress);
     }
-    setSaunaTemp(calcTemp());
-    const id = setInterval(() => setSaunaTemp(calcTemp()), 30000);
-    return () => clearInterval(id);
-  }, [weather]);
+    fetchSauna();
+    const id = setInterval(fetchSauna, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
 
   // Aufgaben-Count fuer die Tile
   useEffect(() => {
@@ -659,7 +663,15 @@ export default function HomeScreen() {
             {saunaTemp ?? "–"}°C
           </p>
           <p className="mt-1 text-[10px] text-gray-500">
-            {(saunaTemp ?? 0) >= 60 ? "geheizt 🔥" : "kalt"}
+            {saunaTemp === null
+              ? "Sensor offline"
+              : saunaLive
+                ? saunaTemp >= 60
+                  ? "geheizt 🔥"
+                  : saunaTemp >= 35
+                    ? "warm"
+                    : "kalt"
+                : `vor ${Math.round((saunaAgeSec ?? 0) / 60)} Min`}
           </p>
         </div>
         <div
