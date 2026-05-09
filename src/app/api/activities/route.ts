@@ -189,6 +189,7 @@ export async function POST(req: Request) {
   const timeStr = first.startAt.toLocaleTimeString("de-CH", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Europe/Zurich",
   });
   const recurrenceLabel =
     recurrence === "DAILY"
