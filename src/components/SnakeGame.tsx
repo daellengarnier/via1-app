@@ -118,15 +118,15 @@ function initGame(): Game {
 
 interface SnakeGameProps {
   onGameOver: (score: number) => void;
-  highScore: number;
+  onScoreChange?: (score: number) => void;
 }
 
-export function SnakeGame({ onGameOver, highScore }: SnakeGameProps) {
+export function SnakeGame({ onGameOver, onScoreChange }: SnakeGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gameRef = useRef<Game | null>(null);
   const touchRef = useRef<{ x: number; y: number } | null>(null);
   const onGameOverRef = useRef(onGameOver);
-  const highScoreRef = useRef(highScore);
+  const onScoreChangeRef = useRef(onScoreChange);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [started, setStarted] = useState(false);
@@ -135,8 +135,11 @@ export function SnakeGame({ onGameOver, highScore }: SnakeGameProps) {
     onGameOverRef.current = onGameOver;
   }, [onGameOver]);
   useEffect(() => {
-    highScoreRef.current = highScore;
-  }, [highScore]);
+    onScoreChangeRef.current = onScoreChange;
+  }, [onScoreChange]);
+  useEffect(() => {
+    onScoreChangeRef.current?.(score);
+  }, [score]);
 
   const startGame = useCallback(() => {
     gameRef.current = initGame();
@@ -274,13 +277,6 @@ export function SnakeGame({ onGameOver, highScore }: SnakeGameProps) {
           ctx.fillRect(x, y, s, s);
         }
       }
-
-      ctx.fillStyle = "#F0EEFF";
-      ctx.font = "600 13px sans-serif";
-      ctx.textAlign = "left";
-      ctx.fillText(String(g.score), 8, 18);
-      ctx.textAlign = "right";
-      ctx.fillText(`Best: ${Math.max(highScoreRef.current, g.score)}`, W - 8, 18);
 
       ctx.restore();
     };
