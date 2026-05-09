@@ -27,3 +27,7 @@ docker-compose.override.yml
 # Prisma
 prisma/migrations/**/migration_lock.toml
 tsconfig.tsbuildinfo
+
+# Stale build/error directories created by next build
+.next.build-*/
+.next.broken-*/
