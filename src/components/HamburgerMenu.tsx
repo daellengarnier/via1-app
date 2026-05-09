@@ -248,29 +248,29 @@ export function HamburgerMenu() {
             <span className="text-sm text-white">🎮</span>
           )}
         </button>
-
-        {/* Snake Badge */}
-        <button
-          onClick={() => (window.location.href = "/snake")}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-cyan-400"
-          aria-label="Snake spielen"
-          title={
-            snakeTopScore && snakeTopScore > 0
-              ? `🐍 Snake: ${snakeTopScore}`
-              : "Snake spielen"
-          }
-        >
-          {snakeTopScore !== null && snakeTopScore > 0 ? (
-            <span className="font-mono text-[11px] font-bold text-cyan-300">
-              {snakeTopScore > 9999
-                ? `${Math.floor(snakeTopScore / 1000)}k`
-                : snakeTopScore}
-            </span>
-          ) : (
-            <span className="text-sm">🐍</span>
-          )}
-        </button>
       </div>
+
+      {/* Snake Badge — direkt links vom Hamburger */}
+      <button
+        onClick={() => (window.location.href = "/snake")}
+        className="fixed right-16 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-cyan-400"
+        aria-label="Snake spielen"
+        title={
+          snakeTopScore && snakeTopScore > 0
+            ? `🐍 Snake: ${snakeTopScore}`
+            : "Snake spielen"
+        }
+      >
+        {snakeTopScore !== null && snakeTopScore > 0 ? (
+          <span className="font-mono text-[11px] font-bold text-cyan-300">
+            {snakeTopScore > 9999
+              ? `${Math.floor(snakeTopScore / 1000)}k`
+              : snakeTopScore}
+          </span>
+        ) : (
+          <span className="text-sm">🐍</span>
+        )}
+      </button>
 
       {/* Hamburger Button — RECHTS */}
       <button

@@ -362,15 +362,21 @@ export function SnakeGame({ onGameOver, highScore }: SnakeGameProps) {
     <div
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="relative overflow-hidden rounded-xl border border-cyan-500/30"
-      style={{ background: "#0F0A1F" }}
+      className="relative mx-auto overflow-hidden rounded-xl border border-cyan-500/30 touch-none"
+      style={{
+        background: "#0F0A1F",
+        aspectRatio: `${W} / ${H}`,
+        maxHeight: "100%",
+        maxWidth: "100%",
+        height: "auto",
+        width: "auto",
+      }}
     >
       <canvas
         ref={canvasRef}
         width={W}
         height={H}
-        className="block w-full"
-        style={{ maxHeight: "calc(100vh - 240px)", objectFit: "contain" }}
+        className="block h-full w-full"
       />
       {!started && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[rgba(15,10,31,0.92)]">
