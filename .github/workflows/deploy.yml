@@ -1,5 +1,10 @@
 name: Build and Deploy
 
+# Run-Titel = Subject des HEAD-Commits. Bei Squash-Merges ist das der
+# PR-Titel (informativ). Bei normalen Merges nur "Merge pull request #X..."
+# — daher mergen wir aus PRs idealerweise via squash.
+run-name: ${{ github.event.head_commit.message }}
+
 on:
   push:
     branches: [main]
