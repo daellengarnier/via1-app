@@ -18,6 +18,7 @@ export default function SnakePage() {
   const [showLB, setShowLB] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [isNewRecord, setIsNewRecord] = useState(false);
+  const [currentScore, setCurrentScore] = useState(0);
 
   // Scroll blockieren waehrend Snake offen ist (Pfeiltasten/Wischen
   // sollen nicht die Seite verschieben)
@@ -77,34 +78,51 @@ export default function SnakePage() {
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden">
-      {/* Header — fix oben */}
-      <div className="mx-auto flex w-full max-w-[420px] shrink-0 items-center justify-between px-4 py-3">
+      {/* Header — Titel zentriert, Buttons links/rechts */}
+      <div className="mx-auto grid w-full max-w-[420px] shrink-0 grid-cols-3 items-center px-4 py-3">
         <button
           onClick={() => router.back()}
-          className="w-8 text-sm text-gray-500 hover:text-white"
+          className="justify-self-start text-sm text-gray-500 hover:text-white"
         >
           ←
         </button>
-        <p className="font-display text-[12px] font-bold uppercase tracking-widest text-cyan-300">
-          🐍 Snake
+        <p className="justify-self-center font-cinzel text-2xl text-cyan-300">
+          Snake
         </p>
         <button
           onClick={() => setShowLB(true)}
-          className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 font-display text-[10px] font-bold uppercase tracking-wider text-amber-300 hover:bg-amber-500/20"
+          className="justify-self-end rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 font-display text-[10px] font-bold uppercase tracking-wider text-amber-300 hover:bg-amber-500/20"
         >
           🏆 Top 20
         </button>
       </div>
 
       {/* Spielfeld — vertikal zentriert in der verbleibenden Hoehe */}
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-3">
-        {myScore > 0 && (
-          <p className="font-mono text-[10px] text-gray-500">
-            Dein Bestwert: <span className="text-cyan-300">{myScore}</span>
-          </p>
-        )}
-        <div className="w-full max-w-[420px]">
-          <SnakeGame onGameOver={handleGameOver} highScore={myScore} />
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-3">
+        {/* Score-Bar ueber dem Spielfeld */}
+        <div className="flex w-full max-w-[420px] items-center justify-between px-1">
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-display text-[9px] font-bold uppercase tracking-widest text-gray-500">
+              Score
+            </span>
+            <span className="font-mono text-lg font-bold text-cyan-300">
+              {currentScore}
+            </span>
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-display text-[9px] font-bold uppercase tracking-widest text-gray-500">
+              Best
+            </span>
+            <span className="font-mono text-lg font-bold text-amber-300">
+              {Math.max(myScore, currentScore)}
+            </span>
+          </div>
+        </div>
+        <div className="flex min-h-0 w-full max-w-[420px] flex-1 items-center">
+          <SnakeGame
+            onGameOver={handleGameOver}
+            onScoreChange={setCurrentScore}
+          />
         </div>
         {finalScore !== null && finalScore > 0 && (
           <div className="flex flex-col items-center">
