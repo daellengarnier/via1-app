@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { SnakeGame } from "@/components/SnakeGame";
 
 interface LeaderboardEntry {
@@ -12,7 +11,6 @@ interface LeaderboardEntry {
 }
 
 export default function SnakePage() {
-  const router = useRouter();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [myScore, setMyScore] = useState(0);
   const [showLB, setShowLB] = useState(false);
@@ -78,66 +76,60 @@ export default function SnakePage() {
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden">
-      {/* Header — Titel zentriert, Buttons links/rechts */}
-      <div className="mx-auto grid w-full max-w-[420px] shrink-0 grid-cols-3 items-center px-4 py-3">
-        <button
-          onClick={() => router.back()}
-          className="justify-self-start text-sm text-gray-500 hover:text-white"
-        >
-          ←
-        </button>
-        <p className="justify-self-center font-cinzel text-2xl text-cyan-300">
-          Snake
-        </p>
+      {/* Titel — zentriert zwischen den linken und rechten Floating-Badges,
+           keine Buttons hier (waeren von den Badges verdeckt) */}
+      <div className="shrink-0 px-28 pt-4 pb-1 text-center">
+        <p className="font-cinzel text-2xl text-cyan-300">Snake</p>
+      </div>
+
+      {/* Score-Bar mit zentralem Top-20-Button, klar klickbar */}
+      <div className="mx-auto mt-2 flex w-full max-w-[420px] shrink-0 items-center justify-between px-4">
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-display text-[9px] font-bold uppercase tracking-widest text-gray-500">
+            Score
+          </span>
+          <span className="font-mono text-lg font-bold text-cyan-300">
+            {currentScore}
+          </span>
+        </div>
         <button
           onClick={() => setShowLB(true)}
-          className="justify-self-end rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 font-display text-[10px] font-bold uppercase tracking-wider text-amber-300 hover:bg-amber-500/20"
+          className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 font-display text-[10px] font-bold uppercase tracking-wider text-amber-300 hover:bg-amber-500/20"
         >
           🏆 Top 20
         </button>
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-display text-[9px] font-bold uppercase tracking-widest text-gray-500">
+            Best
+          </span>
+          <span className="font-mono text-lg font-bold text-amber-300">
+            {Math.max(myScore, currentScore)}
+          </span>
+        </div>
       </div>
 
-      {/* Spielfeld — vertikal zentriert in der verbleibenden Hoehe */}
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-3">
-        {/* Score-Bar ueber dem Spielfeld */}
-        <div className="flex w-full max-w-[420px] items-center justify-between px-1">
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-display text-[9px] font-bold uppercase tracking-widest text-gray-500">
-              Score
-            </span>
-            <span className="font-mono text-lg font-bold text-cyan-300">
-              {currentScore}
-            </span>
-          </div>
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-display text-[9px] font-bold uppercase tracking-widest text-gray-500">
-              Best
-            </span>
-            <span className="font-mono text-lg font-bold text-amber-300">
-              {Math.max(myScore, currentScore)}
-            </span>
-          </div>
-        </div>
-        <div className="flex min-h-0 w-full max-w-[420px] flex-1 items-center">
-          <SnakeGame
-            onGameOver={handleGameOver}
-            onScoreChange={setCurrentScore}
-          />
-        </div>
-        {finalScore !== null && finalScore > 0 && (
-          <div className="flex flex-col items-center">
-            {isNewRecord ? (
-              <p className="font-display text-[11px] font-bold uppercase tracking-widest text-amber-300">
-                🏆 Neuer Highscore!
-              </p>
-            ) : (
-              <p className="font-mono text-[10px] text-gray-500">
-                Score gespeichert
-              </p>
-            )}
-          </div>
-        )}
+      {/* Spielfeld — startet oben in der verbleibenden Hoehe (nicht
+           vertikal zentriert) und nimmt sich so viel wie es kann */}
+      <div className="flex min-h-0 w-full flex-1 items-start justify-center px-3 pt-3">
+        <SnakeGame
+          onGameOver={handleGameOver}
+          onScoreChange={setCurrentScore}
+        />
       </div>
+
+      {finalScore !== null && finalScore > 0 && (
+        <div className="shrink-0 px-3 pb-2 pt-1 text-center">
+          {isNewRecord ? (
+            <p className="font-display text-[11px] font-bold uppercase tracking-widest text-amber-300">
+              🏆 Neuer Highscore!
+            </p>
+          ) : (
+            <p className="font-mono text-[10px] text-gray-500">
+              Score gespeichert
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Leaderboard Modal */}
       {showLB && (
