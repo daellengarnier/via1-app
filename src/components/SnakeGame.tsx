@@ -327,37 +327,47 @@ export function SnakeGame({ onGameOver, onScoreChange }: SnakeGameProps) {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  function handleTouchStart(e: React.TouchEvent) {
-    const t = e.touches[0];
-    if (!t) return;
-    touchRef.current = { x: t.clientX, y: t.clientY };
-  }
-
-  function handleTouchEnd(e: React.TouchEvent) {
-    if (!touchRef.current) return;
-    const t = e.changedTouches[0];
-    if (!t) return;
-    const dx = t.clientX - touchRef.current.x;
-    const dy = t.clientY - touchRef.current.y;
-    const g = gameRef.current;
-    if (!g || !g.running) {
+  // Touch-Swipes auf dem ganzen Window — so funktioniert das Wischen
+  // auch ausserhalb des Spielfelds (Score-Bar, leerer Bereich darunter).
+  useEffect(() => {
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (!t) return;
+      touchRef.current = { x: t.clientX, y: t.clientY };
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (!touchRef.current) return;
+      const t = e.changedTouches[0];
+      if (!t) {
+        touchRef.current = null;
+        return;
+      }
+      const dx = t.clientX - touchRef.current.x;
+      const dy = t.clientY - touchRef.current.y;
       touchRef.current = null;
-      return;
-    }
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 20 && g.dir !== DIR.LEFT) g.nextDir = DIR.RIGHT;
-      if (dx < -20 && g.dir !== DIR.RIGHT) g.nextDir = DIR.LEFT;
-    } else {
-      if (dy > 20 && g.dir !== DIR.UP) g.nextDir = DIR.DOWN;
-      if (dy < -20 && g.dir !== DIR.DOWN) g.nextDir = DIR.UP;
-    }
-    touchRef.current = null;
-  }
+      const g = gameRef.current;
+      if (!g || !g.running) return;
+      // Tap (kaum Bewegung) ignorieren, damit Buttons weiter klickbar
+      // sind
+      if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 0 && g.dir !== DIR.LEFT) g.nextDir = DIR.RIGHT;
+        if (dx < 0 && g.dir !== DIR.RIGHT) g.nextDir = DIR.LEFT;
+      } else {
+        if (dy > 0 && g.dir !== DIR.UP) g.nextDir = DIR.DOWN;
+        if (dy < 0 && g.dir !== DIR.DOWN) g.nextDir = DIR.UP;
+      }
+    };
+    window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchend", onEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onStart);
+      window.removeEventListener("touchend", onEnd);
+    };
+  }, []);
 
   return (
     <div
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
       className="relative mx-auto overflow-hidden rounded-xl border border-cyan-500/30 touch-none"
       style={{
         background: "#0F0A1F",
