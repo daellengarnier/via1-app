@@ -19,6 +19,22 @@ export default function SnakePage() {
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [isNewRecord, setIsNewRecord] = useState(false);
 
+  // Scroll blockieren waehrend Snake offen ist (Pfeiltasten/Wischen
+  // sollen nicht die Seite verschieben)
+  useEffect(() => {
+    const prevHtml = document.documentElement.style.overflow;
+    const prevBody = document.body.style.overflow;
+    const prevOverscroll = document.body.style.overscrollBehavior;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    return () => {
+      document.documentElement.style.overflow = prevHtml;
+      document.body.style.overflow = prevBody;
+      document.body.style.overscrollBehavior = prevOverscroll;
+    };
+  }, []);
+
   const loadLB = useCallback(() => {
     fetch("/api/game/highscore?game=snake")
       .then((r) => (r.ok ? r.json() : null))
@@ -60,9 +76,9 @@ export default function SnakePage() {
   );
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col items-center px-3 py-2">
-      {/* Header */}
-      <div className="flex w-full items-center justify-between px-1 py-2">
+    <div className="fixed inset-0 flex flex-col overflow-hidden">
+      {/* Header — fix oben */}
+      <div className="mx-auto flex w-full max-w-[420px] shrink-0 items-center justify-between px-4 py-3">
         <button
           onClick={() => router.back()}
           className="w-8 text-sm text-gray-500 hover:text-white"
@@ -80,29 +96,30 @@ export default function SnakePage() {
         </button>
       </div>
 
-      {myScore > 0 && (
-        <p className="mb-2 font-mono text-[10px] text-gray-500">
-          Dein Bestwert: <span className="text-cyan-300">{myScore}</span>
-        </p>
-      )}
-
-      <div className="w-full">
-        <SnakeGame onGameOver={handleGameOver} highScore={myScore} />
-      </div>
-
-      {finalScore !== null && finalScore > 0 && (
-        <div className="mt-3 flex flex-col items-center">
-          {isNewRecord ? (
-            <p className="font-display text-[11px] font-bold uppercase tracking-widest text-amber-300">
-              🏆 Neuer Highscore!
-            </p>
-          ) : (
-            <p className="font-mono text-[10px] text-gray-500">
-              Score gespeichert
-            </p>
-          )}
+      {/* Spielfeld — vertikal zentriert in der verbleibenden Hoehe */}
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-3">
+        {myScore > 0 && (
+          <p className="font-mono text-[10px] text-gray-500">
+            Dein Bestwert: <span className="text-cyan-300">{myScore}</span>
+          </p>
+        )}
+        <div className="w-full max-w-[420px]">
+          <SnakeGame onGameOver={handleGameOver} highScore={myScore} />
         </div>
-      )}
+        {finalScore !== null && finalScore > 0 && (
+          <div className="flex flex-col items-center">
+            {isNewRecord ? (
+              <p className="font-display text-[11px] font-bold uppercase tracking-widest text-amber-300">
+                🏆 Neuer Highscore!
+              </p>
+            ) : (
+              <p className="font-mono text-[10px] text-gray-500">
+                Score gespeichert
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Leaderboard Modal */}
       {showLB && (
