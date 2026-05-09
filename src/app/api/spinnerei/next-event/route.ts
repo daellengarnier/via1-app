@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
 
 interface SpinnereiEvent {
   title: string;
@@ -7,6 +6,10 @@ interface SpinnereiEvent {
   endAt: string | null;
   url: string | null;
 }
+
+// 12h Cache fuer den ganzen Route — Spinnerei-Programm aendert sich
+// selten und wir wollen die Drittseite nicht hammern.
+export const revalidate = 60 * 60 * 12;
 
 // Mehrere URLs probieren, da der Events-Calendar-Plugin-Pfad
 // nicht garantiert /events/ ist und JSON-LD oft auch auf der
@@ -37,7 +40,7 @@ function collectEventsFromJsonLd(html: string): SpinnereiEvent[] {
     /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   let m: RegExpExecArray | null;
   while ((m = scriptRe.exec(html)) !== null) {
-    const raw = m[1].trim();
+    const raw = m[1]?.trim();
     if (!raw) continue;
     let parsed: unknown;
     try {
@@ -45,11 +48,19 @@ function collectEventsFromJsonLd(html: string): SpinnereiEvent[] {
     } catch {
       continue;
     }
-    const items: unknown[] = Array.isArray(parsed)
-      ? parsed
-      : parsed && typeof parsed === "object" && "@graph" in parsed
-        ? ((parsed as { "@graph": unknown[] })["@graph"] ?? [])
-        : [parsed];
+    let items: unknown[];
+    if (Array.isArray(parsed)) {
+      items = parsed;
+    } else if (
+      parsed &&
+      typeof parsed === "object" &&
+      "@graph" in parsed &&
+      Array.isArray((parsed as { "@graph": unknown }) ["@graph"])
+    ) {
+      items = (parsed as { "@graph": unknown[] })["@graph"];
+    } else {
+      items = [parsed];
+    }
     for (const item of items) {
       if (!item || typeof item !== "object") continue;
       const e = item as JsonLdEvent;
@@ -74,7 +85,7 @@ async function fetchHtml(url: string): Promise<string | null> {
           "Mozilla/5.0 (compatible; via1-app/1.0; +https://app.felsenau.org)",
         Accept: "text/html,application/xhtml+xml",
       },
-      cache: "no-store",
+      next: { revalidate: 60 * 60 * 12 },
     });
     if (!res.ok) {
       console.warn("[spinnerei] fetch failed", url, res.status);
@@ -108,20 +119,8 @@ async function fetchNextEvent(): Promise<SpinnereiEvent | null> {
   return upcoming[0] ?? null;
 }
 
-const getCachedNextEvent = unstable_cache(
-  fetchNextEvent,
-  ["spinnerei-next-event"],
-  { revalidate: 60 * 60 * 12 }
-);
-
 export async function GET() {
-  const event = await getCachedNextEvent();
-  if (!event) {
-    return NextResponse.json(
-      { event: null, sourceUrl: FALLBACK_URL },
-      { headers: { "Cache-Control": "public, s-maxage=3600" } }
-    );
-  }
+  const event = await fetchNextEvent();
   return NextResponse.json(
     { event, sourceUrl: FALLBACK_URL },
     { headers: { "Cache-Control": "public, s-maxage=3600" } }
