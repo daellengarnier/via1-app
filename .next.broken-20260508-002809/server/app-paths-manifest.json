@@ -1,0 +1,5 @@
+{
+  "/api/laundry/route": "app/api/laundry/route.js",
+  "/page": "app/page.js",
+  "/api/notifications/route": "app/api/notifications/route.js"
+}
