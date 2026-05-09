@@ -337,7 +337,7 @@ export default function TetrisPage() {
   }, []);
 
   const loadLB = useCallback(() => {
-    fetch("/api/game/highscore")
+    fetch("/api/game/highscore?game=tetris")
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { leaderboard?: LeaderboardEntry[] } | null) => {
         if (d?.leaderboard) setLeaderboard(d.leaderboard);
@@ -352,7 +352,7 @@ export default function TetrisPage() {
       fetch("/api/game/highscore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ score }),
+        body: JSON.stringify({ score, game: "tetris" }),
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((d: { isNewRecord?: boolean } | null) => {
