@@ -351,35 +351,52 @@ function WashingMachineIcon({
           strokeWidth="0.95"
         />
       </svg>
-      {/* Schallwellen — halbrunde Bögen links & rechts */}
+      {/* Schallwellen — konzentrische Kreise um die Maschine, cyan,
+           starten knapp ausserhalb der Trommel und expandieren weiter
+           nach aussen */}
       <svg
         className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
         viewBox="0 0 72 88"
       >
         {(active
           ? [
-              { delay: "0s", dur: "1.6s" },
-              { delay: "0.4s", dur: "1.6s" },
-              { delay: "0.8s", dur: "1.6s" },
-              { delay: "1.2s", dur: "1.6s" },
+              { delay: "0s", dur: "2s" },
+              { delay: "0.5s", dur: "2s" },
+              { delay: "1s", dur: "2s" },
+              { delay: "1.5s", dur: "2s" },
             ]
           : [
               { delay: "0s", dur: "4s" },
               { delay: "2s", dur: "4s" },
             ]
         ).map((w, i) => (
-          <g key={i}>
-            {/* Linker Bogen */}
-            <path fill="none" stroke={active ? "rgba(184,240,104,0.8)" : "rgba(184,240,104,0.12)"} strokeWidth={active ? "1.3" : "0.7"} strokeLinecap="round">
-              <animate attributeName="d" values="M10 44 Q6 50 10 56;M-4 32 Q-14 50 -4 68" dur={w.dur} begin={w.delay} repeatCount="indefinite" />
-              <animate attributeName="opacity" values={active ? "0.8;0" : "0.12;0"} dur={w.dur} begin={w.delay} repeatCount="indefinite" />
-            </path>
-            {/* Rechter Bogen */}
-            <path fill="none" stroke={active ? "rgba(184,240,104,0.8)" : "rgba(184,240,104,0.12)"} strokeWidth={active ? "1.3" : "0.7"} strokeLinecap="round">
-              <animate attributeName="d" values="M62 44 Q66 50 62 56;M76 32 Q86 50 76 68" dur={w.dur} begin={w.delay} repeatCount="indefinite" />
-              <animate attributeName="opacity" values={active ? "0.8;0" : "0.12;0"} dur={w.dur} begin={w.delay} repeatCount="indefinite" />
-            </path>
-          </g>
+          <circle
+            key={i}
+            cx="36"
+            cy="56"
+            fill="none"
+            stroke={
+              active
+                ? "rgba(103,232,249,0.85)"
+                : "rgba(103,232,249,0.18)"
+            }
+            strokeWidth={active ? "1.2" : "0.6"}
+          >
+            <animate
+              attributeName="r"
+              values="26;48"
+              dur={w.dur}
+              begin={w.delay}
+              repeatCount="indefinite"
+            />
+            <animate
+              attributeName="opacity"
+              values={active ? "0.85;0" : "0.18;0"}
+              dur={w.dur}
+              begin={w.delay}
+              repeatCount="indefinite"
+            />
+          </circle>
         ))}
       </svg>
       <SevenSegmentDisplay value={active ? remaining : "--"} />
