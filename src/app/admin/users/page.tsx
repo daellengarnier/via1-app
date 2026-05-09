@@ -18,6 +18,15 @@ interface AdminUser {
   roomKey: string | null;
 }
 
+const WG_OPTIONS = [
+  { name: "Nordwind", rooms: ["N01", "N02", "N03", "N04", "N05"] },
+  { name: "Ostblock", rooms: ["O01", "O02", "O03", "O04", "O05"] },
+  { name: "Dreiecksbar", rooms: ["N11", "N12", "N13", "N14", "N15"] },
+  { name: "Kleenex", rooms: ["O11", "O12", "O13", "O14", "O15"] },
+  { name: "Family-WG", rooms: ["N21", "N22", "N23", "N24", "N25"] },
+  { name: "Bonzennest", rooms: ["O21", "O22", "O23", "O24"] },
+];
+
 export default function AdminUsersPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -37,6 +46,11 @@ export default function AdminUsersPage() {
   const [newEmail, setNewEmail] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  // Zimmer aendern
+  const [editingRoomUser, setEditingRoomUser] = useState<string | null>(null);
+  const [editingRoomKey, setEditingRoomKey] = useState<string>("");
+  const [savingRoom, setSavingRoom] = useState<string | null>(null);
 
   const isAdmin = (session?.user?.roles || []).includes("ADMIN");
 
@@ -131,6 +145,39 @@ export default function AdminUsersPage() {
       setCreateError("Netzwerkfehler.");
     } finally {
       setCreating(false);
+    }
+  }
+
+  function startEditRoom(u: AdminUser) {
+    setEditingRoomUser(u.id);
+    setEditingRoomKey(u.roomKey ?? "");
+  }
+
+  function cancelEditRoom() {
+    setEditingRoomUser(null);
+    setEditingRoomKey("");
+  }
+
+  async function saveRoom(userId: string) {
+    setSavingRoom(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ room: editingRoomKey }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        alert(data.error ?? "Konnte Zimmer nicht aendern.");
+        return;
+      }
+      cancelEditRoom();
+      loadUsers();
+    } catch (err) {
+      console.error("saveRoom", err);
+      alert("Netzwerkfehler.");
+    } finally {
+      setSavingRoom(null);
     }
   }
 
@@ -383,6 +430,16 @@ export default function AdminUsersPage() {
                 </div>
                 <div className="flex shrink-0 gap-1.5">
                   <button
+                    onClick={() =>
+                      editingRoomUser === u.id
+                        ? cancelEditRoom()
+                        : startEditRoom(u)
+                    }
+                    className="rounded-lg border border-secondary/40 bg-secondary/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-secondary hover:bg-secondary/20"
+                  >
+                    Zimmer
+                  </button>
+                  <button
                     onClick={() => resetPassword(u)}
                     disabled={resetting === u.id}
                     className="rounded-lg border border-orange-500/40 bg-orange-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-orange-200 hover:bg-orange-500/20 disabled:opacity-50"
@@ -397,6 +454,53 @@ export default function AdminUsersPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Zimmer-Editor */}
+              {editingRoomUser === u.id && (
+                <div className="mt-3 rounded-lg border border-secondary/30 bg-secondary/5 p-2.5">
+                  <p className="mb-2 font-display text-[9px] font-bold uppercase tracking-widest text-secondary">
+                    Zimmer aendern
+                  </p>
+                  <select
+                    value={editingRoomKey}
+                    onChange={(e) => setEditingRoomKey(e.target.value)}
+                    className="mb-2 w-full rounded border border-gray-700 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-secondary focus:outline-none"
+                  >
+                    <option value="">— kein Zimmer —</option>
+                    {WG_OPTIONS.map((wg) => (
+                      <optgroup key={wg.name} label={wg.name}>
+                        {wg.rooms.map((rk) => {
+                          const occupant = users.find(
+                            (other) =>
+                              other.id !== u.id && other.roomKey === rk
+                          );
+                          return (
+                            <option key={rk} value={rk}>
+                              {rk}
+                              {occupant ? ` · belegt von ${occupant.name}` : ""}
+                            </option>
+                          );
+                        })}
+                      </optgroup>
+                    ))}
+                  </select>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => saveRoom(u.id)}
+                      disabled={savingRoom === u.id}
+                      className="rounded bg-secondary px-3 py-1 font-mono text-[10px] font-bold text-white hover:brightness-110 disabled:opacity-50"
+                    >
+                      {savingRoom === u.id ? "…" : "Speichern"}
+                    </button>
+                    <button
+                      onClick={cancelEditRoom}
+                      className="rounded px-3 py-1 text-[10px] text-gray-400 hover:text-white"
+                    >
+                      Abbrechen
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Reset-Resultat: Link anzeigen + Kopieren */}
               {resultForUser && (
