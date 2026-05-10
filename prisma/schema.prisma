@@ -57,6 +57,8 @@ enum NotificationKind {
   WG_KOCH_NEW
   WG_TERMIN_NEW
   WG_TERMIN_COMMENT
+  WG_PINNWAND_NEW
+  WG_PINNWAND_COMMENT
 }
 
 model User {
@@ -135,6 +137,8 @@ model User {
   wgTerminComments     WgTerminComment[]     @relation("WgTerminCommentAuthor")
   wgDoodlesCreated     WgDoodle[]            @relation("WgDoodleCreator")
   wgDoodleVotes        WgDoodleVote[]
+  wgPinnwandNotes      WgPinnwandNote[]      @relation("WgPinnwandAuthor")
+  wgPinnwandComments   WgPinnwandComment[]   @relation("WgPinnwandCommentAuthor")
 
   @@map("users")
 }
@@ -610,6 +614,7 @@ model Wg {
   aemtli              WgAemtli[]
   termine             WgTermin[]
   doodles             WgDoodle[]
+  pinnwandNotes       WgPinnwandNote[]
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 }
@@ -792,6 +797,33 @@ model WgDoodleVote {
   createdAt DateTime       @default(now())
 
   @@unique([optionId, userId])
+}
+
+model WgPinnwandNote {
+  id        String              @id @default(cuid())
+  wgId      String
+  wg        Wg                  @relation(fields: [wgId], references: [id], onDelete: Cascade)
+  text      String
+  color     String              @default("yellow")
+  authorId  String
+  author    User                @relation("WgPinnwandAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  comments  WgPinnwandComment[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@index([wgId, createdAt])
+}
+
+model WgPinnwandComment {
+  id        String         @id @default(cuid())
+  noteId    String
+  note      WgPinnwandNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User           @relation("WgPinnwandCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime       @default(now())
+
+  @@index([noteId])
 }
 
 model Room {
