@@ -127,9 +127,11 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-800 bg-black/95"
       style={{
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        paddingLeft: "env(safe-area-inset-left, 0px)",
+        paddingRight: "env(safe-area-inset-right, 0px)",
       }}
     >
-      <div className="mx-auto flex max-w-lg">
+      <div className="mx-auto flex max-w-lg px-2">
         {visibleItems.map((item) => {
           const isActive =
             item.href === "/"
@@ -141,7 +143,7 @@ export function BottomNav() {
               href={item.href}
               className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-xs transition-colors ${
                 isActive
-                  ? "text-accent"
+                  ? "text-white"
                   : "text-gray-500 hover:text-gray-300"
               }`}
             >

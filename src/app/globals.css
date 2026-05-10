@@ -404,3 +404,59 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 4px 28px rgba(255, 255, 255, 0.12);
 }
+
+/* Sternschnuppen fuer den "Meine WG"-Bereich:
+   3 Streifen die in unregelmaessigen Abstaenden quer ueber den Hintergrund sausen.
+   Mit blur(2px) wirken sie wie weiche Lichtspuren. */
+.wg-shooting-star {
+  position: absolute;
+  width: 140px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 30%,
+    rgba(255, 255, 255, 0.95) 78%,
+    rgba(255, 255, 255, 0.6) 90%,
+    transparent 100%
+  );
+  filter: blur(2px) drop-shadow(0 0 6px rgba(255, 255, 255, 0.6));
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+@keyframes wgShoot1 {
+  0%, 88% { transform: translate3d(-15vw, -10vh, 0) rotate(22deg); opacity: 0; }
+  90%     { opacity: 1; }
+  100%    { transform: translate3d(115vw, 65vh, 0) rotate(22deg); opacity: 0; }
+}
+@keyframes wgShoot2 {
+  0%, 60%, 92% { transform: translate3d(110vw, -5vh, 0) rotate(155deg); opacity: 0; }
+  62%          { opacity: 1; }
+  72%          { transform: translate3d(-15vw, 60vh, 0) rotate(155deg); opacity: 0; }
+  100%         { transform: translate3d(-15vw, 60vh, 0) rotate(155deg); opacity: 0; }
+}
+@keyframes wgShoot3 {
+  0%, 30%, 78% { transform: translate3d(-20vw, 30vh, 0) rotate(-10deg); opacity: 0; }
+  32%          { opacity: 1; }
+  44%          { transform: translate3d(115vw, 50vh, 0) rotate(-10deg); opacity: 0; }
+  100%         { transform: translate3d(115vw, 50vh, 0) rotate(-10deg); opacity: 0; }
+}
+.wg-shooting-star-1 {
+  top: 10%;
+  left: 0;
+  animation: wgShoot1 11s linear infinite;
+}
+.wg-shooting-star-2 {
+  top: 25%;
+  left: 0;
+  animation: wgShoot2 14s linear infinite;
+  animation-delay: -3s;
+}
+.wg-shooting-star-3 {
+  top: 60%;
+  left: 0;
+  animation: wgShoot3 9s linear infinite;
+  animation-delay: -6s;
+}

@@ -169,7 +169,7 @@ function KochTile({
   if (!data) {
     return (
       <Tile href={`/meine-wg/${slug}/kochplan`} icon="🍳" title="Kochplan">
-        <p className="text-xs text-gray-500">Lade...</p>
+        <div className="space-y-2"><div className="h-4 animate-pulse rounded bg-white/10" /><div className="h-3 w-2/3 animate-pulse rounded bg-white/10" /></div>
       </Tile>
     );
   }
@@ -487,7 +487,7 @@ function ShoppingTile({
   if (!items) {
     return (
       <Tile href={`/meine-wg/${slug}/einkauf`} icon="🛒" title="Einkauf">
-        <p className="text-xs text-gray-500">Lade...</p>
+        <div className="space-y-2"><div className="h-4 animate-pulse rounded bg-white/10" /><div className="h-3 w-2/3 animate-pulse rounded bg-white/10" /></div>
       </Tile>
     );
   }
@@ -585,7 +585,7 @@ function AemtliTile({
   if (!data) {
     return (
       <Tile href={`/meine-wg/${slug}/aemtli`} icon="🧹" title="Aemtli">
-        <p className="text-xs text-gray-500">Lade...</p>
+        <div className="space-y-2"><div className="h-4 animate-pulse rounded bg-white/10" /><div className="h-3 w-2/3 animate-pulse rounded bg-white/10" /></div>
       </Tile>
     );
   }
@@ -661,7 +661,7 @@ function TermineTile({
   if (!data) {
     return (
       <Tile href={`/meine-wg/${slug}/termine`} icon="📅" title="Termine">
-        <p className="text-xs text-gray-500">Lade...</p>
+        <div className="space-y-2"><div className="h-4 animate-pulse rounded bg-white/10" /><div className="h-3 w-2/3 animate-pulse rounded bg-white/10" /></div>
       </Tile>
     );
   }
@@ -804,7 +804,7 @@ function PinnwandInline({
       )}
 
       {notes === null ? (
-        <p className="text-xs text-gray-500">Lade...</p>
+        <div className="space-y-2"><div className="h-4 animate-pulse rounded bg-white/10" /><div className="h-3 w-2/3 animate-pulse rounded bg-white/10" /></div>
       ) : notes.length === 0 ? (
         <p className="rounded-lg border border-dashed border-white/15 px-3 py-6 text-center text-xs italic text-gray-500">
           Pinnwand ist leer.
