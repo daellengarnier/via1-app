@@ -151,8 +151,23 @@ model User {
   wgPinnwandNotes      WgPinnwandNote[]      @relation("WgPinnwandAuthor")
   wgPinnwandComments   WgPinnwandComment[]   @relation("WgPinnwandCommentAuthor")
   wgGuestMemberships   WgGuest[]
+  familyKids           FamilyKid[]           @relation("FamilyKidParents")
 
   @@map("users")
+}
+
+// Globale Familien-Kinder fuer Termin-Anmeldungen (Hauschat).
+// Jedes Kind hat 1..n Eltern (z.B. Nori: Yves+Zoe), die das Kind
+// schnell zu Essen/Anlaessen anmelden koennen. Diet ist vorbelegt
+// damit nicht jedes Mal neu eingegeben werden muss.
+model FamilyKid {
+  id        String   @id @default(cuid())
+  name      String
+  diet      Diet
+  allergies String   @default("")
+  parents   User[]   @relation("FamilyKidParents")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model GameScore {

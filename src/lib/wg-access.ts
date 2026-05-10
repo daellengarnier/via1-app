@@ -5,7 +5,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   WG_UNLOCK_COOKIE_NAME,
+  WG_UNLOCK_TTL_SECONDS,
   decodeWgUnlock,
+  encodeWgUnlock,
   wgSlug,
 } from "@/lib/wg-unlock";
 
@@ -84,6 +86,29 @@ export async function requireWgAccess(
         { status: 401 }
       ),
     };
+  }
+
+  // Rolling Refresh: bei jedem erfolgreichen Zugriff wird das Ablauf-
+  // datum auf +30 Tage zurueckgesetzt. So bleibt der User dauerhaft
+  // eingeloggt solange er die App regelmaessig nutzt (wichtig fuer
+  // iOS PWAs die Cookies aggressiv aufraeumen).
+  try {
+    const refreshed = {
+      uid: payload.uid,
+      wgs: payload.wgs,
+      exp: Date.now() + WG_UNLOCK_TTL_SECONDS * 1000,
+    };
+    cookieStore.set(WG_UNLOCK_COOKIE_NAME, encodeWgUnlock(refreshed), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: WG_UNLOCK_TTL_SECONDS,
+      path: "/",
+    });
+  } catch {
+    // cookies().set() funktioniert nur in Route-Handlers/Server-Actions.
+    // In Server-Components ist sie read-only — dort einfach nicht
+    // refreshen (die naechste API-Call refresht dann).
   }
 
   return {
