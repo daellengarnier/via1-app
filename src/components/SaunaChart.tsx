@@ -298,26 +298,19 @@ export function SaunaSparkline() {
     .filter((p): p is { x: number; y: number } => p !== null);
 
   const path = smoothPath(pts);
-  const area = `${path} L${pts[pts.length - 1].x},${H} L${pts[0].x},${H} Z`;
 
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
-      className="mt-1 h-6 w-full"
+      className="mt-1 h-4 w-full"
       preserveAspectRatio="none"
     >
-      <defs>
-        <linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgb(248,113,113)" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="rgb(248,113,113)" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill="url(#spark-grad)" />
       <path
         d={path}
         fill="none"
         stroke="rgb(248,113,113)"
-        strokeWidth="1.4"
+        strokeOpacity="0.5"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
