@@ -133,6 +133,8 @@ model User {
   wgAemtliErledigt     WgAemtliErledigung[]
   wgTermineCreated     WgTermin[]            @relation("WgTerminCreator")
   wgTerminComments     WgTerminComment[]     @relation("WgTerminCommentAuthor")
+  wgDoodlesCreated     WgDoodle[]            @relation("WgDoodleCreator")
+  wgDoodleVotes        WgDoodleVote[]
 
   @@map("users")
 }
@@ -607,6 +609,7 @@ model Wg {
   einkauf             WgEinkauf[]
   aemtli              WgAemtli[]
   termine             WgTermin[]
+  doodles             WgDoodle[]
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 }
@@ -748,6 +751,47 @@ model WgTerminComment {
   createdAt DateTime @default(now())
 
   @@index([terminId])
+}
+
+model WgDoodle {
+  id            String           @id @default(cuid())
+  wgId          String
+  wg            Wg               @relation(fields: [wgId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  location      String?
+  duration      Int?             // Minuten
+  createdById   String
+  createdBy     User             @relation("WgDoodleCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  options       WgDoodleOption[]
+  finalizedAt   DateTime?
+  finalizedDate DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([wgId])
+}
+
+model WgDoodleOption {
+  id        String         @id @default(cuid())
+  doodleId  String
+  doodle    WgDoodle       @relation(fields: [doodleId], references: [id], onDelete: Cascade)
+  date      DateTime
+  votes     WgDoodleVote[]
+  createdAt DateTime       @default(now())
+
+  @@index([doodleId])
+}
+
+model WgDoodleVote {
+  id        String         @id @default(cuid())
+  optionId  String
+  option    WgDoodleOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@unique([optionId, userId])
 }
 
 model Room {

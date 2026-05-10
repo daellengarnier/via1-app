@@ -91,7 +91,12 @@ export default async function MeineWgSlugPage({ params }: Props) {
             title="WG-Termine"
             subtitle="Sitzungen mit Traktanden + Protokoll"
           />
-          <FeatureLinkPlaceholder icon="🗓" title="Termin-Doodle" />
+          <FeatureLink
+            href={`/meine-wg/${params.slug}/doodle`}
+            icon="🗓"
+            title="Termin-Doodle"
+            subtitle="Datums-Umfragen → Termin"
+          />
           <FeatureLinkPlaceholder icon="📌" title="WG-Pinnwand" />
         </div>
       )}
