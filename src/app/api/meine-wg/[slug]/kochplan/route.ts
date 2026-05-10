@@ -24,7 +24,7 @@ export async function GET(
   const from = (fromParam && parseIsoDate(fromParam)) || addDaysUTC(today, -1);
   const to = (toParam && parseIsoDate(toParam)) || addDaysUTC(today, 7);
 
-  const [eintraege, templates] = await Promise.all([
+  const [eintraege, templates, kinder, members] = await Promise.all([
     prisma.wgKochEintrag.findMany({
       where: { wgId: access.wg.id, date: { gte: from, lte: to } },
       include: {
@@ -42,12 +42,27 @@ export async function GET(
       where: { wgId: access.wg.id },
       orderBy: { title: "asc" },
     }),
+    prisma.wgKochKind.findMany({
+      where: { wgId: access.wg.id },
+      orderBy: { name: "asc" },
+    }),
+    prisma.user.findMany({
+      where: { room: { wgId: access.wg.id } },
+      select: { id: true, name: true, avatar: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   return NextResponse.json({
     today: isoDate(today),
     from: isoDate(from),
     to: isoDate(to),
+    members,
+    kinder: kinder.map((k) => ({
+      id: k.id,
+      name: k.name,
+      parentIds: k.parentIds,
+    })),
     eintraege: eintraege.map((e) => ({
       id: e.id,
       date: isoDate(e.date),
@@ -60,8 +75,8 @@ export async function GET(
       signups: e.signups.map((s) => ({
         id: s.id,
         user: s.user,
-        adults: s.adults,
-        kids: s.kids,
+        status: s.status, // "going" | "declined"
+        childrenIds: s.childrenIds,
         guests: s.guests,
         notes: s.notes,
       })),
