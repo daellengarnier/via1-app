@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   SLOT_ICON,
   SLOT_LABEL,
@@ -205,18 +207,18 @@ function KochTile({
     <>
       <div className="wg-tile-heavy p-3">
         <div className="mb-2 flex items-baseline justify-between">
-          <a
+          <Link
             href={`/meine-wg/${slug}/kochplan`}
             className="font-display text-xs font-bold uppercase tracking-widest text-white hover:text-white"
           >
             🍳 Kochplan · heute
-          </a>
-          <a
+          </Link>
+          <Link
             href={`/meine-wg/${slug}/kochplan`}
             className="font-mono text-[10px] uppercase tracking-wider text-white hover:underline"
           >
             ganze Woche →
-          </a>
+          </Link>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <KochSlotMini
@@ -555,12 +557,12 @@ function ShoppingTile({
       style={maxHeight ? { height: maxHeight, maxHeight } : undefined}
     >
       <div className="mb-2 flex items-baseline justify-between">
-        <a
+        <Link
           href={`/meine-wg/${slug}/einkauf`}
           className="font-display text-[11px] font-bold uppercase tracking-widest text-white hover:text-white"
         >
           🛒 Einkauf
-        </a>
+        </Link>
         <span className="font-mono text-[10px] uppercase tracking-wider text-white">
           {open.length} offen
         </span>
@@ -630,7 +632,7 @@ function AemtliTile({
   const isOverdue = overdueDays >= 11;
 
   return (
-    <a
+    <Link
       href={`/meine-wg/${slug}/aemtli`}
       className={`block p-3 ${
         isOverdue
@@ -673,7 +675,7 @@ function AemtliTile({
           </p>
         </div>
       )}
-    </a>
+    </Link>
   );
 }
 
@@ -707,12 +709,12 @@ function TermineTile({
   return (
     <div className="wg-tile-heavy p-3">
       <div className="mb-1 flex items-baseline justify-between">
-        <a
+        <Link
           href={`/meine-wg/${slug}/termine`}
           className="font-display text-[11px] font-bold uppercase tracking-widest text-white"
         >
           📅 Termine
-        </a>
+        </Link>
         {openDoodles.length > 0 && (
           <span className="font-mono text-[10px] uppercase tracking-wider text-white">
             🗓 {openDoodles.length}
@@ -892,6 +894,7 @@ function PinnwandNoteCard({
   onCancelEdit: () => void;
   onChanged: () => void;
 }) {
+  const router = useRouter();
   const isMine = note.author.id === meId;
   const [draft, setDraft] = useState(note.text);
   const [busy, setBusy] = useState(false);
@@ -976,11 +979,9 @@ function PinnwandNoteCard({
     <div
       role="link"
       tabIndex={0}
-      onClick={() => {
-        window.location.href = `/meine-wg/${slug}/pinnwand`;
-      }}
+      onClick={() => router.push(`/meine-wg/${slug}/pinnwand`)}
       onKeyDown={(e) => {
-        if (e.key === "Enter") window.location.href = `/meine-wg/${slug}/pinnwand`;
+        if (e.key === "Enter") router.push(`/meine-wg/${slug}/pinnwand`);
       }}
       className={`cursor-pointer ${cardClass}`}
       style={cardStyle}
@@ -1042,12 +1043,12 @@ function Tile({
   children: React.ReactNode;
 }) {
   return (
-    <a href={href} className="block wg-tile p-3 hover:wg-tile-strong">
+    <Link href={href} className="block wg-tile p-3 hover:wg-tile-strong">
       <p className="font-display text-xs font-bold uppercase tracking-widest text-white">
         {icon} {title}
       </p>
       <div className="mt-1">{children}</div>
-    </a>
+    </Link>
   );
 }
 
