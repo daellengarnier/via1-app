@@ -126,6 +126,8 @@ model User {
   wgKochEintragCreated WgKochEintrag[]       @relation("WgKochCreator")
   wgKochEintragCooked  WgKochEintrag[]       @relation("WgKochCook")
   wgKochSignups        WgKochSignup[]
+  wgEinkaufCreated     WgEinkauf[]           @relation("WgEinkaufCreator")
+  wgEinkaufDone        WgEinkauf[]           @relation("WgEinkaufDoner")
 
   @@map("users")
 }
@@ -597,6 +599,7 @@ model Wg {
   passwordSetBy       User?     @relation("WgPasswordSetter", fields: [passwordSetById], references: [id], onDelete: SetNull)
   kochTemplates       WgKochTemplate[]
   kochEintraege       WgKochEintrag[]
+  einkauf             WgEinkauf[]
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 }
@@ -647,6 +650,23 @@ model WgKochSignup {
   updatedAt DateTime      @updatedAt
 
   @@unique([eintragId, userId])
+}
+
+model WgEinkauf {
+  id          String    @id @default(cuid())
+  wgId        String
+  wg          Wg        @relation(fields: [wgId], references: [id], onDelete: Cascade)
+  text        String
+  done        Boolean   @default(false)
+  doneAt      DateTime?
+  doneById    String?
+  doneBy      User?     @relation("WgEinkaufDoner", fields: [doneById], references: [id], onDelete: SetNull)
+  createdById String
+  createdBy   User      @relation("WgEinkaufCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([wgId, done, createdAt])
 }
 
 model Room {

@@ -73,7 +73,12 @@ export default async function MeineWgSlugPage({ params }: Props) {
             title="Kochplan"
             subtitle="Wer kocht wann, wer isst mit"
           />
-          <FeatureLinkPlaceholder icon="🛒" title="Einkaufsliste" />
+          <FeatureLink
+            href={`/meine-wg/${params.slug}/einkauf`}
+            icon="🛒"
+            title="Einkaufsliste"
+            subtitle="Gemeinsame Einkaufsliste"
+          />
           <FeatureLinkPlaceholder icon="🧹" title="Aemtli" />
           <FeatureLinkPlaceholder icon="📅" title="WG-Termine" />
           <FeatureLinkPlaceholder icon="🗓" title="Termin-Doodle" />
