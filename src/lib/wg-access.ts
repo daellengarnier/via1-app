@@ -39,12 +39,8 @@ export async function requireWgAccess(
     };
   }
   const roles = session.user.roles ?? [];
-  if (!roles.includes("ADMIN")) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
-    };
-  }
+  // Admin-Restriction wurde entfernt — alle eingeloggten User duerfen
+  // den "Meine WG"-Bereich nutzen, geschuetzt nur durch das WG-Passwort.
 
   const wgs = await prisma.wg.findMany({
     select: {

@@ -113,7 +113,7 @@ const navItems: NavItem[] = [
   { href: "/aufgaben", label: "AUFGABEN", icon: <CheckIcon /> },
   { href: "/einkauf", label: "BESCHAFFUNG", icon: <EinkaufIcon /> },
   { href: "/aktivitaeten", label: "AKTIVITÄT", icon: <AktivitaetIcon /> },
-  { href: "/meine-wg", label: "MEINE WG", icon: <HausIcon />, adminOnly: true },
+  { href: "/meine-wg", label: "MEINE WG", icon: <HausIcon /> },
 ];
 
 export function BottomNav() {

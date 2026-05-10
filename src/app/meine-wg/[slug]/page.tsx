@@ -21,7 +21,7 @@ export default async function MeineWgSlugPage({ params }: Props) {
   if (!session?.user?.id) redirect("/login");
 
   // Phase 0: nur Admins
-  if (!(session.user.roles ?? []).includes("ADMIN")) redirect("/");
+  // Admin-Restriction wurde entfernt — alle eingeloggten User duerfen rein
 
   const allWgs = await prisma.wg.findMany();
   const wg = allWgs.find((w) => wgSlug(w.name) === params.slug);

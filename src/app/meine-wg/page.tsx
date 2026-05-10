@@ -9,7 +9,7 @@ import { wgSlug } from "@/lib/wg-unlock";
 export default async function MeineWgIndexPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
-  if (!(session.user.roles ?? []).includes("ADMIN")) redirect("/");
+  // Admin-Restriction wurde entfernt — alle eingeloggten User duerfen rein
 
   const me = await prisma.user.findUnique({
     where: { id: session.user.id },
