@@ -427,7 +427,7 @@ function EintragCard({
   const meIsCook = e.cook?.id === meId;
 
   return (
-    <div className="rounded-lg border border-gray-800 bg-black/40 p-3">
+    <div className="wg-glow-border rounded-lg border border-white/15 bg-black/40 p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] uppercase tracking-wider text-secondary">

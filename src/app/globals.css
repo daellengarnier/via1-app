@@ -485,11 +485,11 @@ body {
   padding: 1.5px;
   background: conic-gradient(
     from var(--wg-angle),
-    transparent 0%,
-    transparent 68%,
-    rgba(255, 255, 255, 0.95) 82%,
-    rgba(255, 255, 255, 0.4) 92%,
-    transparent 100%
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.08) 60%,
+    rgba(255, 255, 255, 1) 80%,
+    rgba(255, 255, 255, 0.55) 92%,
+    rgba(255, 255, 255, 0.08) 100%
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -505,9 +505,9 @@ body {
   .wg-glow-border::before {
     background: linear-gradient(
       135deg,
-      transparent,
-      rgba(255, 255, 255, 0.4),
-      transparent
+      rgba(255, 255, 255, 0.12),
+      rgba(255, 255, 255, 0.55),
+      rgba(255, 255, 255, 0.12)
     );
     animation: none;
   }

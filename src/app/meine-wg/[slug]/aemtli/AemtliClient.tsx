@@ -242,7 +242,7 @@ export function AemtliClient({ slug, wgName, meId }: Props) {
       />
 
       {/* Aktuell dran */}
-      <div className="wg-tile mt-3 p-5 text-center">
+      <div className="wg-tile wg-glow-border mt-3 p-5 text-center">
         <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400">
           Aktuell dran
         </p>
@@ -338,7 +338,7 @@ export function AemtliClient({ slug, wgName, meId }: Props) {
           {pendingForMe.map((r) => (
             <div
               key={r.id}
-              className="wg-tile p-3"
+              className="wg-tile wg-glow-border p-3"
               style={{ borderColor: "rgba(255,140,0,0.5)" }}
             >
               <p className="text-sm text-white">
@@ -367,7 +367,7 @@ export function AemtliClient({ slug, wgName, meId }: Props) {
       )}
 
       {/* Swap anfragen */}
-      <div className="mt-3 wg-tile p-3">
+      <div className="mt-3 wg-tile wg-glow-border p-3">
         <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-white">
           🔄 Schicht tauschen mit...
         </p>
@@ -401,7 +401,7 @@ export function AemtliClient({ slug, wgName, meId }: Props) {
       </div>
 
       {/* Pflicht-Tasks */}
-      <div className="mt-3 wg-tile p-3">
+      <div className="mt-3 wg-tile wg-glow-border p-3">
         <button
           onClick={() => setTasksOpen((v) => !v)}
           className="flex w-full items-center justify-between"
@@ -450,7 +450,7 @@ export function AemtliClient({ slug, wgName, meId }: Props) {
       </div>
 
       {/* Bonus-Tasks */}
-      <div className="mt-3 wg-tile p-3">
+      <div className="mt-3 wg-tile wg-glow-border p-3">
         <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-white">
           ⭐ Bonus-Aufgaben
         </p>
@@ -551,7 +551,7 @@ export function AemtliClient({ slug, wgName, meId }: Props) {
       )}
 
       {/* Verlauf */}
-      <div className="mt-3 wg-tile p-3">
+      <div className="mt-3 wg-tile wg-glow-border p-3">
         <button
           onClick={() => setHistoryOpen((v) => !v)}
           className="flex w-full items-center justify-between"

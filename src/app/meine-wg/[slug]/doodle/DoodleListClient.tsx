@@ -107,7 +107,9 @@ function DoodleRow({ d, slug }: { d: DoodleListItem; slug: string }) {
   return (
     <Link
       href={`/meine-wg/${slug}/doodle/${d.id}`}
-      className="block rounded-xl border border-gray-800 bg-gray-900/40 p-3 hover:border-white/50"
+      className={`block rounded-xl border bg-gray-900/40 p-3 hover:border-white/50 ${
+        d.finalized ? "border-gray-800" : "wg-glow-border border-white/15"
+      }`}
     >
       <p className="font-medium text-white">{d.title}</p>
       <p className="text-[11px] text-gray-500">
