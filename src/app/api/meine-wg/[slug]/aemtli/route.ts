@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWgAccess } from "@/lib/wg-access";
-import { DEFAULT_AEMTLI, daysSince, nextRotationIndex } from "@/lib/wg-aemtli";
 
-// GET /api/meine-wg/[slug]/aemtli — Liste mit Rotation, last/next Person,
-// Overdue-Status. Seedet Default-Aemtli bei erstem Aufruf falls leer.
+// GET /api/meine-wg/[slug]/aemtli — kompletter State (auto-seed bei Bedarf)
 export async function GET(
   _req: Request,
   { params }: { params: { slug: string } }
@@ -12,7 +10,7 @@ export async function GET(
   const access = await requireWgAccess(params.slug);
   if (!access.ok) return access.response;
 
-  // Members = Bewohner mit Zimmer in dieser WG, sortiert nach keyNumber
+  // WG-Mitglieder ermitteln (User mit Zimmer in dieser WG)
   const members = await prisma.user.findMany({
     where: { room: { wgId: access.wg.id } },
     select: {
@@ -21,130 +19,99 @@ export async function GET(
       avatar: true,
       room: { select: { keyNumber: true } },
     },
-    orderBy: { room: { keyNumber: "asc" } },
+    orderBy: { name: "asc" },
   });
 
-  // Auto-Seed: wenn diese WG noch keine Aemtli hat, lege Defaults an
-  let aemtli = await prisma.wgAemtli.findMany({
+  // State auto-seeden falls noch nicht vorhanden
+  let state = await prisma.wgAemtliState.findUnique({
     where: { wgId: access.wg.id },
     include: {
+      lastDoneBy: { select: { id: true, name: true, avatar: true } },
       history: {
-        orderBy: { doneAt: "desc" },
-        take: 1,
         include: {
-          user: { select: { id: true, name: true, avatar: true } },
+          byUser: { select: { id: true, name: true, avatar: true } },
+        },
+        orderBy: { doneAt: "desc" },
+        take: 50,
+      },
+      bonusLog: {
+        include: {
+          byUser: { select: { id: true, name: true, avatar: true } },
         },
       },
-      _count: { select: { history: true } },
+      swapRequests: {
+        include: {
+          fromUser: { select: { id: true, name: true, avatar: true } },
+          toUser: { select: { id: true, name: true, avatar: true } },
+        },
+        where: { status: "pending" },
+        orderBy: { createdAt: "desc" },
+      },
     },
-    orderBy: [{ order: "asc" }, { createdAt: "asc" }],
   });
 
-  if (aemtli.length === 0) {
-    await prisma.wgAemtli.createMany({
-      data: DEFAULT_AEMTLI.map((d) => ({
+  if (!state) {
+    state = await prisma.wgAemtliState.create({
+      data: {
         wgId: access.wg.id,
-        title: d.title,
-        description: d.description,
-        intervalDays: d.intervalDays,
-        mandatory: d.mandatory,
-        order: d.order,
-      })),
-    });
-    aemtli = await prisma.wgAemtli.findMany({
-      where: { wgId: access.wg.id },
+        rotationOrder: members.map((m) => m.id),
+      },
       include: {
+        lastDoneBy: { select: { id: true, name: true, avatar: true } },
         history: {
-          orderBy: { doneAt: "desc" },
-          take: 1,
           include: {
-            user: { select: { id: true, name: true, avatar: true } },
+            byUser: { select: { id: true, name: true, avatar: true } },
           },
         },
-        _count: { select: { history: true } },
+        bonusLog: {
+          include: {
+            byUser: { select: { id: true, name: true, avatar: true } },
+          },
+        },
+        swapRequests: {
+          include: {
+            fromUser: { select: { id: true, name: true, avatar: true } },
+            toUser: { select: { id: true, name: true, avatar: true } },
+          },
+        },
       },
-      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
     });
   }
 
+  // Aktuell-Dran ermitteln aus rotationOrder + currentIndex
+  const order = state.rotationOrder;
+  const currentUserId =
+    order.length > 0 ? order[state.currentIndex % order.length] : null;
+  const currentUser = currentUserId
+    ? members.find((m) => m.id === currentUserId) ?? null
+    : null;
+
   return NextResponse.json({
-    members: members.map((m) => ({
-      id: m.id,
-      name: m.name,
-      avatar: m.avatar,
-      keyNumber: m.room?.keyNumber ?? null,
+    members,
+    rotationOrder: order,
+    currentIndex: state.currentIndex,
+    currentUser,
+    lastDoneBy: state.lastDoneBy,
+    lastDoneAt: state.lastDoneAt?.toISOString() ?? null,
+    checkedPflicht: state.checkedPflicht,
+    customBonus: state.customBonus,
+    history: state.history.map((h) => ({
+      id: h.id,
+      byUser: h.byUser,
+      doneAt: h.doneAt.toISOString(),
     })),
-    aemtli: aemtli.map((a) => {
-      const last = a.history[0];
-      const totalDone = a._count.history;
-      const nextIdx = nextRotationIndex(totalDone, members.length);
-      const nextMember = members[nextIdx];
-      const overdueDays = last ? daysSince(last.doneAt) - a.intervalDays : 999;
-      return {
-        id: a.id,
-        title: a.title,
-        description: a.description,
-        intervalDays: a.intervalDays,
-        mandatory: a.mandatory,
-        order: a.order,
-        active: a.active,
-        lastDoneAt: last?.doneAt.toISOString() ?? null,
-        lastDoneBy: last?.user ?? null,
-        nextMember: nextMember
-          ? {
-              id: nextMember.id,
-              name: nextMember.name,
-              avatar: nextMember.avatar,
-            }
-          : null,
-        totalDone,
-        overdueDays: Math.max(0, overdueDays),
-      };
-    }),
+    bonusLog: Object.fromEntries(
+      state.bonusLog.map((l) => [
+        l.taskName,
+        { byUser: l.byUser, date: l.date.toISOString() },
+      ])
+    ),
+    swapRequests: state.swapRequests.map((s) => ({
+      id: s.id,
+      from: s.fromUser,
+      to: s.toUser,
+      status: s.status,
+      createdAt: s.createdAt.toISOString(),
+    })),
   });
-}
-
-// POST /api/meine-wg/[slug]/aemtli — neues Aemtli anlegen
-export async function POST(
-  req: Request,
-  { params }: { params: { slug: string } }
-) {
-  const access = await requireWgAccess(params.slug);
-  if (!access.ok) return access.response;
-
-  const body = (await req.json().catch(() => null)) as {
-    title?: string;
-    description?: string | null;
-    intervalDays?: number;
-    mandatory?: boolean;
-  } | null;
-
-  const title = (body?.title ?? "").trim();
-  if (!title) {
-    return NextResponse.json({ error: "Titel fehlt" }, { status: 400 });
-  }
-  const intervalDays = Math.max(
-    1,
-    Math.min(365, Math.floor(body?.intervalDays ?? 7))
-  );
-
-  // Order = aktuelles Maximum + 1
-  const max = await prisma.wgAemtli.findFirst({
-    where: { wgId: access.wg.id },
-    orderBy: { order: "desc" },
-    select: { order: true },
-  });
-  const order = (max?.order ?? -1) + 1;
-
-  const a = await prisma.wgAemtli.create({
-    data: {
-      wgId: access.wg.id,
-      title,
-      description: body?.description?.trim() || null,
-      intervalDays,
-      mandatory: !!body?.mandatory,
-      order,
-    },
-  });
-  return NextResponse.json({ id: a.id });
 }

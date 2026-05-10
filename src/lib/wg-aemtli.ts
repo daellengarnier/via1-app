@@ -1,70 +1,40 @@
-// Default-Aemtli die beim ersten Aufruf einer WG angelegt werden,
-// falls noch keine existieren. 4 verpflichtende plus eines optionales
-// Beispiel.
-export const DEFAULT_AEMTLI: Array<{
-  title: string;
-  description: string;
-  intervalDays: number;
-  mandatory: boolean;
-  order: number;
-}> = [
-  {
-    title: "Bad putzen",
-    description: "Lavabo, WC, Dusche, Spiegel — alles glaenzt wieder",
-    intervalDays: 7,
-    mandatory: true,
-    order: 0,
-  },
-  {
-    title: "Kueche putzen",
-    description: "Herd, Backofen, Spuele, Kuehlschrank von aussen",
-    intervalDays: 7,
-    mandatory: true,
-    order: 1,
-  },
-  {
-    title: "Boden saugen + wischen",
-    description: "Gemeinschaftsraeume und Gang",
-    intervalDays: 7,
-    mandatory: true,
-    order: 2,
-  },
-  {
-    title: "Muell + Glas raus",
-    description: "Restmuell, Karton, Glas, PET — alles in den Container",
-    intervalDays: 7,
-    mandatory: true,
-    order: 3,
-  },
+// Aemtli-Defaults nach family-wg-Spec.
+
+// 4 Pflicht-Tasks pro Runde — alle muessen abgehakt sein bevor "Erledigt"
+export const PFLICHT_TASKS: ReadonlyArray<string> = [
+  "Küche, Wohnzimmer & Bad putzen",
+  "Böden saugen & feucht aufnehmen",
+  "Entsorgen",
+  "Gemeinschaftswäsche waschen",
 ];
 
-// Humorvolle Overdue-Texte je nach Anzahl ueberfaelligen Tagen.
-export function overdueRoast(daysOverdue: number, title: string): string {
-  const t = title.toLowerCase();
-  if (daysOverdue >= 21) {
-    return `🦠 Seit ${daysOverdue} Tagen ueberfaellig. Im ${t.includes("bad") ? "Bad" : "WG-Habitat"} entsteht gerade neues Leben.`;
-  }
-  if (daysOverdue >= 14) {
-    return `🕷 ${daysOverdue} Tage ueber. Die Spinnen feiern offiziellen Einzug.`;
-  }
-  if (daysOverdue >= 7) {
-    return `😬 ${daysOverdue} Tage zu spaet. Jemand muss da ran.`;
-  }
-  return `⏰ ${daysOverdue} Tag${daysOverdue === 1 ? "" : "e"} ueberfaellig.`;
+// 4 Default-Bonus-Tasks (zusaetzlich koennen Custom-Bonus-Tasks angelegt werden)
+export const DEFAULT_BONUS_TASKS: ReadonlyArray<string> = [
+  "Fenster putzen",
+  "Backofen reinigen",
+  "Balkon aufräumen/putzen",
+  "Mikrowelle putzen",
+];
+
+// Lustige Sprueche die rotieren wenn die WG ueberfaellig ist (>=11 Tage).
+export const OVERDUE_JOKES: ReadonlyArray<string> = [
+  "Die Staubmäuse organisieren sich 🐭",
+  "Der Staubsauger vermisst dich 🥺",
+  "Pilze wachsen im Bad – echte! 🍄",
+  "WG-Fee hat Burnout ✨",
+  "Houston, Putz-Problem 🚀",
+  "Müll will Miete zahlen 🗑️",
+];
+
+// Ab wievielen Tagen wird's "ueberfaellig"
+export const OVERDUE_DAYS_THRESHOLD = 11;
+
+export function daysBetween(d1: Date | string, d2: Date | string = new Date()): number {
+  const a = typeof d1 === "string" ? new Date(d1) : d1;
+  const b = typeof d2 === "string" ? new Date(d2) : d2;
+  return Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-// Berechnet aus Anzahl bisheriger Erledigungen und Anzahl WG-Member,
-// wer als naechstes dran ist (Index in der nach keyNumber sortierten
-// Mitgliederliste).
-export function nextRotationIndex(
-  totalErledigungen: number,
-  memberCount: number
-): number {
-  if (memberCount === 0) return 0;
-  return totalErledigungen % memberCount;
-}
-
-export function daysSince(d: Date, now: Date = new Date()): number {
-  const ms = now.getTime() - d.getTime();
-  return Math.floor(ms / (24 * 60 * 60 * 1000));
+export function pickJoke(daysOverdue: number): string {
+  return OVERDUE_JOKES[Math.abs(daysOverdue) % OVERDUE_JOKES.length]!;
 }

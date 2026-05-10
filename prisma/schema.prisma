@@ -133,7 +133,11 @@ model User {
   wgEinkaufCreated     WgEinkauf[]           @relation("WgEinkaufCreator")
   wgEinkaufDone        WgEinkauf[]           @relation("WgEinkaufDoner")
   wgEinkaufComments    WgEinkaufComment[]    @relation("WgEinkaufCommentAuthor")
-  wgAemtliErledigt     WgAemtliErledigung[]
+  wgAemtliLastDone     WgAemtliState[]       @relation("WgAemtliStateLastDone")
+  wgAemtliRounds       WgAemtliRound[]       @relation("WgAemtliRoundUser")
+  wgAemtliBonusLogs    WgAemtliBonusLog[]    @relation("WgAemtliBonusUser")
+  wgAemtliSwapsFrom    WgAemtliSwap[]        @relation("WgAemtliSwapFrom")
+  wgAemtliSwapsTo      WgAemtliSwap[]        @relation("WgAemtliSwapTo")
   wgTermineCreated     WgTermin[]            @relation("WgTerminCreator")
   wgTerminComments     WgTerminComment[]     @relation("WgTerminCommentAuthor")
   wgDoodlesCreated     WgDoodle[]            @relation("WgDoodleCreator")
@@ -613,7 +617,7 @@ model Wg {
   kochEintraege       WgKochEintrag[]
   kochKinder          WgKochKind[]
   einkauf             WgEinkauf[]
-  aemtli              WgAemtli[]
+  aemtli              WgAemtliState?
   termine             WgTermin[]
   doodles             WgDoodle[]
   pinnwandNotes       WgPinnwandNote[]
@@ -715,33 +719,70 @@ model WgEinkaufComment {
   @@index([einkaufId])
 }
 
-model WgAemtli {
-  id           String                @id @default(cuid())
-  wgId         String
-  wg           Wg                    @relation(fields: [wgId], references: [id], onDelete: Cascade)
-  title        String
-  description  String?
-  intervalDays Int                   @default(7)
-  mandatory    Boolean               @default(false)
-  order        Int                   @default(0)
-  active       Boolean               @default(true)
-  history      WgAemtliErledigung[]
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
-
-  @@index([wgId, order])
+// Aemtli nach Family-WG-Style: EINE Rotation pro WG durch alle Mitglieder.
+// Wer dran ist, muss alle Pflicht-Tasks abhaken und dann auf "erledigt" tippen.
+// Danach wird der Index inkrementiert.
+model WgAemtliState {
+  id              String              @id @default(cuid())
+  wgId            String              @unique
+  wg              Wg                  @relation(fields: [wgId], references: [id], onDelete: Cascade)
+  // Reihenfolge der Rotation als Liste von User-IDs
+  rotationOrder   String[]            @default([])
+  currentIndex    Int                 @default(0)
+  // Snapshot der letzten Erledigung (lookup-frei)
+  lastDoneById    String?
+  lastDoneBy      User?               @relation("WgAemtliStateLastDone", fields: [lastDoneById], references: [id], onDelete: SetNull)
+  lastDoneAt      DateTime?
+  // Aktuelle Runde: welche Pflicht-Tasks sind abgehakt
+  checkedPflicht  String[]            @default([])
+  // Custom Bonus-Tasks (zusaetzlich zu DEFAULT_BONUS-Konstanten)
+  customBonus     String[]            @default([])
+  history         WgAemtliRound[]
+  bonusLog        WgAemtliBonusLog[]
+  swapRequests    WgAemtliSwap[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 }
 
-model WgAemtliErledigung {
-  id       String   @id @default(cuid())
-  aemtliId String
-  aemtli   WgAemtli @relation(fields: [aemtliId], references: [id], onDelete: Cascade)
-  userId   String
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  doneAt   DateTime @default(now())
-  notes    String?
+model WgAemtliRound {
+  id        String        @id @default(cuid())
+  stateId   String
+  state     WgAemtliState @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  byUserId  String
+  byUser    User          @relation("WgAemtliRoundUser", fields: [byUserId], references: [id], onDelete: Cascade)
+  doneAt    DateTime
+  createdAt DateTime      @default(now())
 
-  @@index([aemtliId, doneAt])
+  @@index([stateId, doneAt])
+}
+
+// Pro Bonus-Task wird nur das letzte Erledigungs-Event behalten
+model WgAemtliBonusLog {
+  id        String        @id @default(cuid())
+  stateId   String
+  state     WgAemtliState @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  taskName  String
+  byUserId  String
+  byUser    User          @relation("WgAemtliBonusUser", fields: [byUserId], references: [id], onDelete: Cascade)
+  date      DateTime
+  updatedAt DateTime      @updatedAt
+
+  @@unique([stateId, taskName])
+}
+
+model WgAemtliSwap {
+  id          String        @id @default(cuid())
+  stateId     String
+  state       WgAemtliState @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  fromUserId  String
+  fromUser    User          @relation("WgAemtliSwapFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId    String
+  toUser      User          @relation("WgAemtliSwapTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  status      String        @default("pending") // "pending" | "accepted" | "declined"
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([stateId, status])
 }
 
 model WgTermin {
