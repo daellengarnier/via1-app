@@ -53,7 +53,7 @@ export function DoodleListClient({ slug, wgName }: Props) {
       <div className="mb-4 mt-3 flex justify-end">
         <button
           onClick={() => setShowAdd(true)}
-          className="rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-fuchsia-200 hover:bg-fuchsia-500/20"
+          className="rounded-lg border border-white/30 bg-white/5 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/15"
         >
           + Doodle
         </button>

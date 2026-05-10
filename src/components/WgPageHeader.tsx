@@ -30,7 +30,7 @@ export function WgPageHeader({
       {backToWgSlug && backToWgName && (
         <Link
           href={`/meine-wg/${backToWgSlug}`}
-          className="font-mono text-[10px] uppercase tracking-widest text-fuchsia-300/80 hover:text-fuchsia-200"
+          className="font-mono text-[10px] uppercase tracking-widest text-gray-300 hover:text-white"
         >
           ← {backToWgName}
         </Link>
@@ -41,7 +41,7 @@ export function WgPageHeader({
       </h1>
 
       {subtitle && (
-        <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-fuchsia-300/70">
+        <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-gray-400">
           {subtitle}
         </p>
       )}
