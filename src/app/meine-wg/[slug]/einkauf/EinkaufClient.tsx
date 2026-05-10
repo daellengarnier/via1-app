@@ -287,7 +287,13 @@ function ItemRow({
   }
 
   return (
-    <div className="rounded-lg border border-gray-800 bg-gray-900/40">
+    <div
+      className={`rounded-lg border bg-gray-900/40 ${
+        item.done
+          ? "border-gray-800"
+          : "wg-glow-border border-white/15"
+      }`}
+    >
       <div className="flex items-center gap-2 px-2 py-2">
         <input
           type="checkbox"

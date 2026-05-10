@@ -225,7 +225,7 @@ export function WgTermineClient({ slug, wgName }: Props) {
 
 function TerminRow({ termin, slug }: { termin: Termin; slug: string }) {
   return (
-    <div className="wg-tile-light p-3">
+    <div className="wg-tile-light wg-glow-border p-3">
       <Link href={`/meine-wg/${slug}/termine/${termin.id}`} className="block">
         <p className="font-display text-base font-bold uppercase tracking-wider text-white">
           {termin.title}
@@ -263,7 +263,7 @@ function DoodleRow({
   return (
     <Link
       href={`/meine-wg/${slug}/doodle/${doodle.id}`}
-      className="block rounded-xl border border-white/30 bg-white/5 p-3 hover:border-white/50"
+      className="wg-glow-border block rounded-xl border border-white/30 bg-white/5 p-3 hover:border-white/50"
     >
       <p className="font-medium text-white">🗓 {doodle.title}</p>
       <p className="text-[11px] text-gray-500">

@@ -649,7 +649,7 @@ function ShoppingTile({
             <button
               key={i.id}
               onClick={() => toggle(i.id)}
-              className="flex w-full items-center gap-2 rounded border border-gray-800 bg-black/30 px-2 py-1 text-left text-xs text-white hover:border-white/50"
+              className="wg-glow-border flex w-full items-center gap-2 rounded-lg border border-white/15 bg-black/30 px-2 py-1 text-left text-xs text-white hover:bg-black/40"
               title={`von ${i.createdBy.name}`}
             >
               <span className="text-gray-500">○</span>
@@ -714,7 +714,7 @@ function AemtliTile({
           : "wg-tile-heavy"
       }`}
     >
-      <div className="mb-1 flex items-baseline justify-between">
+      <div className="mb-2 flex items-baseline justify-between">
         <span className="font-display text-[11px] font-bold uppercase tracking-widest text-white">
           🧹 Aemtli
         </span>
@@ -724,31 +724,33 @@ function AemtliTile({
           </span>
         )}
       </div>
-      {data.currentUser ? (
-        <p className="truncate font-display text-xs font-bold uppercase tracking-wider text-white">
-          {data.currentUser.name}
-        </p>
-      ) : (
-        <p className="text-xs italic text-gray-500">keine Rotation</p>
-      )}
-      <p className="text-[10px] text-gray-400">ist dran</p>
-      {data.lastDoneBy && data.lastDoneAt && (
-        <div className="mt-2 rounded bg-black/30 px-2 py-1.5">
-          <p className="font-mono text-[9px] uppercase tracking-wider text-gray-500">
-            zuletzt geputzt
+      <div className="wg-glow-border rounded-lg border border-white/15 bg-black/30 p-2">
+        {data.currentUser ? (
+          <p className="truncate font-display text-xs font-bold uppercase tracking-wider text-white">
+            {data.currentUser.name}
           </p>
-          <p className="font-display text-[11px] font-bold uppercase tracking-wider text-white">
-            {data.lastDoneBy.name}
-          </p>
-          <p className="font-mono text-[10px] text-gray-300">
-            {new Date(data.lastDoneAt).toLocaleDateString("de-CH", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </p>
-        </div>
-      )}
+        ) : (
+          <p className="text-xs italic text-gray-500">keine Rotation</p>
+        )}
+        <p className="text-[10px] text-gray-400">ist dran</p>
+        {data.lastDoneBy && data.lastDoneAt && (
+          <div className="mt-2 border-t border-white/10 pt-1.5">
+            <p className="font-mono text-[9px] uppercase tracking-wider text-gray-500">
+              zuletzt
+            </p>
+            <p className="truncate font-display text-[11px] font-bold uppercase tracking-wider text-white">
+              {data.lastDoneBy.name}
+            </p>
+            <p className="font-mono text-[10px] text-gray-300">
+              {new Date(data.lastDoneAt).toLocaleDateString("de-CH", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+          </div>
+        )}
+      </div>
     </Link>
   );
 }
