@@ -110,13 +110,14 @@ export default function HomeScreen() {
   const [kaffeeState] = useCurrentKaffee();
   const currentKaffee = kaffeeState.kaffee;
   const [putzRotation, , putzCurrentWg] = usePutzplan();
-  const putzLastCompletedDate = [...putzRotation]
-    .map((r) => r.completedAt)
-    .filter((d): d is string => d !== null)
-    .sort((a, b) => b.localeCompare(a))[0];
-  const putzDaysSince = putzLastCompletedDate
+  const putzPrev = [...putzRotation]
+    .filter((r) => r.completedAt !== null)
+    .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))[0];
+  const putzPrevWg = putzPrev?.wg ?? null;
+  const putzPrevDate = putzPrev?.completedAt ?? null;
+  const putzDaysSince = putzPrevDate
     ? Math.floor(
-        (Date.now() - new Date(putzLastCompletedDate).getTime()) /
+        (Date.now() - new Date(putzPrevDate).getTime()) /
           (24 * 60 * 60 * 1000)
       )
     : null;
@@ -713,22 +714,25 @@ export default function HomeScreen() {
           <p className="mt-1 break-words text-sm font-semibold leading-tight text-white">
             {putzCurrentWg ?? "—"}
           </p>
-          {putzLastCompletedDate ? (
+          {putzPrevWg && putzPrevDate ? (
             <p className="mt-1 text-[10px] leading-tight text-gray-500">
-              zuletzt:{" "}
-              {new Date(putzLastCompletedDate).toLocaleDateString("de-CH", {
-                day: "2-digit",
-                month: "2-digit",
-              })}
+              vorher: <span className="text-gray-300">{putzPrevWg}</span>
+              <span className="text-gray-600">
+                {" "}
+                ·{" "}
+                {new Date(putzPrevDate).toLocaleDateString("de-CH", {
+                  day: "2-digit",
+                  month: "2-digit",
+                })}
+              </span>
               {putzDaysSince !== null && (
                 <span className="text-gray-600">
                   {" "}
-                  ·{" "}
-                  {putzDaysSince === 0
+                  ({putzDaysSince === 0
                     ? "heute"
                     : putzDaysSince === 1
-                      ? "vor 1 Tag"
-                      : `vor ${putzDaysSince} T.`}
+                      ? "vor 1 T."
+                      : `vor ${putzDaysSince} T.`})
                 </span>
               )}
             </p>
