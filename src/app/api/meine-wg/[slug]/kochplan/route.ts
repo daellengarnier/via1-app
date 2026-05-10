@@ -37,6 +37,12 @@ export async function GET(
             user: { select: { id: true, name: true, avatar: true } },
           },
         },
+        comments: {
+          include: {
+            author: { select: { id: true, name: true, avatar: true } },
+          },
+          orderBy: { createdAt: "asc" },
+        },
       },
       orderBy: [{ date: "asc" }, { slot: "asc" }, { time: "asc" }],
     }),
@@ -82,6 +88,12 @@ export async function GET(
         childrenIds: s.childrenIds,
         guests: s.guests,
         notes: s.notes,
+      })),
+      comments: e.comments.map((c) => ({
+        id: c.id,
+        author: c.author,
+        text: c.text,
+        createdAt: c.createdAt.toISOString(),
       })),
     })),
     templates: templates.map((t) => ({
