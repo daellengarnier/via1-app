@@ -35,6 +35,7 @@ export async function POST(req: Request) {
   const body = (await req.json()) as {
     action?: string;
     wg?: string;
+    completedAt?: string;
   };
 
   if (body.action === "reset") {
@@ -42,11 +43,26 @@ export async function POST(req: Request) {
       data: { completedAt: null },
     });
   } else if (body.action === "complete" && body.wg) {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    // Default: heute. Optional: rueckwirkendes Datum (max heute, max 90 Tage zurueck)
+    let when = new Date();
+    if (body.completedAt && /^\d{4}-\d{2}-\d{2}$/.test(body.completedAt)) {
+      const parsed = new Date(`${body.completedAt}T00:00:00Z`);
+      if (!Number.isNaN(parsed.getTime())) {
+        const today = new Date();
+        today.setUTCHours(23, 59, 59, 999);
+        const earliest = new Date();
+        earliest.setUTCDate(earliest.getUTCDate() - 90);
+        earliest.setUTCHours(0, 0, 0, 0);
+        if (parsed.getTime() <= today.getTime() && parsed.getTime() >= earliest.getTime()) {
+          when = parsed;
+        }
+      }
+    }
+    when.setUTCHours(0, 0, 0, 0);
+
     await prisma.putzplanEntry.updateMany({
       where: { wg: body.wg },
-      data: { completedAt: today },
+      data: { completedAt: when },
     });
 
     // Auto-Reset prüfen: wenn alle durch, neue Runde starten

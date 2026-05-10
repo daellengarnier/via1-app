@@ -3,7 +3,20 @@
 import { useState } from "react";
 import { usePutzplan } from "@/lib/putzplan-store";
 
-const funnyMessages = [
+// Sanfte Sprueche: lustig, nicht auffordernd. Werden immer gezeigt.
+const gentleMessages = [
+  "Wer macht's diesmal mit Cocktail? 🍸",
+  "Treppenhaus-Aerobic ruft 🧽",
+  "Heute mal mit Musik im Ohr putzen — geht schneller 🎧",
+  "Frueh dran ist halb gewonnen 🌱",
+  "Wischmopp-Yoga kann auch Spass machen 🧘",
+  "Putzen mit Aussicht — die Spinnerei dankt's 🪟",
+  "Saubere Treppen, sauberes Karma 💚",
+  "Der Tag wartet auf die Putzaktion ☀️",
+];
+
+// Auffordernde Sprueche: erst nach 30 Tagen ohne Putz-Aktivitaet.
+const nudgeMessages = [
   "Das Treppenhaus versinkt im Dreck! 🧹",
   "Hier wachsen bald Pilze im Gang... 🍄",
   "Die Staubmäuse haben eigene WGs gegründet 🐭",
@@ -20,13 +33,35 @@ function daysSince(dateStr: string): number {
   return Math.floor((now.getTime() - then.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function getRandomMessage(seed: number): string {
-  return funnyMessages[seed % funnyMessages.length]!;
+function pickMessage(pool: string[], seed: number): string {
+  return pool[Math.abs(seed) % pool.length]!;
+}
+
+function todayIso(): string {
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
+}
+
+function ninetyDaysAgoIso(): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 90);
+  return d.toISOString().slice(0, 10);
+}
+
+function fmtDateLong(iso: string): string {
+  return new Date(iso).toLocaleDateString("de-CH", {
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 export default function PutzplanPage() {
   const [rotation, markComplete, , loading] = usePutzplan();
   const [confirmed, setConfirmed] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickedDate, setPickedDate] = useState<string>(todayIso());
 
   const currentIndex = rotation.findIndex((r) => r.completedAt === null);
   const currentWg = currentIndex >= 0 ? rotation[currentIndex]! : null;
@@ -40,10 +75,23 @@ export default function PutzplanPage() {
     : 999;
   const overOneMonth = daysSinceLastClean > 30;
 
+  // Stabiler "Random"-Seed pro Tag, damit der Spruch nicht bei jedem Klick wechselt
+  const seed =
+    Math.floor(Date.now() / (24 * 60 * 60 * 1000)) +
+    (currentWg ? currentWg.wg.length : 0);
+  const gentleSpruch = pickMessage(gentleMessages, seed);
+  const nudgeSpruch = overOneMonth ? pickMessage(nudgeMessages, seed) : null;
+
   async function handleComplete() {
     if (!currentWg || confirmed) return;
     setConfirmed(true);
-    await markComplete(currentWg.wg);
+
+    // Nur ein Datum mitschicken wenn der User wirklich rueckwirkend gewaehlt hat
+    const completedAt =
+      showDatePicker && pickedDate && pickedDate !== todayIso()
+        ? pickedDate
+        : undefined;
+    await markComplete(currentWg.wg, completedAt);
 
     // Nächste WG benachrichtigen
     const res = await fetch("/api/putzplan");
@@ -66,6 +114,8 @@ export default function PutzplanPage() {
       }
     }
 
+    setShowDatePicker(false);
+    setPickedDate(todayIso());
     setTimeout(() => setConfirmed(false), 1500);
   }
 
@@ -105,20 +155,38 @@ export default function PutzplanPage() {
             Treppenhaus + Waschküche
           </p>
 
-          {overOneMonth && (
-            <p className="mt-3 rounded-lg bg-secondary/20 p-3 text-sm text-secondary">
-              {getRandomMessage(daysSinceLastClean)}
+          {/* Sanfter Spruch — immer sichtbar, nicht auffordernd */}
+          <p className="mt-3 rounded-lg bg-accent/10 p-3 text-sm text-accent/90">
+            {gentleSpruch}
+          </p>
+
+          {/* Auffordernder Spruch — erst ab >30 Tagen ohne Putz-Aktivitaet */}
+          {nudgeSpruch && (
+            <p className="mt-2 rounded-lg bg-secondary/20 p-3 text-sm text-secondary">
+              {nudgeSpruch}
             </p>
           )}
 
-          {lastCompletedDate && (
-            <p className="mt-2 text-xs text-gray-500">
-              Zuletzt geputzt: vor {daysSinceLastClean} Tagen (
-              {new Date(lastCompletedDate).toLocaleDateString("de-CH", {
-                day: "numeric",
-                month: "long",
-              })}
-              )
+          {lastCompletedDate ? (
+            <p className="mt-3 rounded-md bg-black/30 px-3 py-2 text-sm text-gray-300">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
+                Zuletzt geputzt
+              </span>
+              <br />
+              {fmtDateLong(lastCompletedDate)}
+              <span className="text-gray-500">
+                {" "}
+                · vor{" "}
+                {daysSinceLastClean === 0
+                  ? "heute"
+                  : daysSinceLastClean === 1
+                    ? "1 Tag"
+                    : `${daysSinceLastClean} Tagen`}
+              </span>
+            </p>
+          ) : (
+            <p className="mt-3 text-xs italic text-gray-600">
+              Noch keine Putzaktion in dieser Runde erfasst
             </p>
           )}
 
@@ -131,9 +199,48 @@ export default function PutzplanPage() {
                 : "bg-accent text-dark hover:brightness-110"
             }`}
           >
-            {confirmed ? "✓ Erledigt!" : "Als erledigt markieren"}
+            {confirmed
+              ? "✓ Erledigt!"
+              : showDatePicker && pickedDate !== todayIso()
+                ? `Erledigt am ${fmtDateLong(pickedDate)}`
+                : "Als erledigt markieren"}
           </button>
-          <p className="mt-1 text-center text-xs text-gray-600">
+
+          {/* Rueckwirkend-Datum-Auswahl */}
+          {!showDatePicker ? (
+            <button
+              onClick={() => setShowDatePicker(true)}
+              className="mt-2 block w-full text-center font-mono text-[10px] uppercase tracking-wider text-gray-500 hover:text-accent"
+            >
+              ↻ Anderes Datum waehlen (rueckwirkend)
+            </button>
+          ) : (
+            <div className="mt-2 flex items-center gap-2 rounded-md border border-accent/30 bg-black/30 p-2">
+              <label className="font-mono text-[10px] uppercase tracking-wider text-gray-400">
+                Datum:
+              </label>
+              <input
+                type="date"
+                value={pickedDate}
+                min={ninetyDaysAgoIso()}
+                max={todayIso()}
+                onChange={(e) => setPickedDate(e.target.value || todayIso())}
+                className="flex-1 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-sm text-white focus:border-accent focus:outline-none"
+              />
+              <button
+                onClick={() => {
+                  setShowDatePicker(false);
+                  setPickedDate(todayIso());
+                }}
+                className="text-xs text-gray-500 hover:text-white"
+                title="Zuruecksetzen auf heute"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          <p className="mt-2 text-center text-xs text-gray-600">
             Nur Bewohner:innen der {currentWg.wg} können abkreuzen
           </p>
         </div>
