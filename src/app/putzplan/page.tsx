@@ -69,6 +69,7 @@ export default function PutzplanPage() {
   const lastCompleted = [...rotation]
     .filter((r) => r.completedAt !== null)
     .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!));
+  const lastCompletedWg = lastCompleted[0]?.wg ?? null;
   const lastCompletedDate = lastCompleted[0]?.completedAt;
   const daysSinceLastClean = lastCompletedDate
     ? daysSince(lastCompletedDate)
@@ -167,23 +168,28 @@ export default function PutzplanPage() {
             </p>
           )}
 
-          {lastCompletedDate ? (
-            <p className="mt-3 rounded-md bg-black/30 px-3 py-2 text-sm text-gray-300">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
-                Zuletzt geputzt
-              </span>
-              <br />
-              {fmtDateLong(lastCompletedDate)}
-              <span className="text-gray-500">
-                {" "}
-                · vor{" "}
+          {lastCompletedDate && lastCompletedWg ? (
+            <div className="mt-3 rounded-md bg-black/30 px-3 py-2 text-sm">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
+                Vorher dran war
+              </p>
+              <p className="mt-0.5 text-gray-200">
+                <span className="font-semibold text-white">
+                  {lastCompletedWg}
+                </span>
+                <span className="text-gray-400">
+                  {" "}
+                  · {fmtDateLong(lastCompletedDate)}
+                </span>
+              </p>
+              <p className="text-[11px] text-gray-500">
                 {daysSinceLastClean === 0
-                  ? "heute"
+                  ? "heute geputzt"
                   : daysSinceLastClean === 1
-                    ? "1 Tag"
-                    : `${daysSinceLastClean} Tagen`}
-              </span>
-            </p>
+                    ? "vor 1 Tag geputzt"
+                    : `vor ${daysSinceLastClean} Tagen geputzt`}
+              </p>
+            </div>
           ) : (
             <p className="mt-3 text-xs italic text-gray-600">
               Noch keine Putzaktion in dieser Runde erfasst
