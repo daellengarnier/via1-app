@@ -193,7 +193,7 @@ function KochTile({
         <div className="mb-2 flex items-baseline justify-between">
           <a
             href={`/meine-wg/${slug}/kochplan`}
-            className="font-display text-xs font-bold uppercase tracking-widest text-fuchsia-200 hover:text-fuchsia-100"
+            className="font-display text-xs font-bold uppercase tracking-widest text-white hover:text-white"
           >
             🍳 Kochplan · heute
           </a>
@@ -523,7 +523,7 @@ function ShoppingTile({
       <div className="mb-2 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/einkauf`}
-          className="font-display text-[11px] font-bold uppercase tracking-widest text-fuchsia-200 hover:text-fuchsia-100"
+          className="font-display text-[11px] font-bold uppercase tracking-widest text-white hover:text-white"
         >
           🛒 Einkauf
         </a>
@@ -630,7 +630,7 @@ function AemtliTile({
       <div className="mb-2 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/aemtli`}
-          className="font-display text-[11px] font-bold uppercase tracking-widest text-fuchsia-200 hover:text-fuchsia-100"
+          className="font-display text-[11px] font-bold uppercase tracking-widest text-white hover:text-white"
         >
           🧹 Aemtli
         </a>
@@ -711,7 +711,7 @@ function TermineTile({
       <div className="mb-2 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/termine`}
-          className="font-display text-[11px] font-bold uppercase tracking-widest text-fuchsia-200 hover:text-fuchsia-100"
+          className="font-display text-[11px] font-bold uppercase tracking-widest text-white hover:text-white"
         >
           📅 Termine
           {openDoodles.length > 0 && (
@@ -811,7 +811,7 @@ function PinnwandTile({
       <div className="mb-2 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/pinnwand`}
-          className="font-display text-[11px] font-bold uppercase tracking-widest text-fuchsia-200 hover:text-fuchsia-100"
+          className="font-display text-[11px] font-bold uppercase tracking-widest text-white hover:text-white"
         >
           📌 Pinnwand
         </a>
@@ -874,7 +874,7 @@ function Tile({
 }) {
   return (
     <a href={href} className="block wg-tile p-3 hover:wg-tile-strong">
-      <p className="font-display text-xs font-bold uppercase tracking-widest text-fuchsia-200">
+      <p className="font-display text-xs font-bold uppercase tracking-widest text-white">
         {icon} {title}
       </p>
       <div className="mt-1">{children}</div>

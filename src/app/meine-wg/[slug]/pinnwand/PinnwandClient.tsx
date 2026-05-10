@@ -84,7 +84,7 @@ const COLOR_STYLE: Record<PinnwandColor, ColorStyle> = {
     grad: "from-fuchsia-400/60 to-violet-600/30",
     border: "border-fuchsia-300/50",
     text: "text-fuchsia-50",
-    meta: "text-fuchsia-200/90",
+    meta: "text-white/90",
     rot: "rotate-1",
   },
 };
@@ -141,7 +141,7 @@ export function PinnwandClient({ slug, wgName, meId }: Props) {
       <div className="mb-4 mt-3 flex justify-end">
         <button
           onClick={() => setShowAdd(true)}
-          className="rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-fuchsia-200 hover:bg-fuchsia-500/20"
+          className="rounded-lg border border-white/30 bg-white/5 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/15"
         >
           + Post-It
         </button>

@@ -127,11 +127,11 @@ export function DoodleDetailClient({ slug, wgName, doodleId, meId }: Props) {
         <div className="pt-14">
           <Link
             href={`/meine-wg/${slug}/termine`}
-            className="font-mono text-[10px] uppercase tracking-widest text-fuchsia-300/80 hover:text-fuchsia-200"
+            className="font-mono text-[10px] uppercase tracking-widest text-gray-300 hover:text-white"
           >
             ← {wgName} · Termine
           </Link>
-          <p className="mt-4 text-sm text-fuchsia-300/60">Lade...</p>
+          <p className="mt-4 text-sm text-gray-500">Lade...</p>
         </div>
       </div>
     );
@@ -145,7 +145,7 @@ export function DoodleDetailClient({ slug, wgName, doodleId, meId }: Props) {
         <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-48 wg-bg-glow" />
         <Link
           href={`/meine-wg/${slug}/termine`}
-          className="font-mono text-[10px] uppercase tracking-widest text-fuchsia-300/80 hover:text-fuchsia-200"
+          className="font-mono text-[10px] uppercase tracking-widest text-gray-300 hover:text-white"
         >
           ← {wgName} · Termine
         </Link>

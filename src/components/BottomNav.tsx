@@ -146,7 +146,7 @@ export function BottomNav() {
               }`}
             >
               <span className="flex h-[18px] items-center">{item.icon}</span>
-              <span className="font-display text-[9px] font-bold tracking-wider">
+              <span className="whitespace-nowrap font-display text-[9px] font-bold tracking-tight">
                 {item.label}
               </span>
             </Link>

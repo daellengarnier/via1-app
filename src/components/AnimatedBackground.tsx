@@ -46,6 +46,7 @@ export function AnimatedBackground({
     "glow-pink": "255, 100, 180",
     "glow-silver": "200, 210, 220",
     "glow-green": "80, 240, 140",
+    "glow-white": "255, 255, 255",
   };
   const rgb = glowClass ? colorMap[glowClass] : "0, 255, 100";
   const c = rgb || "0, 255, 100";

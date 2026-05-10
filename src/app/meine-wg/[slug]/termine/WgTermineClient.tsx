@@ -91,7 +91,7 @@ export function WgTermineClient({ slug, wgName }: Props) {
           backToWgName={wgName}
           title="📅 Termine"
         />
-        <p className="mt-4 text-sm text-fuchsia-300/60">Lade...</p>
+        <p className="mt-4 text-sm text-gray-500">Lade...</p>
       </div>
     );
   }

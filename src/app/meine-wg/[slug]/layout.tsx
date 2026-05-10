@@ -1,8 +1,8 @@
-import { WgAnimatedBg } from "@/components/WgAnimatedBg";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
-// Layout fuer den "Meine WG"-Bereich: rendert den bewegten Pink/Fuchsia/Cyan
-// Hintergrund als fixed Layer hinter der Page. Ueberschreibt das Standard
-// "via-bg" der App.
+// Layout fuer den "Meine WG"-Bereich: schwarzer Hintergrund mit
+// weiss-leuchtenden Partikeln + Glow-Spots wie auf den anderen Tabs,
+// nur in monochromem Weiss.
 export default function MeineWgSlugLayout({
   children,
 }: {
@@ -10,7 +10,7 @@ export default function MeineWgSlugLayout({
 }) {
   return (
     <>
-      <WgAnimatedBg />
+      <AnimatedBackground glowClass="glow-white" showIcon={false} />
       {children}
     </>
   );
