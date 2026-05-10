@@ -9,6 +9,13 @@ interface Person {
   avatar: string | null;
 }
 
+interface Comment {
+  id: string;
+  text: string;
+  author: Person;
+  createdAt: string;
+}
+
 interface Item {
   id: string;
   text: string;
@@ -17,6 +24,7 @@ interface Item {
   doneAt: string | null;
   createdBy: Person;
   doneBy: Person | null;
+  comments: Comment[];
 }
 
 interface Props {
@@ -25,7 +33,16 @@ interface Props {
   meId: string;
 }
 
-export function EinkaufClient({ slug, wgName }: Props) {
+function fmtDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("de-CH", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function EinkaufClient({ slug, wgName, meId }: Props) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
@@ -33,6 +50,7 @@ export function EinkaufClient({ slug, wgName }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [showDone, setShowDone] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -148,48 +166,25 @@ export function EinkaufClient({ slug, wgName }: Props) {
               </p>
             ) : (
               open.map((item) => (
-                <div
+                <ItemRow
                   key={item.id}
-                  className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900/40 px-2 py-2"
-                >
-                  <input
-                    type="checkbox"
-                    checked={item.done}
-                    onChange={() => toggleDone(item)}
-                    className="h-5 w-5 rounded border-gray-600 bg-gray-900 text-accent"
-                  />
-                  {editingId === item.id ? (
-                    <input
-                      type="text"
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onBlur={() => saveEdit(item.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") saveEdit(item.id);
-                        if (e.key === "Escape") setEditingId(null);
-                      }}
-                      autoFocus
-                      className="flex-1 rounded border border-secondary/40 bg-gray-900 px-2 py-1 text-sm text-white focus:outline-none"
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => startEdit(item)}
-                      className="flex-1 text-left text-sm text-white"
-                    >
-                      <span>{item.text}</span>
-                      <span className="ml-2 text-[10px] text-gray-500">
-                        · {item.createdBy.name}
-                      </span>
-                    </button>
-                  )}
-                  <button
-                    onClick={() => remove(item.id)}
-                    className="text-xs text-gray-600 hover:text-red-400"
-                  >
-                    ✕
-                  </button>
-                </div>
+                  slug={slug}
+                  item={item}
+                  meId={meId}
+                  expanded={expandedId === item.id}
+                  isEditing={editingId === item.id}
+                  editText={editText}
+                  setEditText={setEditText}
+                  onExpand={() =>
+                    setExpandedId((cur) => (cur === item.id ? null : item.id))
+                  }
+                  onStartEdit={() => startEdit(item)}
+                  onSaveEdit={() => saveEdit(item.id)}
+                  onCancelEdit={() => setEditingId(null)}
+                  onToggleDone={() => toggleDone(item)}
+                  onRemove={() => remove(item.id)}
+                  onChanged={load}
+                />
               ))
             )}
           </div>
@@ -234,6 +229,169 @@ export function EinkaufClient({ slug, wgName }: Props) {
             </div>
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+function ItemRow({
+  slug,
+  item,
+  meId,
+  expanded,
+  isEditing,
+  editText,
+  setEditText,
+  onExpand,
+  onStartEdit,
+  onSaveEdit,
+  onCancelEdit,
+  onToggleDone,
+  onRemove,
+  onChanged,
+}: {
+  slug: string;
+  item: Item;
+  meId: string;
+  expanded: boolean;
+  isEditing: boolean;
+  editText: string;
+  setEditText: (s: string) => void;
+  onExpand: () => void;
+  onStartEdit: () => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onToggleDone: () => void;
+  onRemove: () => void;
+  onChanged: () => void;
+}) {
+  const [newComment, setNewComment] = useState("");
+
+  async function addComment() {
+    const t = newComment.trim();
+    if (!t) return;
+    await fetch(`/api/meine-wg/${slug}/einkauf/${item.id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: t }),
+    });
+    setNewComment("");
+    onChanged();
+  }
+
+  async function deleteComment(cId: string) {
+    await fetch(
+      `/api/meine-wg/${slug}/einkauf/${item.id}/comments/${cId}`,
+      { method: "DELETE" }
+    );
+    onChanged();
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-800 bg-gray-900/40">
+      <div className="flex items-center gap-2 px-2 py-2">
+        <input
+          type="checkbox"
+          checked={item.done}
+          onChange={onToggleDone}
+          className="h-5 w-5 rounded border-gray-600 bg-gray-900 text-accent"
+        />
+        {isEditing ? (
+          <input
+            type="text"
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            onBlur={onSaveEdit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onSaveEdit();
+              if (e.key === "Escape") onCancelEdit();
+            }}
+            autoFocus
+            className="flex-1 rounded border border-secondary/40 bg-gray-900 px-2 py-1 text-sm text-white focus:outline-none"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={onExpand}
+            className="flex-1 text-left text-sm text-white"
+          >
+            <span>{item.text}</span>
+            <span className="ml-2 text-[10px] text-gray-500">
+              · {item.createdBy.name}
+            </span>
+            {item.comments.length > 0 && (
+              <span className="ml-2 text-[10px] text-secondary">
+                💬 {item.comments.length}
+              </span>
+            )}
+          </button>
+        )}
+        {!isEditing && (
+          <button
+            onClick={onStartEdit}
+            className="text-[10px] text-gray-600 hover:text-white"
+            title="Bearbeiten"
+          >
+            ✎
+          </button>
+        )}
+        <button
+          onClick={onRemove}
+          className="text-xs text-gray-600 hover:text-red-400"
+          title="Loeschen"
+        >
+          ✕
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="border-t border-gray-800 bg-black/30 px-3 py-2">
+          {item.comments.length > 0 && (
+            <div className="mb-2 space-y-1">
+              {item.comments.map((c) => (
+                <div key={c.id} className="text-xs">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p>
+                      <span className="font-medium text-accent">
+                        {c.author.name}
+                      </span>
+                      <span className="ml-1 text-[10px] text-gray-600">
+                        {fmtDateTime(c.createdAt)}
+                      </span>
+                    </p>
+                    {c.author.id === meId && (
+                      <button
+                        onClick={() => deleteComment(c.id)}
+                        className="text-[10px] text-gray-600 hover:text-red-400"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  <p className="whitespace-pre-line text-gray-200">{c.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-1">
+            <input
+              type="text"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addComment()}
+              placeholder="Kommentar / Notiz (z.B. 'Marke X', '500g')"
+              maxLength={500}
+              className="flex-1 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-accent focus:outline-none"
+            />
+            <button
+              onClick={addComment}
+              disabled={!newComment.trim()}
+              className="rounded bg-accent px-2 py-1 text-[10px] font-bold uppercase text-black hover:brightness-110 disabled:opacity-50"
+            >
+              ↵
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

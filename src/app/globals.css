@@ -335,3 +335,18 @@ body {
 }
 .input::placeholder { color: rgb(75 85 99); }
 .input:focus { outline: none; border-color: rgb(196 181 253); }
+
+/* Sauna-Kachel pulsiert sanft rot wenn jemand heizt — Border + Glow */
+@keyframes saunaHeatingPulse {
+  0%, 100% {
+    border-color: rgba(239, 68, 68, 0.3);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+  50% {
+    border-color: rgba(239, 68, 68, 0.85);
+    box-shadow: 0 0 25px 2px rgba(239, 68, 68, 0.45);
+  }
+}
+.sauna-heating-pulse {
+  animation: saunaHeatingPulse 2s ease-in-out infinite;
+}

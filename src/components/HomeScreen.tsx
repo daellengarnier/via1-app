@@ -124,6 +124,9 @@ export default function HomeScreen() {
   const [saunaTemp, setSaunaTemp] = useState<number | null>(null);
   const [saunaLive, setSaunaLive] = useState(false);
   const [saunaAgeSec, setSaunaAgeSec] = useState<number | null>(null);
+  const [saunaHeating, setSaunaHeating] = useState<
+    { startedByName: string; minutesAgo: number } | null
+  >(null);
   const [openAufgabenCount, setOpenAufgabenCount] = useState<number | null>(
     null
   );
@@ -251,8 +254,24 @@ export default function HomeScreen() {
         setSaunaLive(false);
       }
     }
+    async function fetchHeating() {
+      try {
+        const res = await fetch("/api/sauna/heating", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as
+          | { startedByName: string; minutesAgo: number }
+          | null;
+        if (!cancelled) setSaunaHeating(data);
+      } catch {
+        // silent
+      }
+    }
     fetchSauna();
-    const id = setInterval(fetchSauna, 15000);
+    fetchHeating();
+    const id = setInterval(() => {
+      fetchSauna();
+      fetchHeating();
+    }, 15000);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -670,7 +689,11 @@ export default function HomeScreen() {
       {/* Glasige Neon-Kacheln — ohne Gästi */}
       <div className="mb-4 grid grid-cols-3 gap-3">
         <div
-          className="cursor-pointer rounded-xl border border-red-500/15 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-red-500/30 hover:shadow-[0_0_20px_rgba(255,50,50,0.1)]"
+          className={`cursor-pointer rounded-xl border bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-red-500/30 hover:shadow-[0_0_20px_rgba(255,50,50,0.1)] ${
+            saunaHeating
+              ? "sauna-heating-pulse border-red-500/50"
+              : "border-red-500/15"
+          }`}
           onClick={() => router.push("/sauna")}
         >
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-red-400">
@@ -680,15 +703,17 @@ export default function HomeScreen() {
             {saunaTemp ?? "–"}°C
           </p>
           <p className="mt-1 text-[10px] text-gray-500">
-            {saunaTemp === null
-              ? "Sensor offline"
-              : saunaLive
-                ? saunaTemp >= 60
-                  ? "geheizt 🔥"
-                  : saunaTemp >= 35
-                    ? "warm"
-                    : "kalt"
-                : `vor ${Math.round((saunaAgeSec ?? 0) / 60)} Min`}
+            {saunaHeating
+              ? `🔥 ${saunaHeating.startedByName} heizt ein`
+              : saunaTemp === null
+                ? "Sensor offline"
+                : saunaLive
+                  ? saunaTemp >= 60
+                    ? "geheizt 🔥"
+                    : saunaTemp >= 35
+                      ? "warm"
+                      : "kalt"
+                  : `vor ${Math.round((saunaAgeSec ?? 0) / 60)} Min`}
           </p>
           <SaunaSparkline />
         </div>
