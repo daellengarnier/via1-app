@@ -35,21 +35,6 @@ interface Props {
   meId: string;
 }
 
-// Sticky-Note-Optik wie auf Home, aber alles monochrom schwarz/weiss.
-// Verschiedene Rotations-Winkel + leichte Opacity-Variationen zur Unterscheidung.
-interface ColorStyle {
-  rot: string; // leichte Rotation
-}
-
-const COLOR_STYLE: Record<PinnwandColor, ColorStyle> = {
-  yellow: { rot: "-rotate-1" },
-  pink:   { rot: "rotate-1" },
-  blue:   { rot: "-rotate-2" },
-  green:  { rot: "rotate-2" },
-  orange: { rot: "-rotate-1" },
-  purple: { rot: "rotate-1" },
-};
-
 // Einheitlicher s/w-Stil — gleiche Klassen fuer alle Notes
 const NOTE_GRAD = "from-white/15 to-white/5";
 const NOTE_BORDER = "border-white/25";
@@ -65,10 +50,6 @@ const COLOR_DOT: Record<PinnwandColor, string> = {
   orange: "bg-white/30",
   purple: "bg-white/15",
 };
-
-function isColor(c: string): c is PinnwandColor {
-  return (PINNWAND_COLORS as readonly string[]).includes(c);
-}
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleString("de-CH", {
@@ -122,7 +103,7 @@ export function PinnwandClient({ slug, wgName, meId }: Props) {
           Pinnwand ist leer.
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           {notes.map((n) => (
             <NoteCard
               key={n.id}
@@ -168,8 +149,6 @@ function NoteCard({
   slug: string;
   onChanged: () => void;
 }) {
-  const color: PinnwandColor = isColor(note.color) ? note.color : "yellow";
-  const style = COLOR_STYLE[color];
   const isMine = note.author.id === meId;
   const [newComment, setNewComment] = useState("");
 
@@ -203,11 +182,9 @@ function NoteCard({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border ${
+      className={`relative w-full overflow-hidden rounded-2xl border ${
         NOTE_BORDER
-      } bg-gradient-to-br ${NOTE_GRAD} ${
-        expanded ? "col-span-2 rotate-0" : style.rot
-      } cursor-pointer p-3 pb-7 shadow-lg backdrop-blur-md transition-transform hover:rotate-0 hover:scale-105`}
+      } bg-gradient-to-br ${NOTE_GRAD} cursor-pointer p-3 pb-7 shadow-lg backdrop-blur-md transition-transform hover:scale-[1.01]`}
       style={{
         boxShadow:
           "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",

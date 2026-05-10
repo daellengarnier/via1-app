@@ -8,8 +8,8 @@ import {
   WG_UNLOCK_TTL_SECONDS,
   decodeWgUnlock,
   encodeWgUnlock,
-  wgSlug,
 } from "@/lib/wg-unlock";
+import { getWgBySlugCached } from "@/lib/wg-lookup";
 
 interface WgAccessOk {
   ok: true;
@@ -44,16 +44,7 @@ export async function requireWgAccess(
   // Admin-Restriction wurde entfernt — alle eingeloggten User duerfen
   // den "Meine WG"-Bereich nutzen, geschuetzt nur durch das WG-Passwort.
 
-  const wgs = await prisma.wg.findMany({
-    select: {
-      id: true,
-      name: true,
-      floor: true,
-      side: true,
-      passwordHash: true,
-    },
-  });
-  const wg = wgs.find((w) => wgSlug(w.name) === slug);
+  const wg = await getWgBySlugCached(slug);
   if (!wg) {
     return {
       ok: false,

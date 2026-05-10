@@ -1,13 +1,13 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import {
   WG_UNLOCK_COOKIE_NAME,
   decodeWgUnlock,
-  wgSlug,
 } from "@/lib/wg-unlock";
+import { getWgBySlugCached } from "@/lib/wg-lookup";
 import { UnlockForm } from "./UnlockForm";
 import { WgDashboardClient } from "./WgDashboardClient";
 import { WgPageHeader } from "@/components/WgPageHeader";
@@ -23,8 +23,7 @@ export default async function MeineWgSlugPage({ params }: Props) {
   // Phase 0: nur Admins
   // Admin-Restriction wurde entfernt — alle eingeloggten User duerfen rein
 
-  const allWgs = await prisma.wg.findMany();
-  const wg = allWgs.find((w) => wgSlug(w.name) === params.slug);
+  const wg = await getWgBySlugCached(params.slug);
   if (!wg) {
     return (
       <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
@@ -48,6 +47,12 @@ export default async function MeineWgSlugPage({ params }: Props) {
   return (
     <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
       <WgPageHeader title={wg.name} subtitle={subtitle} />
+      <Link
+        href="/meine-wg?all=1"
+        className="mt-1 inline-block font-mono text-[10px] uppercase tracking-widest text-gray-400 hover:text-white"
+      >
+        ↔ Andere WG
+      </Link>
       <div className="h-5" />
 
       {!wg.passwordHash ? (
