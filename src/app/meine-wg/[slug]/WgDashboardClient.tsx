@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   SLOT_ICON,
   SLOT_LABEL,
@@ -162,7 +164,7 @@ export function WgDashboardClient({ slug, meId, meName }: Props) {
         />
       </div>
 
-      <PinnwandInline slug={slug} notes={pinnwand} onChanged={loadAll} />
+      <PinnwandInline slug={slug} notes={pinnwand} meId={meId} onChanged={loadAll} />
     </div>
   );
 }
@@ -205,18 +207,18 @@ function KochTile({
     <>
       <div className="wg-tile-heavy p-3">
         <div className="mb-2 flex items-baseline justify-between">
-          <a
+          <Link
             href={`/meine-wg/${slug}/kochplan`}
             className="font-display text-xs font-bold uppercase tracking-widest text-white hover:text-white"
           >
             🍳 Kochplan · heute
-          </a>
-          <a
+          </Link>
+          <Link
             href={`/meine-wg/${slug}/kochplan`}
             className="font-mono text-[10px] uppercase tracking-wider text-white hover:underline"
           >
             ganze Woche →
-          </a>
+          </Link>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <KochSlotMini
@@ -555,12 +557,12 @@ function ShoppingTile({
       style={maxHeight ? { height: maxHeight, maxHeight } : undefined}
     >
       <div className="mb-2 flex items-baseline justify-between">
-        <a
+        <Link
           href={`/meine-wg/${slug}/einkauf`}
           className="font-display text-[11px] font-bold uppercase tracking-widest text-white hover:text-white"
         >
           🛒 Einkauf
-        </a>
+        </Link>
         <span className="font-mono text-[10px] uppercase tracking-wider text-white">
           {open.length} offen
         </span>
@@ -630,7 +632,7 @@ function AemtliTile({
   const isOverdue = overdueDays >= 11;
 
   return (
-    <a
+    <Link
       href={`/meine-wg/${slug}/aemtli`}
       className={`block p-3 ${
         isOverdue
@@ -673,7 +675,7 @@ function AemtliTile({
           </p>
         </div>
       )}
-    </a>
+    </Link>
   );
 }
 
@@ -707,12 +709,12 @@ function TermineTile({
   return (
     <div className="wg-tile-heavy p-3">
       <div className="mb-1 flex items-baseline justify-between">
-        <a
+        <Link
           href={`/meine-wg/${slug}/termine`}
           className="font-display text-[11px] font-bold uppercase tracking-widest text-white"
         >
           📅 Termine
-        </a>
+        </Link>
         {openDoodles.length > 0 && (
           <span className="font-mono text-[10px] uppercase tracking-wider text-white">
             🗓 {openDoodles.length}
@@ -769,15 +771,18 @@ function TermineTile({
 function PinnwandInline({
   slug,
   notes,
+  meId,
   onChanged,
 }: {
   slug: string;
   notes: PinnwandNote[] | null;
+  meId: string;
   onChanged: () => void;
 }) {
   const [showForm, setShowForm] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -846,32 +851,180 @@ function PinnwandInline({
         <div className="grid grid-cols-2 gap-3">
           {notes.map((n, i) => {
             const rotations = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2"];
-            const rot = rotations[i % rotations.length];
+            const rot = rotations[i % rotations.length] ?? "";
             return (
-              <a
+              <PinnwandNoteCard
                 key={n.id}
-                href={`/meine-wg/${slug}/pinnwand`}
-                className={`relative overflow-hidden rounded-2xl border border-white/25 bg-gradient-to-br from-white/15 to-white/5 p-3 pb-7 text-left text-white shadow-lg backdrop-blur-md transition-transform hover:rotate-0 hover:scale-105 ${rot}`}
-                style={{
-                  boxShadow:
-                    "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.18)",
+                note={n}
+                slug={slug}
+                meId={meId}
+                rot={rot}
+                editing={editingId === n.id}
+                onStartEdit={() => setEditingId(n.id)}
+                onCancelEdit={() => setEditingId(null)}
+                onChanged={() => {
+                  setEditingId(null);
+                  onChanged();
                 }}
-              >
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
-                <p className="relative line-clamp-4 pt-1 text-sm font-medium leading-relaxed">
-                  {n.text}
-                </p>
-                <div className="absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[10px] text-gray-300">
-                  <span>— {n.author.name}</span>
-                  {n.comments.length > 0 && (
-                    <span>💬 {n.comments.length}</span>
-                  )}
-                </div>
-              </a>
+              />
             );
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function PinnwandNoteCard({
+  note,
+  slug,
+  meId,
+  rot,
+  editing,
+  onStartEdit,
+  onCancelEdit,
+  onChanged,
+}: {
+  note: PinnwandNote;
+  slug: string;
+  meId: string;
+  rot: string;
+  editing: boolean;
+  onStartEdit: () => void;
+  onCancelEdit: () => void;
+  onChanged: () => void;
+}) {
+  const router = useRouter();
+  const isMine = note.author.id === meId;
+  const [draft, setDraft] = useState(note.text);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (editing) setDraft(note.text);
+  }, [editing, note.text]);
+
+  async function save() {
+    const t = draft.trim();
+    if (!t || t === note.text) {
+      onCancelEdit();
+      return;
+    }
+    setBusy(true);
+    try {
+      await fetch(`/api/meine-wg/${slug}/pinnwand/${note.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: t }),
+      });
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function del() {
+    if (!confirm("Post-It loeschen?")) return;
+    setBusy(true);
+    try {
+      await fetch(`/api/meine-wg/${slug}/pinnwand/${note.id}`, {
+        method: "DELETE",
+      });
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const cardClass = `relative overflow-hidden rounded-2xl border border-white/25 bg-gradient-to-br from-white/15 to-white/5 p-3 pb-7 text-left text-white shadow-lg backdrop-blur-md transition-transform ${
+    editing ? "rotate-0" : `hover:rotate-0 hover:scale-105 ${rot}`
+  }`;
+  const cardStyle = {
+    boxShadow:
+      "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.18)",
+  };
+
+  if (editing) {
+    return (
+      <div className={cardClass} style={cardStyle}>
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          rows={4}
+          maxLength={500}
+          autoFocus
+          className="relative w-full resize-none rounded bg-white/10 p-2 text-sm font-medium leading-relaxed text-white placeholder-white/40 focus:outline-none"
+        />
+        <div className="relative mt-2 flex justify-end gap-1">
+          <button
+            onClick={onCancelEdit}
+            disabled={busy}
+            className="rounded border border-white/20 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-gray-300 hover:bg-white/10"
+          >
+            Abbrechen
+          </button>
+          <button
+            onClick={save}
+            disabled={busy || !draft.trim()}
+            className="rounded bg-white px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
+          >
+            Speichern
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={() => router.push(`/meine-wg/${slug}/pinnwand`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") router.push(`/meine-wg/${slug}/pinnwand`);
+      }}
+      className={`cursor-pointer ${cardClass}`}
+      style={cardStyle}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
+      {isMine && (
+        <div
+          className="absolute right-1.5 top-1.5 z-10 flex gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onStartEdit();
+            }}
+            disabled={busy}
+            className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-white/90 hover:bg-white/25"
+            aria-label="Bearbeiten"
+          >
+            ✎
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              del();
+            }}
+            disabled={busy}
+            className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-white/90 hover:bg-red-500/40"
+            aria-label="Loeschen"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      <p className="relative line-clamp-4 pt-1 text-sm font-medium leading-relaxed">
+        {note.text}
+      </p>
+      <div className="absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[10px] text-gray-300">
+        <span>— {note.author.name}</span>
+        {note.comments.length > 0 && (
+          <span>💬 {note.comments.length}</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -890,12 +1043,12 @@ function Tile({
   children: React.ReactNode;
 }) {
   return (
-    <a href={href} className="block wg-tile p-3 hover:wg-tile-strong">
+    <Link href={href} className="block wg-tile p-3 hover:wg-tile-strong">
       <p className="font-display text-xs font-bold uppercase tracking-widest text-white">
         {icon} {title}
       </p>
       <div className="mt-1">{children}</div>
-    </a>
+    </Link>
   );
 }
 

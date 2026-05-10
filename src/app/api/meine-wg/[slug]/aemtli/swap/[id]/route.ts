@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWgAccess } from "@/lib/wg-access";
+import { notify } from "@/lib/notify";
 
 interface PatchBody {
   accept?: boolean;
@@ -41,6 +42,13 @@ export async function PATCH(
       where: { id: swap.id },
       data: { status: "declined" },
     });
+    await notify({
+      kind: "WG_AEMTLI_SWAP_DECISION",
+      title: `🔁 ${access.wg.name}: Tausch abgelehnt`,
+      body: `${access.user.name} hat deinen Aemtli-Tausch abgelehnt.`,
+      link: `/meine-wg/${params.slug}/aemtli`,
+      audience: [swap.fromUserId],
+    });
     return NextResponse.json({ ok: true });
   }
 
@@ -67,5 +75,14 @@ export async function PATCH(
       data: { rotationOrder: order },
     }),
   ]);
+
+  await notify({
+    kind: "WG_AEMTLI_SWAP_DECISION",
+    title: `🔁 ${access.wg.name}: Tausch angenommen`,
+    body: `${access.user.name} hat den Aemtli-Tausch angenommen.`,
+    link: `/meine-wg/${params.slug}/aemtli`,
+    audience: [swap.fromUserId],
+  });
+
   return NextResponse.json({ ok: true });
 }

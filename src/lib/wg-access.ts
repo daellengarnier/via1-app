@@ -103,12 +103,36 @@ export async function requireWgAccess(
   };
 }
 
-// Liefert die User-IDs aller Bewohner einer WG (ueber Room.wgId).
+// Prisma-Where-Clause der alle "Mitglieder" einer WG matched —
+// offizielle Bewohner UND Cross-WG-Gaeste. Wird in Member-Queries
+// (Kochplan-Member, Aemtli-Member, Termine-Birthdays, etc.) verwendet.
+export function wgMemberFilter(wgId: string) {
+  return {
+    OR: [
+      { room: { wgId } },
+      { wgGuestMemberships: { some: { wgId } } },
+    ],
+  };
+}
+
+// Liefert die User-IDs aller "Mitglieder" einer WG. Eingeschlossen sind:
+//  1. offizielle Bewohner (Room.wgId)
+//  2. Cross-WG-Mitglieder via WgGuest (z.B. Partner:innen die offiziell
+//     in einer anderen WG wohnen sich aber zur WG entlockt haben)
 // Wird fuer WG-interne Push-Notifications verwendet.
 export async function getWgMemberUserIds(wgId: string): Promise<string[]> {
-  const users = await prisma.user.findMany({
-    where: { room: { wgId } },
-    select: { id: true },
-  });
-  return users.map((u) => u.id);
+  const [residents, guests] = await Promise.all([
+    prisma.user.findMany({
+      where: { room: { wgId } },
+      select: { id: true },
+    }),
+    prisma.wgGuest.findMany({
+      where: { wgId },
+      select: { userId: true },
+    }),
+  ]);
+  const ids = new Set<string>();
+  for (const u of residents) ids.add(u.id);
+  for (const g of guests) ids.add(g.userId);
+  return Array.from(ids);
 }

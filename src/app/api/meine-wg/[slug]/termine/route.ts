@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notify";
-import { getWgMemberUserIds, requireWgAccess } from "@/lib/wg-access";
+import {
+  getWgMemberUserIds,
+  requireWgAccess,
+  wgMemberFilter,
+} from "@/lib/wg-access";
 
 interface CreateBody {
   title?: string;
@@ -36,7 +40,7 @@ export async function GET(
       orderBy: { date: "asc" },
     }),
     prisma.user.findMany({
-      where: { room: { wgId: access.wg.id }, birthday: { not: null } },
+      where: { AND: [wgMemberFilter(access.wg.id), { birthday: { not: null } }] },
       select: {
         id: true,
         name: true,

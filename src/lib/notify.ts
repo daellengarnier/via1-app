@@ -53,10 +53,15 @@ const kindToPref: Record<NotificationKind, keyof PrefFields> = {
   FEEDBACK_RESOLVED: "notifyMyPostsComment",
   LAUNDRY_DONE: "notifyLaundry",
   WG_KOCH_NEW: "notifyMeineWg",
+  WG_KOCH_COMMENT: "notifyMeineWg",
   WG_TERMIN_NEW: "notifyMeineWg",
   WG_TERMIN_COMMENT: "notifyMeineWg",
   WG_PINNWAND_NEW: "notifyMeineWg",
   WG_PINNWAND_COMMENT: "notifyMeineWg",
+  WG_AEMTLI_SWAP_REQUEST: "notifyMeineWg",
+  WG_AEMTLI_SWAP_DECISION: "notifyMeineWg",
+  WG_AEMTLI_DONE: "notifyMeineWg",
+  WG_EINKAUF_COMMENT: "notifyMeineWg",
 };
 
 type PrefFields = {

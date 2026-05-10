@@ -55,10 +55,15 @@ enum NotificationKind {
   FEEDBACK_RESOLVED
   LAUNDRY_DONE
   WG_KOCH_NEW
+  WG_KOCH_COMMENT
   WG_TERMIN_NEW
   WG_TERMIN_COMMENT
   WG_PINNWAND_NEW
   WG_PINNWAND_COMMENT
+  WG_AEMTLI_SWAP_REQUEST
+  WG_AEMTLI_SWAP_DECISION
+  WG_AEMTLI_DONE
+  WG_EINKAUF_COMMENT
 }
 
 model User {
@@ -145,6 +150,7 @@ model User {
   wgDoodleVotes        WgDoodleVote[]
   wgPinnwandNotes      WgPinnwandNote[]      @relation("WgPinnwandAuthor")
   wgPinnwandComments   WgPinnwandComment[]   @relation("WgPinnwandCommentAuthor")
+  wgGuestMemberships   WgGuest[]
 
   @@map("users")
 }
@@ -622,8 +628,26 @@ model Wg {
   termine             WgTermin[]
   doodles             WgDoodle[]
   pinnwandNotes       WgPinnwandNote[]
+  guests              WgGuest[]
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+}
+
+// Cross-WG-Mitgliedschaft: User die nicht offiziell (per Room.wgId)
+// einer WG zugeordnet sind, sich aber via WG-Passwort entlockt haben
+// (z.B. Partner:innen die offiziell in einer anderen WG wohnen).
+// Wird beim erfolgreichen /unlock-Call persistiert, damit Cross-WG-Mitglieder
+// auch Push-Notifications der WG erhalten.
+model WgGuest {
+  id        String   @id @default(cuid())
+  wgId      String
+  wg        Wg       @relation(fields: [wgId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([wgId, userId])
+  @@index([userId])
 }
 
 model WgKochTemplate {

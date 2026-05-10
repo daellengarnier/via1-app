@@ -26,11 +26,6 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Phase 0: nur Admins haben Zugriff bis das Feature reif ist
-  if (!(session.user.roles ?? []).includes("ADMIN")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   const allWgs = await prisma.wg.findMany({
     select: { id: true, name: true, passwordHash: true },
   });
@@ -77,6 +72,19 @@ export async function POST(
     maxAge: WG_UNLOCK_TTL_SECONDS,
     path: "/",
   });
+
+  // Cross-WG-Mitgliedschaft persistieren: damit der User auch Push-
+  // Notifications dieser WG erhaelt, selbst wenn er offiziell in
+  // einer anderen WG wohnt.
+  await prisma.wgGuest
+    .upsert({
+      where: { wgId_userId: { wgId: wg.id, userId: session.user.id } },
+      create: { wgId: wg.id, userId: session.user.id },
+      update: {},
+    })
+    .catch(() => {
+      // Best-effort; falls Tabelle gerade migrierend ist, nicht fatal
+    });
 
   return NextResponse.json({ ok: true, wgId: wg.id });
 }
