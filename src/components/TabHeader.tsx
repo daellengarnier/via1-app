@@ -52,7 +52,11 @@ export function TabHeader({
       {/* Einheitlicher Abstand: gross mit Icon, minimal ohne */}
       {showIcon && <div className="h-36" />}
       {title && (
-        <h1 className={`mb-5 text-center font-display font-bold uppercase tracking-wider text-2xl ${text}`}>
+        <h1
+          className={`mb-5 truncate whitespace-nowrap px-3 text-center font-display font-bold uppercase tracking-wider ${text}`}
+          // Fluid: skaliert mit Bildschirmbreite, wird bei langen Namen nicht zweizeilig
+          style={{ fontSize: "clamp(0.95rem, 4.6vw, 1.4rem)" }}
+        >
           {title}
         </h1>
       )}

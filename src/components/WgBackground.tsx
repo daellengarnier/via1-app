@@ -3,41 +3,67 @@
 import type { CSSProperties } from "react";
 
 // Pure white-particle background fuer den "Meine WG"-Bereich.
-// Keine Glow-Spots, keine Tab-Icons — nur viele fliegende Partikel
-// auf schwarzem Grund.
+// 50 schwebende Partikel + gelegentlich vorbeisausende Sternschnuppen
+// (geblurrt) auf schwarzem Grund.
 
-// 30 Partikel-Positionen, fix vorgeneriert damit Server/Client matchen
 const PARTICLES = [
-  { left: "5%",  top: "8%",  anim: "a", duration: 17, delay: -3,  blur: "blur-sharp" },
-  { left: "12%", top: "20%", anim: "b", duration: 21, delay: -7,  blur: "blur-soft" },
-  { left: "8%",  top: "38%", anim: "c", duration: 19, delay: -10, blur: "" },
-  { left: "16%", top: "54%", anim: "d", duration: 24, delay: -2,  blur: "blur-heavy" },
-  { left: "10%", top: "72%", anim: "a", duration: 18, delay: -14, blur: "blur-soft" },
-  { left: "6%",  top: "88%", anim: "b", duration: 22, delay: -5,  blur: "blur-sharp" },
-  { left: "26%", top: "12%", anim: "c", duration: 20, delay: -11, blur: "blur-heavy" },
-  { left: "30%", top: "30%", anim: "d", duration: 16, delay: -1,  blur: "" },
-  { left: "22%", top: "48%", anim: "a", duration: 25, delay: -8,  blur: "blur-soft" },
-  { left: "32%", top: "66%", anim: "b", duration: 18, delay: -4,  blur: "blur-sharp" },
-  { left: "28%", top: "82%", anim: "c", duration: 23, delay: -13, blur: "blur-heavy" },
-  { left: "44%", top: "5%",  anim: "d", duration: 19, delay: -6,  blur: "blur-soft" },
-  { left: "50%", top: "22%", anim: "a", duration: 21, delay: -12, blur: "" },
-  { left: "46%", top: "40%", anim: "b", duration: 17, delay: -3,  blur: "blur-heavy" },
-  { left: "54%", top: "58%", anim: "c", duration: 24, delay: -9,  blur: "blur-soft" },
-  { left: "48%", top: "76%", anim: "d", duration: 20, delay: -2,  blur: "blur-sharp" },
-  { left: "52%", top: "92%", anim: "a", duration: 18, delay: -15, blur: "" },
-  { left: "66%", top: "10%", anim: "b", duration: 22, delay: -7,  blur: "blur-soft" },
-  { left: "70%", top: "28%", anim: "c", duration: 19, delay: -11, blur: "blur-heavy" },
-  { left: "62%", top: "44%", anim: "d", duration: 25, delay: -1,  blur: "blur-sharp" },
-  { left: "72%", top: "62%", anim: "a", duration: 17, delay: -8,  blur: "" },
-  { left: "68%", top: "80%", anim: "b", duration: 23, delay: -4,  blur: "blur-soft" },
-  { left: "84%", top: "6%",  anim: "c", duration: 20, delay: -13, blur: "blur-heavy" },
-  { left: "88%", top: "24%", anim: "d", duration: 16, delay: -5,  blur: "blur-soft" },
-  { left: "82%", top: "42%", anim: "a", duration: 24, delay: -10, blur: "blur-sharp" },
-  { left: "90%", top: "60%", anim: "b", duration: 18, delay: -2,  blur: "" },
-  { left: "86%", top: "78%", anim: "c", duration: 21, delay: -6,  blur: "blur-heavy" },
-  { left: "94%", top: "94%", anim: "d", duration: 19, delay: -12, blur: "blur-soft" },
-  { left: "38%", top: "16%", anim: "a", duration: 22, delay: -9,  blur: "" },
-  { left: "60%", top: "50%", anim: "b", duration: 20, delay: -14, blur: "blur-sharp" },
+  // Linke Seite
+  { left: "3%",  top: "8%",  anim: "a", duration: 17, delay: -3,  blur: "blur-sharp" },
+  { left: "7%",  top: "20%", anim: "b", duration: 21, delay: -7,  blur: "blur-soft" },
+  { left: "5%",  top: "32%", anim: "c", duration: 19, delay: -10, blur: "" },
+  { left: "11%", top: "44%", anim: "d", duration: 24, delay: -2,  blur: "blur-heavy" },
+  { left: "8%",  top: "56%", anim: "a", duration: 18, delay: -14, blur: "blur-soft" },
+  { left: "13%", top: "68%", anim: "b", duration: 22, delay: -5,  blur: "blur-sharp" },
+  { left: "6%",  top: "80%", anim: "c", duration: 20, delay: -11, blur: "blur-heavy" },
+  { left: "10%", top: "92%", anim: "d", duration: 16, delay: -1,  blur: "" },
+  // Linke Mitte
+  { left: "18%", top: "12%", anim: "a", duration: 25, delay: -8,  blur: "blur-soft" },
+  { left: "22%", top: "26%", anim: "b", duration: 18, delay: -4,  blur: "blur-sharp" },
+  { left: "16%", top: "38%", anim: "c", duration: 23, delay: -13, blur: "blur-heavy" },
+  { left: "24%", top: "50%", anim: "d", duration: 19, delay: -6,  blur: "blur-soft" },
+  { left: "20%", top: "62%", anim: "a", duration: 21, delay: -12, blur: "" },
+  { left: "26%", top: "74%", anim: "b", duration: 17, delay: -3,  blur: "blur-heavy" },
+  { left: "18%", top: "86%", anim: "c", duration: 24, delay: -9,  blur: "blur-soft" },
+  // Mitte
+  { left: "32%", top: "5%",  anim: "d", duration: 20, delay: -2,  blur: "blur-sharp" },
+  { left: "36%", top: "18%", anim: "a", duration: 18, delay: -15, blur: "" },
+  { left: "30%", top: "32%", anim: "b", duration: 22, delay: -7,  blur: "blur-soft" },
+  { left: "38%", top: "46%", anim: "c", duration: 19, delay: -11, blur: "blur-heavy" },
+  { left: "34%", top: "60%", anim: "d", duration: 25, delay: -1,  blur: "blur-sharp" },
+  { left: "40%", top: "74%", anim: "a", duration: 17, delay: -8,  blur: "" },
+  { left: "32%", top: "88%", anim: "b", duration: 23, delay: -4,  blur: "blur-soft" },
+  // Mittlere Mitte
+  { left: "46%", top: "10%", anim: "c", duration: 20, delay: -13, blur: "blur-heavy" },
+  { left: "50%", top: "24%", anim: "d", duration: 16, delay: -5,  blur: "blur-soft" },
+  { left: "44%", top: "40%", anim: "a", duration: 24, delay: -10, blur: "blur-sharp" },
+  { left: "52%", top: "56%", anim: "b", duration: 18, delay: -2,  blur: "" },
+  { left: "48%", top: "70%", anim: "c", duration: 21, delay: -6,  blur: "blur-heavy" },
+  { left: "54%", top: "84%", anim: "d", duration: 19, delay: -12, blur: "blur-soft" },
+  // Rechte Mitte
+  { left: "58%", top: "6%",  anim: "a", duration: 22, delay: -9,  blur: "" },
+  { left: "62%", top: "20%", anim: "b", duration: 20, delay: -14, blur: "blur-sharp" },
+  { left: "56%", top: "34%", anim: "c", duration: 17, delay: -3,  blur: "blur-soft" },
+  { left: "64%", top: "48%", anim: "d", duration: 23, delay: -7,  blur: "blur-heavy" },
+  { left: "60%", top: "62%", anim: "a", duration: 25, delay: -11, blur: "" },
+  { left: "66%", top: "76%", anim: "b", duration: 19, delay: -1,  blur: "blur-soft" },
+  { left: "58%", top: "90%", anim: "c", duration: 21, delay: -8,  blur: "blur-sharp" },
+  // Rechte Seite
+  { left: "72%", top: "12%", anim: "d", duration: 18, delay: -4,  blur: "blur-heavy" },
+  { left: "76%", top: "26%", anim: "a", duration: 22, delay: -13, blur: "blur-soft" },
+  { left: "70%", top: "40%", anim: "b", duration: 24, delay: -10, blur: "" },
+  { left: "78%", top: "54%", anim: "c", duration: 16, delay: -5,  blur: "blur-sharp" },
+  { left: "74%", top: "68%", anim: "d", duration: 20, delay: -2,  blur: "blur-heavy" },
+  { left: "80%", top: "82%", anim: "a", duration: 17, delay: -12, blur: "blur-soft" },
+  // Ganz rechts
+  { left: "84%", top: "4%",  anim: "b", duration: 23, delay: -6,  blur: "" },
+  { left: "88%", top: "18%", anim: "c", duration: 19, delay: -14, blur: "blur-sharp" },
+  { left: "82%", top: "32%", anim: "d", duration: 25, delay: -1,  blur: "blur-soft" },
+  { left: "90%", top: "46%", anim: "a", duration: 18, delay: -11, blur: "blur-heavy" },
+  { left: "86%", top: "60%", anim: "b", duration: 21, delay: -7,  blur: "" },
+  { left: "92%", top: "74%", anim: "c", duration: 24, delay: -3,  blur: "blur-soft" },
+  { left: "88%", top: "88%", anim: "d", duration: 17, delay: -9,  blur: "blur-sharp" },
+  { left: "94%", top: "12%", anim: "a", duration: 22, delay: -4,  blur: "blur-heavy" },
+  { left: "96%", top: "52%", anim: "b", duration: 20, delay: -13, blur: "" },
 ];
 
 export function WgBackground() {
@@ -62,6 +88,11 @@ export function WgBackground() {
           }}
         />
       ))}
+      {/* 3 Sternschnuppen mit unterschiedlichen Trajektorien + Delays —
+         saust ungefaehr alle 7-11s eine vorbei */}
+      <span className="wg-shooting-star wg-shooting-star-1" />
+      <span className="wg-shooting-star wg-shooting-star-2" />
+      <span className="wg-shooting-star wg-shooting-star-3" />
     </div>
   );
 }
