@@ -36,7 +36,13 @@ export function WgPageHeader({
         </Link>
       )}
 
-      <h1 className="wg-title-gradient font-cinzel text-3xl font-medium leading-tight tracking-wide sm:text-4xl">
+      <h1
+        className="font-display text-4xl font-bold uppercase leading-none tracking-wider text-white sm:text-5xl"
+        style={{
+          textShadow:
+            "0 1px 0 rgba(255,255,255,0.15), 0 2px 12px rgba(0,0,0,0.7)",
+        }}
+      >
         {title}
       </h1>
 

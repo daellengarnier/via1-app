@@ -184,7 +184,7 @@ function KochTile({
 
   return (
     <>
-      <div className="wg-tile p-3">
+      <div className="wg-tile-heavy p-3">
         <div className="mb-2 flex items-baseline justify-between">
           <a
             href={`/meine-wg/${slug}/kochplan`}
@@ -514,7 +514,7 @@ function ShoppingTile({
   }
 
   return (
-    <div className="wg-tile p-3">
+    <div className="wg-tile-light p-3">
       <div className="mb-2 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/einkauf`}
@@ -600,7 +600,7 @@ function AemtliTile({
       className={`block p-3 ${
         isOverdue
           ? "rounded-xl border border-red-500/40 bg-red-500/10"
-          : "wg-tile"
+          : "wg-tile-heavy"
       }`}
     >
       <div className="mb-1 flex items-baseline justify-between">
