@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { WgPageHeader } from "@/components/WgPageHeader";
 
 interface Termin {
   id: string;
@@ -84,8 +85,13 @@ export function WgTermineClient({ slug, wgName }: Props) {
 
   if (loading || !data) {
     return (
-      <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-        <p className="text-sm text-gray-500">Lade Termine...</p>
+      <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+        <WgPageHeader
+          backToWgSlug={slug}
+          backToWgName={wgName}
+          title="📅 Termine"
+        />
+        <p className="mt-4 text-sm text-fuchsia-300/60">Lade...</p>
       </div>
     );
   }
@@ -98,16 +104,13 @@ export function WgTermineClient({ slug, wgName }: Props) {
   const openDoodles = (doodles ?? []).filter((d) => !d.finalized);
 
   return (
-    <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-      <div className="mb-4">
-        <Link
-          href={`/meine-wg/${slug}`}
-          className="font-mono text-[10px] uppercase tracking-widest text-gray-500 hover:text-accent"
-        >
-          ← {wgName}
-        </Link>
-        <h1 className="font-cinzel text-3xl text-accent">📅 WG-Termine</h1>
-      </div>
+    <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+      <WgPageHeader
+        backToWgSlug={slug}
+        backToWgName={wgName}
+        title="📅 WG-Termine"
+      />
+      <div className="h-3" />
 
       <div className="mb-4 grid grid-cols-2 gap-2">
         <button

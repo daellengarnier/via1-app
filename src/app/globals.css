@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Caveat:wght@400;500;600;700&display=swap");
 
 body {
   background-color: #000000;
@@ -349,4 +349,50 @@ body {
 }
 .sauna-heating-pulse {
   animation: saunaHeatingPulse 2s ease-in-out infinite;
+}
+
+/* "Meine WG"-Bereich: leuchtige Pink/Fuchsia/Cyan-Akzente + sanftes Pulse-Gradient */
+@keyframes wgGradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.wg-title-gradient {
+  background: linear-gradient(
+    90deg,
+    #f9a8d4 0%,
+    #d946ef 30%,
+    #c084fc 60%,
+    #67e8f9 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: wgGradientShift 8s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(217, 70, 239, 0.35));
+}
+.wg-bg-glow {
+  background:
+    radial-gradient(ellipse at top left,    rgba(236, 72, 153, 0.10), transparent 50%),
+    radial-gradient(ellipse at top right,   rgba(168, 85, 247, 0.10), transparent 50%),
+    radial-gradient(ellipse at bottom right,rgba(34, 211, 238, 0.06), transparent 50%);
+}
+.wg-tile {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid rgba(217, 70, 239, 0.25);
+  background:
+    linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(168, 85, 247, 0.05) 60%, rgba(34, 211, 238, 0.04));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 18px rgba(217, 70, 239, 0.08);
+}
+.wg-tile-strong {
+  border-color: rgba(217, 70, 239, 0.45);
+  background:
+    linear-gradient(135deg, rgba(236, 72, 153, 0.18), rgba(168, 85, 247, 0.12) 60%, rgba(34, 211, 238, 0.08));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 24px rgba(217, 70, 239, 0.15);
 }

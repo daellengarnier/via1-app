@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { WgPageHeader } from "@/components/WgPageHeader";
 
 interface DoodleListItem {
   id: string;
@@ -42,23 +43,17 @@ export function DoodleListClient({ slug, wgName }: Props) {
   const done = items.filter((i) => i.finalized);
 
   return (
-    <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-      <div className="mb-4 flex items-start justify-between gap-2">
-        <div>
-          <Link
-            href={`/meine-wg/${slug}`}
-            className="font-mono text-[10px] uppercase tracking-widest text-gray-500 hover:text-accent"
-          >
-            ← {wgName}
-          </Link>
-          <h1 className="font-cinzel text-3xl text-accent">🗓 Termin-Doodle</h1>
-          <p className="text-[11px] text-gray-500">
-            Mehrere Datums-Optionen vorschlagen, abstimmen, finalisieren
-          </p>
-        </div>
+    <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+      <WgPageHeader
+        backToWgSlug={slug}
+        backToWgName={wgName}
+        title="🗓 Termin-Doodle"
+        subtitle="Mehrere Datums-Optionen vorschlagen, abstimmen, finalisieren"
+      />
+      <div className="mb-4 mt-3 flex justify-end">
         <button
           onClick={() => setShowAdd(true)}
-          className="rounded-lg border border-secondary/40 bg-secondary/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-secondary hover:bg-secondary/20"
+          className="rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-fuchsia-200 hover:bg-fuchsia-500/20"
         >
           + Doodle
         </button>

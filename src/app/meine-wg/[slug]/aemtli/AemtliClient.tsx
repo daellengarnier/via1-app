@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { overdueRoast } from "@/lib/wg-aemtli";
+import { WgPageHeader } from "@/components/WgPageHeader";
 
 interface Person {
   id: string;
@@ -103,34 +103,36 @@ export function AemtliClient({ slug, wgName }: Props) {
 
   if (loading || !data) {
     return (
-      <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-        <p className="text-sm text-gray-500">Lade Aemtli...</p>
+      <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+        <WgPageHeader
+          backToWgSlug={slug}
+          backToWgName={wgName}
+          title="🧹 Aemtli"
+        />
+        <p className="mt-4 text-sm text-fuchsia-300/60">Lade...</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-      <div className="mb-4 flex items-start justify-between gap-2">
-        <div>
-          <Link
-            href={`/meine-wg/${slug}`}
-            className="font-mono text-[10px] uppercase tracking-widest text-gray-500 hover:text-accent"
-          >
-            ← {wgName}
-          </Link>
-          <h1 className="font-cinzel text-3xl text-accent">🧹 Aemtli</h1>
-          <p className="text-[11px] text-gray-500">
-            Rotation ueber {data.members.length} WG-Member
-            {data.members.length === 0 && " (keine Mitglieder mit Zimmer!)"}
-          </p>
-        </div>
+    <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+      <WgPageHeader
+        backToWgSlug={slug}
+        backToWgName={wgName}
+        title="🧹 Aemtli"
+        subtitle={
+          data.members.length === 0
+            ? "keine Mitglieder mit Zimmer!"
+            : `Rotation ueber ${data.members.length} WG-Member`
+        }
+      />
+      <div className="mb-4 mt-3 flex justify-end">
         <button
           onClick={() => {
             setEditing(null);
             setShowAdd(true);
           }}
-          className="rounded-lg border border-secondary/40 bg-secondary/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-secondary hover:bg-secondary/20"
+          className="rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-fuchsia-200 hover:bg-fuchsia-500/20"
         >
           + Aemtli
         </button>

@@ -189,11 +189,11 @@ function KochTile({
 
   return (
     <>
-      <div className="rounded-xl border border-accent/30 bg-accent/5 p-3">
+      <div className="wg-tile p-3">
         <div className="mb-2 flex items-baseline justify-between">
           <a
             href={`/meine-wg/${slug}/kochplan`}
-            className="font-cinzel text-base text-white hover:text-accent"
+            className="font-caveat text-2xl font-semibold text-fuchsia-200 hover:text-fuchsia-100"
           >
             🍳 Kochplan · heute
           </a>
@@ -519,11 +519,11 @@ function ShoppingTile({
   }
 
   return (
-    <div className="rounded-xl border border-accent/30 bg-accent/5 p-3">
+    <div className="wg-tile p-3">
       <div className="mb-2 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/einkauf`}
-          className="font-cinzel text-sm text-white hover:text-accent"
+          className="font-caveat text-xl font-semibold text-fuchsia-200 hover:text-fuchsia-100"
         >
           🛒 Einkauf
         </a>
@@ -621,16 +621,16 @@ function AemtliTile({
 
   return (
     <div
-      className={`rounded-xl border p-3 ${
+      className={`p-3 ${
         overdueCount > 0
-          ? "border-red-500/40 bg-red-500/5"
-          : "border-accent/30 bg-accent/5"
+          ? "rounded-xl border border-red-500/40 bg-red-500/10 shadow-[0_0_18px_rgba(239,68,68,0.15)]"
+          : "wg-tile"
       }`}
     >
       <div className="mb-2 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/aemtli`}
-          className="font-cinzel text-sm text-white hover:text-accent"
+          className="font-caveat text-xl font-semibold text-fuchsia-200 hover:text-fuchsia-100"
         >
           🧹 Aemtli
         </a>
@@ -707,11 +707,11 @@ function TermineTile({
   const openDoodles = (doodles ?? []).filter((d) => !d.finalized);
 
   return (
-    <div className="rounded-xl border border-accent/30 bg-accent/5 p-3">
+    <div className="wg-tile p-3">
       <div className="mb-2 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/termine`}
-          className="font-cinzel text-sm text-white hover:text-accent"
+          className="font-caveat text-xl font-semibold text-fuchsia-200 hover:text-fuchsia-100"
         >
           📅 Termine
           {openDoodles.length > 0 && (
@@ -807,11 +807,11 @@ function PinnwandTile({
   }
 
   return (
-    <div className="rounded-xl border border-accent/30 bg-accent/5 p-3">
+    <div className="wg-tile p-3">
       <div className="mb-2 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/pinnwand`}
-          className="font-cinzel text-sm text-white hover:text-accent"
+          className="font-caveat text-xl font-semibold text-fuchsia-200 hover:text-fuchsia-100"
         >
           📌 Pinnwand
         </a>
@@ -873,11 +873,8 @@ function Tile({
   children: React.ReactNode;
 }) {
   return (
-    <a
-      href={href}
-      className="block rounded-xl border border-accent/30 bg-accent/5 p-3 hover:border-accent"
-    >
-      <p className="font-cinzel text-sm text-white">
+    <a href={href} className="block wg-tile p-3 hover:wg-tile-strong">
+      <p className="font-caveat text-2xl font-semibold text-fuchsia-200">
         {icon} {title}
       </p>
       <div className="mt-1">{children}</div>

@@ -123,8 +123,16 @@ export function DoodleDetailClient({ slug, wgName, doodleId, meId }: Props) {
 
   if (loading || !d) {
     return (
-      <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-        <p className="text-sm text-gray-500">Lade Doodle...</p>
+      <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+        <div className="pt-14">
+          <Link
+            href={`/meine-wg/${slug}/termine`}
+            className="font-mono text-[10px] uppercase tracking-widest text-fuchsia-300/80 hover:text-fuchsia-200"
+          >
+            ← {wgName} · Termine
+          </Link>
+          <p className="mt-4 text-sm text-fuchsia-300/60">Lade...</p>
+        </div>
       </div>
     );
   }
@@ -132,21 +140,26 @@ export function DoodleDetailClient({ slug, wgName, doodleId, meId }: Props) {
   const maxVotes = Math.max(0, ...d.options.map((o) => o.voters.length));
 
   return (
-    <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-      <Link
-        href={`/meine-wg/${slug}/doodle`}
-        className="font-mono text-[10px] uppercase tracking-widest text-gray-500 hover:text-accent"
-      >
-        ← {wgName} · Doodles
-      </Link>
-      <div className="mb-4 mt-1 flex items-start justify-between gap-2">
-        <h1 className="font-cinzel text-2xl text-accent">{d.title}</h1>
-        <button
-          onClick={deleteDoodle}
-          className="text-xs text-gray-500 hover:text-red-400"
+    <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+      <div className="relative pt-14">
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-48 wg-bg-glow" />
+        <Link
+          href={`/meine-wg/${slug}/termine`}
+          className="font-mono text-[10px] uppercase tracking-widest text-fuchsia-300/80 hover:text-fuchsia-200"
         >
-          ✕
-        </button>
+          ← {wgName} · Termine
+        </Link>
+        <div className="flex items-start justify-between gap-2">
+          <h1 className="wg-title-gradient font-caveat text-5xl font-bold leading-none">
+            🗓 {d.title}
+          </h1>
+          <button
+            onClick={deleteDoodle}
+            className="mt-2 text-xs text-gray-500 hover:text-red-400"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       {d.description && (

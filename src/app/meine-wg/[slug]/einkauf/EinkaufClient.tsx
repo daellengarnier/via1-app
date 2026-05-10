@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { WgPageHeader } from "@/components/WgPageHeader";
 
 interface Person {
   id: string;
@@ -128,14 +128,13 @@ export function EinkaufClient({ slug, wgName, meId }: Props) {
   const done = items.filter((i) => i.done);
 
   return (
-    <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-      <Link
-        href={`/meine-wg/${slug}`}
-        className="font-mono text-[10px] uppercase tracking-widest text-gray-500 hover:text-accent"
-      >
-        ← {wgName}
-      </Link>
-      <h1 className="mb-4 font-cinzel text-3xl text-accent">🛒 Einkauf</h1>
+    <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+      <WgPageHeader
+        backToWgSlug={slug}
+        backToWgName={wgName}
+        title="🛒 Einkauf"
+      />
+      <div className="h-4" />
 
       <form onSubmit={add} className="mb-4 flex gap-2">
         <input

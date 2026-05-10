@@ -10,6 +10,7 @@ import {
 } from "@/lib/wg-unlock";
 import { UnlockForm } from "./UnlockForm";
 import { WgDashboardClient } from "./WgDashboardClient";
+import { WgPageHeader } from "@/components/WgPageHeader";
 
 interface Props {
   params: { slug: string };
@@ -26,9 +27,9 @@ export default async function MeineWgSlugPage({ params }: Props) {
   const wg = allWgs.find((w) => wgSlug(w.name) === params.slug);
   if (!wg) {
     return (
-      <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-        <h1 className="mb-2 font-cinzel text-2xl text-accent">Meine WG</h1>
-        <p className="text-sm text-gray-400">WG nicht gefunden.</p>
+      <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+        <WgPageHeader title="Meine WG" />
+        <p className="mt-4 text-sm text-gray-400">WG nicht gefunden.</p>
       </div>
     );
   }
@@ -42,13 +43,12 @@ export default async function MeineWgSlugPage({ params }: Props) {
     payload.uid === session.user.id &&
     payload.wgs.includes(wg.id);
 
+  const subtitle = `${wg.floor === 0 ? "EG" : `${wg.floor}. OG`} · ${wg.side === "NORD" ? "Nord" : "Ost"} · Privater Bereich`;
+
   return (
-    <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-      <h1 className="mb-1 font-cinzel text-3xl text-accent">{wg.name}</h1>
-      <p className="mb-6 font-mono text-[10px] uppercase tracking-widest text-gray-500">
-        {wg.floor === 0 ? "EG" : `${wg.floor}. OG`} ·{" "}
-        {wg.side === "NORD" ? "Nord" : "Ost"} · Privater Bereich
-      </p>
+    <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+      <WgPageHeader title={wg.name} subtitle={subtitle} />
+      <div className="h-5" />
 
       {!wg.passwordHash ? (
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5">

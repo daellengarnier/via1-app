@@ -19,6 +19,7 @@ const config: Config = {
         display: ["Orbitron", "sans-serif"],
         heading: ["Playfair Display", "serif"],
         cinzel: ["Cinzel", "serif"],
+        caveat: ["Caveat", "cursive"],
       },
     },
   },
