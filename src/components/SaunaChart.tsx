@@ -13,17 +13,21 @@ interface Props {
   className?: string;
 }
 
+type Pt = { x: number; y: number };
+
 // Glaette eine Polyline via Catmull-Rom -> Cubic Bezier (smooth flow chart look)
-function smoothPath(points: Array<{ x: number; y: number }>): string {
-  if (points.length < 2) return "";
+function smoothPath(points: Pt[]): string {
+  const first = points[0];
+  if (!first || points.length < 2) return "";
+  const second = points[1]!;
   if (points.length === 2) {
-    return `M${points[0].x},${points[0].y} L${points[1].x},${points[1].y}`;
+    return `M${first.x},${first.y} L${second.x},${second.y}`;
   }
-  const d: string[] = [`M${points[0].x},${points[0].y}`];
+  const d: string[] = [`M${first.x},${first.y}`];
   for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[i - 1] ?? points[i];
-    const p1 = points[i];
-    const p2 = points[i + 1];
+    const p1 = points[i]!;
+    const p2 = points[i + 1]!;
+    const p0 = points[i - 1] ?? p1;
     const p3 = points[i + 2] ?? p2;
     const c1x = p1.x + (p2.x - p0.x) / 6;
     const c1y = p1.y + (p2.y - p0.y) / 6;
@@ -114,11 +118,11 @@ export function SaunaChart({ hours = 2, className = "" }: Props) {
   const baseY = yFor(minV);
   const topArea =
     topPts.length >= 2
-      ? `${topPath} L${topPts[topPts.length - 1].x},${baseY} L${topPts[0].x},${baseY} Z`
+      ? `${topPath} L${topPts[topPts.length - 1]!.x},${baseY} L${topPts[0]!.x},${baseY} Z`
       : "";
   const bottomArea =
     bottomPts.length >= 2
-      ? `${bottomPath} L${bottomPts[bottomPts.length - 1].x},${baseY} L${bottomPts[0].x},${baseY} Z`
+      ? `${bottomPath} L${bottomPts[bottomPts.length - 1]!.x},${baseY} L${bottomPts[0]!.x},${baseY} Z`
       : "";
 
   // Zeit-Labels (Start / Mitte / Ende)
@@ -127,8 +131,8 @@ export function SaunaChart({ hours = 2, className = "" }: Props) {
       hour: "2-digit",
       minute: "2-digit",
     });
-  const tStart = fmtT(points[0].t);
-  const tEnd = fmtT(points[points.length - 1].t);
+  const tStart = fmtT(points[0]!.t);
+  const tEnd = fmtT(points[points.length - 1]!.t);
 
   // Y-Achse Ticks (3 stueck)
   const ticks = [minV, Math.round((minV + maxV) / 2), maxV];
