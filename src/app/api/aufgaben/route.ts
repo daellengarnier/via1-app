@@ -17,6 +17,7 @@ export async function GET() {
     include: {
       createdBy: true,
       activeWorkers: { include: { user: true } },
+      subTodos: true,
     },
   });
 
@@ -78,6 +79,7 @@ export async function POST(req: Request) {
     include: {
       createdBy: true,
       activeWorkers: { include: { user: true } },
+      subTodos: true,
     },
   });
 

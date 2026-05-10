@@ -283,11 +283,26 @@ model Aufgabe {
   createdBy     User                  @relation("AufgabeCreator", fields: [createdById], references: [id])
   createdById   String
   activeWorkers AufgabeActiveWorker[]
+  subTodos      AufgabeSubTodo[]
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
 
   @@index([done, createdAt])
   @@map("aufgaben")
+}
+
+model AufgabeSubTodo {
+  id        String   @id @default(cuid())
+  aufgabe   Aufgabe  @relation(fields: [aufgabeId], references: [id], onDelete: Cascade)
+  aufgabeId String
+  title     String
+  done      Boolean  @default(false)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([aufgabeId, position])
+  @@map("aufgabe_sub_todos")
 }
 
 model AufgabeActiveWorker {

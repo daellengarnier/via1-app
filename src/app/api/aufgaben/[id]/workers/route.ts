@@ -51,6 +51,7 @@ export async function POST(
     include: {
       createdBy: true,
       activeWorkers: { include: { user: true } },
+      subTodos: true,
     },
   });
   if (!full) {
@@ -98,6 +99,7 @@ export async function DELETE(
     include: {
       createdBy: true,
       activeWorkers: { include: { user: true } },
+      subTodos: true,
     },
   });
   if (!full) {

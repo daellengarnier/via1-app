@@ -1,8 +1,20 @@
-import type { Aufgabe, AufgabeActiveWorker, User } from "@prisma/client";
+import type {
+  Aufgabe,
+  AufgabeActiveWorker,
+  AufgabeSubTodo,
+  User,
+} from "@prisma/client";
 
 export interface PinDTO {
   lat: number;
   lng: number;
+}
+
+export interface SubTodoDTO {
+  id: string;
+  title: string;
+  done: boolean;
+  position: number;
 }
 
 export interface AufgabeDTO {
@@ -17,12 +29,23 @@ export interface AufgabeDTO {
   createdAt: string;
   completedAt: string | null;
   activeWorkers: string[];
+  subTodos: SubTodoDTO[];
+}
+
+export function serializeSubTodo(s: AufgabeSubTodo): SubTodoDTO {
+  return {
+    id: s.id,
+    title: s.title,
+    done: s.done,
+    position: s.position,
+  };
 }
 
 export function serializeAufgabe(
   a: Aufgabe & {
     createdBy: User;
     activeWorkers: (AufgabeActiveWorker & { user: User })[];
+    subTodos?: AufgabeSubTodo[];
   }
 ): AufgabeDTO {
   return {
@@ -40,5 +63,13 @@ export function serializeAufgabe(
     createdAt: a.createdAt.toISOString(),
     completedAt: a.completedAt ? a.completedAt.toISOString() : null,
     activeWorkers: a.activeWorkers.map((w) => w.user.name),
+    subTodos: (a.subTodos ?? [])
+      .slice()
+      .sort(
+        (x, y) =>
+          x.position - y.position ||
+          x.createdAt.getTime() - y.createdAt.getTime()
+      )
+      .map(serializeSubTodo),
   };
 }

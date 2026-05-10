@@ -10,6 +10,13 @@ interface Pin {
   lng: number;
 }
 
+interface SubTodo {
+  id: string;
+  title: string;
+  done: boolean;
+  position: number;
+}
+
 interface Aufgabe {
   id: string;
   title: string;
@@ -22,6 +29,7 @@ interface Aufgabe {
   createdAt: string;
   completedAt: string | null;
   activeWorkers: string[];
+  subTodos: SubTodo[];
 }
 
 // Aufgaben werden vom API geladen
@@ -163,6 +171,7 @@ export default function AufgabenPage() {
   const [editLocation, setEditLocation] = useState("");
   const [editPin, setEditPin] = useState<Pin | null>(null);
   const [editPlacingPin, setEditPlacingPin] = useState(false);
+  const [newSubTodo, setNewSubTodo] = useState("");
 
   const loadAufgaben = useCallback(async () => {
     try {
@@ -289,6 +298,71 @@ export default function AufgabenPage() {
   function closeEdit() {
     setEditingId(null);
     setEditPlacingPin(false);
+    setNewSubTodo("");
+  }
+
+  async function addSubTodo(aufgabeId: string, title: string) {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    try {
+      const res = await fetch(`/api/aufgaben/${aufgabeId}/subtodos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: trimmed }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const sub = (await res.json()) as SubTodo;
+      setAufgaben((prev) =>
+        prev.map((a) =>
+          a.id === aufgabeId ? { ...a, subTodos: [...a.subTodos, sub] } : a
+        )
+      );
+      setNewSubTodo("");
+    } catch (err) {
+      console.error("addSubTodo", err);
+    }
+  }
+
+  async function toggleSubTodo(aufgabeId: string, sub: SubTodo) {
+    // optimistic
+    setAufgaben((prev) =>
+      prev.map((a) =>
+        a.id === aufgabeId
+          ? {
+              ...a,
+              subTodos: a.subTodos.map((s) =>
+                s.id === sub.id ? { ...s, done: !s.done } : s
+              ),
+            }
+          : a
+      )
+    );
+    try {
+      await fetch(`/api/aufgaben/${aufgabeId}/subtodos/${sub.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ done: !sub.done }),
+      });
+    } catch (err) {
+      console.error("toggleSubTodo", err);
+    }
+  }
+
+  async function deleteSubTodo(aufgabeId: string, subId: string) {
+    setAufgaben((prev) =>
+      prev.map((a) =>
+        a.id === aufgabeId
+          ? { ...a, subTodos: a.subTodos.filter((s) => s.id !== subId) }
+          : a
+      )
+    );
+    try {
+      await fetch(`/api/aufgaben/${aufgabeId}/subtodos/${subId}`, {
+        method: "DELETE",
+      });
+    } catch (err) {
+      console.error("deleteSubTodo", err);
+    }
   }
 
   async function saveEdit(e: React.FormEvent) {
@@ -636,6 +710,25 @@ export default function AufgabenPage() {
                       → {a.assignee}
                     </p>
                   )}
+                  {a.subTodos.length > 0 && (() => {
+                    const doneCount = a.subTodos.filter((s) => s.done).length;
+                    const total = a.subTodos.length;
+                    const pct = total === 0 ? 0 : (doneCount / total) * 100;
+                    return (
+                      <div className="mt-1.5">
+                        <div className="flex items-center justify-between text-[9px] text-gray-500">
+                          <span>📋 Subtasks</span>
+                          <span>{doneCount}/{total}</span>
+                        </div>
+                        <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-gray-800">
+                          <div
+                            className="h-full bg-yellow-400/70 transition-all"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -748,6 +841,86 @@ export default function AufgabenPage() {
                   className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none"
                 />
               </div>
+
+              {/* Subtasks-Section */}
+              {editingId && (() => {
+                const editingTask = aufgaben.find((a) => a.id === editingId);
+                if (!editingTask) return null;
+                return (
+                  <div className="mb-4 rounded-lg border border-gray-800 bg-white/5 p-3">
+                    <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-yellow-400">
+                      📋 Subtasks
+                    </p>
+                    <p className="mb-3 text-[10px] text-gray-500">
+                      Kleine Schritte, die helfen die Aufgabe richtig auszuführen.
+                    </p>
+                    <ul className="mb-3 space-y-1.5">
+                      {editingTask.subTodos.map((s) => (
+                        <li
+                          key={s.id}
+                          className="group flex items-center gap-2 rounded border border-gray-800/60 bg-black/20 px-2 py-1.5"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleSubTodo(editingTask.id, s)}
+                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
+                              s.done
+                                ? "border-yellow-400 bg-yellow-400 text-black"
+                                : "border-gray-600 hover:border-yellow-400"
+                            }`}
+                            aria-label={s.done ? "Erledigt" : "Offen"}
+                          >
+                            {s.done && "✓"}
+                          </button>
+                          <span
+                            className={`flex-1 text-xs ${
+                              s.done ? "text-gray-500 line-through" : "text-white"
+                            }`}
+                          >
+                            {s.title}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => deleteSubTodo(editingTask.id, s.id)}
+                            className="opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-60"
+                            aria-label="Subtask löschen"
+                          >
+                            ×
+                          </button>
+                        </li>
+                      ))}
+                      {editingTask.subTodos.length === 0 && (
+                        <li className="text-[10px] italic text-gray-600">
+                          Noch keine Subtasks.
+                        </li>
+                      )}
+                    </ul>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newSubTodo}
+                        onChange={(e) => setNewSubTodo(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addSubTodo(editingTask.id, newSubTodo);
+                          }
+                        }}
+                        placeholder="Neuer Subtask…"
+                        className="flex-1 rounded border border-gray-700 bg-gray-900 px-2 py-1.5 text-xs text-white focus:border-yellow-400 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addSubTodo(editingTask.id, newSubTodo)}
+                        disabled={newSubTodo.trim() === ""}
+                        className="rounded bg-yellow-400 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-black disabled:opacity-30"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Pin-Section */}
               <div className="mb-4 rounded-lg border border-gray-800 bg-white/5 p-3">

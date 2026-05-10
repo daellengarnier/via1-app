@@ -81,6 +81,7 @@ export async function PATCH(
       include: {
         createdBy: true,
         activeWorkers: { include: { user: true } },
+        subTodos: true,
       },
     });
   });
