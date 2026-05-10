@@ -139,11 +139,12 @@ export function WgDashboardClient({ slug, meId }: Props) {
     <div className="space-y-3">
       <KochTile slug={slug} meId={meId} data={koch} onChanged={loadAll} />
 
-      <ShoppingTile slug={slug} items={shopping} onChanged={loadAll} />
-
       <div className="grid grid-cols-2 gap-3">
-        <AemtliTile slug={slug} data={aemtli} meId={meId} onChanged={loadAll} />
-        <TermineTile slug={slug} data={termine} doodles={doodles} />
+        <div className="flex flex-col gap-3">
+          <AemtliTile slug={slug} data={aemtli} meId={meId} onChanged={loadAll} />
+          <TermineTile slug={slug} data={termine} doodles={doodles} />
+        </div>
+        <ShoppingTile slug={slug} items={shopping} onChanged={loadAll} />
       </div>
 
       <PinnwandInline slug={slug} notes={pinnwand} onChanged={loadAll} />
@@ -521,7 +522,7 @@ function ShoppingTile({
   }
 
   return (
-    <div className="wg-tile-light p-3">
+    <div className="wg-tile-light flex h-full flex-col p-3">
       <div className="mb-2 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/einkauf`}
@@ -535,8 +536,8 @@ function ShoppingTile({
       </div>
 
       {open.length > 0 && (
-        // ~4 Items sichtbar, danach scrollbar
-        <div className="mb-2 max-h-[140px] space-y-1 overflow-y-auto pr-1">
+        // Nimmt verbleibenden vertikalen Platz ein und scrollt intern.
+        <div className="mb-2 flex-1 space-y-1 overflow-y-auto pr-1">
           {open.map((i) => (
             <button
               key={i.id}
@@ -551,7 +552,7 @@ function ShoppingTile({
         </div>
       )}
 
-      <form onSubmit={add} className="flex gap-1">
+      <form onSubmit={add} className="mt-auto flex gap-1">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
