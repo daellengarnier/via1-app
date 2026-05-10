@@ -58,7 +58,7 @@ export default async function MeineWgSlugPage({ params }: Props) {
           <p className="text-sm text-gray-300">
             Fuer diese WG ist noch kein Passwort hinterlegt. Setze es als
             Admin ueber{" "}
-            <a className="text-accent hover:underline" href="/admin/wgs">
+            <a className="text-white hover:underline" href="/admin/wgs">
               /admin/wgs
             </a>
             .

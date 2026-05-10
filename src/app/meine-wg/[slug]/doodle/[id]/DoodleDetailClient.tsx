@@ -176,8 +176,8 @@ export function DoodleDetailClient({ slug, wgName, doodleId, meId }: Props) {
       )}
 
       {d.finalized && d.finalizedDate && (
-        <div className="mb-4 rounded-lg border border-accent/40 bg-accent/10 p-3">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-accent">
+        <div className="mb-4 rounded-lg border border-white/40 bg-white/10 p-3">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-white">
             ✓ Finalisiert
           </p>
           <p className="text-sm text-white">{fmtDate(d.finalizedDate)}</p>
@@ -193,7 +193,7 @@ export function DoodleDetailClient({ slug, wgName, doodleId, meId }: Props) {
               key={o.id}
               className={`rounded-xl border p-3 ${
                 isWinner
-                  ? "border-accent/40 bg-accent/5"
+                  ? "border-white/40 bg-white/5"
                   : "border-gray-800 bg-gray-900/40"
               }`}
             >
@@ -209,8 +209,8 @@ export function DoodleDetailClient({ slug, wgName, doodleId, meId }: Props) {
                       disabled={busy}
                       className={`rounded-md px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider ${
                         meVoted
-                          ? "border border-accent/50 bg-accent/10 text-accent"
-                          : "bg-accent text-black hover:brightness-110"
+                          ? "border border-white/50 bg-white/10 text-white"
+                          : "bg-white text-black hover:brightness-90"
                       } disabled:opacity-50`}
                     >
                       {meVoted ? "✓ kann" : "kann"}

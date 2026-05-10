@@ -107,14 +107,14 @@ function DoodleRow({ d, slug }: { d: DoodleListItem; slug: string }) {
   return (
     <Link
       href={`/meine-wg/${slug}/doodle/${d.id}`}
-      className="block rounded-xl border border-gray-800 bg-gray-900/40 p-3 hover:border-accent"
+      className="block rounded-xl border border-gray-800 bg-gray-900/40 p-3 hover:border-white/50"
     >
       <p className="font-medium text-white">{d.title}</p>
       <p className="text-[11px] text-gray-500">
         {d.optionCount} Optionen · {d.totalVotes} Stimmen · von {d.createdBy.name}
       </p>
       {d.finalized && d.finalizedDate && (
-        <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-accent">
+        <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-white">
           ✓ Finalisiert:{" "}
           {new Date(d.finalizedDate).toLocaleString("de-CH", {
             weekday: "short",
@@ -209,7 +209,7 @@ function AddDoodleModal({
         className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-gray-800 bg-gray-950 p-4 sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-3 font-cinzel text-lg text-accent">Neuer Doodle</h2>
+        <h2 className="mb-3 font-cinzel text-lg text-white">Neuer Doodle</h2>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -269,7 +269,7 @@ function AddDoodleModal({
         </div>
         <button
           onClick={addOption}
-          className="mb-3 w-full rounded border border-dashed border-gray-700 px-3 py-1.5 font-mono text-[10px] uppercase text-gray-400 hover:border-accent hover:text-accent"
+          className="mb-3 w-full rounded border border-dashed border-gray-700 px-3 py-1.5 font-mono text-[10px] uppercase text-gray-400 hover:border-white/50 hover:text-white"
         >
           + Option
         </button>
@@ -279,7 +279,7 @@ function AddDoodleModal({
           <button
             onClick={save}
             disabled={busy}
-            className="flex-1 rounded-lg bg-accent px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+            className="flex-1 rounded-lg bg-white px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
           >
             {busy ? "..." : "Erstellen"}
           </button>

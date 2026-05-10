@@ -35,67 +35,35 @@ interface Props {
   meId: string;
 }
 
-// Sticky-Note-Optik wie auf Home, aber **leuchtende** Farben (hoehere Saettigung).
+// Sticky-Note-Optik wie auf Home, aber alles monochrom schwarz/weiss.
+// Verschiedene Rotations-Winkel + leichte Opacity-Variationen zur Unterscheidung.
 interface ColorStyle {
-  grad: string; // Tailwind: from-X to-Y
-  border: string;
-  text: string; // Haupt-Text
-  meta: string; // Sub-Text (Author/Datum)
   rot: string; // leichte Rotation
 }
 
 const COLOR_STYLE: Record<PinnwandColor, ColorStyle> = {
-  yellow: {
-    grad: "from-yellow-300/60 to-yellow-500/30",
-    border: "border-yellow-300/50",
-    text: "text-yellow-50",
-    meta: "text-yellow-200/90",
-    rot: "-rotate-1",
-  },
-  pink: {
-    grad: "from-pink-400/60 to-pink-600/30",
-    border: "border-pink-300/50",
-    text: "text-pink-50",
-    meta: "text-pink-200/90",
-    rot: "rotate-1",
-  },
-  blue: {
-    grad: "from-cyan-300/60 to-sky-500/30",
-    border: "border-cyan-300/50",
-    text: "text-cyan-50",
-    meta: "text-cyan-200/90",
-    rot: "-rotate-2",
-  },
-  green: {
-    grad: "from-lime-300/60 to-emerald-500/30",
-    border: "border-lime-300/50",
-    text: "text-lime-50",
-    meta: "text-lime-200/90",
-    rot: "rotate-2",
-  },
-  orange: {
-    grad: "from-orange-300/60 to-orange-500/30",
-    border: "border-orange-300/50",
-    text: "text-orange-50",
-    meta: "text-orange-200/90",
-    rot: "-rotate-1",
-  },
-  purple: {
-    grad: "from-fuchsia-400/60 to-violet-600/30",
-    border: "border-fuchsia-300/50",
-    text: "text-fuchsia-50",
-    meta: "text-white/90",
-    rot: "rotate-1",
-  },
+  yellow: { rot: "-rotate-1" },
+  pink:   { rot: "rotate-1" },
+  blue:   { rot: "-rotate-2" },
+  green:  { rot: "rotate-2" },
+  orange: { rot: "-rotate-1" },
+  purple: { rot: "rotate-1" },
 };
 
+// Einheitlicher s/w-Stil — gleiche Klassen fuer alle Notes
+const NOTE_GRAD = "from-white/15 to-white/5";
+const NOTE_BORDER = "border-white/25";
+const NOTE_TEXT = "text-white";
+const NOTE_META = "text-gray-300";
+
+// Farbpunkte im AddModal — auch s/w mit verschiedenen Helligkeiten
 const COLOR_DOT: Record<PinnwandColor, string> = {
-  yellow: "bg-yellow-300",
-  pink: "bg-pink-400",
-  blue: "bg-cyan-300",
-  green: "bg-lime-300",
-  orange: "bg-orange-300",
-  purple: "bg-fuchsia-400",
+  yellow: "bg-white/90",
+  pink:   "bg-white/75",
+  blue:   "bg-white/60",
+  green:  "bg-white/45",
+  orange: "bg-white/30",
+  purple: "bg-white/15",
 };
 
 function isColor(c: string): c is PinnwandColor {
@@ -236,8 +204,8 @@ function NoteCard({
   return (
     <div
       className={`relative overflow-hidden rounded-2xl border ${
-        style.border
-      } bg-gradient-to-br ${style.grad} ${
+        NOTE_BORDER
+      } bg-gradient-to-br ${NOTE_GRAD} ${
         expanded ? "col-span-2 rotate-0" : style.rot
       } cursor-pointer p-3 pb-7 shadow-lg backdrop-blur-md transition-transform hover:rotate-0 hover:scale-105`}
       style={{
@@ -250,12 +218,12 @@ function NoteCard({
       <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
 
       <p
-        className={`relative whitespace-pre-line pt-1 text-sm font-medium leading-relaxed ${style.text}`}
+        className={`relative whitespace-pre-line pt-1 text-sm font-medium leading-relaxed ${NOTE_TEXT}`}
       >
         {note.text}
       </p>
       <div
-        className={`absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[10px] ${style.meta}`}
+        className={`absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[10px] ${NOTE_META}`}
       >
         <span>— {note.author.name}</span>
         {note.comments.length > 0 && !expanded ? (
@@ -267,15 +235,15 @@ function NoteCard({
 
       {expanded && (
         <div
-          className={`relative mt-4 space-y-2 border-t border-white/20 pt-2 ${style.text}`}
+          className={`relative mt-4 space-y-2 border-t border-white/20 pt-2 ${NOTE_TEXT}`}
           onClick={(e) => e.stopPropagation()}
         >
           {note.comments.map((c) => (
             <div key={c.id} className="text-xs">
-              <p className={`font-medium ${style.meta}`}>{c.author.name}</p>
+              <p className={`font-medium ${NOTE_META}`}>{c.author.name}</p>
               <p className="whitespace-pre-line">{c.text}</p>
               <div
-                className={`flex items-center justify-between text-[9px] ${style.meta} opacity-80`}
+                className={`flex items-center justify-between text-[9px] ${NOTE_META} opacity-80`}
               >
                 <span>{fmtDate(c.createdAt)}</span>
                 {c.author.id === meId && (
@@ -295,7 +263,7 @@ function NoteCard({
               onChange={(e) => setNewComment(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addComment()}
               placeholder="Kommentar..."
-              className={`flex-1 rounded border border-white/20 bg-white/10 px-2 py-1 text-xs placeholder-white/40 focus:border-white/40 focus:outline-none ${style.text}`}
+              className={`flex-1 rounded border border-white/20 bg-white/10 px-2 py-1 text-xs placeholder-white/40 focus:border-white/40 focus:outline-none ${NOTE_TEXT}`}
             />
             <button
               onClick={addComment}
@@ -308,7 +276,7 @@ function NoteCard({
           {isMine && (
             <button
               onClick={deleteNote}
-              className={`text-[10px] underline opacity-70 hover:opacity-100 ${style.meta}`}
+              className={`text-[10px] underline opacity-70 hover:opacity-100 ${NOTE_META}`}
             >
               Post-It loeschen
             </button>
@@ -356,7 +324,7 @@ function AddNoteModal({
         className="w-full max-w-md rounded-t-2xl border border-gray-800 bg-gray-950 p-4 sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-3 font-cinzel text-lg text-accent">Neuer Post-It</h2>
+        <h2 className="mb-3 font-cinzel text-lg text-white">Neuer Post-It</h2>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -364,7 +332,7 @@ function AddNoteModal({
           autoFocus
           maxLength={500}
           placeholder="Was willst du loswerden?"
-          className={`mb-3 w-full resize-none rounded-2xl border bg-gradient-to-br ${COLOR_STYLE[color].grad} ${COLOR_STYLE[color].border} ${COLOR_STYLE[color].text} p-3 text-sm font-medium shadow-lg backdrop-blur-md focus:outline-none`}
+          className={`mb-3 w-full resize-none rounded-2xl border bg-gradient-to-br ${NOTE_GRAD} ${NOTE_BORDER} ${NOTE_TEXT} p-3 text-sm font-medium shadow-lg backdrop-blur-md focus:outline-none`}
           style={{
             boxShadow:
               "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
@@ -391,7 +359,7 @@ function AddNoteModal({
           <button
             onClick={save}
             disabled={busy || !text.trim()}
-            className="flex-1 rounded-lg bg-accent px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+            className="flex-1 rounded-lg bg-white px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
           >
             {busy ? "..." : "Pinnen"}
           </button>

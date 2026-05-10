@@ -353,16 +353,14 @@ body {
 
 /* "Meine WG"-Bereich: leuchtige Pink/Fuchsia/Cyan-Akzente + sanftes Pulse-Gradient */
 /* "Meine WG"-Bereich: monochromes Schwarz/Weiss-Theme.
-   Der bewegte Background wird ueber AnimatedBackground (mit glow-white)
-   geliefert — siehe meine-wg/[slug]/layout.tsx. */
+   Der bewegte Background wird ueber WgBackground geliefert
+   (nur weisse Partikel, keine Glow-Spots).
+   Header-Background-Glow wurde absichtlich entfernt (User-Wunsch). */
 .wg-title-gradient {
   color: #ffffff;
-  text-shadow: 0 0 18px rgba(255, 255, 255, 0.35);
 }
 .wg-bg-glow {
-  background:
-    radial-gradient(ellipse at top left,    rgba(255, 255, 255, 0.08), transparent 50%),
-    radial-gradient(ellipse at top right,   rgba(255, 255, 255, 0.05), transparent 50%);
+  background: transparent;
 }
 
 /* Milchige Glas-Kachel — schwarz/weiss */
