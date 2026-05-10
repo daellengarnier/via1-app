@@ -349,7 +349,7 @@ export default function EinkaufPage() {
                 </button>
                 <div className="min-w-0 flex-1">
                   <p
-                    className={`text-sm font-medium ${
+                    className={`font-display text-sm font-bold uppercase tracking-wider ${
                       item.done ? "text-gray-500 line-through" : "text-white"
                     }`}
                   >

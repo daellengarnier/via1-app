@@ -565,7 +565,7 @@ export default function TerminDetailPage() {
         <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-orange-300">
           {formatDate(termin.date).toUpperCase()}
         </p>
-        <h1 className="mt-0.5 text-lg font-medium text-white">
+        <h1 className="mt-0.5 font-display text-xl font-bold uppercase tracking-wider text-white">
           {termin.title}
           {termin.type === "sitzung" && termin.withDinner && (
             <span className="ml-1 text-[11px] font-normal text-gray-500">
