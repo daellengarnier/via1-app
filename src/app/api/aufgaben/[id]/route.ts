@@ -4,6 +4,30 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { serializeAufgabe } from "@/lib/aufgaben-serialize";
 
+// GET /api/aufgaben/[id]
+export async function GET(
+  _req: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const aufgabe = await prisma.aufgabe.findUnique({
+    where: { id: params.id },
+    include: {
+      createdBy: true,
+      activeWorkers: { include: { user: true } },
+      subTodos: true,
+      images: true,
+    },
+  });
+  if (!aufgabe) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return NextResponse.json(serializeAufgabe(aufgabe));
+}
+
 // PATCH /api/aufgaben/[id]
 // Body kann enthalten: title, description, location, pin (oder null),
 // done, assignee
