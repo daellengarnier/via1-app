@@ -37,6 +37,7 @@ export async function POST(req: Request) {
     location?: unknown;
     pin?: unknown;
     assignee?: unknown;
+    subTodos?: unknown;
   };
   const title = typeof body.title === "string" ? body.title.trim() : "";
   if (!title) {
@@ -66,6 +67,13 @@ export async function POST(req: Request) {
     }
   }
 
+  const subTodoTitles = Array.isArray(body.subTodos)
+    ? body.subTodos
+        .filter((t): t is string => typeof t === "string")
+        .map((t) => t.trim())
+        .filter((t) => t !== "")
+    : [];
+
   const created = await prisma.aufgabe.create({
     data: {
       title,
@@ -75,6 +83,15 @@ export async function POST(req: Request) {
       pinLat,
       pinLng,
       createdById: session.user.id,
+      subTodos:
+        subTodoTitles.length > 0
+          ? {
+              create: subTodoTitles.map((title, i) => ({
+                title,
+                position: i,
+              })),
+            }
+          : undefined,
     },
     include: {
       createdBy: true,

@@ -161,6 +161,8 @@ export default function AufgabenPage() {
   const [newLocation, setNewLocation] = useState("");
   const [pendingPin, setPendingPin] = useState<Pin | null>(null);
   const [placingPin, setPlacingPin] = useState(false);
+  const [newCreateSubTodos, setNewCreateSubTodos] = useState<string[]>([]);
+  const [newCreateSubTodoInput, setNewCreateSubTodoInput] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -413,6 +415,7 @@ export default function AufgabenPage() {
           description: newDesc,
           location: newLocation,
           pin: pendingPin,
+          subTodos: newCreateSubTodos,
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -424,6 +427,8 @@ export default function AufgabenPage() {
       setPendingPin(null);
       setPlacingPin(false);
       setShowCreate(false);
+      setNewCreateSubTodos([]);
+      setNewCreateSubTodoInput("");
     } catch (err) {
       console.error("handleCreate", err);
       alert("Konnte Aufgabe nicht erstellen.");
@@ -541,6 +546,68 @@ export default function AufgabenPage() {
             />
           </div>
           <div className="mb-3">
+            <label className="mb-1 block text-xs text-gray-400">
+              Subtasks (optional)
+            </label>
+            {newCreateSubTodos.length > 0 && (
+              <ul className="mb-2 space-y-1">
+                {newCreateSubTodos.map((title, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center gap-2 rounded border border-gray-800/60 bg-black/20 px-2 py-1"
+                  >
+                    <span className="flex-1 text-xs text-white">{title}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNewCreateSubTodos((prev) =>
+                          prev.filter((_, idx) => idx !== i)
+                        )
+                      }
+                      className="text-gray-500 hover:text-red-400"
+                      aria-label="Entfernen"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newCreateSubTodoInput}
+                onChange={(e) => setNewCreateSubTodoInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const v = newCreateSubTodoInput.trim();
+                    if (v) {
+                      setNewCreateSubTodos((prev) => [...prev, v]);
+                      setNewCreateSubTodoInput("");
+                    }
+                  }
+                }}
+                placeholder="Subtask hinzufügen…"
+                className="flex-1 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const v = newCreateSubTodoInput.trim();
+                  if (v) {
+                    setNewCreateSubTodos((prev) => [...prev, v]);
+                    setNewCreateSubTodoInput("");
+                  }
+                }}
+                disabled={newCreateSubTodoInput.trim() === ""}
+                className="rounded bg-yellow-400 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-black disabled:opacity-30"
+              >
+                +
+              </button>
+            </div>
+          </div>
+          <div className="mb-3">
             <button
               type="button"
               onClick={() => setPlacingPin(!placingPin)}
@@ -572,6 +639,8 @@ export default function AufgabenPage() {
                 setShowCreate(false);
                 setPendingPin(null);
                 setPlacingPin(false);
+                setNewCreateSubTodos([]);
+                setNewCreateSubTodoInput("");
               }}
               className="rounded px-4 py-2 text-xs text-gray-400 hover:text-white"
             >
