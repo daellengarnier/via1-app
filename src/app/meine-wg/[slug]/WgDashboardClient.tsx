@@ -6,6 +6,7 @@ import {
   SLOT_LABEL,
   type Slot,
 } from "@/lib/wg-koch-slots";
+import { CookModal } from "@/components/wg/CookModal";
 
 // Minimale Datenshapes — wiederverwendete Public-API der Feature-Routen.
 interface KochSignup {
@@ -92,9 +93,10 @@ interface PinnwandNote {
 interface Props {
   slug: string;
   meId: string;
+  meName: string;
 }
 
-export function WgDashboardClient({ slug, meId }: Props) {
+export function WgDashboardClient({ slug, meId, meName }: Props) {
   const [koch, setKoch] = useState<KochData | null>(null);
   const [shopping, setShopping] = useState<ShoppingItem[] | null>(null);
   const [aemtli, setAemtli] = useState<AemtliData | null>(null);
@@ -102,33 +104,25 @@ export function WgDashboardClient({ slug, meId }: Props) {
   const [doodles, setDoodles] = useState<DoodleItem[] | null>(null);
   const [pinnwand, setPinnwand] = useState<PinnwandNote[] | null>(null);
 
+  // Ein einziger API-Call statt 6 separate Round-Trips fuer schnelleres
+  // erstes Rendering.
   const loadAll = useCallback(async () => {
-    const [k, s, a, t, d, p] = await Promise.all([
-      fetch(`/api/meine-wg/${slug}/kochplan`).then((r) =>
-        r.ok ? (r.json() as Promise<KochData>) : null
-      ),
-      fetch(`/api/meine-wg/${slug}/einkauf`).then((r) =>
-        r.ok ? (r.json() as Promise<ShoppingItem[]>) : null
-      ),
-      fetch(`/api/meine-wg/${slug}/aemtli`).then((r) =>
-        r.ok ? (r.json() as Promise<AemtliData>) : null
-      ),
-      fetch(`/api/meine-wg/${slug}/termine`).then((r) =>
-        r.ok ? (r.json() as Promise<TermineData>) : null
-      ),
-      fetch(`/api/meine-wg/${slug}/doodle`).then((r) =>
-        r.ok ? (r.json() as Promise<DoodleItem[]>) : null
-      ),
-      fetch(`/api/meine-wg/${slug}/pinnwand`).then((r) =>
-        r.ok ? (r.json() as Promise<PinnwandNote[]>) : null
-      ),
-    ]);
-    setKoch(k);
-    setShopping(s);
-    setAemtli(a);
-    setTermine(t);
-    setDoodles(d);
-    setPinnwand(p);
+    const res = await fetch(`/api/meine-wg/${slug}/dashboard`);
+    if (!res.ok) return;
+    const data = (await res.json()) as {
+      koch: KochData;
+      shopping: ShoppingItem[];
+      aemtli: AemtliData | null;
+      termine: TermineData;
+      doodles: DoodleItem[];
+      pinnwand: PinnwandNote[];
+    };
+    setKoch(data.koch);
+    setShopping(data.shopping);
+    setAemtli(data.aemtli);
+    setTermine(data.termine);
+    setDoodles(data.doodles);
+    setPinnwand(data.pinnwand);
   }, [slug]);
 
   useEffect(() => {
@@ -137,7 +131,7 @@ export function WgDashboardClient({ slug, meId }: Props) {
 
   return (
     <div className="space-y-3">
-      <KochTile slug={slug} meId={meId} data={koch} onChanged={loadAll} />
+      <KochTile slug={slug} meId={meId} meName={meName} data={koch} onChanged={loadAll} />
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-3">
@@ -157,15 +151,18 @@ export function WgDashboardClient({ slug, meId }: Props) {
 function KochTile({
   slug,
   meId,
+  meName,
   data,
   onChanged,
 }: {
   slug: string;
   meId: string;
+  meName: string;
   data: KochData | null;
   onChanged: () => void;
 }) {
   const [signupOpen, setSignupOpen] = useState<KochEintrag | null>(null);
+  const [cookOpen, setCookOpen] = useState<{ date: string; slot: Slot } | null>(null);
 
   if (!data) {
     return (
@@ -204,23 +201,33 @@ function KochTile({
           <KochSlotMini
             slot="lunch"
             eintrag={lunch}
-            today={today}
-            slug={slug}
             meId={meId}
+            onIchKoche={() => setCookOpen({ date: today, slot: "lunch" })}
             onSignup={(e) => setSignupOpen(e)}
-            onChanged={onChanged}
           />
           <KochSlotMini
             slot="dinner"
             eintrag={dinner}
-            today={today}
-            slug={slug}
             meId={meId}
+            onIchKoche={() => setCookOpen({ date: today, slot: "dinner" })}
             onSignup={(e) => setSignupOpen(e)}
-            onChanged={onChanged}
           />
         </div>
       </div>
+      {cookOpen && (
+        <CookModal
+          slug={slug}
+          slotKey={cookOpen}
+          editing={null}
+          templates={[]}
+          meName={meName}
+          onClose={() => setCookOpen(null)}
+          onSaved={() => {
+            setCookOpen(null);
+            onChanged();
+          }}
+        />
+      )}
       {signupOpen && (
         <KochSignupQuickModal
           slug={slug}
@@ -241,44 +248,16 @@ function KochTile({
 function KochSlotMini({
   slot,
   eintrag,
-  today,
-  slug,
   meId,
+  onIchKoche,
   onSignup,
-  onChanged,
 }: {
   slot: Slot;
   eintrag: KochEintrag | undefined;
-  today: string;
-  slug: string;
   meId: string;
+  onIchKoche: () => void;
   onSignup: (e: KochEintrag) => void;
-  onChanged: () => void;
 }) {
-  const [busy, setBusy] = useState(false);
-
-  async function ichKoche() {
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/meine-wg/${slug}/kochplan/eintraege`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date: today, // effective Bern-Tag aus API (nach 21h = morgen)
-          slot,
-          selfCook: true,
-        }),
-      });
-      if (!res.ok) {
-        const b = (await res.json().catch(() => ({}))) as { error?: string };
-        alert(b.error ?? `Konnte Eintrag nicht erstellen (${res.status})`);
-      }
-      onChanged();
-    } finally {
-      setBusy(false);
-    }
-  }
-
   if (!eintrag) {
     return (
       <div className="rounded-lg border border-dashed border-gray-700 bg-black/30 p-2">
@@ -287,9 +266,8 @@ function KochSlotMini({
         </p>
         <p className="mt-1 text-[11px] italic text-gray-600">niemand kocht</p>
         <button
-          onClick={ichKoche}
-          disabled={busy}
-          className="mt-2 w-full rounded-md bg-white px-2 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
+          onClick={onIchKoche}
+          className="mt-2 w-full rounded-md bg-white px-2 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-90"
         >
           🍳 Ich koche!
         </button>
@@ -376,6 +354,7 @@ function KochSignupQuickModal({
   const [childrenIds, setChildrenIds] = useState<string[]>(
     existing?.childrenIds ?? myKinder.map((k) => k.id)
   );
+  const [guests, setGuests] = useState<number>(existing?.guests ?? 0);
   const [busy, setBusy] = useState(false);
 
   function toggleChild(id: string) {
@@ -395,7 +374,7 @@ function KochSignupQuickModal({
           body: JSON.stringify({
             status,
             childrenIds: status === "going" ? childrenIds : [],
-            guests: 0,
+            guests: status === "going" ? guests : 0,
           }),
         }
       );
@@ -410,23 +389,23 @@ function KochSignupQuickModal({
       <div className="mb-3 grid grid-cols-2 gap-2">
         <button
           onClick={() => setStatus("going")}
-          className={`rounded-lg py-3 font-mono text-xs font-bold uppercase tracking-wider ${
+          className={`rounded-lg py-3 font-display text-xs font-bold uppercase tracking-wider ${
             status === "going"
               ? "bg-white text-black"
               : "border border-gray-700 bg-gray-900 text-gray-400"
           }`}
         >
-          ✓ Bin dabei
+          ✓ BIN DABEI
         </button>
         <button
           onClick={() => setStatus("declined")}
-          className={`rounded-lg py-3 font-mono text-xs font-bold uppercase tracking-wider ${
+          className={`rounded-lg py-3 font-display text-xs font-bold uppercase tracking-wider ${
             status === "declined"
               ? "bg-red-500/30 text-red-200"
               : "border border-gray-700 bg-gray-900 text-gray-400"
           }`}
         >
-          ✗ Kann nicht
+          ✗ KANN NICHT
         </button>
       </div>
 
@@ -438,17 +417,43 @@ function KochSignupQuickModal({
               <button
                 key={k.id}
                 onClick={() => toggleChild(k.id)}
-                className={`w-full rounded-lg px-3 py-2.5 font-mono text-sm font-bold uppercase tracking-wider ${
+                className={`w-full rounded-lg px-3 py-2 font-display text-xs font-bold uppercase tracking-wider ${
                   checked
-                    ? "bg-white/20 text-white ring-1 ring-accent"
+                    ? "bg-white/20 text-white ring-1 ring-white/50"
                     : "border border-gray-700 bg-gray-900 text-gray-400"
                 }`}
               >
                 {checked ? "✓ " : ""}
-                {k.name} isst mit
+                {k.name.toUpperCase()} ISST MIT
               </button>
             );
           })}
+        </div>
+      )}
+
+      {status === "going" && (
+        <div className="mb-3 flex items-center justify-between rounded-lg border border-gray-700 bg-gray-900 px-3 py-2">
+          <span className="font-display text-xs font-bold uppercase tracking-wider text-white">
+            GAESTE
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setGuests(Math.max(0, guests - 1))}
+              disabled={guests === 0}
+              className="h-8 w-8 rounded-full border border-gray-700 bg-gray-900 text-lg text-white hover:border-white/50 disabled:opacity-30"
+            >
+              −
+            </button>
+            <span className="w-6 text-center font-mono text-base text-white">
+              {guests}
+            </span>
+            <button
+              onClick={() => setGuests(Math.min(20, guests + 1))}
+              className="h-8 w-8 rounded-full border border-gray-700 bg-gray-900 text-lg text-white hover:border-white/50"
+            >
+              +
+            </button>
+          </div>
         </div>
       )}
 
@@ -456,7 +461,7 @@ function KochSignupQuickModal({
         <button
           onClick={save}
           disabled={busy}
-          className="flex-1 rounded-lg bg-white px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
+          className="flex-1 rounded-lg bg-white px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
         >
           {existing ? "Aktualisieren" : "Speichern"}
         </button>
@@ -522,7 +527,7 @@ function ShoppingTile({
   }
 
   return (
-    <div className="wg-tile-light flex h-full flex-col p-3">
+    <div className="wg-tile flex h-full min-h-0 flex-col p-3">
       <div className="mb-2 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/einkauf`}
@@ -618,7 +623,7 @@ function AemtliTile({
         )}
       </div>
       {data.currentUser ? (
-        <p className="truncate font-display text-sm font-bold uppercase tracking-wider text-white">
+        <p className="truncate font-display text-xs font-bold uppercase tracking-wider text-white">
           {data.currentUser.name}
         </p>
       ) : (
@@ -626,21 +631,19 @@ function AemtliTile({
       )}
       <p className="text-[10px] text-gray-400">ist dran</p>
       {data.lastDoneBy && data.lastDoneAt && (
-        <div className="mt-2 rounded bg-black/30 px-2 py-1">
+        <div className="mt-2 rounded bg-black/30 px-2 py-1.5">
           <p className="font-mono text-[9px] uppercase tracking-wider text-gray-500">
             zuletzt geputzt
           </p>
-          <p className="text-[11px] text-white">
+          <p className="font-display text-[11px] font-bold uppercase tracking-wider text-white">
             {data.lastDoneBy.name}
-            <span className="text-gray-400">
-              {" "}
-              ·{" "}
-              {new Date(data.lastDoneAt).toLocaleDateString("de-CH", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "2-digit",
-              })}
-            </span>
+          </p>
+          <p className="font-mono text-[10px] text-gray-300">
+            {new Date(data.lastDoneAt).toLocaleDateString("de-CH", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
           </p>
         </div>
       )}
@@ -697,9 +700,12 @@ function TermineTile({
             {next.title}
           </p>
           <p className="mt-0.5 font-mono text-[10px] text-gray-300">
-            {new Date(next.date).toLocaleString("de-CH", {
-              day: "2-digit",
-              month: "2-digit",
+            {new Date(next.date).toLocaleDateString("de-CH", {
+              day: "numeric",
+              month: "long",
+            })}
+            {", "}
+            {new Date(next.date).toLocaleTimeString("de-CH", {
               hour: "2-digit",
               minute: "2-digit",
             })}

@@ -5,4 +5,5 @@ export const COOKING_PRESETS: ReadonlyArray<string> = [
   "Fischstäbli mit Reis & Rüeblisalat",
   "Fried Rice",
   "Grillen im Garten 🔥",
+  "Pizza 🍕",
 ];
