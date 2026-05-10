@@ -120,6 +120,7 @@ model User {
   gameScores           GameScore[]
   laundryTimers        LaundryTimer[]        @relation("LaundryTimerStarter")
   laundryTimerWatches  LaundryTimerWatch[]
+  wgPasswordsSet       Wg[]                  @relation("WgPasswordSetter")
 
   @@map("users")
 }
@@ -580,13 +581,17 @@ model HausbuchArticleLink {
 }
 
 model Wg {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  floor     Int      // 0=EG, 1=1.OG, 2=2.OG
-  side      Side
-  rooms     Room[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String    @id @default(cuid())
+  name                String    @unique
+  floor               Int       // 0=EG, 1=1.OG, 2=2.OG
+  side                Side
+  rooms               Room[]
+  passwordHash        String?
+  passwordSetAt       DateTime?
+  passwordSetById     String?
+  passwordSetBy       User?     @relation("WgPasswordSetter", fields: [passwordSetById], references: [id], onDelete: SetNull)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
 model Room {

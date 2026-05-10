@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import type { ReactNode } from "react";
 
 // Monochrom Line-Art SVG Icons — passend zum Text-Style
@@ -55,6 +56,25 @@ function KalenderIcon() {
   );
 }
 
+function HausIcon() {
+  return (
+    <svg
+      width="20"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 11l9-7 9 7" />
+      <path d="M5 10v10h14V10" />
+      <path d="M10 20v-5h4v5" />
+    </svg>
+  );
+}
+
 function AktivitaetIcon() {
   // Pilz (Fliegenpilz-Stil, monochrom)
   return (
@@ -80,16 +100,27 @@ function AktivitaetIcon() {
   );
 }
 
-const navItems: { href: string; label: string; icon: ReactNode }[] = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: ReactNode;
+  adminOnly?: boolean;
+}
+
+const navItems: NavItem[] = [
   { href: "/", label: "HOME", icon: <HomeIcon /> },
   { href: "/termine", label: "TERMINE", icon: <KalenderIcon /> },
   { href: "/aufgaben", label: "AUFGABEN", icon: <CheckIcon /> },
   { href: "/einkauf", label: "BESCHAFFUNG", icon: <EinkaufIcon /> },
   { href: "/aktivitaeten", label: "AKTIVITÄT", icon: <AktivitaetIcon /> },
+  { href: "/meine-wg", label: "MEINE WG", icon: <HausIcon />, adminOnly: true },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const isAdmin = (session?.user?.roles ?? []).includes("ADMIN");
+  const visibleItems = navItems.filter((i) => !i.adminOnly || isAdmin);
 
   return (
     <nav
@@ -99,7 +130,7 @@ export function BottomNav() {
       }}
     >
       <div className="mx-auto flex max-w-lg">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive =
             item.href === "/"
               ? pathname === "/"
