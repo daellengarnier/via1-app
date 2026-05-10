@@ -852,7 +852,7 @@ function AufgabenPage() {
                 </button>
                 <div className="min-w-0 flex-1">
                   <h3
-                    className={`font-display text-sm font-bold uppercase tracking-wider leading-tight ${
+                    className={`font-display text-[11px] font-bold uppercase tracking-wider leading-tight ${
                       a.done ? "text-gray-500 line-through" : "text-white"
                     }`}
                   >
