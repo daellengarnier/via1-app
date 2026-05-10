@@ -199,7 +199,7 @@ export function TerminDetailClient({ slug, wgName, terminId, meId }: Props) {
         <div className="mt-2 flex flex-wrap gap-2">
           <a
             href={`/api/meine-wg/${slug}/termine/${terminId}/ics`}
-            className="rounded border border-gray-700 px-2 py-1 font-mono text-[10px] uppercase text-gray-300 hover:border-accent hover:text-accent"
+            className="rounded border border-gray-700 px-2 py-1 font-mono text-[10px] uppercase text-gray-300 hover:border-white/50 hover:text-white"
           >
             📥 .ics
           </a>
@@ -231,12 +231,12 @@ export function TerminDetailClient({ slug, wgName, terminId, meId }: Props) {
             onChange={(e) => setNewTraktandum(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addTraktandum()}
             placeholder="+ Neues Traktandum"
-            className="flex-1 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-sm text-white focus:border-accent focus:outline-none"
+            className="flex-1 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-sm text-white focus:border-white/50 focus:outline-none"
           />
           <button
             onClick={addTraktandum}
             disabled={!newTraktandum.trim()}
-            className="rounded bg-accent px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+            className="rounded bg-white px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
           >
             +
           </button>
@@ -267,7 +267,7 @@ export function TerminDetailClient({ slug, wgName, terminId, meId }: Props) {
             >
               <div className="flex items-baseline justify-between gap-2">
                 <p className="text-xs">
-                  <span className="font-medium text-accent">
+                  <span className="font-medium text-white">
                     {c.author.name}
                   </span>{" "}
                   <span className="text-gray-600">
@@ -295,12 +295,12 @@ export function TerminDetailClient({ slug, wgName, terminId, meId }: Props) {
             onChange={(e) => setNewComment(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addComment()}
             placeholder="Kommentar..."
-            className="flex-1 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-sm text-white focus:border-accent focus:outline-none"
+            className="flex-1 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-sm text-white focus:border-white/50 focus:outline-none"
           />
           <button
             onClick={addComment}
             disabled={!newComment.trim()}
-            className="rounded bg-accent px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+            className="rounded bg-white px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
           >
             ↵
           </button>
@@ -385,7 +385,7 @@ function TraktandumRow({
           rows={2}
           autoFocus
           placeholder="Notizen..."
-          className="mt-1 w-full resize-none rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-200 focus:border-accent focus:outline-none"
+          className="mt-1 w-full resize-none rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-200 focus:border-white/50 focus:outline-none"
         />
       ) : (
         tr.notes && (
@@ -444,7 +444,7 @@ function ProtokollEditor({
         )}
         <button
           onClick={onEdit}
-          className="mt-2 rounded border border-gray-700 px-2 py-1 font-mono text-[10px] uppercase text-gray-400 hover:border-accent hover:text-accent"
+          className="mt-2 rounded border border-gray-700 px-2 py-1 font-mono text-[10px] uppercase text-gray-400 hover:border-white/50 hover:text-white"
         >
           ✎ Bearbeiten
         </button>
@@ -460,13 +460,13 @@ function ProtokollEditor({
         rows={6}
         autoFocus
         placeholder="Protokoll..."
-        className="w-full resize-y rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-200 focus:border-accent focus:outline-none"
+        className="w-full resize-y rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-200 focus:border-white/50 focus:outline-none"
       />
       <div className="mt-2 flex gap-2">
         <button
           onClick={save}
           disabled={busy}
-          className="rounded bg-accent px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+          className="rounded bg-white px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
         >
           {busy ? "..." : "Speichern"}
         </button>
@@ -531,7 +531,7 @@ function EditTerminModal({
         className="w-full max-w-md rounded-t-2xl border border-gray-800 bg-gray-950 p-4 sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-3 font-cinzel text-lg text-accent">
+        <h2 className="mb-3 font-cinzel text-lg text-white">
           Termin bearbeiten
         </h2>
         <input
@@ -570,7 +570,7 @@ function EditTerminModal({
           <button
             onClick={save}
             disabled={busy}
-            className="flex-1 rounded-lg bg-accent px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+            className="flex-1 rounded-lg bg-white px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
           >
             {busy ? "..." : "Speichern"}
           </button>

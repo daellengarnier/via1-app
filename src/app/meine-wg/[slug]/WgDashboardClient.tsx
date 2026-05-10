@@ -146,7 +146,7 @@ export function WgDashboardClient({ slug, meId }: Props) {
 
       <TermineTile slug={slug} data={termine} doodles={doodles} />
 
-      <PinnwandTile slug={slug} notes={pinnwand} />
+      <PinnwandInline slug={slug} notes={pinnwand} onChanged={loadAll} />
     </div>
   );
 }
@@ -194,7 +194,7 @@ function KochTile({
           </a>
           <a
             href={`/meine-wg/${slug}/kochplan`}
-            className="font-mono text-[10px] uppercase tracking-wider text-accent hover:underline"
+            className="font-mono text-[10px] uppercase tracking-wider text-white hover:underline"
           >
             ganze Woche →
           </a>
@@ -281,7 +281,7 @@ function KochSlotMini({
         <button
           onClick={ichKoche}
           disabled={busy}
-          className="mt-2 w-full rounded-md bg-accent px-2 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+          className="mt-2 w-full rounded-md bg-white px-2 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
         >
           🍳 Ich koche!
         </button>
@@ -328,10 +328,10 @@ function KochSlotMini({
           onClick={() => onSignup(eintrag)}
           className={`mt-1 w-full rounded-md px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider ${
             myStatus === "going"
-              ? "border border-accent/50 bg-accent/10 text-accent"
+              ? "border border-white/50 bg-white/10 text-white"
               : myStatus === "declined"
                 ? "border border-red-500/40 bg-red-500/10 text-red-300"
-                : "bg-accent text-black hover:brightness-110"
+                : "bg-white text-black hover:brightness-90"
           }`}
         >
           {myStatus === "going"
@@ -404,7 +404,7 @@ function KochSignupQuickModal({
           onClick={() => setStatus("going")}
           className={`rounded-lg py-3 font-mono text-xs font-bold uppercase tracking-wider ${
             status === "going"
-              ? "bg-accent text-black"
+              ? "bg-white text-black"
               : "border border-gray-700 bg-gray-900 text-gray-400"
           }`}
         >
@@ -432,7 +432,7 @@ function KochSignupQuickModal({
                 onClick={() => toggleChild(k.id)}
                 className={`w-full rounded-lg px-3 py-2.5 font-mono text-sm font-bold uppercase tracking-wider ${
                   checked
-                    ? "bg-accent/20 text-accent ring-1 ring-accent"
+                    ? "bg-white/20 text-white ring-1 ring-accent"
                     : "border border-gray-700 bg-gray-900 text-gray-400"
                 }`}
               >
@@ -448,7 +448,7 @@ function KochSignupQuickModal({
         <button
           onClick={save}
           disabled={busy}
-          className="flex-1 rounded-lg bg-accent px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+          className="flex-1 rounded-lg bg-white px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
         >
           {existing ? "Aktualisieren" : "Speichern"}
         </button>
@@ -522,7 +522,7 @@ function ShoppingTile({
         >
           🛒 Einkauf
         </a>
-        <span className="font-mono text-[10px] uppercase tracking-wider text-accent">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-white">
           {open.length} offen
         </span>
       </div>
@@ -533,7 +533,7 @@ function ShoppingTile({
             <button
               key={i.id}
               onClick={() => toggle(i.id)}
-              className="flex w-full items-center gap-2 rounded border border-gray-800 bg-black/30 px-2 py-1 text-left text-xs text-white hover:border-accent"
+              className="flex w-full items-center gap-2 rounded border border-gray-800 bg-black/30 px-2 py-1 text-left text-xs text-white hover:border-white/50"
               title={`von ${i.createdBy.name}`}
             >
               <span className="text-gray-500">○</span>
@@ -554,12 +554,12 @@ function ShoppingTile({
           onChange={(e) => setText(e.target.value)}
           placeholder="+ hinzufuegen"
           maxLength={200}
-          className="flex-1 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-accent focus:outline-none"
+          className="flex-1 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-white/50 focus:outline-none"
         />
         <button
           type="submit"
           disabled={busy || !text.trim()}
-          className="rounded bg-accent px-2 py-1 text-[10px] font-bold uppercase text-black hover:brightness-110 disabled:opacity-50"
+          className="rounded bg-white px-2 py-1 text-[10px] font-bold uppercase text-black hover:brightness-90 disabled:opacity-50"
         >
           +
         </button>
@@ -668,14 +668,14 @@ function TermineTile({
         >
           📅 Termine
           {openDoodles.length > 0 && (
-            <span className="ml-1 font-mono text-[10px] text-accent">
+            <span className="ml-1 font-mono text-[10px] text-white">
               · 🗓 {openDoodles.length}
             </span>
           )}
         </a>
         <a
           href={`/meine-wg/${slug}/termine`}
-          className="font-mono text-[10px] uppercase tracking-wider text-accent hover:underline"
+          className="font-mono text-[10px] uppercase tracking-wider text-white hover:underline"
         >
           alle →
         </a>
@@ -713,7 +713,7 @@ function TermineTile({
             <a
               key={d.id}
               href={`/meine-wg/${slug}/doodle/${d.id}`}
-              className="block truncate rounded border border-accent/20 bg-black/30 p-1.5 text-[11px] text-white hover:bg-black/50"
+              className="block truncate rounded border border-white/20 bg-black/30 p-1.5 text-[11px] text-white hover:bg-black/50"
             >
               🗓 {d.title}
               <span className="ml-1 text-gray-500">
@@ -742,70 +742,113 @@ function TermineTile({
   );
 }
 
-// ===== PINNWAND-TILE =====
+// ===== PINNWAND (inline, kein Tile, wie auf Home) =====
+// Direkt im Dashboard Sticky-Notes anzeigen + neue Notiz erstellen.
 
-function PinnwandTile({
+function PinnwandInline({
   slug,
   notes,
+  onChanged,
 }: {
   slug: string;
   notes: PinnwandNote[] | null;
+  onChanged: () => void;
 }) {
-  if (!notes) {
-    return (
-      <Tile href={`/meine-wg/${slug}/pinnwand`} icon="📌" title="Pinnwand">
-        <p className="text-xs text-gray-500">Lade...</p>
-      </Tile>
-    );
+  const [showForm, setShowForm] = useState(false);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    const t = text.trim();
+    if (!t) return;
+    setBusy(true);
+    try {
+      await fetch(`/api/meine-wg/${slug}/pinnwand`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: t, color: "yellow" }),
+      });
+      setText("");
+      setShowForm(false);
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
-    <div className="wg-tile p-3">
-      <div className="mb-2 flex items-baseline justify-between">
-        <a
-          href={`/meine-wg/${slug}/pinnwand`}
-          className="font-display text-[11px] font-bold uppercase tracking-widest text-white hover:text-white"
-        >
-          📌 Pinnwand
-        </a>
-        <span className="font-mono text-[10px] uppercase tracking-wider text-accent">
-          {notes.length} Notes
-        </span>
+    <div className="relative">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex-1" />
+        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-white">
+          PINNWAND
+        </p>
+        <div className="flex flex-1 justify-end">
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="font-display text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-white"
+          >
+            + NEU
+          </button>
+        </div>
       </div>
 
-      {notes.length === 0 ? (
-        <p className="text-xs italic text-gray-500">leer</p>
+      {showForm && (
+        <form onSubmit={add} className="mb-4 flex gap-2">
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Nachricht an die WG..."
+            className="flex-1 rounded border border-white/20 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-white/50 focus:outline-none"
+            autoFocus
+            maxLength={500}
+          />
+          <button
+            type="submit"
+            disabled={busy || !text.trim()}
+            className="rounded bg-white px-3 py-2 font-display text-[10px] font-bold uppercase text-black hover:brightness-90 disabled:opacity-50"
+          >
+            OK
+          </button>
+        </form>
+      )}
+
+      {notes === null ? (
+        <p className="text-xs text-gray-500">Lade...</p>
+      ) : notes.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-white/15 px-3 py-6 text-center text-xs italic text-gray-500">
+          Pinnwand ist leer.
+        </p>
       ) : (
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {notes.slice(0, 5).map((n) => (
-            <a
-              key={n.id}
-              href={`/meine-wg/${slug}/pinnwand`}
-              className="block w-32 shrink-0 rounded p-2 text-[10px] text-black"
-              style={{
-                backgroundColor:
-                  n.color === "yellow"
-                    ? "#fef08a"
-                    : n.color === "pink"
-                      ? "#fbcfe8"
-                      : n.color === "blue"
-                        ? "#bae6fd"
-                        : n.color === "green"
-                          ? "#d9f99d"
-                          : n.color === "orange"
-                            ? "#fed7aa"
-                            : "#ddd6fe",
-              }}
-            >
-              <p className="line-clamp-3 font-medium">{n.text}</p>
-              <p className="mt-1 text-[9px] opacity-70">
-                — {n.author.name}
-                {n.comments.length > 0 && (
-                  <span className="ml-1">💬 {n.comments.length}</span>
-                )}
-              </p>
-            </a>
-          ))}
+        <div className="grid grid-cols-2 gap-3">
+          {notes.map((n, i) => {
+            const rotations = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2"];
+            const rot = rotations[i % rotations.length];
+            return (
+              <a
+                key={n.id}
+                href={`/meine-wg/${slug}/pinnwand`}
+                className={`relative overflow-hidden rounded-2xl border border-white/25 bg-gradient-to-br from-white/15 to-white/5 p-3 pb-7 text-left text-white shadow-lg backdrop-blur-md transition-transform hover:rotate-0 hover:scale-105 ${rot}`}
+                style={{
+                  boxShadow:
+                    "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.18)",
+                }}
+              >
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
+                <p className="relative line-clamp-4 pt-1 text-sm font-medium leading-relaxed">
+                  {n.text}
+                </p>
+                <div className="absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[10px] text-gray-300">
+                  <span>— {n.author.name}</span>
+                  {n.comments.length > 0 && (
+                    <span>💬 {n.comments.length}</span>
+                  )}
+                </div>
+              </a>
+            );
+          })}
         </div>
       )}
     </div>
@@ -854,7 +897,7 @@ function ModalShell({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="font-cinzel text-lg text-accent">{title}</h2>
+          <h2 className="font-cinzel text-lg text-white">{title}</h2>
           <button
             onClick={onClose}
             className="text-xl text-gray-500 hover:text-white"

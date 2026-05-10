@@ -142,13 +142,13 @@ export function EinkaufClient({ slug, wgName, meId }: Props) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Was muss eingekauft werden?"
-          className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-white/50 focus:outline-none"
           maxLength={200}
         />
         <button
           type="submit"
           disabled={adding || !text.trim()}
-          className="rounded-lg bg-accent px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+          className="rounded-lg bg-white px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
         >
           +
         </button>
@@ -192,7 +192,7 @@ export function EinkaufClient({ slug, wgName, meId }: Props) {
             <div className="mt-6">
               <button
                 onClick={() => setShowDone((v) => !v)}
-                className="mb-2 flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-gray-500 hover:text-accent"
+                className="mb-2 flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-gray-500 hover:text-white"
               >
                 {showDone ? "▼" : "▶"} Erledigt ({done.length})
               </button>
@@ -207,7 +207,7 @@ export function EinkaufClient({ slug, wgName, meId }: Props) {
                         type="checkbox"
                         checked
                         onChange={() => toggleDone(item)}
-                        className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-accent"
+                        className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-white"
                       />
                       <span className="flex-1 text-sm text-gray-400 line-through">
                         {item.text}
@@ -293,7 +293,7 @@ function ItemRow({
           type="checkbox"
           checked={item.done}
           onChange={onToggleDone}
-          className="h-5 w-5 rounded border-gray-600 bg-gray-900 text-accent"
+          className="h-5 w-5 rounded border-gray-600 bg-gray-900 text-white"
         />
         {isEditing ? (
           <input
@@ -351,7 +351,7 @@ function ItemRow({
                 <div key={c.id} className="text-xs">
                   <div className="flex items-baseline justify-between gap-2">
                     <p>
-                      <span className="font-medium text-accent">
+                      <span className="font-medium text-white">
                         {c.author.name}
                       </span>
                       <span className="ml-1 text-[10px] text-gray-600">
@@ -380,12 +380,12 @@ function ItemRow({
               onKeyDown={(e) => e.key === "Enter" && addComment()}
               placeholder="Kommentar / Notiz (z.B. 'Marke X', '500g')"
               maxLength={500}
-              className="flex-1 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-accent focus:outline-none"
+              className="flex-1 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-white/50 focus:outline-none"
             />
             <button
               onClick={addComment}
               disabled={!newComment.trim()}
-              className="rounded bg-accent px-2 py-1 text-[10px] font-bold uppercase text-black hover:brightness-110 disabled:opacity-50"
+              className="rounded bg-white px-2 py-1 text-[10px] font-bold uppercase text-black hover:brightness-90 disabled:opacity-50"
             >
               ↵
             </button>

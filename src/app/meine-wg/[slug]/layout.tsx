@@ -1,8 +1,7 @@
-import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { WgBackground } from "@/components/WgBackground";
 
-// Layout fuer den "Meine WG"-Bereich: schwarzer Hintergrund mit
-// weiss-leuchtenden Partikeln + Glow-Spots wie auf den anderen Tabs,
-// nur in monochromem Weiss.
+// Schwarzer Hintergrund mit nur weiss-leuchtenden, fliegenden Partikeln.
+// Keine Glow-Spots, keine Themen-Farbe.
 export default function MeineWgSlugLayout({
   children,
 }: {
@@ -10,7 +9,7 @@ export default function MeineWgSlugLayout({
 }) {
   return (
     <>
-      <AnimatedBackground glowClass="glow-white" showIcon={false} />
+      <WgBackground />
       {children}
     </>
   );

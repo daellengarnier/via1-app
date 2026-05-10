@@ -27,7 +27,7 @@ export default async function MeineWgIndexPage() {
 
   return (
     <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-      <h1 className="mb-1 font-cinzel text-3xl text-accent">Meine WG</h1>
+      <h1 className="mb-1 font-cinzel text-3xl text-white">Meine WG</h1>
       <p className="mb-6 text-xs text-gray-500">
         Du hast keinem Zimmer zugewiesen — waehle die WG aus, in die du rein
         willst.
@@ -37,7 +37,7 @@ export default async function MeineWgIndexPage() {
           <a
             key={w.id}
             href={`/meine-wg/${wgSlug(w.name)}`}
-            className="block rounded-lg border border-gray-800 bg-white/5 px-4 py-3 hover:border-accent"
+            className="block rounded-lg border border-gray-800 bg-white/5 px-4 py-3 hover:border-white/50"
           >
             <p className="font-medium text-white">{w.name}</p>
             <p className="font-mono text-[10px] text-gray-500">

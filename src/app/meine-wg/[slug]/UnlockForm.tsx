@@ -64,7 +64,7 @@ export function UnlockForm({ wgSlug, wgName }: UnlockFormProps) {
       <button
         type="submit"
         disabled={busy || !password}
-        className="w-full rounded-lg bg-secondary px-4 py-2 font-mono text-sm font-bold text-white hover:brightness-110 disabled:opacity-50"
+        className="w-full rounded-lg bg-secondary px-4 py-2 font-mono text-sm font-bold text-white hover:brightness-90 disabled:opacity-50"
       >
         {busy ? "..." : "Entsperren"}
       </button>

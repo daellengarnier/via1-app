@@ -184,13 +184,13 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
               key={day}
               className={`rounded-xl border p-3 ${
                 isToday
-                  ? "border-accent/50 bg-accent/5"
+                  ? "border-white/50 bg-white/5"
                   : "border-gray-800 bg-gray-900/30"
               }`}
             >
               <p
                 className={`mb-2 font-mono text-xs font-bold uppercase tracking-wider ${
-                  isToday ? "text-accent" : "text-gray-400"
+                  isToday ? "text-white" : "text-gray-400"
                 }`}
               >
                 {formatDateLabel(day, data.today)}
@@ -324,7 +324,7 @@ function SlotBox({
         </p>
         <button
           onClick={onIchKoche}
-          className="rounded-md bg-accent px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-black hover:brightness-110"
+          className="rounded-md bg-white px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-black hover:brightness-90"
         >
           🍳 Ich koche!
         </button>
@@ -440,10 +440,10 @@ function EintragCard({
             onClick={onSignup}
             className={`rounded-md px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider ${
               myStatus === "going"
-                ? "border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20"
+                ? "border border-white/50 bg-white/10 text-white hover:bg-white/20"
                 : myStatus === "declined"
                   ? "border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
-                  : "bg-accent text-black hover:brightness-110"
+                  : "bg-white text-black hover:brightness-90"
             }`}
           >
             {myStatus === "going"
@@ -459,7 +459,7 @@ function EintragCard({
         <div className="mt-2 space-y-1.5">
           {going.length > 0 && (
             <div>
-              <p className="font-mono text-[9px] uppercase tracking-wider text-accent">
+              <p className="font-mono text-[9px] uppercase tracking-wider text-white">
                 dabei ({going.length})
               </p>
               <div className="mt-0.5 flex flex-wrap gap-1">
@@ -518,12 +518,12 @@ function SignupBadge({ signup, kinder }: { signup: Signup; kinder: Kind[] }) {
   if (signup.guests > 0) extras.push(`+${signup.guests} Gast${signup.guests > 1 ? "e" : ""}`);
   return (
     <span
-      className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] text-accent"
+      className="rounded-full border border-white/40 bg-white/10 px-2 py-0.5 text-[10px] text-white"
       title={signup.notes ?? undefined}
     >
       {signup.user.name}
       {extras.length > 0 && (
-        <span className="text-accent/70"> + {extras.join(", ")}</span>
+        <span className="text-white/70"> + {extras.join(", ")}</span>
       )}
     </span>
   );
@@ -615,7 +615,7 @@ function CookModal({
                 onClick={() => setSlot(s)}
                 className={`rounded-lg py-2 font-mono text-xs font-bold uppercase tracking-wider ${
                   slot === s
-                    ? "bg-accent text-black"
+                    ? "bg-white text-black"
                     : "border border-gray-700 bg-gray-900 text-gray-400"
                 }`}
               >
@@ -632,7 +632,7 @@ function CookModal({
           value={menu}
           onChange={(e) => setMenu(e.target.value)}
           placeholder="z.B. Pasta mit Pesto"
-          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-white/50 focus:outline-none"
           autoFocus
         />
         <div className="mt-2 flex flex-wrap gap-1">
@@ -655,7 +655,7 @@ function CookModal({
               key={t.id}
               type="button"
               onClick={() => applyTemplate(t)}
-              className="rounded-full border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-300 hover:border-accent hover:text-accent"
+              className="rounded-full border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-300 hover:border-white/50 hover:text-white"
               title="Eigene Vorlage"
             >
               ⭐ {t.title}
@@ -673,8 +673,8 @@ function CookModal({
               onClick={() => setTime(p)}
               className={`rounded-md border px-2 py-1 font-mono text-xs ${
                 time === p
-                  ? "border-accent bg-accent text-black"
-                  : "border-gray-700 bg-gray-900 text-gray-300 hover:border-accent"
+                  ? "border-white/50 bg-white text-black"
+                  : "border-gray-700 bg-gray-900 text-gray-300 hover:border-white/50"
               }`}
             >
               {p}
@@ -685,7 +685,7 @@ function CookModal({
           type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
-          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-white/50 focus:outline-none"
         />
       </Field>
 
@@ -694,7 +694,7 @@ function CookModal({
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-white/50 focus:outline-none"
         />
       </Field>
 
@@ -703,7 +703,7 @@ function CookModal({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={2}
-          className="w-full resize-none rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          className="w-full resize-none rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-white/50 focus:outline-none"
           placeholder="z.B. 'bringt jemand Salat?'"
         />
       </Field>
@@ -714,7 +714,7 @@ function CookModal({
         <button
           onClick={save}
           disabled={busy}
-          className="flex-1 rounded-lg bg-accent px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+          className="flex-1 rounded-lg bg-white px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
         >
           {busy ? "..." : editing ? "Speichern" : "🍳 Los geht's!"}
         </button>
@@ -809,7 +809,7 @@ function SignupModal({
           onClick={() => setStatus("going")}
           className={`rounded-lg py-3 font-mono text-xs font-bold uppercase tracking-wider ${
             status === "going"
-              ? "bg-accent text-black"
+              ? "bg-white text-black"
               : "border border-gray-700 bg-gray-900 text-gray-400"
           }`}
         >
@@ -839,7 +839,7 @@ function SignupModal({
                 onClick={() => toggleChild(k.id)}
                 className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 font-mono text-sm font-bold uppercase tracking-wider ${
                   checked
-                    ? "bg-accent/20 text-accent ring-1 ring-accent"
+                    ? "bg-white/20 text-white ring-1 ring-accent"
                     : "border border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-500"
                 }`}
               >
@@ -867,7 +867,7 @@ function SignupModal({
           onChange={(e) => setNotes(e.target.value)}
           maxLength={200}
           placeholder="optional"
-          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-white/50 focus:outline-none"
         />
       </Field>
 
@@ -875,7 +875,7 @@ function SignupModal({
         <button
           onClick={save}
           disabled={busy}
-          className="flex-1 rounded-lg bg-accent px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+          className="flex-1 rounded-lg bg-white px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
         >
           {existing ? "Aktualisieren" : "Speichern"}
         </button>
@@ -1017,7 +1017,7 @@ function TemplatesModal({
         <button
           onClick={add}
           disabled={busy || !title.trim()}
-          className="w-full rounded bg-secondary px-3 py-1.5 font-mono text-xs font-bold uppercase text-white hover:brightness-110 disabled:opacity-50"
+          className="w-full rounded bg-secondary px-3 py-1.5 font-mono text-xs font-bold uppercase text-white hover:brightness-90 disabled:opacity-50"
         >
           + Vorlage anlegen
         </button>
@@ -1131,7 +1131,7 @@ function KinderModal({
                 onClick={() => toggleParent(m.id)}
                 className={`rounded-full border px-2 py-0.5 text-[10px] ${
                   checked
-                    ? "border-accent bg-accent/20 text-accent"
+                    ? "border-white/50 bg-white/20 text-white"
                     : "border-gray-700 bg-gray-900 text-gray-400"
                 }`}
               >
@@ -1144,7 +1144,7 @@ function KinderModal({
         <button
           onClick={add}
           disabled={busy || !name.trim()}
-          className="w-full rounded bg-secondary px-3 py-1.5 font-mono text-xs font-bold uppercase text-white hover:brightness-110 disabled:opacity-50"
+          className="w-full rounded bg-secondary px-3 py-1.5 font-mono text-xs font-bold uppercase text-white hover:brightness-90 disabled:opacity-50"
         >
           + Kind anlegen
         </button>
@@ -1216,7 +1216,7 @@ function KindRow({
                 onClick={() => toggle(m.id)}
                 className={`rounded-full border px-2 py-0.5 text-[10px] ${
                   checked
-                    ? "border-accent bg-accent/20 text-accent"
+                    ? "border-white/50 bg-white/20 text-white"
                     : "border-gray-700 bg-gray-900 text-gray-400"
                 }`}
               >
@@ -1250,7 +1250,7 @@ function Modal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-cinzel text-lg text-accent">{title}</h2>
+          <h2 className="font-cinzel text-lg text-white">{title}</h2>
           <button
             onClick={onClose}
             className="text-xl text-gray-500 hover:text-white"
@@ -1296,7 +1296,7 @@ function Counter({
       <div className="flex items-center gap-2">
         <button
           onClick={() => onChange(Math.max(0, value - 1))}
-          className="h-8 w-8 rounded-full border border-gray-700 bg-gray-900 text-lg text-white hover:border-accent disabled:opacity-30"
+          className="h-8 w-8 rounded-full border border-gray-700 bg-gray-900 text-lg text-white hover:border-white/50 disabled:opacity-30"
           disabled={value === 0}
         >
           −
@@ -1306,7 +1306,7 @@ function Counter({
         </span>
         <button
           onClick={() => onChange(Math.min(20, value + 1))}
-          className="h-8 w-8 rounded-full border border-gray-700 bg-gray-900 text-lg text-white hover:border-accent"
+          className="h-8 w-8 rounded-full border border-gray-700 bg-gray-900 text-lg text-white hover:border-white/50"
         >
           +
         </button>

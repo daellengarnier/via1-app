@@ -121,7 +121,7 @@ export function WgTermineClient({ slug, wgName }: Props) {
         </button>
         <button
           onClick={() => setShowAddDoodle(true)}
-          className="rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-accent hover:bg-accent/20"
+          className="rounded-lg border border-white/40 bg-white/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-white hover:bg-white/20"
         >
           🗓 + Doodle
         </button>
@@ -227,7 +227,7 @@ function TerminRow({ termin, slug }: { termin: Termin; slug: string }) {
   return (
     <Link
       href={`/meine-wg/${slug}/termine/${termin.id}`}
-      className="block rounded-xl border border-gray-800 bg-gray-900/40 p-3 hover:border-accent"
+      className="block rounded-xl border border-gray-800 bg-gray-900/40 p-3 hover:border-white/50"
     >
       <p className="font-medium text-white">{termin.title}</p>
       <p className="font-mono text-[10px] uppercase tracking-wider text-secondary">
@@ -255,7 +255,7 @@ function DoodleRow({
   return (
     <Link
       href={`/meine-wg/${slug}/doodle/${doodle.id}`}
-      className="block rounded-xl border border-accent/30 bg-accent/5 p-3 hover:border-accent"
+      className="block rounded-xl border border-white/30 bg-white/5 p-3 hover:border-white/50"
     >
       <p className="font-medium text-white">🗓 {doodle.title}</p>
       <p className="text-[11px] text-gray-500">
@@ -320,41 +320,41 @@ function AddTerminModal({
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Titel (z.B. WG-Sitzung)"
         autoFocus
-        className="mb-2 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+        className="mb-2 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-white/50 focus:outline-none"
       />
       <div className="mb-2 flex gap-2">
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-white/50 focus:outline-none"
         />
         <input
           type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
-          className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-white/50 focus:outline-none"
         />
       </div>
       <input
         value={location}
         onChange={(e) => setLocation(e.target.value)}
         placeholder="Ort (optional)"
-        className="mb-2 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+        className="mb-2 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-white/50 focus:outline-none"
       />
       <textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         rows={2}
         placeholder="Beschreibung (optional)"
-        className="mb-3 w-full resize-none rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+        className="mb-3 w-full resize-none rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-white/50 focus:outline-none"
       />
       {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
       <div className="flex gap-2">
         <button
           onClick={save}
           disabled={busy}
-          className="flex-1 rounded-lg bg-accent px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+          className="flex-1 rounded-lg bg-white px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
         >
           {busy ? "..." : "Anlegen"}
         </button>
@@ -506,7 +506,7 @@ function AddDoodleModal({
       </div>
       <button
         onClick={addOption}
-        className="mb-3 w-full rounded border border-dashed border-gray-700 px-3 py-1.5 font-mono text-[10px] uppercase text-gray-400 hover:border-accent hover:text-accent"
+        className="mb-3 w-full rounded border border-dashed border-gray-700 px-3 py-1.5 font-mono text-[10px] uppercase text-gray-400 hover:border-white/50 hover:text-white"
       >
         + Option
       </button>
@@ -516,7 +516,7 @@ function AddDoodleModal({
         <button
           onClick={save}
           disabled={busy}
-          className="flex-1 rounded-lg bg-accent px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
+          className="flex-1 rounded-lg bg-white px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-90 disabled:opacity-50"
         >
           {busy ? "..." : "Erstellen"}
         </button>
@@ -549,7 +549,7 @@ function ModalShell({
         className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-gray-800 bg-gray-950 p-4 sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-3 font-cinzel text-lg text-accent">{title}</h2>
+        <h2 className="mb-3 font-cinzel text-lg text-white">{title}</h2>
         {children}
       </div>
     </div>
