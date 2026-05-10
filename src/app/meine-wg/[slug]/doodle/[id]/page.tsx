@@ -17,7 +17,7 @@ interface Props {
 export default async function DoodleDetailPage({ params }: Props) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
-  if (!(session.user.roles ?? []).includes("ADMIN")) redirect("/");
+  // Admin-Restriction wurde entfernt — alle eingeloggten User duerfen rein
 
   const allWgs = await prisma.wg.findMany();
   const wg = allWgs.find((w) => wgSlug(w.name) === params.slug);
