@@ -36,7 +36,7 @@ export function WgPageHeader({
         </Link>
       )}
 
-      <h1 className="wg-title-gradient font-caveat text-5xl font-bold leading-none tracking-tight sm:text-6xl">
+      <h1 className="wg-title-gradient font-heading text-4xl font-semibold italic leading-tight tracking-tight sm:text-5xl">
         {title}
       </h1>
 
