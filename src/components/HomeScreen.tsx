@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { TabHeader } from "./TabHeader";
 import { LaundryTimers } from "./LaundryTimers";
+import { SaunaSparkline } from "./SaunaChart";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { usePutzplan } from "@/lib/putzplan-store";
 
@@ -673,6 +674,7 @@ export default function HomeScreen() {
                     : "kalt"
                 : `vor ${Math.round((saunaAgeSec ?? 0) / 60)} Min`}
           </p>
+          <SaunaSparkline />
         </div>
         <div
           className="cursor-pointer rounded-xl border border-yellow-400/15 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-yellow-400/30 hover:shadow-[0_0_20px_rgba(255,220,50,0.1)]"

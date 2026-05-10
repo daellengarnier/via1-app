@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { TabHeader } from "@/components/TabHeader";
+import { SaunaChart } from "@/components/SaunaChart";
 
 const saunaSections = [
   {
@@ -271,6 +272,9 @@ export default function SaunaPage() {
           </p>
         </div>
       )}
+
+      {/* Verlauf */}
+      <SaunaChart hours={2} className="mb-6" />
 
       {/* Sauna-Reglement */}
       <div className="mt-8">
