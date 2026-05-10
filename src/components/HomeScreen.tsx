@@ -109,7 +109,17 @@ export default function HomeScreen() {
   const [userName, setUserName] = useState(session?.user?.name ?? "");
   const [kaffeeState] = useCurrentKaffee();
   const currentKaffee = kaffeeState.kaffee;
-  const [, , putzCurrentWg] = usePutzplan();
+  const [putzRotation, , putzCurrentWg] = usePutzplan();
+  const putzLastCompletedDate = [...putzRotation]
+    .map((r) => r.completedAt)
+    .filter((d): d is string => d !== null)
+    .sort((a, b) => b.localeCompare(a))[0];
+  const putzDaysSince = putzLastCompletedDate
+    ? Math.floor(
+        (Date.now() - new Date(putzLastCompletedDate).getTime()) /
+          (24 * 60 * 60 * 1000)
+      )
+    : null;
   const [saunaTemp, setSaunaTemp] = useState<number | null>(null);
   const [saunaLive, setSaunaLive] = useState(false);
   const [saunaAgeSec, setSaunaAgeSec] = useState<number | null>(null);
@@ -703,6 +713,30 @@ export default function HomeScreen() {
           <p className="mt-1 break-words text-sm font-semibold leading-tight text-white">
             {putzCurrentWg ?? "—"}
           </p>
+          {putzLastCompletedDate ? (
+            <p className="mt-1 text-[10px] leading-tight text-gray-500">
+              zuletzt:{" "}
+              {new Date(putzLastCompletedDate).toLocaleDateString("de-CH", {
+                day: "2-digit",
+                month: "2-digit",
+              })}
+              {putzDaysSince !== null && (
+                <span className="text-gray-600">
+                  {" "}
+                  ·{" "}
+                  {putzDaysSince === 0
+                    ? "heute"
+                    : putzDaysSince === 1
+                      ? "vor 1 Tag"
+                      : `vor ${putzDaysSince} T.`}
+                </span>
+              )}
+            </p>
+          ) : (
+            <p className="mt-1 text-[10px] italic text-gray-600">
+              noch nicht erfasst
+            </p>
+          )}
         </div>
       </div>
 
