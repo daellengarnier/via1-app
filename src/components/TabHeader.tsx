@@ -52,7 +52,7 @@ export function TabHeader({
       {/* Einheitlicher Abstand: gross mit Icon, minimal ohne */}
       {showIcon && <div className="h-36" />}
       {title && (
-        <h1 className={`mb-5 text-center font-cinzel text-2xl ${text}`}>
+        <h1 className={`mb-5 text-center font-display font-bold uppercase tracking-wider text-2xl ${text}`}>
           {title}
         </h1>
       )}

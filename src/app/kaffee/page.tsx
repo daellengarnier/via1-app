@@ -415,7 +415,7 @@ export default function KaffeePage() {
           fetchPriority="high"
         />
       </div>
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-amber-200">
+      <h1 className="mb-1 text-center font-display font-bold uppercase tracking-wider text-3xl text-amber-200">
         Kaffee-Abo
       </h1>
       <p className="mb-6 text-center text-sm text-gray-500">Hauseigene Kaffeemaschine</p>

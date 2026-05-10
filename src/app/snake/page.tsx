@@ -79,7 +79,7 @@ export default function SnakePage() {
       {/* Titel — zentriert zwischen den linken und rechten Floating-Badges,
            keine Buttons hier (waeren von den Badges verdeckt) */}
       <div className="shrink-0 px-28 pt-4 pb-1 text-center">
-        <p className="font-cinzel text-2xl text-cyan-300">Snake</p>
+        <p className="font-display font-bold uppercase tracking-wider text-2xl text-cyan-300">Snake</p>
       </div>
 
       {/* Score-Bar mit zentralem Top-20-Button, klar klickbar */}

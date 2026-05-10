@@ -123,7 +123,7 @@ export default function PutzplanPage() {
   if (loading) {
     return (
       <div className="p-4 pb-20">
-        <h1 className="mb-6 text-center font-cinzel text-3xl text-accent">
+        <h1 className="mb-6 text-center font-display font-bold uppercase tracking-wider text-3xl text-accent">
           Putzdienst
         </h1>
         <p className="text-center text-sm text-gray-600">Lade…</p>
@@ -133,7 +133,7 @@ export default function PutzplanPage() {
 
   return (
     <div className="p-4 pb-20">
-      <h1 className="mb-6 text-center font-cinzel text-3xl text-accent">
+      <h1 className="mb-6 text-center font-display font-bold uppercase tracking-wider text-3xl text-accent">
         Putzdienst
       </h1>
 

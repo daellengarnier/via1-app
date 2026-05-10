@@ -27,7 +27,7 @@ export default async function MeineWgIndexPage() {
 
   return (
     <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-      <h1 className="mb-1 font-cinzel text-3xl text-white">Meine WG</h1>
+      <h1 className="mb-1 font-display font-bold uppercase tracking-wider text-3xl text-white">Meine WG</h1>
       <p className="mb-6 text-xs text-gray-500">
         Du hast keinem Zimmer zugewiesen — waehle die WG aus, in die du rein
         willst.

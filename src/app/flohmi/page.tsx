@@ -252,7 +252,7 @@ export default function FlohmiPage() {
           fetchPriority="high"
         />
       </div>
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-pink-300">
+      <h1 className="mb-1 text-center font-display font-bold uppercase tracking-wider text-3xl text-pink-300">
         Flohmi
       </h1>
       <p className="mb-4 text-center text-sm text-pink-300/70">

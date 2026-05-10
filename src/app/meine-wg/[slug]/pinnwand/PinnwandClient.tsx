@@ -324,7 +324,7 @@ function AddNoteModal({
         className="w-full max-w-md rounded-t-2xl border border-gray-800 bg-gray-950 p-4 sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-3 font-cinzel text-lg text-white">Neuer Post-It</h2>
+        <h2 className="mb-3 font-display font-bold uppercase tracking-wider text-lg text-white">Neuer Post-It</h2>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}

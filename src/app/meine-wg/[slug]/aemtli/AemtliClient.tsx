@@ -251,7 +251,7 @@ export function AemtliClient({ slug, wgName, meId }: Props) {
             <div className="mx-auto mt-3 flex h-16 w-16 items-center justify-center rounded-full border border-white/30 bg-white/10 text-2xl font-bold text-white">
               {data.currentUser.name.charAt(0).toUpperCase()}
             </div>
-            <p className="mt-3 font-cinzel text-2xl text-white">
+            <p className="mt-3 font-display font-bold uppercase tracking-wider text-2xl text-white">
               {data.currentUser.name}
             </p>
           </>

@@ -85,7 +85,7 @@ export default function BilderPage() {
           fetchPriority="high"
         />
       </div>
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-gray-200">
+      <h1 className="mb-1 text-center font-display font-bold uppercase tracking-wider text-3xl text-gray-200">
         Bilder
       </h1>
       <p className="mb-6 text-center text-sm text-gray-500">

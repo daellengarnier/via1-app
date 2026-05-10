@@ -68,7 +68,7 @@ function LoginContent() {
           />
         </div>
 
-        <h1 className="mb-1 text-center font-cinzel text-4xl text-accent">
+        <h1 className="mb-1 text-center font-display font-bold uppercase tracking-wider text-4xl text-accent">
           Via 1
         </h1>
         <p className="mb-8 text-center text-sm text-gray-500">Anmelden</p>
