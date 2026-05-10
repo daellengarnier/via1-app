@@ -19,7 +19,7 @@ export function isRoundComplete(rotation: PutzRunde[]): boolean {
 
 export function usePutzplan(): [
   PutzRunde[],
-  (wg: string) => Promise<void>,
+  (wg: string, completedAt?: string) => Promise<void>,
   string | null,
   boolean,
 ] {
@@ -43,12 +43,16 @@ export function usePutzplan(): [
     load();
   }, [load]);
 
-  async function markComplete(wg: string) {
+  async function markComplete(wg: string, completedAt?: string) {
     try {
       const res = await fetch("/api/putzplan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "complete", wg }),
+        body: JSON.stringify({
+          action: "complete",
+          wg,
+          ...(completedAt ? { completedAt } : {}),
+        }),
       });
       if (!res.ok) return;
       const data = (await res.json()) as PutzRunde[];
