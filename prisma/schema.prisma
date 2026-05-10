@@ -610,6 +610,7 @@ model Wg {
   passwordSetBy       User?     @relation("WgPasswordSetter", fields: [passwordSetById], references: [id], onDelete: SetNull)
   kochTemplates       WgKochTemplate[]
   kochEintraege       WgKochEintrag[]
+  kochKinder          WgKochKind[]
   einkauf             WgEinkauf[]
   aemtli              WgAemtli[]
   termine             WgTermin[]
@@ -652,19 +653,33 @@ model WgKochEintrag {
 }
 
 model WgKochSignup {
-  id        String        @id @default(cuid())
-  eintragId String
-  eintrag   WgKochEintrag @relation(fields: [eintragId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  adults    Int           @default(1)
-  kids      Int           @default(0)
-  guests    Int           @default(0)
-  notes     String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id          String        @id @default(cuid())
+  eintragId   String
+  eintrag     WgKochEintrag @relation(fields: [eintragId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      String        @default("going") // "going" | "declined"
+  childrenIds String[]      @default([])      // IDs aus WgKochKind
+  guests      Int           @default(0)        // optionale Gaeste-Anzahl
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@unique([eintragId, userId])
+}
+
+// Kinder pro WG: keine eigenen User-Accounts, sondern als
+// Mit-Esser beim Eltern-Account beim Kochplan-Sign-up auswaehlbar.
+model WgKochKind {
+  id        String   @id @default(cuid())
+  wgId      String
+  wg        Wg       @relation(fields: [wgId], references: [id], onDelete: Cascade)
+  name      String
+  parentIds String[] @default([]) // User-IDs der Eltern
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([wgId])
 }
 
 model WgEinkauf {

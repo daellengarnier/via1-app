@@ -3,8 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireWgAccess } from "@/lib/wg-access";
 
 interface SignupBody {
-  adults?: number;
-  kids?: number;
+  status?: "going" | "declined";
+  childrenIds?: string[];
   guests?: number;
   notes?: string | null;
 }
@@ -16,7 +16,7 @@ function clampInt(v: unknown, min: number, max: number, fallback: number): numbe
 }
 
 // PUT /api/meine-wg/[slug]/kochplan/eintraege/[id]/signup
-// Erstellt oder aktualisiert die eigene Anmeldung.
+// Bin-dabei oder Kann-nicht. Bei "going" optional Kinder + Gaeste.
 export async function PUT(
   req: Request,
   { params }: { params: { slug: string; id: string } }
@@ -32,18 +32,27 @@ export async function PUT(
   }
 
   const body = (await req.json().catch(() => null)) as SignupBody | null;
-  const adults = clampInt(body?.adults, 0, 20, 1);
-  const kids = clampInt(body?.kids, 0, 20, 0);
-  const guests = clampInt(body?.guests, 0, 20, 0);
+  const status = body?.status === "declined" ? "declined" : "going";
+
+  let childrenIds: string[] = [];
+  if (status === "going" && Array.isArray(body?.childrenIds)) {
+    // Sanity-Check: Children muessen in dieser WG existieren und der User
+    // muss als Parent eingetragen sein
+    const validKinder = await prisma.wgKochKind.findMany({
+      where: {
+        wgId: access.wg.id,
+        id: { in: body.childrenIds.filter((x) => typeof x === "string") },
+      },
+    });
+    childrenIds = validKinder
+      .filter((k) => k.parentIds.includes(access.user.id))
+      .map((k) => k.id);
+  }
+
+  const guests =
+    status === "going" ? clampInt(body?.guests, 0, 20, 0) : 0;
   const notes =
     typeof body?.notes === "string" ? body.notes.trim().slice(0, 200) || null : null;
-
-  if (adults + kids + guests === 0) {
-    return NextResponse.json(
-      { error: "Mindestens eine Person muss angemeldet sein." },
-      { status: 400 }
-    );
-  }
 
   await prisma.wgKochSignup.upsert({
     where: {
@@ -52,19 +61,19 @@ export async function PUT(
     create: {
       eintragId: eintrag.id,
       userId: access.user.id,
-      adults,
-      kids,
+      status,
+      childrenIds,
       guests,
       notes,
     },
-    update: { adults, kids, guests, notes },
+    update: { status, childrenIds, guests, notes },
   });
 
   return NextResponse.json({ ok: true });
 }
 
 // DELETE /api/meine-wg/[slug]/kochplan/eintraege/[id]/signup
-// Eigene Anmeldung loeschen.
+// Eigenen Status entfernen (zurueck zu "noch nicht geantwortet")
 export async function DELETE(
   _req: Request,
   { params }: { params: { slug: string; id: string } }

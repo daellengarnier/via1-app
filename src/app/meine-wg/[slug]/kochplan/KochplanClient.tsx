@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { COOKING_PRESETS } from "@/lib/wg-koch-presets";
 
 interface Person {
   id: string;
@@ -9,11 +10,17 @@ interface Person {
   avatar: string | null;
 }
 
+interface Kind {
+  id: string;
+  name: string;
+  parentIds: string[];
+}
+
 interface Signup {
   id: string;
   user: Person;
-  adults: number;
-  kids: number;
+  status: "going" | "declined";
+  childrenIds: string[];
   guests: number;
   notes: string | null;
 }
@@ -41,6 +48,8 @@ interface ApiData {
   today: string;
   from: string;
   to: string;
+  members: Person[];
+  kinder: Kind[];
   eintraege: Eintrag[];
   templates: Template[];
 }
@@ -70,9 +79,10 @@ function formatDateLabel(iso: string, todayIso: string): string {
 export function KochplanClient({ slug, wgName, meId, meName }: Props) {
   const [data, setData] = useState<ApiData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState<string | null>(null); // date iso
+  const [showAdd, setShowAdd] = useState<string | null>(null);
   const [showSignup, setShowSignup] = useState<Eintrag | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showKinder, setShowKinder] = useState(false);
   const [editing, setEditing] = useState<Eintrag | null>(null);
 
   const load = useCallback(async () => {
@@ -92,7 +102,6 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
     load();
   }, [load]);
 
-  // Gruppiere Eintraege pro Tag
   const byDay = useMemo(() => {
     if (!data) return new Map<string, Eintrag[]>();
     const map = new Map<string, Eintrag[]>();
@@ -104,7 +113,6 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
     return map;
   }, [data]);
 
-  // Volle Tagesreihe (auch ohne Eintraege) zwischen from und to
   const days = useMemo(() => {
     if (!data) return [] as string[];
     const out: string[] = [];
@@ -140,12 +148,20 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
           </Link>
           <h1 className="font-cinzel text-3xl text-accent">🍳 Kochplan</h1>
         </div>
-        <button
-          onClick={() => setShowTemplates(true)}
-          className="rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-300 hover:border-accent hover:text-accent"
-        >
-          Vorlagen
-        </button>
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={() => setShowTemplates(true)}
+            className="rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-300 hover:border-accent hover:text-accent"
+          >
+            Vorlagen
+          </button>
+          <button
+            onClick={() => setShowKinder(true)}
+            className="rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-300 hover:border-accent hover:text-accent"
+          >
+            Kinder
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -191,6 +207,8 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
                       key={e.id}
                       e={e}
                       meId={meId}
+                      members={data.members}
+                      kinder={data.kinder}
                       onSignup={() => setShowSignup(e)}
                       onEdit={() => {
                         setShowAdd(null);
@@ -237,6 +255,7 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
           slug={slug}
           eintrag={showSignup}
           meId={meId}
+          kinder={data.kinder}
           onClose={() => setShowSignup(null)}
           onSaved={() => {
             setShowSignup(null);
@@ -253,6 +272,16 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
           onChanged={load}
         />
       )}
+
+      {showKinder && (
+        <KinderModal
+          slug={slug}
+          kinder={data.kinder}
+          members={data.members}
+          onClose={() => setShowKinder(false)}
+          onChanged={load}
+        />
+      )}
     </div>
   );
 }
@@ -260,24 +289,34 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
 function EintragCard({
   e,
   meId,
+  members,
+  kinder,
   onSignup,
   onEdit,
   onDelete,
 }: {
   e: Eintrag;
   meId: string;
+  members: Person[];
+  kinder: Kind[];
   onSignup: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const totalPpl = e.signups.reduce(
-    (sum, s) => sum + s.adults + s.kids + s.guests,
-    0
-  );
-  const totalAdults = e.signups.reduce((s, x) => s + x.adults, 0);
-  const totalKids = e.signups.reduce((s, x) => s + x.kids, 0);
-  const totalGuests = e.signups.reduce((s, x) => s + x.guests, 0);
+  const going = e.signups.filter((s) => s.status === "going");
+  const declined = e.signups.filter((s) => s.status === "declined");
+  const respondedIds = new Set(e.signups.map((s) => s.user.id));
+  // Cook gilt automatisch als dabei → von noResponse ausschliessen
+  if (e.cook) respondedIds.add(e.cook.id);
+  const noResponse = members.filter((m) => !respondedIds.has(m.id));
+
+  const totalAdults = going.length + (e.cook ? 1 : 0);
+  const totalKids = going.reduce((sum, s) => sum + s.childrenIds.length, 0);
+  const totalGuests = going.reduce((sum, s) => sum + s.guests, 0);
+  const total = totalAdults + totalKids + totalGuests;
+
   const mySignup = e.signups.find((s) => s.user.id === meId);
+  const myStatus = mySignup?.status ?? null;
 
   return (
     <div className="rounded-lg border border-gray-800 bg-black/40 p-3">
@@ -318,9 +357,9 @@ function EintragCard({
 
       <div className="mt-2 flex items-center justify-between gap-2">
         <div className="text-[11px] text-gray-400">
-          {totalPpl > 0 ? (
+          {total > 0 ? (
             <>
-              <span className="font-bold text-white">{totalPpl}</span> dabei
+              <span className="font-bold text-white">{total}</span> dabei
               <span className="ml-1 text-gray-600">
                 ({totalAdults}E
                 {totalKids > 0 ? ` + ${totalKids}K` : ""}
@@ -334,37 +373,92 @@ function EintragCard({
         <button
           onClick={onSignup}
           className={`rounded-md px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider ${
-            mySignup
+            myStatus === "going"
               ? "border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20"
-              : "bg-accent text-black hover:brightness-110"
+              : myStatus === "declined"
+                ? "border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                : "bg-accent text-black hover:brightness-110"
           }`}
         >
-          {mySignup ? "✓ angemeldet" : "anmelden"}
+          {myStatus === "going"
+            ? "✓ dabei"
+            : myStatus === "declined"
+              ? "✗ kann nicht"
+              : "antworten"}
         </button>
       </div>
 
-      {e.signups.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {e.signups.map((s) => (
-            <span
-              key={s.id}
-              className="rounded-full border border-gray-700 bg-gray-900 px-2 py-0.5 text-[10px] text-gray-300"
-              title={s.notes ?? undefined}
-            >
-              {s.user.name}
-              {s.adults + s.kids + s.guests > 1 && (
-                <span className="text-gray-500">
-                  {" "}
-                  ({s.adults}
-                  {s.kids > 0 ? `+${s.kids}K` : ""}
-                  {s.guests > 0 ? `+${s.guests}G` : ""})
-                </span>
-              )}
-            </span>
-          ))}
+      {(going.length > 0 || declined.length > 0 || noResponse.length > 0) && (
+        <div className="mt-2 space-y-1.5">
+          {going.length > 0 && (
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-wider text-accent">
+                dabei ({going.length})
+              </p>
+              <div className="mt-0.5 flex flex-wrap gap-1">
+                {going.map((s) => (
+                  <SignupBadge key={s.id} signup={s} kinder={kinder} />
+                ))}
+              </div>
+            </div>
+          )}
+          {declined.length > 0 && (
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-wider text-red-400/70">
+                kann nicht ({declined.length})
+              </p>
+              <div className="mt-0.5 flex flex-wrap gap-1">
+                {declined.map((s) => (
+                  <span
+                    key={s.id}
+                    className="rounded-full border border-red-500/30 bg-red-500/5 px-2 py-0.5 text-[10px] text-red-300/80"
+                    title={s.notes ?? undefined}
+                  >
+                    {s.user.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {noResponse.length > 0 && (
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-wider text-gray-500">
+                noch keine Antwort ({noResponse.length})
+              </p>
+              <div className="mt-0.5 flex flex-wrap gap-1">
+                {noResponse.map((m) => (
+                  <span
+                    key={m.id}
+                    className="rounded-full border border-gray-700 bg-transparent px-2 py-0.5 text-[10px] text-gray-500"
+                  >
+                    {m.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
+  );
+}
+
+function SignupBadge({ signup, kinder }: { signup: Signup; kinder: Kind[] }) {
+  const childNames = signup.childrenIds
+    .map((cid) => kinder.find((k) => k.id === cid)?.name)
+    .filter((n): n is string => !!n);
+  const extras: string[] = [...childNames];
+  if (signup.guests > 0) extras.push(`+${signup.guests} Gast${signup.guests > 1 ? "e" : ""}`);
+  return (
+    <span
+      className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] text-accent"
+      title={signup.notes ?? undefined}
+    >
+      {signup.user.name}
+      {extras.length > 0 && (
+        <span className="text-accent/70"> + {extras.join(", ")}</span>
+      )}
+    </span>
   );
 }
 
@@ -392,6 +486,10 @@ function EintragModal({
   const [selfCook, setSelfCook] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function applyPreset(s: string) {
+    setTitle(s);
+  }
 
   function applyTemplate(t: Template) {
     setTitle(t.title);
@@ -435,24 +533,29 @@ function EintragModal({
 
   return (
     <Modal title={editing ? "Essen bearbeiten" : "Neues Essen"} onClose={onClose}>
-      {!editing && templates.length > 0 && (
-        <div className="mb-3">
-          <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-gray-500">
-            Vorlage waehlen
-          </p>
-          <div className="flex flex-wrap gap-1">
-            {templates.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => applyTemplate(t)}
-                className="rounded-full border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-300 hover:border-accent hover:text-accent"
-              >
-                {t.title}
-              </button>
-            ))}
-          </div>
+      <Field label="Schnellauswahl">
+        <div className="flex flex-wrap gap-1">
+          {COOKING_PRESETS.map((s) => (
+            <button
+              key={s}
+              onClick={() => applyPreset(s)}
+              className="rounded-full border border-secondary/40 bg-secondary/10 px-2 py-1 text-xs text-secondary hover:bg-secondary/20"
+            >
+              {s}
+            </button>
+          ))}
+          {templates.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => applyTemplate(t)}
+              className="rounded-full border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-300 hover:border-accent hover:text-accent"
+              title="Eigene Vorlage"
+            >
+              ⭐ {t.title}
+            </button>
+          ))}
         </div>
-      )}
+      </Field>
 
       <Field label="Datum">
         <input
@@ -530,21 +633,35 @@ function SignupModal({
   slug,
   eintrag,
   meId,
+  kinder,
   onClose,
   onSaved,
 }: {
   slug: string;
   eintrag: Eintrag;
   meId: string;
+  kinder: Kind[];
   onClose: () => void;
   onSaved: () => void;
 }) {
   const existing = eintrag.signups.find((s) => s.user.id === meId);
-  const [adults, setAdults] = useState(existing?.adults ?? 1);
-  const [kids, setKids] = useState(existing?.kids ?? 0);
+  const myKinder = kinder.filter((k) => k.parentIds.includes(meId));
+
+  const [status, setStatus] = useState<"going" | "declined">(
+    existing?.status ?? "going"
+  );
+  const [childrenIds, setChildrenIds] = useState<string[]>(
+    existing?.childrenIds ?? myKinder.map((k) => k.id) // default: alle eigenen Kinder dabei
+  );
   const [guests, setGuests] = useState(existing?.guests ?? 0);
   const [notes, setNotes] = useState(existing?.notes ?? "");
   const [busy, setBusy] = useState(false);
+
+  function toggleChild(id: string) {
+    setChildrenIds((cur) =>
+      cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
+    );
+  }
 
   async function save() {
     setBusy(true);
@@ -554,7 +671,12 @@ function SignupModal({
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ adults, kids, guests, notes: notes || null }),
+          body: JSON.stringify({
+            status,
+            childrenIds: status === "going" ? childrenIds : [],
+            guests: status === "going" ? guests : 0,
+            notes: notes || null,
+          }),
         }
       );
       onSaved();
@@ -577,10 +699,57 @@ function SignupModal({
   }
 
   return (
-    <Modal title={`Anmeldung: ${eintrag.title}`} onClose={onClose}>
-      <Counter label="Erwachsene" value={adults} onChange={setAdults} />
-      <Counter label="Kinder" value={kids} onChange={setKids} />
-      <Counter label="Gaeste" value={guests} onChange={setGuests} />
+    <Modal title={`Antwort: ${eintrag.title}`} onClose={onClose}>
+      <div className="mb-3 grid grid-cols-2 gap-2">
+        <button
+          onClick={() => setStatus("going")}
+          className={`rounded-lg py-3 font-mono text-xs font-bold uppercase tracking-wider ${
+            status === "going"
+              ? "bg-accent text-black"
+              : "border border-gray-700 bg-gray-900 text-gray-400"
+          }`}
+        >
+          ✓ Bin dabei
+        </button>
+        <button
+          onClick={() => setStatus("declined")}
+          className={`rounded-lg py-3 font-mono text-xs font-bold uppercase tracking-wider ${
+            status === "declined"
+              ? "bg-red-500/30 text-red-200"
+              : "border border-gray-700 bg-gray-900 text-gray-400"
+          }`}
+        >
+          ✗ Kann nicht
+        </button>
+      </div>
+
+      {status === "going" && myKinder.length > 0 && (
+        <Field label="Kinder dabei?">
+          <div className="space-y-1">
+            {myKinder.map((k) => {
+              const checked = childrenIds.includes(k.id);
+              return (
+                <label
+                  key={k.id}
+                  className="flex items-center gap-2 rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-200"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleChild(k.id)}
+                    className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-accent"
+                  />
+                  {k.name}
+                </label>
+              );
+            })}
+          </div>
+        </Field>
+      )}
+
+      {status === "going" && (
+        <Counter label="Gaeste" value={guests} onChange={setGuests} />
+      )}
 
       <Field label="Notiz (z.B. Allergien)">
         <input
@@ -596,18 +765,19 @@ function SignupModal({
       <div className="mt-2 flex gap-2">
         <button
           onClick={save}
-          disabled={busy || adults + kids + guests === 0}
+          disabled={busy}
           className="flex-1 rounded-lg bg-accent px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
         >
-          {existing ? "Aktualisieren" : "Anmelden"}
+          {existing ? "Aktualisieren" : "Speichern"}
         </button>
         {existing && (
           <button
             onClick={remove}
             disabled={busy}
-            className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-red-300 hover:bg-red-500/20 disabled:opacity-50"
+            className="rounded-lg border border-gray-600 bg-gray-900 px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-gray-800 disabled:opacity-50"
+            title="Antwort zuruecksetzen"
           >
-            Abmelden
+            ↺ Zurueck
           </button>
         )}
         <button
@@ -747,6 +917,211 @@ function TemplatesModal({
   );
 }
 
+function KinderModal({
+  slug,
+  kinder,
+  members,
+  onClose,
+  onChanged,
+}: {
+  slug: string;
+  kinder: Kind[];
+  members: Person[];
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [parentIds, setParentIds] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  function toggleParent(id: string) {
+    setParentIds((cur) =>
+      cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
+    );
+  }
+
+  async function add() {
+    if (!name.trim()) return;
+    setBusy(true);
+    try {
+      await fetch(`/api/meine-wg/${slug}/kochplan/kinder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), parentIds }),
+      });
+      setName("");
+      setParentIds([]);
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Kind loeschen?")) return;
+    await fetch(`/api/meine-wg/${slug}/kochplan/kinder/${id}`, {
+      method: "DELETE",
+    });
+    onChanged();
+  }
+
+  async function patchParents(id: string, ids: string[]) {
+    await fetch(`/api/meine-wg/${slug}/kochplan/kinder/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ parentIds: ids }),
+    });
+    onChanged();
+  }
+
+  return (
+    <Modal title="Kinder" onClose={onClose}>
+      <p className="mb-3 text-xs text-gray-500">
+        Kinder werden beim Sign-up der Eltern als Toggles angezeigt
+        ("Nori dabei?"). Mehrere Eltern moeglich.
+      </p>
+
+      <div className="mb-3 space-y-2">
+        {kinder.length === 0 ? (
+          <p className="py-3 text-center text-xs italic text-gray-600">
+            noch keine Kinder
+          </p>
+        ) : (
+          kinder.map((k) => (
+            <KindRow
+              key={k.id}
+              kind={k}
+              members={members}
+              onChangeParents={(ids) => patchParents(k.id, ids)}
+              onDelete={() => remove(k.id)}
+            />
+          ))
+        )}
+      </div>
+
+      <div className="rounded-lg border border-secondary/30 bg-secondary/5 p-3">
+        <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-secondary">
+          Neues Kind
+        </p>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Name (z.B. Nori)"
+          className="mb-2 w-full rounded border border-gray-700 bg-gray-900 px-2 py-1 text-sm text-white"
+        />
+        <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-gray-500">
+          Eltern
+        </p>
+        <div className="mb-2 flex flex-wrap gap-1">
+          {members.map((m) => {
+            const checked = parentIds.includes(m.id);
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => toggleParent(m.id)}
+                className={`rounded-full border px-2 py-0.5 text-[10px] ${
+                  checked
+                    ? "border-accent bg-accent/20 text-accent"
+                    : "border-gray-700 bg-gray-900 text-gray-400"
+                }`}
+              >
+                {checked ? "✓ " : ""}
+                {m.name}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={add}
+          disabled={busy || !name.trim()}
+          className="w-full rounded bg-secondary px-3 py-1.5 font-mono text-xs font-bold uppercase text-white hover:brightness-110 disabled:opacity-50"
+        >
+          + Kind anlegen
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function KindRow({
+  kind,
+  members,
+  onChangeParents,
+  onDelete,
+}: {
+  kind: Kind;
+  members: Person[];
+  onChangeParents: (ids: string[]) => void;
+  onDelete: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [ids, setIds] = useState<string[]>(kind.parentIds);
+
+  function toggle(id: string) {
+    setIds((cur) =>
+      cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium text-white">{kind.name}</p>
+        <div className="flex gap-1">
+          <button
+            onClick={() => {
+              if (editing) {
+                onChangeParents(ids);
+              }
+              setEditing(!editing);
+            }}
+            className="text-xs text-gray-500 hover:text-white"
+          >
+            {editing ? "✓" : "✎"}
+          </button>
+          <button
+            onClick={onDelete}
+            className="text-xs text-gray-500 hover:text-red-400"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+      <p className="mt-1 text-[11px] text-gray-500">
+        Eltern:{" "}
+        {kind.parentIds.length === 0
+          ? "—"
+          : kind.parentIds
+              .map((pid) => members.find((m) => m.id === pid)?.name ?? "?")
+              .join(", ")}
+      </p>
+      {editing && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {members.map((m) => {
+            const checked = ids.includes(m.id);
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => toggle(m.id)}
+                className={`rounded-full border px-2 py-0.5 text-[10px] ${
+                  checked
+                    ? "border-accent bg-accent/20 text-accent"
+                    : "border-gray-700 bg-gray-900 text-gray-400"
+                }`}
+              >
+                {checked ? "✓ " : ""}
+                {m.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Modal({
   title,
   onClose,
@@ -762,7 +1137,7 @@ function Modal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-2xl border border-gray-800 bg-gray-950 p-4 sm:rounded-2xl"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-gray-800 bg-gray-950 p-4 sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
