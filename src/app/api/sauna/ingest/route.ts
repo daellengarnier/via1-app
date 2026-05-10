@@ -3,6 +3,15 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+function asNum(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   const token = process.env.SAUNA_INGEST_TOKEN;
   if (!token) {
@@ -14,28 +23,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  let body: { tempC?: unknown; rssi?: unknown };
+  let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    body = (await req.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
-  const tempC = typeof body.tempC === "number" ? body.tempC : Number(body.tempC);
-  if (!Number.isFinite(tempC) || tempC < -55 || tempC > 150) {
-    return NextResponse.json({ error: "tempC out of range" }, { status: 400 });
+  // ESP sendet aktuell `tempC` (single sensor), spaeter `tempTopC` + `tempBottomC`.
+  const tempTopC = asNum(body.tempTopC) ?? asNum(body.tempC);
+  const tempBottomC = asNum(body.tempBottomC);
+
+  if (tempTopC === null || tempTopC < -55 || tempTopC > 150) {
+    return NextResponse.json({ error: "tempTopC out of range" }, { status: 400 });
+  }
+  if (tempBottomC !== null && (tempBottomC < -55 || tempBottomC > 150)) {
+    return NextResponse.json(
+      { error: "tempBottomC out of range" },
+      { status: 400 }
+    );
   }
 
-  const rssi =
-    typeof body.rssi === "number" && Number.isFinite(body.rssi)
-      ? Math.round(body.rssi)
-      : null;
+  const rssi = asNum(body.rssi);
 
   const reading = await prisma.saunaReading.create({
-    data: { tempC, rssi: rssi ?? undefined },
+    data: {
+      tempTopC,
+      tempBottomC: tempBottomC ?? undefined,
+      rssi: rssi !== null ? Math.round(rssi) : undefined,
+    },
   });
 
-  // Retention: alles aelter als 30 Tage loeschen (best-effort, bei Bedarf)
   if (reading.id % 100 === 0) {
     const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     await prisma.saunaReading.deleteMany({

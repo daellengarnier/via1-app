@@ -9,7 +9,13 @@ export async function GET() {
   });
 
   if (!latest) {
-    return NextResponse.json({ tempC: null, ageSeconds: null, recordedAt: null });
+    return NextResponse.json({
+      tempTopC: null,
+      tempBottomC: null,
+      rssi: null,
+      ageSeconds: null,
+      recordedAt: null,
+    });
   }
 
   const ageSeconds = Math.round(
@@ -17,7 +23,8 @@ export async function GET() {
   );
 
   return NextResponse.json({
-    tempC: Number(latest.tempC),
+    tempTopC: Number(latest.tempTopC),
+    tempBottomC: latest.tempBottomC !== null ? Number(latest.tempBottomC) : null,
     rssi: latest.rssi,
     ageSeconds,
     recordedAt: latest.recordedAt.toISOString(),

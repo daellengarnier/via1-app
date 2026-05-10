@@ -728,7 +728,8 @@ model FeedbackComment {
 
 model SaunaReading {
   id          Int      @id @default(autoincrement())
-  tempC       Decimal  @db.Decimal(5, 2)
+  tempTopC    Decimal  @db.Decimal(5, 2)
+  tempBottomC Decimal? @db.Decimal(5, 2)
   rssi        Int?
   recordedAt  DateTime @default(now())
 

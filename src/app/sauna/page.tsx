@@ -109,55 +109,73 @@ const saunaSections = [
 const SAUNA_KEY = "via1-sauna-start";
 const SAUNA_BY_KEY = "via1-sauna-by";
 
-function calcSaunaTemp(outsideTemp: number): {
-  temp: number;
-  heating: boolean;
-  startedBy: string | null;
-  minutesAgo: number;
-} {
-  const stored = localStorage.getItem(SAUNA_KEY);
-  if (!stored) return { temp: outsideTemp, heating: false, startedBy: null, minutesAgo: 0 };
-  const startTime = parseInt(stored, 10);
-  if (Number.isNaN(startTime)) return { temp: outsideTemp, heating: false, startedBy: null, minutesAgo: 0 };
-  const now = new Date();
-  const start = new Date(startTime);
-  if (start.getDate() !== now.getDate() && now.getHours() >= 6) {
-    localStorage.removeItem(SAUNA_KEY);
-    localStorage.removeItem(SAUNA_BY_KEY);
-    return { temp: outsideTemp, heating: false, startedBy: null, minutesAgo: 0 };
-  }
-  const elapsed = (Date.now() - startTime) / 60000;
-  const progress = Math.min(1, elapsed / 30);
-  const temp = Math.round(outsideTemp + (80 - outsideTemp) * progress);
-  const by = localStorage.getItem(SAUNA_BY_KEY) ?? null;
-  return { temp, heating: true, startedBy: by, minutesAgo: Math.round(elapsed) };
+interface SaunaReading {
+  tempTopC: number | null;
+  tempBottomC: number | null;
+  ageSeconds: number | null;
 }
 
 export default function SaunaPage() {
   const { data: session } = useSession();
   const [showReglement, setShowReglement] = useState(false);
-  const [outsideTemp, setOutsideTemp] = useState(15);
-  const [sauna, setSauna] = useState({ temp: 15, heating: false, startedBy: null as string | null, minutesAgo: 0 });
+  const [reading, setReading] = useState<SaunaReading>({
+    tempTopC: null,
+    tempBottomC: null,
+    ageSeconds: null,
+  });
+  const [heating, setHeating] = useState<{ startedBy: string | null; minutesAgo: number } | null>(null);
 
-  const refresh = useCallback(() => {
-    setSauna(calcSaunaTemp(outsideTemp));
-  }, [outsideTemp]);
-
-  useEffect(() => {
-    fetch("https://api.open-meteo.com/v1/forecast?latitude=46.9480&longitude=7.4474&current=temperature_2m&timezone=Europe%2FZurich")
-      .then((r) => r.json())
-      .then((d: { current?: { temperature_2m: number } }) => {
-        if (d.current) setOutsideTemp(Math.round(d.current.temperature_2m));
-      })
-      .catch(() => {});
+  const fetchReading = useCallback(async () => {
+    try {
+      const res = await fetch("/api/sauna/current", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as SaunaReading;
+      setReading(data);
+    } catch {
+      // silent
+    }
   }, []);
 
-  useEffect(() => { refresh(); const id = setInterval(refresh, 15000); return () => clearInterval(id); }, [refresh]);
+  const refreshHeating = useCallback(() => {
+    const stored = localStorage.getItem(SAUNA_KEY);
+    if (!stored) {
+      setHeating(null);
+      return;
+    }
+    const startTime = parseInt(stored, 10);
+    if (Number.isNaN(startTime)) {
+      setHeating(null);
+      return;
+    }
+    const start = new Date(startTime);
+    const now = new Date();
+    if (start.getDate() !== now.getDate() && now.getHours() >= 6) {
+      localStorage.removeItem(SAUNA_KEY);
+      localStorage.removeItem(SAUNA_BY_KEY);
+      setHeating(null);
+      return;
+    }
+    const minutesAgo = Math.round((Date.now() - startTime) / 60000);
+    setHeating({
+      startedBy: localStorage.getItem(SAUNA_BY_KEY),
+      minutesAgo,
+    });
+  }, []);
+
+  useEffect(() => {
+    fetchReading();
+    refreshHeating();
+    const id = setInterval(() => {
+      fetchReading();
+      refreshHeating();
+    }, 15000);
+    return () => clearInterval(id);
+  }, [fetchReading, refreshHeating]);
 
   function startHeating() {
     localStorage.setItem(SAUNA_KEY, String(Date.now()));
     localStorage.setItem(SAUNA_BY_KEY, session?.user?.name ?? "");
-    refresh();
+    refreshHeating();
     fetch("/api/notifications/trigger", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -173,22 +191,14 @@ export default function SaunaPage() {
   function stopHeating() {
     localStorage.removeItem(SAUNA_KEY);
     localStorage.removeItem(SAUNA_BY_KEY);
-    refresh();
+    refreshHeating();
   }
 
-  const svgWidth = 300;
-  const svgHeight = 40;
-  const tempHistory = Array.from({ length: 12 }, (_, i) => {
-    const progress = Math.min(1, i / 10);
-    return Math.round(outsideTemp + (80 - outsideTemp) * progress);
-  });
-  const points = tempHistory
-    .map((t, i) => {
-      const x = (i / (tempHistory.length - 1)) * svgWidth;
-      const y = svgHeight - (t / 80) * svgHeight;
-      return `${x},${y}`;
-    })
-    .join(" ");
+  const isHeating = heating !== null;
+  const tempTop = reading.tempTopC;
+  const tempBottom = reading.tempBottomC;
+  const sensorLive = reading.ageSeconds !== null && reading.ageSeconds < 120;
+  const ageMin = reading.ageSeconds !== null ? Math.round(reading.ageSeconds / 60) : null;
 
   return (
     <div className="relative p-4 pb-20">
@@ -206,56 +216,61 @@ export default function SaunaPage() {
         />
         <button
           onClick={() => {
-            if (sauna.heating) stopHeating();
+            if (isHeating) stopHeating();
             else startHeating();
           }}
           className={`rounded-full border px-5 py-2 font-display text-[11px] font-bold uppercase tracking-wider shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-colors ${
-            sauna.heating
+            isHeating
               ? "border-gray-600/60 bg-gray-700/30 text-white hover:bg-gray-700/50"
               : "border-red-500/50 bg-red-500/20 text-red-200 hover:bg-red-500/30"
           }`}
         >
-          {sauna.heating ? "× Heizung stoppen" : "+ Sauna einheizen"}
+          {isHeating ? "× Heizung stoppen" : "+ Sauna einheizen"}
         </button>
       </div>
 
-      {/* Temperatur */}
-      <div className="mb-6 flex flex-col items-center rounded-lg border border-gray-800 bg-white/5 p-5">
-        <p className="font-mono text-4xl font-bold text-red-400">
-          {sauna.temp}°C
-        </p>
-        <p className="mt-1 text-xs text-gray-400">
-          {sauna.heating ? "Wird geheizt" : `Aussentemperatur (${outsideTemp}°C)`}
-        </p>
-        {sauna.heating && (
-          <p className="mt-1 text-sm text-secondary">
-            🔥 {sauna.startedBy ? `von ${sauna.startedBy}` : "Eingeheizt"} · vor {sauna.minutesAgo} Min.
+      {/* Live-Sensor-Werte */}
+      <div className="mb-6 grid grid-cols-2 gap-3">
+        {/* Temperatur oben */}
+        <div className="flex flex-col items-center rounded-lg border border-gray-800 bg-white/5 p-4">
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-red-400">
+            OBEN
           </p>
-        )}
+          <p className="mt-1 font-mono text-3xl font-bold text-red-400">
+            {tempTop !== null ? `${tempTop.toFixed(1)}°C` : "–"}
+          </p>
+          <p className="mt-1 text-[10px] text-gray-500">
+            {tempTop === null
+              ? "kein Wert"
+              : sensorLive
+                ? "live"
+                : `vor ${ageMin} Min.`}
+          </p>
+        </div>
 
-        {/* Temperaturverlauf als dezente Linie */}
-        <div className="mt-4 w-full">
-          <svg
-            viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-            className="h-8 w-full"
-            preserveAspectRatio="none"
-          >
-            <polyline
-              points={points}
-              fill="none"
-              stroke="#b8f068"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity="0.5"
-            />
-          </svg>
-          <div className="flex justify-between text-[10px] text-gray-600">
-            <span>Start</span>
-            <span>Jetzt</span>
-          </div>
+        {/* Temperatur unten */}
+        <div className="flex flex-col items-center rounded-lg border border-gray-800 bg-white/5 p-4 opacity-60">
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500">
+            UNTEN
+          </p>
+          <p className="mt-1 font-mono text-3xl font-bold text-gray-600">
+            {tempBottom !== null ? `${tempBottom.toFixed(1)}°C` : "–"}
+          </p>
+          <p className="mt-1 text-[10px] text-gray-600">
+            {tempBottom !== null ? "live" : "nicht verfügbar"}
+          </p>
         </div>
       </div>
+
+      {/* Heiz-Status */}
+      {isHeating && heating && (
+        <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-center">
+          <p className="text-sm text-red-200">
+            🔥 {heating.startedBy ? `${heating.startedBy} heizt ein` : "Eingeheizt"} ·
+            vor {heating.minutesAgo} Min.
+          </p>
+        </div>
+      )}
 
       {/* Sauna-Reglement */}
       <div className="mt-8">

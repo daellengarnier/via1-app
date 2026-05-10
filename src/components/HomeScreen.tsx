@@ -221,16 +221,16 @@ export default function HomeScreen() {
       try {
         const res = await fetch("/api/sauna/current", { cache: "no-store" });
         if (!res.ok) throw new Error(String(res.status));
-        const data: { tempC: number | null; ageSeconds: number | null } =
+        const data: { tempTopC: number | null; ageSeconds: number | null } =
           await res.json();
         if (cancelled) return;
-        if (data.tempC === null || data.ageSeconds === null) {
+        if (data.tempTopC === null || data.ageSeconds === null) {
           setSaunaTemp(null);
           setSaunaLive(false);
           setSaunaAgeSec(null);
           return;
         }
-        setSaunaTemp(Math.round(data.tempC * 10) / 10);
+        setSaunaTemp(Math.round(data.tempTopC * 10) / 10);
         setSaunaAgeSec(data.ageSeconds);
         setSaunaLive(data.ageSeconds < 120);
       } catch {
