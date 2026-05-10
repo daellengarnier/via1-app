@@ -396,3 +396,90 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     0 0 24px rgba(217, 70, 239, 0.15);
 }
+
+/* Bewegter Background fuer den "Meine WG"-Bereich:
+   3 sich langsam bewegende Color-Blobs (Pink, Fuchsia, Cyan).
+   Wenn ein User-Hintergrundbild als CSS-Variable --wg-bg-image
+   gesetzt ist, wird es als Basis-Layer gemixt. */
+.wg-animated-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background-color: #050208;
+  background-image: url("/background%20meine%20wg.png");
+  background-size: cover;
+  background-position: center;
+  /* Sanftes "Ken Burns"-Zoomen, damit das Bild leicht in Bewegung ist */
+  animation: wgBgKenBurns 40s ease-in-out infinite alternate;
+}
+@keyframes wgBgKenBurns {
+  0%   { background-size: 110% auto; background-position: 50% 50%; }
+  50%  { background-size: 120% auto; background-position: 60% 45%; }
+  100% { background-size: 115% auto; background-position: 45% 55%; }
+}
+.wg-animated-bg::before,
+.wg-animated-bg::after,
+.wg-animated-bg .wg-blob-3 {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.35;
+  mix-blend-mode: screen;
+}
+.wg-animated-bg::before {
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.7), transparent 70%);
+  top: -10%;
+  left: -10%;
+  animation: wgBlob1 22s ease-in-out infinite alternate;
+}
+.wg-animated-bg::after {
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.65), transparent 70%);
+  bottom: -15%;
+  right: -10%;
+  animation: wgBlob2 26s ease-in-out infinite alternate;
+}
+.wg-animated-bg .wg-blob-3 {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.55), transparent 70%);
+  top: 30%;
+  right: -5%;
+  animation: wgBlob3 30s ease-in-out infinite alternate;
+}
+@keyframes wgBlob1 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(80px, 120px) scale(1.15); }
+  100% { transform: translate(40px, 60px) scale(0.95); }
+}
+@keyframes wgBlob2 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(-100px, -80px) scale(1.1); }
+  100% { transform: translate(-50px, -140px) scale(0.9); }
+}
+@keyframes wgBlob3 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(-90px, 100px) scale(1.2); }
+  100% { transform: translate(40px, -60px) scale(0.95); }
+}
+
+/* Tile-Variante mit mehr Transparenz + staerkerem Backdrop-Blur,
+   damit der bewegte Hintergrund durchscheint. */
+.wg-tile {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid rgba(217, 70, 239, 0.25);
+  background:
+    linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.06) 60%, rgba(34, 211, 238, 0.05));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 4px 24px rgba(217, 70, 239, 0.12);
+}

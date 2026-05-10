@@ -164,7 +164,7 @@ export function TerminDetailClient({ slug, wgName, terminId, meId }: Props) {
           ← {wgName} · Termine
         </Link>
         <div className="flex items-start justify-between gap-2">
-          <h1 className="wg-title-gradient font-heading text-4xl font-semibold italic leading-tight">
+          <h1 className="wg-title-gradient font-cinzel text-3xl font-medium leading-tight">
             {termin.title}
           </h1>
           <div className="mt-2 flex shrink-0 gap-1">
