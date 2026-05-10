@@ -66,25 +66,66 @@ export default async function MeineWgSlugPage({ params }: Props) {
       ) : !unlocked ? (
         <UnlockForm wgSlug={params.slug} wgName={wg.name} />
       ) : (
-        <div className="space-y-3">
-          <div className="rounded-2xl border border-accent/30 bg-accent/5 p-5">
-            <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-accent">
-              🔓 Entsperrt — bald hier:
-            </p>
-            <ul className="space-y-1 text-sm text-gray-300">
-              <li>· Kochplan</li>
-              <li>· Einkaufsliste</li>
-              <li>· Aemtli (Putzplan)</li>
-              <li>· WG-Termine + Termin-Doodle</li>
-              <li>· WG-Pinnwand</li>
-              <li>· Finanzen</li>
-            </ul>
-          </div>
-          <p className="text-center text-[10px] text-gray-600">
-            Phase 0 — Skeleton. Inhalt kommt schrittweise.
-          </p>
+        <div className="space-y-2">
+          <FeatureLink
+            href={`/meine-wg/${params.slug}/kochplan`}
+            icon="🍳"
+            title="Kochplan"
+            subtitle="Wer kocht wann, wer isst mit"
+          />
+          <FeatureLinkPlaceholder icon="🛒" title="Einkaufsliste" />
+          <FeatureLinkPlaceholder icon="🧹" title="Aemtli" />
+          <FeatureLinkPlaceholder icon="📅" title="WG-Termine" />
+          <FeatureLinkPlaceholder icon="🗓" title="Termin-Doodle" />
+          <FeatureLinkPlaceholder icon="📌" title="WG-Pinnwand" />
         </div>
       )}
+    </div>
+  );
+}
+
+function FeatureLink({
+  href,
+  icon,
+  title,
+  subtitle,
+}: {
+  href: string;
+  icon: string;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <a
+      href={href}
+      className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 p-4 hover:border-accent hover:bg-accent/10"
+    >
+      <span className="text-2xl">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="font-medium text-white">{title}</p>
+        <p className="text-[11px] text-gray-400">{subtitle}</p>
+      </div>
+      <span className="text-accent">→</span>
+    </a>
+  );
+}
+
+function FeatureLinkPlaceholder({
+  icon,
+  title,
+}: {
+  icon: string;
+  title: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-900/30 p-4 opacity-60">
+      <span className="text-2xl grayscale">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-gray-400">{title}</p>
+        <p className="font-mono text-[10px] uppercase tracking-wider text-gray-600">
+          bald
+        </p>
+      </div>
     </div>
   );
 }
