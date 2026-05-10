@@ -97,7 +97,12 @@ export default async function MeineWgSlugPage({ params }: Props) {
             title="Termin-Doodle"
             subtitle="Datums-Umfragen → Termin"
           />
-          <FeatureLinkPlaceholder icon="📌" title="WG-Pinnwand" />
+          <FeatureLink
+            href={`/meine-wg/${params.slug}/pinnwand`}
+            icon="📌"
+            title="Pinnwand"
+            subtitle="Post-Its in 6 Farben + Kommentare"
+          />
         </div>
       )}
     </div>
@@ -130,22 +135,3 @@ function FeatureLink({
   );
 }
 
-function FeatureLinkPlaceholder({
-  icon,
-  title,
-}: {
-  icon: string;
-  title: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-900/30 p-4 opacity-60">
-      <span className="text-2xl grayscale">{icon}</span>
-      <div className="min-w-0 flex-1">
-        <p className="text-gray-400">{title}</p>
-        <p className="font-mono text-[10px] uppercase tracking-wider text-gray-600">
-          bald
-        </p>
-      </div>
-    </div>
-  );
-}
