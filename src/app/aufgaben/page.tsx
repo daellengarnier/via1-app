@@ -168,6 +168,8 @@ export default function AufgabenPage() {
   const [newCreateImages, setNewCreateImages] = useState<string[]>([]);
   const [editImages, setEditImages] = useState<string[]>([]);
   const [imageBusy, setImageBusy] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -778,10 +780,7 @@ export default function AufgabenPage() {
           return (
             <div
               key={a.id}
-              onClick={() => {
-                if (!a.pin) return;
-                setSelectedId(isSelected ? null : a.id);
-              }}
+              onClick={() => setDetailId(a.id)}
               className={`relative cursor-pointer rounded-lg border p-3 transition-colors ${
                 a.done ? "opacity-50" : ""
               } ${
@@ -942,6 +941,189 @@ export default function AufgabenPage() {
           );
         })}
       </div>
+
+      {/* Detail Modal */}
+      {detailId && (() => {
+        const t = aufgaben.find((x) => x.id === detailId);
+        if (!t) return null;
+        const subDone = t.subTodos.filter((s) => s.done).length;
+        const subTotal = t.subTodos.length;
+        return (
+          <div
+            className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center"
+            onClick={() => setDetailId(null)}
+          >
+            <div
+              className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-gray-800 bg-black sm:rounded-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4">
+                <div className="mb-3 flex items-start justify-between gap-2">
+                  <h2 className={`flex-1 font-display text-base font-bold ${
+                    t.done ? "text-gray-500 line-through" : "text-white"
+                  }`}>
+                    {t.title}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setDetailId(null)}
+                    className="text-gray-500 hover:text-white"
+                    aria-label="Schliessen"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {t.description && (
+                  <p className="mb-3 whitespace-pre-wrap text-sm text-gray-300">
+                    {t.description}
+                  </p>
+                )}
+
+                <div className="mb-3 flex flex-wrap items-center gap-2 text-[10px] text-gray-500">
+                  {t.location && <span>📍 {t.location}</span>}
+                  <span>👤 {t.createdBy}</span>
+                  <span>
+                    {new Date(t.createdAt).toLocaleDateString("de-CH", {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </span>
+                  {t.assignee && (
+                    <span className="text-yellow-400">→ {t.assignee}</span>
+                  )}
+                </div>
+
+                {/* Fotos */}
+                {t.images.length > 0 && (
+                  <div className="mb-4">
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {t.images.map((src, i) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={i}
+                          src={src}
+                          alt={`Foto ${i + 1}`}
+                          className="h-20 w-full cursor-pointer rounded border border-gray-800 object-cover"
+                          onClick={() => setLightboxSrc(src)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Subtasks - interaktiv */}
+                {t.subTodos.length > 0 && (
+                  <div className="mb-4 rounded-lg border border-gray-800 bg-white/5 p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="font-display text-[10px] font-bold uppercase tracking-widest text-yellow-400">
+                        📋 Subtasks
+                      </p>
+                      <span className="font-mono text-[10px] text-gray-400">
+                        {subDone}/{subTotal}
+                      </span>
+                    </div>
+                    <div className="mb-2 h-1 w-full overflow-hidden rounded-full bg-gray-800">
+                      <div
+                        className="h-full bg-yellow-400/70 transition-all"
+                        style={{
+                          width: `${subTotal === 0 ? 0 : (subDone / subTotal) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <ul className="space-y-1.5">
+                      {t.subTodos.map((s) => (
+                        <li
+                          key={s.id}
+                          onClick={() => toggleSubTodo(t.id, s)}
+                          className="flex cursor-pointer items-center gap-2 rounded border border-gray-800/60 bg-black/20 px-2 py-2 hover:border-yellow-400/40"
+                        >
+                          <span
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[12px] ${
+                              s.done
+                                ? "border-yellow-400 bg-yellow-400 text-black"
+                                : "border-gray-600"
+                            }`}
+                          >
+                            {s.done && "✓"}
+                          </span>
+                          <span
+                            className={`flex-1 text-sm ${
+                              s.done ? "text-gray-500 line-through" : "text-white"
+                            }`}
+                          >
+                            {s.title}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Active workers */}
+                {!t.done && t.activeWorkers.length > 0 && (
+                  <div className="mb-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-2 text-xs text-yellow-200">
+                    🏃 {t.activeWorkers.join(", ")}{" "}
+                    {t.activeWorkers.length === 1 ? "ist dabei" : "sind dabei"}
+                  </div>
+                )}
+
+                {/* Aktions-Buttons */}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleDone(t.id)}
+                    className={`flex-1 rounded-lg py-2 font-display text-[10px] font-bold uppercase tracking-wider ${
+                      t.done
+                        ? "border border-gray-600 text-gray-300 hover:bg-gray-800"
+                        : "bg-yellow-400 text-black hover:brightness-110"
+                    }`}
+                  >
+                    {t.done ? "✓ erledigt – wieder öffnen" : "✓ Aufgabe erledigt"}
+                  </button>
+                  {t.pin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedId(t.id);
+                        setDetailId(null);
+                      }}
+                      className="rounded-lg border border-yellow-400/40 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-yellow-300"
+                    >
+                      📍 Karte
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDetailId(null);
+                      openEdit(t.id);
+                    }}
+                    className="rounded-lg border border-gray-700 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-gray-300 hover:border-yellow-400 hover:text-yellow-300"
+                  >
+                    ✎ Bearbeiten
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Lightbox fuer Fotos */}
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/95 p-4"
+          onClick={() => setLightboxSrc(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxSrc}
+            alt="Foto"
+            className="max-h-full max-w-full rounded object-contain"
+          />
+        </div>
+      )}
 
       {/* Edit Modal (beim Pin-Platzieren versteckt) */}
       {editingId && !editPlacingPin && (
