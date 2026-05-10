@@ -139,12 +139,12 @@ export function WgDashboardClient({ slug, meId }: Props) {
     <div className="space-y-3">
       <KochTile slug={slug} meId={meId} data={koch} onChanged={loadAll} />
 
-      <div className="grid grid-cols-2 gap-3">
-        <ShoppingTile slug={slug} items={shopping} onChanged={loadAll} />
-        <AemtliTile slug={slug} data={aemtli} meId={meId} onChanged={loadAll} />
-      </div>
+      <ShoppingTile slug={slug} items={shopping} onChanged={loadAll} />
 
-      <TermineTile slug={slug} data={termine} doodles={doodles} />
+      <div className="grid grid-cols-2 gap-3">
+        <AemtliTile slug={slug} data={aemtli} meId={meId} onChanged={loadAll} />
+        <TermineTile slug={slug} data={termine} doodles={doodles} />
+      </div>
 
       <PinnwandInline slug={slug} notes={pinnwand} onChanged={loadAll} />
     </div>
@@ -203,6 +203,7 @@ function KochTile({
           <KochSlotMini
             slot="lunch"
             eintrag={lunch}
+            today={today}
             slug={slug}
             meId={meId}
             onSignup={(e) => setSignupOpen(e)}
@@ -211,6 +212,7 @@ function KochTile({
           <KochSlotMini
             slot="dinner"
             eintrag={dinner}
+            today={today}
             slug={slug}
             meId={meId}
             onSignup={(e) => setSignupOpen(e)}
@@ -238,6 +240,7 @@ function KochTile({
 function KochSlotMini({
   slot,
   eintrag,
+  today,
   slug,
   meId,
   onSignup,
@@ -245,6 +248,7 @@ function KochSlotMini({
 }: {
   slot: Slot;
   eintrag: KochEintrag | undefined;
+  today: string;
   slug: string;
   meId: string;
   onSignup: (e: KochEintrag) => void;
@@ -255,16 +259,19 @@ function KochSlotMini({
   async function ichKoche() {
     setBusy(true);
     try {
-      const today = new Date().toISOString().slice(0, 10);
-      await fetch(`/api/meine-wg/${slug}/kochplan/eintraege`, {
+      const res = await fetch(`/api/meine-wg/${slug}/kochplan/eintraege`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date: today,
+          date: today, // effective Bern-Tag aus API (nach 21h = morgen)
           slot,
           selfCook: true,
         }),
       });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(b.error ?? `Konnte Eintrag nicht erstellen (${res.status})`);
+      }
       onChanged();
     } finally {
       setBusy(false);
@@ -528,8 +535,9 @@ function ShoppingTile({
       </div>
 
       {open.length > 0 && (
-        <div className="mb-2 max-h-28 space-y-1 overflow-y-auto">
-          {open.slice(0, 4).map((i) => (
+        // ~4 Items sichtbar, danach scrollbar
+        <div className="mb-2 max-h-[140px] space-y-1 overflow-y-auto pr-1">
+          {open.map((i) => (
             <button
               key={i.id}
               onClick={() => toggle(i.id)}
@@ -540,11 +548,6 @@ function ShoppingTile({
               <span className="flex-1 truncate">{i.text}</span>
             </button>
           ))}
-          {open.length > 4 && (
-            <p className="text-[10px] italic text-gray-600">
-              +{open.length - 4} weitere
-            </p>
-          )}
         </div>
       )}
 
@@ -614,20 +617,31 @@ function AemtliTile({
         )}
       </div>
       {data.currentUser ? (
-        <p className="truncate text-sm font-medium text-white">
-          {data.currentUser.name} ist dran
+        <p className="truncate font-display text-sm font-bold uppercase tracking-wider text-white">
+          {data.currentUser.name}
         </p>
       ) : (
         <p className="text-xs italic text-gray-500">keine Rotation</p>
       )}
+      <p className="text-[10px] text-gray-400">ist dran</p>
       {data.lastDoneBy && data.lastDoneAt && (
-        <p className="mt-0.5 text-[10px] text-gray-400">
-          zuletzt: {data.lastDoneBy.name} ·{" "}
-          {new Date(data.lastDoneAt).toLocaleDateString("de-CH", {
-            day: "2-digit",
-            month: "2-digit",
-          })}
-        </p>
+        <div className="mt-2 rounded bg-black/30 px-2 py-1">
+          <p className="font-mono text-[9px] uppercase tracking-wider text-gray-500">
+            zuletzt geputzt
+          </p>
+          <p className="text-[11px] text-white">
+            {data.lastDoneBy.name}
+            <span className="text-gray-400">
+              {" "}
+              ·{" "}
+              {new Date(data.lastDoneAt).toLocaleDateString("de-CH", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "2-digit",
+              })}
+            </span>
+          </p>
+        </div>
       )}
     </a>
   );
@@ -655,88 +669,62 @@ function TermineTile({
   const now = Date.now();
   const upcoming = data.termine
     .filter((t) => new Date(t.date).getTime() >= now)
-    .slice(0, 2);
-  const upcomingBdays = data.birthdays.slice(0, 2);
+    .slice(0, 1);
+  const next = upcoming[0];
+  const upcomingBdays = data.birthdays.slice(0, 1);
   const openDoodles = (doodles ?? []).filter((d) => !d.finalized);
 
   return (
-    <div className="wg-tile p-3">
-      <div className="mb-2 flex items-baseline justify-between">
+    <div className="wg-tile-heavy p-3">
+      <div className="mb-1 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/termine`}
-          className="font-display text-[11px] font-bold uppercase tracking-widest text-white hover:text-white"
+          className="font-display text-[11px] font-bold uppercase tracking-widest text-white"
         >
           📅 Termine
-          {openDoodles.length > 0 && (
-            <span className="ml-1 font-mono text-[10px] text-white">
-              · 🗓 {openDoodles.length}
-            </span>
-          )}
         </a>
-        <a
-          href={`/meine-wg/${slug}/termine`}
-          className="font-mono text-[10px] uppercase tracking-wider text-white hover:underline"
-        >
-          alle →
-        </a>
+        {openDoodles.length > 0 && (
+          <span className="font-mono text-[10px] uppercase tracking-wider text-white">
+            🗓 {openDoodles.length}
+          </span>
+        )}
       </div>
 
-      {upcoming.length > 0 ? (
-        <div className="space-y-1">
-          {upcoming.map((t) => (
-            <a
-              key={t.id}
-              href={`/meine-wg/${slug}/termine/${t.id}`}
-              className="block rounded bg-black/30 p-2 hover:bg-black/50"
-            >
-              <p className="truncate text-xs font-medium text-white">
-                {t.title}
-              </p>
-              <p className="font-mono text-[10px] text-secondary">
-                {new Date(t.date).toLocaleString("de-CH", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </a>
-          ))}
+      {next ? (
+        <div className="rounded bg-black/30 p-2">
+          <p className="truncate font-display text-sm font-bold uppercase tracking-wider text-white">
+            {next.title}
+          </p>
+          <p className="mt-0.5 font-mono text-[10px] text-gray-300">
+            {new Date(next.date).toLocaleString("de-CH", {
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+          <a
+            href={`/api/meine-wg/${slug}/termine/${next.id}/ics`}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-1 inline-block font-mono text-[9px] uppercase tracking-wider text-white/80 hover:text-white"
+            title="In Kalender importieren"
+          >
+            📥 .ics
+          </a>
         </div>
-      ) : openDoodles.length === 0 ? (
-        <p className="text-xs italic text-gray-500">keine bevorstehenden</p>
-      ) : null}
-
-      {openDoodles.length > 0 && (
-        <div className="mt-2 space-y-1">
-          {openDoodles.slice(0, 2).map((d) => (
-            <a
-              key={d.id}
-              href={`/meine-wg/${slug}/doodle/${d.id}`}
-              className="block truncate rounded border border-white/20 bg-black/30 p-1.5 text-[11px] text-white hover:bg-black/50"
-            >
-              🗓 {d.title}
-              <span className="ml-1 text-gray-500">
-                ({d.totalVotes} Stimmen)
-              </span>
-            </a>
-          ))}
-        </div>
+      ) : (
+        <p className="text-xs italic text-gray-500">keine geplant</p>
       )}
 
       {upcomingBdays.length > 0 && (
-        <div className="mt-2 space-y-0.5">
-          {upcomingBdays.map((b) => (
-            <p key={b.user.id} className="text-[10px] text-secondary">
-              🎂 {b.user.name}
-              {b.daysUntil === 0
-                ? " heute!"
-                : b.daysUntil === 1
-                  ? " morgen"
-                  : ` in ${b.daysUntil}d`}
-            </p>
-          ))}
-        </div>
+        <p className="mt-1.5 truncate text-[10px] text-gray-300">
+          🎂 {upcomingBdays[0]!.user.name}
+          {upcomingBdays[0]!.daysUntil === 0
+            ? " heute!"
+            : upcomingBdays[0]!.daysUntil === 1
+              ? " morgen"
+              : ` in ${upcomingBdays[0]!.daysUntil}d`}
+        </p>
       )}
     </div>
   );

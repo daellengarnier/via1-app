@@ -225,23 +225,31 @@ export function WgTermineClient({ slug, wgName }: Props) {
 
 function TerminRow({ termin, slug }: { termin: Termin; slug: string }) {
   return (
-    <Link
-      href={`/meine-wg/${slug}/termine/${termin.id}`}
-      className="block rounded-xl border border-gray-800 bg-gray-900/40 p-3 hover:border-white/50"
-    >
-      <p className="font-medium text-white">{termin.title}</p>
-      <p className="font-mono text-[10px] uppercase tracking-wider text-secondary">
-        {fmtDateTime(termin.date)}
-        {termin.location && ` · ${termin.location}`}
-      </p>
-      <div className="mt-1 flex gap-3 text-[10px] text-gray-500">
+    <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-3 hover:border-white/50">
+      <Link href={`/meine-wg/${slug}/termine/${termin.id}`} className="block">
+        <p className="font-display text-base font-bold uppercase tracking-wider text-white">
+          {termin.title}
+        </p>
+        <p className="font-mono text-[10px] uppercase tracking-wider text-gray-300">
+          {fmtDateTime(termin.date)}
+          {termin.location && ` · ${termin.location}`}
+        </p>
+      </Link>
+      <div className="mt-1 flex flex-wrap items-center gap-3 text-[10px] text-gray-500">
         {termin.traktandenCount > 0 && (
           <span>📋 {termin.traktandenCount} Traktanden</span>
         )}
         {termin.commentCount > 0 && <span>💬 {termin.commentCount}</span>}
         {termin.hasProtokoll && <span>📝 Protokoll</span>}
+        <a
+          href={`/api/meine-wg/${slug}/termine/${termin.id}/ics`}
+          className="ml-auto rounded border border-white/20 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-white/80 hover:border-white/50 hover:text-white"
+          title="In Kalender importieren"
+        >
+          📥 .ics
+        </a>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -266,6 +274,18 @@ function DoodleRow({
   );
 }
 
+// Standard-Traktanden fuer WG-Sitzungen — werden direkt mitangelegt
+// wenn der "WG-Sitzung"-Vorlage-Button geklickt wurde.
+const WG_SITZUNG_TRAKTANDEN: ReadonlyArray<string> = [
+  "Begruessung & Anwesenheit",
+  "Letztes Protokoll",
+  "Pendenzen aus letzter Sitzung",
+  "Finanzen / Kassenstand",
+  "Putzplan / Aemtli",
+  "Wartung & Reparaturen",
+  "Verschiedenes",
+];
+
 function AddTerminModal({
   slug,
   onClose,
@@ -280,8 +300,18 @@ function AddTerminModal({
   const [time, setTime] = useState("19:00");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
+  const [isSitzung, setIsSitzung] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function applyWgSitzungTemplate() {
+    setTitle("WG-Sitzung");
+    setIsSitzung(true);
+    setLocation((cur) => cur || "Wohnzimmer");
+    setDescription((cur) =>
+      cur || "Monatliche WG-Sitzung mit Traktanden + Protokoll."
+    );
+  }
 
   async function save() {
     if (!title.trim() || !date) {
@@ -307,6 +337,21 @@ function AddTerminModal({
         setError(b.error ?? "Fehler.");
         return;
       }
+      const body = (await res.json()) as { id?: string };
+
+      // Wenn "WG-Sitzung"-Vorlage gewaehlt: Default-Traktanden anlegen
+      if (isSitzung && body.id) {
+        for (const t of WG_SITZUNG_TRAKTANDEN) {
+          await fetch(
+            `/api/meine-wg/${slug}/termine/${body.id}/traktanden`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ title: t }),
+            }
+          );
+        }
+      }
       onSaved();
     } finally {
       setBusy(false);
@@ -315,6 +360,26 @@ function AddTerminModal({
 
   return (
     <ModalShell title="Neuer Termin" onClose={onClose}>
+      <div className="mb-3">
+        <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-gray-500">
+          Vorlage
+        </p>
+        <button
+          type="button"
+          onClick={applyWgSitzungTemplate}
+          className={`w-full rounded-lg border px-3 py-2 text-sm transition-colors ${
+            isSitzung
+              ? "border-white/60 bg-white/15 text-white"
+              : "border-white/30 bg-white/5 text-gray-200 hover:bg-white/15"
+          }`}
+        >
+          📋 WG-Sitzung
+          <span className="ml-2 font-mono text-[10px] uppercase tracking-wider text-gray-400">
+            mit Traktanden + Protokoll
+          </span>
+        </button>
+      </div>
+
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}

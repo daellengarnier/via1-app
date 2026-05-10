@@ -21,7 +21,9 @@ export async function GET(
   const today = effectiveKochDay();
   const fromParam = url.searchParams.get("from");
   const toParam = url.searchParams.get("to");
-  const from = (fromParam && parseIsoDate(fromParam)) || addDaysUTC(today, -1);
+  // Default: ab heute (effektiver Tag, nach 21h = morgen) +7 Tage.
+  // Vergangene Eintraege werden nicht mehr angezeigt.
+  const from = (fromParam && parseIsoDate(fromParam)) || today;
   const to = (toParam && parseIsoDate(toParam)) || addDaysUTC(today, 7);
 
   const [eintraege, templates, kinder, members] = await Promise.all([
