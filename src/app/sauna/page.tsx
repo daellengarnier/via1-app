@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
 import { TabHeader } from "@/components/TabHeader";
 import { SaunaChart } from "@/components/SaunaChart";
 
@@ -107,24 +106,26 @@ const saunaSections = [
 ];
 
 
-const SAUNA_KEY = "via1-sauna-start";
-const SAUNA_BY_KEY = "via1-sauna-by";
-
 interface SaunaReading {
   tempTopC: number | null;
   tempBottomC: number | null;
   ageSeconds: number | null;
 }
 
+interface HeatingState {
+  startedByName: string;
+  startedAt: string;
+  minutesAgo: number;
+}
+
 export default function SaunaPage() {
-  const { data: session } = useSession();
   const [showReglement, setShowReglement] = useState(false);
   const [reading, setReading] = useState<SaunaReading>({
     tempTopC: null,
     tempBottomC: null,
     ageSeconds: null,
   });
-  const [heating, setHeating] = useState<{ startedBy: string | null; minutesAgo: number } | null>(null);
+  const [heating, setHeating] = useState<HeatingState | null>(null);
 
   const fetchReading = useCallback(async () => {
     try {
@@ -137,62 +138,38 @@ export default function SaunaPage() {
     }
   }, []);
 
-  const refreshHeating = useCallback(() => {
-    const stored = localStorage.getItem(SAUNA_KEY);
-    if (!stored) {
-      setHeating(null);
-      return;
+  const fetchHeating = useCallback(async () => {
+    try {
+      const res = await fetch("/api/sauna/heating", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as HeatingState | null;
+      setHeating(data);
+    } catch {
+      // silent
     }
-    const startTime = parseInt(stored, 10);
-    if (Number.isNaN(startTime)) {
-      setHeating(null);
-      return;
-    }
-    const start = new Date(startTime);
-    const now = new Date();
-    if (start.getDate() !== now.getDate() && now.getHours() >= 6) {
-      localStorage.removeItem(SAUNA_KEY);
-      localStorage.removeItem(SAUNA_BY_KEY);
-      setHeating(null);
-      return;
-    }
-    const minutesAgo = Math.round((Date.now() - startTime) / 60000);
-    setHeating({
-      startedBy: localStorage.getItem(SAUNA_BY_KEY),
-      minutesAgo,
-    });
   }, []);
 
   useEffect(() => {
     fetchReading();
-    refreshHeating();
+    fetchHeating();
     const id = setInterval(() => {
       fetchReading();
-      refreshHeating();
+      fetchHeating();
     }, 15000);
     return () => clearInterval(id);
-  }, [fetchReading, refreshHeating]);
+  }, [fetchReading, fetchHeating]);
 
-  function startHeating() {
-    localStorage.setItem(SAUNA_KEY, String(Date.now()));
-    localStorage.setItem(SAUNA_BY_KEY, session?.user?.name ?? "");
-    refreshHeating();
-    fetch("/api/notifications/trigger", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        kind: "SAUNA",
-        title: "Die Sauna wird eingeheizt 🔥",
-        body: `${session?.user?.name ?? "Jemand"} heizt ein — in ~30 Min. bereit`,
-        link: "/sauna",
-      }),
-    }).catch(() => {});
+  async function startHeating() {
+    const res = await fetch("/api/sauna/heating", { method: "POST" });
+    if (res.ok) {
+      const data = (await res.json()) as HeatingState;
+      setHeating(data);
+    }
   }
 
-  function stopHeating() {
-    localStorage.removeItem(SAUNA_KEY);
-    localStorage.removeItem(SAUNA_BY_KEY);
-    refreshHeating();
+  async function stopHeating() {
+    await fetch("/api/sauna/heating", { method: "DELETE" });
+    setHeating(null);
   }
 
   const isHeating = heating !== null;
@@ -267,8 +244,7 @@ export default function SaunaPage() {
       {isHeating && heating && (
         <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-center">
           <p className="text-sm text-red-200">
-            🔥 {heating.startedBy ? `${heating.startedBy} heizt ein` : "Eingeheizt"} ·
-            vor {heating.minutesAgo} Min.
+            🔥 {heating.startedByName} heizt ein · vor {heating.minutesAgo} Min.
           </p>
         </div>
       )}

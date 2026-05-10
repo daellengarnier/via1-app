@@ -1019,3 +1019,15 @@ model SaunaReading {
   @@index([recordedAt])
   @@map("sauna_readings")
 }
+
+// Singleton: aktueller Heiz-Status (wer heizt, seit wann).
+// id ist immer "singleton".
+model SaunaHeating {
+  id            String   @id @default("singleton")
+  startedAt     DateTime
+  startedByName String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("sauna_heating")
+}
