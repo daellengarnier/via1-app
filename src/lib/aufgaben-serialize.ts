@@ -1,6 +1,7 @@
 import type {
   Aufgabe,
   AufgabeActiveWorker,
+  AufgabeImage,
   AufgabeSubTodo,
   User,
 } from "@prisma/client";
@@ -30,6 +31,7 @@ export interface AufgabeDTO {
   completedAt: string | null;
   activeWorkers: string[];
   subTodos: SubTodoDTO[];
+  images: string[];
 }
 
 export function serializeSubTodo(s: AufgabeSubTodo): SubTodoDTO {
@@ -46,6 +48,7 @@ export function serializeAufgabe(
     createdBy: User;
     activeWorkers: (AufgabeActiveWorker & { user: User })[];
     subTodos?: AufgabeSubTodo[];
+    images?: AufgabeImage[];
   }
 ): AufgabeDTO {
   return {
@@ -71,5 +74,13 @@ export function serializeAufgabe(
           x.createdAt.getTime() - y.createdAt.getTime()
       )
       .map(serializeSubTodo),
+    images: (a.images ?? [])
+      .slice()
+      .sort(
+        (x, y) =>
+          x.position - y.position ||
+          x.createdAt.getTime() - y.createdAt.getTime()
+      )
+      .map((img) => img.data),
   };
 }

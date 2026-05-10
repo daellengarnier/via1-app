@@ -284,6 +284,7 @@ model Aufgabe {
   createdById   String
   activeWorkers AufgabeActiveWorker[]
   subTodos      AufgabeSubTodo[]
+  images        AufgabeImage[]
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
 
@@ -303,6 +304,19 @@ model AufgabeSubTodo {
 
   @@index([aufgabeId, position])
   @@map("aufgabe_sub_todos")
+}
+
+model AufgabeImage {
+  id        String   @id @default(cuid())
+  aufgabe   Aufgabe  @relation(fields: [aufgabeId], references: [id], onDelete: Cascade)
+  aufgabeId String
+  // Base64 Data-URL (JPEG, max 1400px, ~0.78 quality)
+  data      String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([aufgabeId, position])
+  @@map("aufgabe_images")
 }
 
 model AufgabeActiveWorker {

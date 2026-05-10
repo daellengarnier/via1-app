@@ -18,6 +18,7 @@ export async function GET() {
       createdBy: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
+      images: true,
     },
   });
 
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
     pin?: unknown;
     assignee?: unknown;
     subTodos?: unknown;
+    images?: unknown;
   };
   const title = typeof body.title === "string" ? body.title.trim() : "";
   if (!title) {
@@ -74,6 +76,13 @@ export async function POST(req: Request) {
         .filter((t) => t !== "")
     : [];
 
+  const imagesInput = Array.isArray(body.images)
+    ? body.images
+        .filter((x): x is string => typeof x === "string")
+        .filter((x) => x.startsWith("data:image/"))
+        .slice(0, 8)
+    : [];
+
   const created = await prisma.aufgabe.create({
     data: {
       title,
@@ -92,11 +101,18 @@ export async function POST(req: Request) {
               })),
             }
           : undefined,
+      images:
+        imagesInput.length > 0
+          ? {
+              create: imagesInput.map((data, i) => ({ data, position: i })),
+            }
+          : undefined,
     },
     include: {
       createdBy: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
+      images: true,
     },
   });
 

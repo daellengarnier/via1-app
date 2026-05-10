@@ -55,6 +55,15 @@ export async function PATCH(
     }
   }
 
+  // Bilder komplett ersetzen wenn 'images' im Body
+  let replaceImages: string[] | null = null;
+  if (Array.isArray(body.images)) {
+    replaceImages = (body.images as unknown[])
+      .filter((x): x is string => typeof x === "string")
+      .filter((x) => x.startsWith("data:image/"))
+      .slice(0, 8);
+  }
+
   // Done-Toggle aktualisiert completedAt und raeumt activeWorkers auf
   if (typeof body.done === "boolean") {
     data.done = body.done;
@@ -76,12 +85,28 @@ export async function PATCH(
         where: { aufgabeId: params.id },
       });
     }
+    // Bilder komplett ersetzen
+    if (replaceImages !== null) {
+      await tx.aufgabeImage.deleteMany({
+        where: { aufgabeId: params.id },
+      });
+      if (replaceImages.length > 0) {
+        await tx.aufgabeImage.createMany({
+          data: replaceImages.map((data, i) => ({
+            aufgabeId: params.id,
+            data,
+            position: i,
+          })),
+        });
+      }
+    }
     return tx.aufgabe.findUnique({
       where: { id: u.id },
       include: {
         createdBy: true,
         activeWorkers: { include: { user: true } },
         subTodos: true,
+        images: true,
       },
     });
   });

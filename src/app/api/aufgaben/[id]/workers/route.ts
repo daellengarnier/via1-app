@@ -52,6 +52,7 @@ export async function POST(
       createdBy: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
+      images: true,
     },
   });
   if (!full) {
@@ -100,6 +101,7 @@ export async function DELETE(
       createdBy: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
+      images: true,
     },
   });
   if (!full) {

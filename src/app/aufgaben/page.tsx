@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { TabHeader } from "@/components/TabHeader";
+import { compressImage } from "@/lib/image-compress";
 import { WaveDivider } from "@/components/WaveDivider";
 
 interface Pin {
@@ -30,6 +31,7 @@ interface Aufgabe {
   completedAt: string | null;
   activeWorkers: string[];
   subTodos: SubTodo[];
+  images: string[];
 }
 
 // Aufgaben werden vom API geladen
@@ -163,6 +165,9 @@ export default function AufgabenPage() {
   const [placingPin, setPlacingPin] = useState(false);
   const [newCreateSubTodos, setNewCreateSubTodos] = useState<string[]>([]);
   const [newCreateSubTodoInput, setNewCreateSubTodoInput] = useState("");
+  const [newCreateImages, setNewCreateImages] = useState<string[]>([]);
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [imageBusy, setImageBusy] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -295,12 +300,14 @@ export default function AufgabenPage() {
     setEditLocation(task.location);
     setEditPin(task.pin);
     setEditPlacingPin(false);
+    setEditImages(task.images);
   }
 
   function closeEdit() {
     setEditingId(null);
     setEditPlacingPin(false);
     setNewSubTodo("");
+    setEditImages([]);
   }
 
   async function addSubTodo(aufgabeId: string, title: string) {
@@ -379,6 +386,7 @@ export default function AufgabenPage() {
           description: editDesc,
           location: editLocation,
           pin: editPin,
+          images: editImages,
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -416,6 +424,7 @@ export default function AufgabenPage() {
           location: newLocation,
           pin: pendingPin,
           subTodos: newCreateSubTodos,
+          images: newCreateImages,
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -429,6 +438,7 @@ export default function AufgabenPage() {
       setShowCreate(false);
       setNewCreateSubTodos([]);
       setNewCreateSubTodoInput("");
+      setNewCreateImages([]);
     } catch (err) {
       console.error("handleCreate", err);
       alert("Konnte Aufgabe nicht erstellen.");
@@ -608,6 +618,78 @@ export default function AufgabenPage() {
             </div>
           </div>
           <div className="mb-3">
+            <label className="mb-1 block text-xs text-gray-400">
+              Fotos (optional, max. 8)
+            </label>
+            {newCreateImages.length > 0 && (
+              <div className="mb-2 grid grid-cols-4 gap-2">
+                {newCreateImages.map((src, i) => (
+                  <div key={i} className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={src}
+                      alt={`Foto ${i + 1}`}
+                      className="h-16 w-full rounded border border-gray-800 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNewCreateImages((prev) =>
+                          prev.filter((_, idx) => idx !== i)
+                        )
+                      }
+                      className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-[10px] text-white hover:bg-red-500"
+                      aria-label="Entfernen"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <label
+              className={`block cursor-pointer rounded-lg border border-gray-700 py-2 text-center font-mono text-xs font-bold ${
+                newCreateImages.length >= 8 || imageBusy
+                  ? "opacity-40"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              {imageBusy
+                ? "📷 wird verarbeitet..."
+                : newCreateImages.length >= 8
+                  ? "Maximum erreicht"
+                  : "📷 Foto aufnehmen / hochladen"}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                multiple
+                disabled={newCreateImages.length >= 8 || imageBusy}
+                className="hidden"
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  if (files.length === 0) return;
+                  setImageBusy(true);
+                  try {
+                    const compressed = await Promise.all(
+                      files.map((f) =>
+                        compressImage(f, { maxSize: 1400, quality: 0.78 })
+                      )
+                    );
+                    setNewCreateImages((prev) =>
+                      [...prev, ...compressed].slice(0, 8)
+                    );
+                  } catch (err) {
+                    console.error("image compress", err);
+                  } finally {
+                    setImageBusy(false);
+                    e.target.value = "";
+                  }
+                }}
+              />
+            </label>
+          </div>
+          <div className="mb-3">
             <button
               type="button"
               onClick={() => setPlacingPin(!placingPin)}
@@ -641,6 +723,7 @@ export default function AufgabenPage() {
                 setPlacingPin(false);
                 setNewCreateSubTodos([]);
                 setNewCreateSubTodoInput("");
+                setNewCreateImages([]);
               }}
               className="rounded px-4 py-2 text-xs text-gray-400 hover:text-white"
             >
@@ -763,6 +846,11 @@ export default function AufgabenPage() {
                         }
                       >
                         📍
+                      </span>
+                    )}
+                    {a.images.length > 0 && (
+                      <span title={`${a.images.length} Foto${a.images.length === 1 ? "" : "s"}`}>
+                        📷{a.images.length > 1 && a.images.length}
                       </span>
                     )}
                     <span className="truncate">{a.location}</span>
@@ -990,6 +1078,80 @@ export default function AufgabenPage() {
                   </div>
                 );
               })()}
+
+              {/* Fotos */}
+              <div className="mb-4 rounded-lg border border-gray-800 bg-white/5 p-3">
+                <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-yellow-400">
+                  📷 Fotos
+                </p>
+                {editImages.length > 0 && (
+                  <div className="mb-2 grid grid-cols-4 gap-2">
+                    {editImages.map((src, i) => (
+                      <div key={i} className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={src}
+                          alt={`Foto ${i + 1}`}
+                          className="h-16 w-full rounded border border-gray-800 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditImages((prev) =>
+                              prev.filter((_, idx) => idx !== i)
+                            )
+                          }
+                          className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-[10px] text-white hover:bg-red-500"
+                          aria-label="Entfernen"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <label
+                  className={`block cursor-pointer rounded-lg border border-gray-700 py-2 text-center font-mono text-xs font-bold ${
+                    editImages.length >= 8 || imageBusy
+                      ? "opacity-40"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  {imageBusy
+                    ? "📷 wird verarbeitet..."
+                    : editImages.length >= 8
+                      ? "Maximum erreicht"
+                      : "📷 Foto aufnehmen / hochladen"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                    disabled={editImages.length >= 8 || imageBusy}
+                    className="hidden"
+                    onChange={async (e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      if (files.length === 0) return;
+                      setImageBusy(true);
+                      try {
+                        const compressed = await Promise.all(
+                          files.map((f) =>
+                            compressImage(f, { maxSize: 1400, quality: 0.78 })
+                          )
+                        );
+                        setEditImages((prev) =>
+                          [...prev, ...compressed].slice(0, 8)
+                        );
+                      } catch (err) {
+                        console.error("image compress", err);
+                      } finally {
+                        setImageBusy(false);
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                </label>
+              </div>
 
               {/* Pin-Section */}
               <div className="mb-4 rounded-lg border border-gray-800 bg-white/5 p-3">
