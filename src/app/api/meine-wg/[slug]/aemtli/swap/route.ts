@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWgAccess } from "@/lib/wg-access";
+import { notify } from "@/lib/notify";
 
 interface SwapBody {
   toUserId?: string;
@@ -61,5 +62,14 @@ export async function POST(
       toUserId,
     },
   });
+
+  await notify({
+    kind: "WG_AEMTLI_SWAP_REQUEST",
+    title: `🔁 ${access.wg.name}: Aemtli-Tausch?`,
+    body: `${access.user.name} moechte mit dir tauschen.`,
+    link: `/meine-wg/${params.slug}/aemtli`,
+    audience: [toUserId],
+  });
+
   return NextResponse.json({ id: swap.id });
 }

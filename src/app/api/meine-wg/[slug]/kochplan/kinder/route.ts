@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireWgAccess } from "@/lib/wg-access";
+import { requireWgAccess, wgMemberFilter } from "@/lib/wg-access";
 
 interface CreateBody {
   name?: string;
@@ -28,8 +28,10 @@ export async function POST(
   if (candidateIds.length > 0) {
     const validParents = await prisma.user.findMany({
       where: {
-        id: { in: candidateIds },
-        room: { wgId: access.wg.id },
+        AND: [
+          { id: { in: candidateIds } },
+          wgMemberFilter(access.wg.id),
+        ],
       },
       select: { id: true },
     });

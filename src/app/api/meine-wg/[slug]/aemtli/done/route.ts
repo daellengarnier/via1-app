@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWgAccess } from "@/lib/wg-access";
+import { notify } from "@/lib/notify";
 import { PFLICHT_TASKS } from "@/lib/wg-aemtli";
 
 interface DoneBody {
@@ -56,6 +57,10 @@ export async function POST(
     }
   }
 
+  // Naechster User in Rotation (fuer Push)
+  const nextIndex = (state.currentIndex + 1) % state.rotationOrder.length;
+  const nextUserId = state.rotationOrder[nextIndex] ?? null;
+
   // History eintragen + State updaten
   await prisma.$transaction([
     prisma.wgAemtliRound.create({
@@ -70,11 +75,21 @@ export async function POST(
       data: {
         lastDoneById: currentUserId,
         lastDoneAt: when,
-        currentIndex: (state.currentIndex + 1) % state.rotationOrder.length,
+        currentIndex: nextIndex,
         checkedPflicht: [],
       },
     }),
   ]);
+
+  if (nextUserId && nextUserId !== access.user.id) {
+    await notify({
+      kind: "WG_AEMTLI_DONE",
+      title: `🧹 ${access.wg.name}: Du bist dran!`,
+      body: `${access.user.name} hat die Aemtli erledigt — du bist als naechstes dran.`,
+      link: `/meine-wg/${params.slug}/aemtli`,
+      audience: [nextUserId],
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireWgAccess } from "@/lib/wg-access";
+import { requireWgAccess, wgMemberFilter } from "@/lib/wg-access";
 
 interface PatchBody {
   name?: string;
@@ -32,7 +32,12 @@ export async function PATCH(
   if (Array.isArray(body.parentIds)) {
     const candidate = body.parentIds.filter((x) => typeof x === "string");
     const validParents = await prisma.user.findMany({
-      where: { id: { in: candidate }, room: { wgId: access.wg.id } },
+      where: {
+        AND: [
+          { id: { in: candidate } },
+          wgMemberFilter(access.wg.id),
+        ],
+      },
       select: { id: true },
     });
     data.parentIds = validParents.map((p) => p.id);

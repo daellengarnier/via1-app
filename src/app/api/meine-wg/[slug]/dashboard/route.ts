@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireWgAccess } from "@/lib/wg-access";
+import { requireWgAccess, wgMemberFilter } from "@/lib/wg-access";
 import {
   addDaysUTC,
   effectiveKochDay,
@@ -52,7 +52,7 @@ export async function GET(
       orderBy: { name: "asc" },
     }),
     prisma.user.findMany({
-      where: { room: { wgId: access.wg.id } },
+      where: wgMemberFilter(access.wg.id),
       select: { id: true, name: true, avatar: true },
       orderBy: { name: "asc" },
     }),
@@ -87,7 +87,7 @@ export async function GET(
       take: 5,
     }),
     prisma.user.findMany({
-      where: { room: { wgId: access.wg.id }, birthday: { not: null } },
+      where: { AND: [wgMemberFilter(access.wg.id), { birthday: { not: null } }] },
       select: { id: true, name: true, avatar: true, birthday: true },
     }),
     prisma.wgDoodle.findMany({
