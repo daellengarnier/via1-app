@@ -19,6 +19,12 @@ export async function GET(
     include: {
       createdBy: { select: { id: true, name: true, avatar: true } },
       doneBy: { select: { id: true, name: true, avatar: true } },
+      comments: {
+        include: {
+          author: { select: { id: true, name: true, avatar: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      },
     },
     orderBy: [{ done: "asc" }, { createdAt: "desc" }],
   });
@@ -32,6 +38,12 @@ export async function GET(
       doneAt: i.doneAt?.toISOString() ?? null,
       createdBy: i.createdBy,
       doneBy: i.doneBy,
+      comments: i.comments.map((c) => ({
+        id: c.id,
+        text: c.text,
+        author: c.author,
+        createdAt: c.createdAt.toISOString(),
+      })),
     }))
   );
 }

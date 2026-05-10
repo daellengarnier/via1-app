@@ -40,6 +40,7 @@ interface ShoppingItem {
   text: string;
   done: boolean;
   createdBy: { id: string; name: string };
+  comments: { id: string }[];
 }
 
 interface AemtliItem {
@@ -148,10 +149,7 @@ export function WgDashboardClient({ slug, meId }: Props) {
         <AemtliTile slug={slug} data={aemtli} meId={meId} onChanged={loadAll} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <TermineTile slug={slug} data={termine} />
-        <DoodleTile slug={slug} doodles={doodles} />
-      </div>
+      <TermineTile slug={slug} data={termine} doodles={doodles} />
 
       <PinnwandTile slug={slug} notes={pinnwand} />
     </div>
@@ -687,9 +685,11 @@ function AemtliTile({
 function TermineTile({
   slug,
   data,
+  doodles,
 }: {
   slug: string;
   data: TermineData | null;
+  doodles: DoodleItem[] | null;
 }) {
   if (!data) {
     return (
@@ -702,9 +702,9 @@ function TermineTile({
   const now = Date.now();
   const upcoming = data.termine
     .filter((t) => new Date(t.date).getTime() >= now)
-    .slice(0, 1);
-  const next = upcoming[0];
+    .slice(0, 2);
   const upcomingBdays = data.birthdays.slice(0, 2);
+  const openDoodles = (doodles ?? []).filter((d) => !d.finalized);
 
   return (
     <div className="rounded-xl border border-accent/30 bg-accent/5 p-3">
@@ -714,6 +714,11 @@ function TermineTile({
           className="font-cinzel text-sm text-white hover:text-accent"
         >
           📅 Termine
+          {openDoodles.length > 0 && (
+            <span className="ml-1 font-mono text-[10px] text-accent">
+              · 🗓 {openDoodles.length}
+            </span>
+          )}
         </a>
         <a
           href={`/meine-wg/${slug}/termine`}
@@ -723,25 +728,47 @@ function TermineTile({
         </a>
       </div>
 
-      {next ? (
-        <a
-          href={`/meine-wg/${slug}/termine/${next.id}`}
-          className="block rounded bg-black/30 p-2 hover:bg-black/50"
-        >
-          <p className="truncate text-xs font-medium text-white">
-            {next.title}
-          </p>
-          <p className="font-mono text-[10px] text-secondary">
-            {new Date(next.date).toLocaleString("de-CH", {
-              day: "2-digit",
-              month: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </p>
-        </a>
-      ) : (
+      {upcoming.length > 0 ? (
+        <div className="space-y-1">
+          {upcoming.map((t) => (
+            <a
+              key={t.id}
+              href={`/meine-wg/${slug}/termine/${t.id}`}
+              className="block rounded bg-black/30 p-2 hover:bg-black/50"
+            >
+              <p className="truncate text-xs font-medium text-white">
+                {t.title}
+              </p>
+              <p className="font-mono text-[10px] text-secondary">
+                {new Date(t.date).toLocaleString("de-CH", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </a>
+          ))}
+        </div>
+      ) : openDoodles.length === 0 ? (
         <p className="text-xs italic text-gray-500">keine bevorstehenden</p>
+      ) : null}
+
+      {openDoodles.length > 0 && (
+        <div className="mt-2 space-y-1">
+          {openDoodles.slice(0, 2).map((d) => (
+            <a
+              key={d.id}
+              href={`/meine-wg/${slug}/doodle/${d.id}`}
+              className="block truncate rounded border border-accent/20 bg-black/30 p-1.5 text-[11px] text-white hover:bg-black/50"
+            >
+              🗓 {d.title}
+              <span className="ml-1 text-gray-500">
+                ({d.totalVotes} Stimmen)
+              </span>
+            </a>
+          ))}
+        </div>
       )}
 
       {upcomingBdays.length > 0 && (
@@ -755,61 +782,6 @@ function TermineTile({
                   ? " morgen"
                   : ` in ${b.daysUntil}d`}
             </p>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ===== DOODLE-TILE =====
-
-function DoodleTile({
-  slug,
-  doodles,
-}: {
-  slug: string;
-  doodles: DoodleItem[] | null;
-}) {
-  if (!doodles) {
-    return (
-      <Tile href={`/meine-wg/${slug}/doodle`} icon="🗓" title="Doodle">
-        <p className="text-xs text-gray-500">Lade...</p>
-      </Tile>
-    );
-  }
-
-  const open = doodles.filter((d) => !d.finalized);
-
-  return (
-    <div className="rounded-xl border border-accent/30 bg-accent/5 p-3">
-      <div className="mb-2 flex items-baseline justify-between">
-        <a
-          href={`/meine-wg/${slug}/doodle`}
-          className="font-cinzel text-sm text-white hover:text-accent"
-        >
-          🗓 Doodle
-        </a>
-        <span className="font-mono text-[10px] uppercase tracking-wider text-accent">
-          {open.length} offen
-        </span>
-      </div>
-
-      {open.length === 0 ? (
-        <p className="text-xs italic text-gray-500">keine offenen</p>
-      ) : (
-        <div className="space-y-1">
-          {open.slice(0, 2).map((d) => (
-            <a
-              key={d.id}
-              href={`/meine-wg/${slug}/doodle/${d.id}`}
-              className="block truncate rounded bg-black/30 p-1.5 text-[11px] text-white hover:bg-black/50"
-            >
-              {d.title}
-              <span className="ml-1 text-gray-500">
-                ({d.totalVotes} Stimmen)
-              </span>
-            </a>
           ))}
         </div>
       )}
