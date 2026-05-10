@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { TabHeader } from "@/components/TabHeader";
@@ -151,7 +151,15 @@ function GelaendeMap({
   );
 }
 
-export default function AufgabenPage() {
+export default function AufgabenPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <AufgabenPage />
+    </Suspense>
+  );
+}
+
+function AufgabenPage() {
   const { data: session } = useSession();
   const currentUserName = session?.user?.name ?? "";
   const [filter, setFilter] = useState<Filter>("offen");
