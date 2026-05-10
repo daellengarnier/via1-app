@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWgAccess } from "@/lib/wg-access";
 import { parseIsoDate } from "@/lib/wg-koch-day";
+import { isValidSlot } from "@/lib/wg-koch-slots";
 
 interface PatchBody {
   date?: string;
+  slot?: string;
   time?: string | null;
-  title?: string;
+  menu?: string | null;
   description?: string | null;
   cookId?: string | null;
   selfCook?: boolean;
@@ -34,13 +36,15 @@ export async function PATCH(
   }
 
   const data: Record<string, unknown> = {};
-  if (typeof body.title === "string") {
-    const t = body.title.trim();
-    if (t) data.title = t;
+  if (body.menu !== undefined) {
+    data.menu = body.menu?.trim() || null;
   }
   if (body.date) {
     const parsed = parseIsoDate(body.date);
     if (parsed) data.date = parsed;
+  }
+  if (body.slot !== undefined && isValidSlot(body.slot)) {
+    data.slot = body.slot;
   }
   if (body.time !== undefined) {
     data.time = body.time ? body.time.trim().slice(0, 5) : null;

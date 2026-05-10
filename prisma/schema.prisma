@@ -638,8 +638,9 @@ model WgKochEintrag {
   wgId        String
   wg          Wg              @relation(fields: [wgId], references: [id], onDelete: Cascade)
   date        DateTime        @db.Date
+  slot        String          // "lunch" | "dinner"
   time        String?
-  title       String
+  menu        String?         // optional: was es gibt
   description String?
   cookId      String?
   cook        User?           @relation("WgKochCook", fields: [cookId], references: [id], onDelete: SetNull)
@@ -649,6 +650,7 @@ model WgKochEintrag {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
+  @@unique([wgId, date, slot])
   @@index([wgId, date])
 }
 
