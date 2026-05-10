@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 
 interface MehrItem {
@@ -92,7 +93,10 @@ function formatAge(iso: string): string {
 
 export function HamburgerMenu() {
   const { data: session } = useSession();
+  const pathname = usePathname();
+  const router = useRouter();
   const isAdmin = (session?.user?.roles || []).includes("ADMIN");
+  const aufgabeDetailMatch = /^\/aufgaben\/[^/]+$/.test(pathname ?? "");
   const [open, setOpen] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
   const [pinned, setPinned] = useState<string[]>([]);
@@ -211,6 +215,17 @@ export function HamburgerMenu() {
     <>
       {/* Notification Bell — LINKS */}
       <div className="fixed left-4 top-4 z-40 flex items-center gap-2">
+        {aufgabeDetailMatch && (
+          <button
+            onClick={() => router.push("/aufgaben")}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-accent"
+            aria-label="Zurück zur Aufgabenübersicht"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5">
+              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
         <button
           onClick={() => setShowNotifs(!showNotifs)}
           className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-accent"
