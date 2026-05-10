@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { compressImage } from "@/lib/image-compress";
 import { animalAvatarUrl } from "@/lib/avatar-utils";
+import { FamilyKidsSection } from "./FamilyKidsSection";
 
 type Diet = "fleisch" | "vegi" | "vegan";
 
@@ -209,6 +211,8 @@ function PushSubscribeBox() {
 
 export default function ProfilPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const myUserId = session?.user?.id ?? "";
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -505,6 +509,8 @@ export default function ProfilPage() {
           className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
         />
       </section>
+
+      {myUserId && <FamilyKidsSection myUserId={myUserId} />}
 
       {/* Lieblingstier */}
       <section className="mb-6">

@@ -19,6 +19,18 @@ interface Guest {
   allergies: string;
 }
 
+interface FamilyKid {
+  id: string;
+  name: string;
+  diet: "FLEISCH" | "VEGI" | "VEGAN";
+  allergies: string;
+  parents: { id: string; name: string }[];
+}
+
+function dietEnumToLabel(d: "FLEISCH" | "VEGI" | "VEGAN"): string {
+  return d === "FLEISCH" ? "Fleisch" : d === "VEGI" ? "Vegi" : "Vegan";
+}
+
 interface MealSignup {
   id: string;
   userId: string;
@@ -101,6 +113,7 @@ export default function TerminDetailPage() {
   const [newComment, setNewComment] = useState("");
 
   const [myDiet, setMyDiet] = useState("Fleisch");
+  const [myKids, setMyKids] = useState<FamilyKid[]>([]);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -109,7 +122,32 @@ export default function TerminDetailPage() {
         if (data?.diet) setMyDiet(data.diet);
       })
       .catch(() => {});
+    fetch("/api/family-kids")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((kids: FamilyKid[]) => setMyKids(kids))
+      .catch(() => {});
   }, []);
+
+  // True wenn das Kind aktuell in den Gaesten ist (Identifikation per Name —
+  // ein Kind pro Elternteil ist eindeutig benannt).
+  function isKidSelected(kid: FamilyKid): boolean {
+    return signupGuestDetails.some((g) => g.name === kid.name);
+  }
+
+  function toggleKid(kid: FamilyKid) {
+    setSignupGuestDetails((prev) => {
+      const idx = prev.findIndex((g) => g.name === kid.name);
+      if (idx >= 0) return prev.filter((_, i) => i !== idx);
+      return [
+        ...prev,
+        {
+          name: kid.name,
+          diet: dietEnumToLabel(kid.diet),
+          allergies: kid.allergies,
+        },
+      ];
+    });
+  }
 
   const WG_OPTIONS = [
     "Nordwind",
@@ -885,6 +923,37 @@ export default function TerminDetailPage() {
                 Deine Ernährung ({myDiet}) wird automatisch aus deinem Profil
                 übernommen.
               </p>
+
+              {/* Eigene Kinder: 1-Klick-Anmelden mit vorbelegter Diet */}
+              {myKids.length > 0 && (
+                <div className="mb-3">
+                  <p className="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-secondary">
+                    Meine Kinder
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {myKids.map((k) => {
+                      const sel = isKidSelected(k);
+                      return (
+                        <button
+                          key={k.id}
+                          type="button"
+                          onClick={() => toggleKid(k)}
+                          className={`rounded-full border px-2 py-1 font-mono text-[10px] uppercase tracking-wider transition-colors ${
+                            sel
+                              ? "border-secondary bg-secondary text-white"
+                              : "border-gray-700 text-gray-300 hover:border-secondary"
+                          }`}
+                        >
+                          {sel ? "✓" : "+"} {k.name}
+                          <span className="ml-1 opacity-60">
+                            ({dietEnumToLabel(k.diet)})
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Gäste */}
               <div className="mb-3 flex items-center justify-between">
