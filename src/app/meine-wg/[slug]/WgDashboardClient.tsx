@@ -43,19 +43,14 @@ interface ShoppingItem {
   comments: { id: string }[];
 }
 
-interface AemtliItem {
-  id: string;
-  title: string;
-  intervalDays: number;
-  mandatory: boolean;
-  lastDoneAt: string | null;
-  lastDoneBy: { id: string; name: string } | null;
-  nextMember: { id: string; name: string } | null;
-  overdueDays: number;
-}
 interface AemtliData {
   members: { id: string; name: string }[];
-  aemtli: AemtliItem[];
+  rotationOrder: string[];
+  currentIndex: number;
+  currentUser: { id: string; name: string } | null;
+  lastDoneBy: { id: string; name: string } | null;
+  lastDoneAt: string | null;
+  checkedPflicht: string[];
 }
 
 interface TerminItem {
@@ -578,16 +573,12 @@ function ShoppingTile({
 function AemtliTile({
   slug,
   data,
-  meId,
-  onChanged,
 }: {
   slug: string;
   data: AemtliData | null;
   meId: string;
   onChanged: () => void;
 }) {
-  const [busyId, setBusyId] = useState<string | null>(null);
-
   if (!data) {
     return (
       <Tile href={`/meine-wg/${slug}/aemtli`} icon="🧹" title="Aemtli">
@@ -596,87 +587,49 @@ function AemtliTile({
     );
   }
 
-  // Sortiere: ueberfaellige zuerst, dann nach Faelligkeit
-  const sorted = [...data.aemtli].sort((a, b) => {
-    if (a.overdueDays > 0 && b.overdueDays === 0) return -1;
-    if (b.overdueDays > 0 && a.overdueDays === 0) return 1;
-    return b.overdueDays - a.overdueDays;
-  });
-  const top = sorted.slice(0, 2);
-  const overdueCount = data.aemtli.filter((a) => a.overdueDays > 0).length;
-
-  async function done(id: string) {
-    setBusyId(id);
-    try {
-      await fetch(`/api/meine-wg/${slug}/aemtli/${id}/done`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: meId }),
-      });
-      onChanged();
-    } finally {
-      setBusyId(null);
-    }
-  }
+  const overdueDays = data.lastDoneAt
+    ? Math.floor(
+        (Date.now() - new Date(data.lastDoneAt).getTime()) / 86400000
+      )
+    : 999;
+  const isOverdue = overdueDays >= 11;
 
   return (
-    <div
-      className={`p-3 ${
-        overdueCount > 0
-          ? "rounded-xl border border-red-500/40 bg-red-500/10 shadow-[0_0_18px_rgba(239,68,68,0.15)]"
+    <a
+      href={`/meine-wg/${slug}/aemtli`}
+      className={`block p-3 ${
+        isOverdue
+          ? "rounded-xl border border-red-500/40 bg-red-500/10"
           : "wg-tile"
       }`}
     >
-      <div className="mb-2 flex items-baseline justify-between">
-        <a
-          href={`/meine-wg/${slug}/aemtli`}
-          className="font-display text-[11px] font-bold uppercase tracking-widest text-white hover:text-white"
-        >
+      <div className="mb-1 flex items-baseline justify-between">
+        <span className="font-display text-[11px] font-bold uppercase tracking-widest text-white">
           🧹 Aemtli
-        </a>
-        <span
-          className={`font-mono text-[10px] uppercase tracking-wider ${
-            overdueCount > 0 ? "text-red-300" : "text-accent"
-          }`}
-        >
-          {overdueCount > 0 ? `${overdueCount} ueberfaellig` : "ok"}
         </span>
+        {isOverdue && (
+          <span className="font-mono text-[10px] uppercase tracking-wider text-red-300">
+            +{overdueDays}d
+          </span>
+        )}
       </div>
-
-      {top.length === 0 ? (
-        <p className="text-xs italic text-gray-500">noch keine Aemtli</p>
+      {data.currentUser ? (
+        <p className="truncate text-sm font-medium text-white">
+          {data.currentUser.name} ist dran
+        </p>
       ) : (
-        <div className="space-y-1">
-          {top.map((a) => (
-            <div key={a.id} className="rounded bg-black/30 p-1.5">
-              <div className="flex items-baseline justify-between gap-1">
-                <p className="truncate text-[11px] font-medium text-white">
-                  {a.title}
-                </p>
-                {a.overdueDays > 0 && (
-                  <span className="font-mono text-[9px] text-red-300">
-                    +{a.overdueDays}d
-                  </span>
-                )}
-              </div>
-              {a.nextMember && (
-                <p className="text-[9px] text-gray-500">
-                  nächste*r:{" "}
-                  <span className="text-accent">{a.nextMember.name}</span>
-                </p>
-              )}
-              <button
-                onClick={() => done(a.id)}
-                disabled={busyId === a.id}
-                className="mt-1 w-full rounded bg-accent px-2 py-0.5 text-[10px] font-bold uppercase text-black hover:brightness-110 disabled:opacity-50"
-              >
-                ✓ erledigt
-              </button>
-            </div>
-          ))}
-        </div>
+        <p className="text-xs italic text-gray-500">keine Rotation</p>
       )}
-    </div>
+      {data.lastDoneBy && data.lastDoneAt && (
+        <p className="mt-0.5 text-[10px] text-gray-400">
+          zuletzt: {data.lastDoneBy.name} ·{" "}
+          {new Date(data.lastDoneAt).toLocaleDateString("de-CH", {
+            day: "2-digit",
+            month: "2-digit",
+          })}
+        </p>
+      )}
+    </a>
   );
 }
 
