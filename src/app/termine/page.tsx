@@ -1157,7 +1157,7 @@ export default function TerminePage() {
 
               {/* Titel + Organisator — klickbar */}
               <Link href={`/termine/${t.id}`} className="block">
-                <h3 className="mt-0.5 text-sm font-medium text-white">
+                <h3 className="mt-0.5 font-display text-base font-bold uppercase tracking-wider text-white">
                   {t.title}
                   {t.type === "sitzung" && t.withDinner && (
                     <span className="ml-1 text-[10px] font-normal text-gray-500">

@@ -637,7 +637,7 @@ export default function AktivitaetenPage() {
                       </span>
                     )}
                   </p>
-                  <h3 className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-white">
+                  <h3 className="mt-0.5 flex items-center gap-1.5 font-display text-base font-bold uppercase tracking-wider text-white">
                     <span>{a.title}</span>
                     {a.recurrenceGroupId && (
                       <span
