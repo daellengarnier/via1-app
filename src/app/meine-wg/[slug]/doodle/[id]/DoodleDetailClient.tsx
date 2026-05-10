@@ -150,7 +150,7 @@ export function DoodleDetailClient({ slug, wgName, doodleId, meId }: Props) {
           ← {wgName} · Termine
         </Link>
         <div className="flex items-start justify-between gap-2">
-          <h1 className="wg-title-gradient font-caveat text-5xl font-bold leading-none">
+          <h1 className="wg-title-gradient font-heading text-4xl font-semibold italic leading-tight">
             🗓 {d.title}
           </h1>
           <button
