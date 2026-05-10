@@ -55,6 +55,8 @@ enum NotificationKind {
   FEEDBACK_RESOLVED
   LAUNDRY_DONE
   WG_KOCH_NEW
+  WG_TERMIN_NEW
+  WG_TERMIN_COMMENT
 }
 
 model User {
@@ -129,6 +131,8 @@ model User {
   wgEinkaufCreated     WgEinkauf[]           @relation("WgEinkaufCreator")
   wgEinkaufDone        WgEinkauf[]           @relation("WgEinkaufDoner")
   wgAemtliErledigt     WgAemtliErledigung[]
+  wgTermineCreated     WgTermin[]            @relation("WgTerminCreator")
+  wgTerminComments     WgTerminComment[]     @relation("WgTerminCommentAuthor")
 
   @@map("users")
 }
@@ -602,6 +606,7 @@ model Wg {
   kochEintraege       WgKochEintrag[]
   einkauf             WgEinkauf[]
   aemtli              WgAemtli[]
+  termine             WgTermin[]
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 }
@@ -698,6 +703,51 @@ model WgAemtliErledigung {
   notes    String?
 
   @@index([aemtliId, doneAt])
+}
+
+model WgTermin {
+  id          String                @id @default(cuid())
+  wgId        String
+  wg          Wg                    @relation(fields: [wgId], references: [id], onDelete: Cascade)
+  title       String
+  date        DateTime
+  endDate     DateTime?
+  location    String?
+  description String?
+  protokoll   String?
+  createdById String
+  createdBy   User                  @relation("WgTerminCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  traktanden  WgTerminTraktandum[]
+  comments    WgTerminComment[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([wgId, date])
+}
+
+model WgTerminTraktandum {
+  id        String   @id @default(cuid())
+  terminId  String
+  termin    WgTermin @relation(fields: [terminId], references: [id], onDelete: Cascade)
+  title     String
+  notes     String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([terminId])
+}
+
+model WgTerminComment {
+  id        String   @id @default(cuid())
+  terminId  String
+  termin    WgTermin @relation(fields: [terminId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation("WgTerminCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([terminId])
 }
 
 model Room {
