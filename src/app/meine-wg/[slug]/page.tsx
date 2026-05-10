@@ -9,6 +9,7 @@ import {
   wgSlug,
 } from "@/lib/wg-unlock";
 import { UnlockForm } from "./UnlockForm";
+import { WgDashboardClient } from "./WgDashboardClient";
 
 interface Props {
   params: { slug: string };
@@ -66,72 +67,9 @@ export default async function MeineWgSlugPage({ params }: Props) {
       ) : !unlocked ? (
         <UnlockForm wgSlug={params.slug} wgName={wg.name} />
       ) : (
-        <div className="space-y-2">
-          <FeatureLink
-            href={`/meine-wg/${params.slug}/kochplan`}
-            icon="🍳"
-            title="Kochplan"
-            subtitle="Wer kocht wann, wer isst mit"
-          />
-          <FeatureLink
-            href={`/meine-wg/${params.slug}/einkauf`}
-            icon="🛒"
-            title="Einkaufsliste"
-            subtitle="Gemeinsame Einkaufsliste"
-          />
-          <FeatureLink
-            href={`/meine-wg/${params.slug}/aemtli`}
-            icon="🧹"
-            title="Aemtli"
-            subtitle="Putzplan mit Rotation"
-          />
-          <FeatureLink
-            href={`/meine-wg/${params.slug}/termine`}
-            icon="📅"
-            title="WG-Termine"
-            subtitle="Sitzungen mit Traktanden + Protokoll"
-          />
-          <FeatureLink
-            href={`/meine-wg/${params.slug}/doodle`}
-            icon="🗓"
-            title="Termin-Doodle"
-            subtitle="Datums-Umfragen → Termin"
-          />
-          <FeatureLink
-            href={`/meine-wg/${params.slug}/pinnwand`}
-            icon="📌"
-            title="Pinnwand"
-            subtitle="Post-Its in 6 Farben + Kommentare"
-          />
-        </div>
+        <WgDashboardClient slug={params.slug} meId={session.user.id} />
       )}
     </div>
-  );
-}
-
-function FeatureLink({
-  href,
-  icon,
-  title,
-  subtitle,
-}: {
-  href: string;
-  icon: string;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <a
-      href={href}
-      className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 p-4 hover:border-accent hover:bg-accent/10"
-    >
-      <span className="text-2xl">{icon}</span>
-      <div className="min-w-0 flex-1">
-        <p className="font-medium text-white">{title}</p>
-        <p className="text-[11px] text-gray-400">{subtitle}</p>
-      </div>
-      <span className="text-accent">→</span>
-    </a>
   );
 }
 
