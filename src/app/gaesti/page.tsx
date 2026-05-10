@@ -206,7 +206,7 @@ export default function GaestiPage() {
           fetchPriority="high"
         />
       </div>
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-blue-300">
+      <h1 className="mb-1 text-center font-display font-bold uppercase tracking-wider text-3xl text-blue-300">
         Gästewohnwagen
       </h1>
       <p className="mb-4 text-center text-sm text-blue-300/70">

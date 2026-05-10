@@ -194,7 +194,7 @@ export default function HausbuchPage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/pic-hausbuch.webp" alt="" className="tab-btn-icon glow-violet" loading="eager" fetchPriority="high" />
       </div>
-      <h1 className="mb-1 text-center font-cinzel text-3xl text-violet-300">Hausbuch</h1>
+      <h1 className="mb-1 text-center font-display font-bold uppercase tracking-wider text-3xl text-violet-300">Hausbuch</h1>
       <p className="mb-4 text-center text-sm text-violet-300/70">Anleitungen, Orte und Wissen rund ums Via 1</p>
 
       <button

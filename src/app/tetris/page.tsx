@@ -416,7 +416,7 @@ export default function TetrisPage() {
       {/* Start Screen */}
       {!started && (
         <div className="flex flex-1 flex-col items-center justify-center">
-          <p className="mb-2 font-cinzel text-3xl text-accent">Block Puzzle</p>
+          <p className="mb-2 font-display font-bold uppercase tracking-wider text-3xl text-accent">Block Puzzle</p>
           <p className="mb-6 text-xs text-gray-500">Swipe · Tap = Drehen · ⏬ = Drop</p>
           <button
             onClick={startGame}
@@ -439,7 +439,7 @@ export default function TetrisPage() {
       {/* Game Over Screen */}
       {started && finalScore !== null && (
         <div className="flex flex-1 flex-col items-center justify-center">
-          <p className="mb-1 font-cinzel text-2xl text-accent">Game Over</p>
+          <p className="mb-1 font-display font-bold uppercase tracking-wider text-2xl text-accent">Game Over</p>
           <p className="mb-1 font-mono text-4xl font-bold text-white">{finalScore}</p>
           {isNewRecord && (
             <p className="mb-2 font-display text-[11px] font-bold uppercase tracking-widest text-amber-300">

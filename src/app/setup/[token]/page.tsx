@@ -191,7 +191,7 @@ export default function SetupPage() {
           />
         </div>
 
-        <h1 className="mb-1 text-center font-cinzel text-3xl text-emerald-300">
+        <h1 className="mb-1 text-center font-display font-bold uppercase tracking-wider text-3xl text-emerald-300">
           {isReset ? "Passwort zurücksetzen" : "Willkommen bei Via 1"}
         </h1>
         <p className="mb-6 text-center text-sm text-gray-500">

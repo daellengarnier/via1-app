@@ -126,7 +126,7 @@ export default function AdminWgsPage() {
 
   return (
     <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-      <h1 className="mb-1 font-cinzel text-3xl text-accent">WG-Passwoerter</h1>
+      <h1 className="mb-1 font-display font-bold uppercase tracking-wider text-3xl text-accent">WG-Passwoerter</h1>
       <p className="mb-6 text-xs text-gray-500">
         Setzt das Passwort fuer den jeweiligen privaten "Meine WG"-Bereich.
         Mindestens 4 Zeichen.
