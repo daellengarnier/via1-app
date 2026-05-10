@@ -13,6 +13,27 @@ body {
   overflow-x: hidden;
 }
 
+.home-spin-vibration {
+  animation: home-spin-vibration 0.11s linear infinite;
+  transform-origin: center 18%;
+  will-change: transform;
+}
+
+@keyframes home-spin-vibration {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  20% { transform: translate3d(0.55px, -0.35px, 0) rotate(0.045deg); }
+  40% { transform: translate3d(-0.45px, 0.25px, 0) rotate(-0.04deg); }
+  60% { transform: translate3d(0.35px, 0.45px, 0) rotate(0.03deg); }
+  80% { transform: translate3d(-0.55px, -0.2px, 0) rotate(-0.035deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-spin-vibration {
+    animation: none;
+  }
+}
+
 /* ===== Background ===== */
 .via-bg {
   position: fixed;

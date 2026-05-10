@@ -404,7 +404,11 @@ function WashingMachineIcon({
   );
 }
 
-export function LaundryTimers() {
+export function LaundryTimers({
+  onSpinChange,
+}: {
+  onSpinChange?: (spinning: boolean) => void;
+}) {
   const [machines, setMachines] = useState<LaundryMachineState[]>(
     emptyMachines
   );
@@ -413,6 +417,11 @@ export function LaundryTimers() {
   const [programName, setProgramName] = useState<string>(defaultProgram.name);
   const [minutes, setMinutes] = useState<number>(defaultProgram.minutes);
   const [busy, setBusy] = useState(false);
+  const spinning = machines.some(
+    (machine) =>
+      machine.timer &&
+      new Date(machine.timer.endsAt).getTime() - now <= 5 * 60_000
+  );
 
   async function load() {
     try {
@@ -441,6 +450,10 @@ export function LaundryTimers() {
       window.clearInterval(tick);
     };
   }, []);
+
+  useEffect(() => {
+    onSpinChange?.(spinning);
+  }, [onSpinChange, spinning]);
 
   function openMachine(machine: LaundryMachineState) {
     if (selected?.key === machine.key) {

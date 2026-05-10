@@ -141,6 +141,7 @@ export default function HomeScreen() {
     startTime: string;
     timeRange: string;
   } | null>(null);
+  const [laundrySpinning, setLaundrySpinning] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -542,14 +543,18 @@ export default function HomeScreen() {
   }
 
   return (
-    <div className="relative p-4 pb-20">
+    <div
+      className={`relative p-4 pb-20 ${
+        laundrySpinning ? "home-spin-vibration" : ""
+      }`}
+    >
       <TabHeader
         title={`${getGreeting()}, ${userName}`}
         icon="/pyramid.webp"
         color="green"
         scrollable
       />
-      <LaundryTimers />
+      <LaundryTimers onSpinChange={setLaundrySpinning} />
 
       {/* Wetter + Aare */}
       {(weather || aare) && (
