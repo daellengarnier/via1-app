@@ -6,12 +6,13 @@ import { prisma } from "@/lib/prisma";
 import { wgSlug } from "@/lib/wg-unlock";
 import { WgBackground } from "@/components/WgBackground";
 
-// /meine-wg — Auswahlseite
-// - eigene WG (anhand Zimmer-Zuordnung) wird prominent oben gezeigt
-// - alle anderen WGs darunter, klickbar (Zugang via WG-Passwort)
-// - Sinn: User wie Ambar koennen sich auch zur Partner-WG (Family-WG)
-//   anmelden, obwohl sie offiziell einer anderen WG zugeordnet sind
-export default async function MeineWgIndexPage() {
+// /meine-wg — Default: redirect direkt in eigene WG.
+// /meine-wg?all=1 → Auswahlseite (zum Wechseln, z.B. Cross-WG-Partner).
+export default async function MeineWgIndexPage({
+  searchParams,
+}: {
+  searchParams?: { all?: string; select?: string };
+}) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
 
@@ -20,6 +21,11 @@ export default async function MeineWgIndexPage() {
     include: { room: { include: { wg: true } } },
   });
   const myWg = me?.room?.wg ?? null;
+
+  const forceList = !!(searchParams?.all || searchParams?.select);
+  if (myWg && !forceList) {
+    redirect(`/meine-wg/${wgSlug(myWg.name)}`);
+  }
 
   const allWgs = await prisma.wg.findMany({
     orderBy: [{ floor: "asc" }, { side: "asc" }],

@@ -222,18 +222,22 @@ function KochTile({
         </div>
         <div className="grid grid-cols-2 gap-2">
           <KochSlotMini
+            slug={slug}
             slot="lunch"
             eintrag={lunch}
             meId={meId}
             onIchKoche={() => setCookOpen({ date: today, slot: "lunch" })}
             onSignup={(e) => setSignupOpen(e)}
+            onChanged={onChanged}
           />
           <KochSlotMini
+            slug={slug}
             slot="dinner"
             eintrag={dinner}
             meId={meId}
             onIchKoche={() => setCookOpen({ date: today, slot: "dinner" })}
             onSignup={(e) => setSignupOpen(e)}
+            onChanged={onChanged}
           />
         </div>
       </div>
@@ -269,27 +273,40 @@ function KochTile({
 }
 
 function KochSlotMini({
+  slug,
   slot,
   eintrag,
   meId,
   onIchKoche,
   onSignup,
+  onChanged,
 }: {
+  slug: string;
   slot: Slot;
   eintrag: KochEintrag | undefined;
   meId: string;
   onIchKoche: () => void;
   onSignup: (e: KochEintrag) => void;
+  onChanged: () => void;
 }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+
   if (!eintrag) {
     return (
-      <div className="wg-glow-border rounded-lg border border-dashed border-gray-700 bg-black/30 p-2">
+      <div
+        className="wg-glow-border cursor-pointer rounded-lg border border-dashed border-gray-700 bg-black/30 p-2 hover:bg-black/40"
+        onClick={() => router.push(`/meine-wg/${slug}/kochplan`)}
+      >
         <p className="font-mono text-[10px] uppercase tracking-wider text-gray-400">
           {SLOT_ICON[slot]} {SLOT_LABEL[slot]}
         </p>
         <p className="mt-1 text-[11px] italic text-gray-600">niemand kocht</p>
         <button
-          onClick={onIchKoche}
+          onClick={(e) => {
+            e.stopPropagation();
+            onIchKoche();
+          }}
           className="mt-2 w-full rounded-md bg-white px-2 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-black hover:brightness-90"
         >
           🍳 Ich koche!
@@ -311,8 +328,35 @@ function KochSlotMini({
   const myStatus = mySignup?.status ?? null;
   const meIsCook = eintrag.cook?.id === meId;
 
+  // Quick-Signup: 1-Klick going/declined ohne Modal. Bewahrt bestehende
+  // Kinder/Gaeste — wer Details aendern will, geht ueber den Kochplan.
+  async function quickSignup(status: "going" | "declined") {
+    if (!eintrag || busy) return;
+    setBusy(true);
+    try {
+      await fetch(
+        `/api/meine-wg/${slug}/kochplan/eintraege/${eintrag.id}/signup`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status,
+            childrenIds: mySignup?.childrenIds ?? [],
+            guests: mySignup?.guests ?? 0,
+          }),
+        }
+      );
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <div className="wg-glow-border rounded-lg border border-white/15 bg-black/30 p-2">
+    <div
+      className="wg-glow-border cursor-pointer rounded-lg border border-white/15 bg-black/30 p-2 hover:bg-black/40"
+      onClick={() => router.push(`/meine-wg/${slug}/kochplan`)}
+    >
       <p className="font-mono text-[10px] uppercase tracking-wider text-secondary">
         {SLOT_ICON[slot]} {SLOT_LABEL[slot]}
         {eintrag.time && (
@@ -333,22 +377,52 @@ function KochSlotMini({
         <span className="font-bold text-white">{total}</span> dabei
       </p>
       {!meIsCook && (
-        <button
-          onClick={() => onSignup(eintrag)}
-          className={`mt-1 w-full rounded-md px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider ${
-            myStatus === "going"
-              ? "border border-white/50 bg-white/10 text-white"
-              : myStatus === "declined"
-                ? "border border-red-500/40 bg-red-500/10 text-red-300"
-                : "bg-white text-black hover:brightness-90"
-          }`}
+        <div
+          className="mt-1.5 flex gap-1"
+          onClick={(e) => e.stopPropagation()}
         >
-          {myStatus === "going"
-            ? "✓ dabei"
-            : myStatus === "declined"
-              ? "✗ kann nicht"
-              : "antworten"}
-        </button>
+          <button
+            onClick={() => quickSignup("going")}
+            disabled={busy}
+            className={`flex-1 rounded-md py-1 font-mono text-[11px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50 ${
+              myStatus === "going"
+                ? "border border-green-400/60 bg-green-500/30 text-green-100"
+                : "border border-gray-700 text-gray-300 hover:border-green-500/60 hover:bg-green-500/10"
+            }`}
+            title="Bin dabei"
+          >
+            ✓
+          </button>
+          <button
+            onClick={() => quickSignup("declined")}
+            disabled={busy}
+            className={`flex-1 rounded-md py-1 font-mono text-[11px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50 ${
+              myStatus === "declined"
+                ? "border border-red-400/60 bg-red-500/30 text-red-200"
+                : "border border-gray-700 text-gray-300 hover:border-red-500/60 hover:bg-red-500/10"
+            }`}
+            title="Kann nicht"
+          >
+            ✗
+          </button>
+          {(mySignup?.childrenIds.length || mySignup?.guests) ? (
+            <button
+              onClick={() => onSignup(eintrag)}
+              className="rounded-md border border-gray-700 px-1.5 py-1 font-mono text-[9px] uppercase tracking-wider text-gray-300 hover:border-white/40"
+              title="Kinder / Gaeste anpassen"
+            >
+              +
+            </button>
+          ) : (
+            <button
+              onClick={() => onSignup(eintrag)}
+              className="rounded-md border border-gray-700 px-1.5 py-1 font-mono text-[9px] uppercase tracking-wider text-gray-500 hover:border-white/40 hover:text-gray-300"
+              title="Mit Kindern / Gaesten anmelden"
+            >
+              +
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -723,7 +797,10 @@ function TermineTile({
       </div>
 
       {next ? (
-        <div className="wg-glow-border rounded-lg border border-white/15 bg-black/30 p-2">
+        <Link
+          href={`/meine-wg/${slug}/termine/${next.id}`}
+          className="wg-glow-border block rounded-lg border border-white/15 bg-black/30 p-2 hover:bg-black/40"
+        >
           <p className="truncate font-display text-sm font-bold uppercase tracking-wider text-white">
             {next.title}
           </p>
@@ -738,15 +815,19 @@ function TermineTile({
               minute: "2-digit",
             })}
           </p>
-          <a
-            href={`/api/meine-wg/${slug}/termine/${next.id}/ics`}
-            onClick={(e) => e.stopPropagation()}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.location.href = `/api/meine-wg/${slug}/termine/${next.id}/ics`;
+            }}
             className="mt-1 inline-block font-mono text-[9px] uppercase tracking-wider text-white/80 hover:text-white"
             title="In Kalender importieren"
           >
             📥 .ics
-          </a>
-        </div>
+          </button>
+        </Link>
       ) : (
         <p className="text-xs italic text-gray-500">keine geplant</p>
       )}
