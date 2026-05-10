@@ -139,40 +139,52 @@ export function TerminDetailClient({ slug, wgName, terminId, meId }: Props) {
 
   if (loading || !termin) {
     return (
-      <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-        <p className="text-sm text-gray-500">Lade Termin...</p>
+      <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+        <div className="pt-14">
+          <Link
+            href={`/meine-wg/${slug}/termine`}
+            className="font-mono text-[10px] uppercase tracking-widest text-fuchsia-300/80 hover:text-fuchsia-200"
+          >
+            ← {wgName} · Termine
+          </Link>
+          <p className="mt-4 text-sm text-fuchsia-300/60">Lade...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-      <Link
-        href={`/meine-wg/${slug}/termine`}
-        className="font-mono text-[10px] uppercase tracking-widest text-gray-500 hover:text-accent"
-      >
-        ← {wgName} · Termine
-      </Link>
-
-      <div className="mb-4 mt-1 flex items-start justify-between gap-2">
-        <h1 className="font-cinzel text-2xl text-accent">{termin.title}</h1>
-        <div className="flex shrink-0 gap-1">
-          <button
-            onClick={() => setEditing(true)}
-            className="text-xs text-gray-500 hover:text-white"
-          >
-            ✎
+    <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+      <div className="relative pt-14">
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-48 wg-bg-glow" />
+        <Link
+          href={`/meine-wg/${slug}/termine`}
+          className="font-mono text-[10px] uppercase tracking-widest text-fuchsia-300/80 hover:text-fuchsia-200"
+        >
+          ← {wgName} · Termine
+        </Link>
+        <div className="flex items-start justify-between gap-2">
+          <h1 className="wg-title-gradient font-caveat text-5xl font-bold leading-none">
+            {termin.title}
+          </h1>
+          <div className="mt-2 flex shrink-0 gap-1">
+            <button
+              onClick={() => setEditing(true)}
+              className="text-xs text-gray-500 hover:text-white"
+            >
+              ✎
           </button>
-          <button
-            onClick={deleteTermin}
-            className="text-xs text-gray-500 hover:text-red-400"
-          >
-            ✕
-          </button>
+            <button
+              onClick={deleteTermin}
+              className="text-xs text-gray-500 hover:text-red-400"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="mb-4 rounded-xl border border-gray-800 bg-gray-900/40 p-3">
+      <div className="mb-4 mt-3 rounded-xl border border-gray-800 bg-gray-900/40 p-3">
         <p className="font-mono text-xs uppercase tracking-wider text-secondary">
           {fmtDateTime(termin.date)}
         </p>

@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { COOKING_PRESETS } from "@/lib/wg-koch-presets";
+import { WgPageHeader } from "@/components/WgPageHeader";
 import {
   DEFAULT_TIME,
   SLOTS,
@@ -143,38 +143,37 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
 
   if (loading || !data) {
     return (
-      <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-        <p className="text-sm text-gray-500">Lade Kochplan...</p>
+      <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+        <WgPageHeader
+          backToWgSlug={slug}
+          backToWgName={wgName}
+          title="🍳 Kochplan"
+        />
+        <p className="mt-4 text-sm text-fuchsia-300/60">Lade...</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-md px-4 py-6 pb-24">
-      <div className="mb-4 flex items-start justify-between gap-2">
-        <div>
-          <Link
-            href={`/meine-wg/${slug}`}
-            className="font-mono text-[10px] uppercase tracking-widest text-gray-500 hover:text-accent"
-          >
-            ← {wgName}
-          </Link>
-          <h1 className="font-cinzel text-3xl text-accent">🍳 Kochplan</h1>
-        </div>
-        <div className="flex flex-col gap-1">
-          <button
-            onClick={() => setShowTemplates(true)}
-            className="rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-300 hover:border-accent hover:text-accent"
-          >
-            Vorlagen
-          </button>
-          <button
-            onClick={() => setShowKinder(true)}
-            className="rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-300 hover:border-accent hover:text-accent"
-          >
-            Kinder
-          </button>
-        </div>
+    <div className="mx-auto min-h-screen max-w-md px-4 pb-24">
+      <WgPageHeader
+        backToWgSlug={slug}
+        backToWgName={wgName}
+        title="🍳 Kochplan"
+      />
+      <div className="mb-4 mt-3 flex justify-end gap-1">
+        <button
+          onClick={() => setShowTemplates(true)}
+          className="rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-fuchsia-200 hover:bg-fuchsia-500/20"
+        >
+          Vorlagen
+        </button>
+        <button
+          onClick={() => setShowKinder(true)}
+          className="rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-fuchsia-200 hover:bg-fuchsia-500/20"
+        >
+          Kinder
+        </button>
       </div>
 
       <div className="space-y-3">
