@@ -31,6 +31,13 @@ interface Signup {
   notes: string | null;
 }
 
+interface Comment {
+  id: string;
+  author: Person;
+  text: string;
+  createdAt: string;
+}
+
 interface Eintrag {
   id: string;
   date: string;
@@ -42,6 +49,7 @@ interface Eintrag {
   createdBy: { id: string; name: string };
   createdAt: string;
   signups: Signup[];
+  comments: Comment[];
 }
 
 interface Template {
@@ -202,6 +210,7 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
                       key={slot}
                       slot={slot}
                       eintrag={eintrag}
+                      slug={slug}
                       meId={meId}
                       members={data.members}
                       kinder={data.kinder}
@@ -222,6 +231,7 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
                         );
                         load();
                       }}
+                      onChanged={load}
                     />
                   );
                 })}
@@ -293,6 +303,7 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
 function SlotBox({
   slot,
   eintrag,
+  slug,
   meId,
   members,
   kinder,
@@ -300,9 +311,11 @@ function SlotBox({
   onSignup,
   onEdit,
   onDelete,
+  onChanged,
 }: {
   slot: Slot;
   eintrag: Eintrag | undefined;
+  slug: string;
   meId: string;
   members: Person[];
   kinder: Kind[];
@@ -310,6 +323,7 @@ function SlotBox({
   onSignup: (e: Eintrag) => void;
   onEdit: (e: Eintrag) => void;
   onDelete: (e: Eintrag) => void;
+  onChanged: () => void;
 }) {
   if (!eintrag) {
     return (
@@ -332,33 +346,71 @@ function SlotBox({
   return (
     <EintragCard
       e={eintrag}
+      slug={slug}
       meId={meId}
       members={members}
       kinder={kinder}
       onSignup={() => onSignup(eintrag)}
       onEdit={() => onEdit(eintrag)}
       onDelete={() => onDelete(eintrag)}
+      onChanged={onChanged}
     />
   );
 }
 
 function EintragCard({
   e,
+  slug,
   meId,
   members,
   kinder,
   onSignup,
   onEdit,
   onDelete,
+  onChanged,
 }: {
   e: Eintrag;
+  slug: string;
   meId: string;
   members: Person[];
   kinder: Kind[];
   onSignup: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onChanged: () => void;
 }) {
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function addComment() {
+    const t = newComment.trim();
+    if (!t) return;
+    setBusy(true);
+    try {
+      await fetch(
+        `/api/meine-wg/${slug}/kochplan/eintraege/${e.id}/comments`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: t }),
+        }
+      );
+      setNewComment("");
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteComment(cId: string) {
+    await fetch(
+      `/api/meine-wg/${slug}/kochplan/eintraege/${e.id}/comments/${cId}`,
+      { method: "DELETE" }
+    );
+    onChanged();
+  }
+
   const going = e.signups.filter((s) => s.status === "going");
   const declined = e.signups.filter((s) => s.status === "declined");
   const respondedIds = new Set(e.signups.map((s) => s.user.id));
@@ -504,6 +556,76 @@ function EintragCard({
           )}
         </div>
       )}
+
+      {/* Kommentare — z.B. Pizza-Bestellungen */}
+      <div className="mt-2 border-t border-white/10 pt-2">
+        <button
+          type="button"
+          onClick={() => setCommentsOpen((v) => !v)}
+          className="flex w-full items-center justify-between text-left font-mono text-[10px] uppercase tracking-wider text-gray-400 hover:text-white"
+        >
+          <span>
+            💬 Kommentare{e.comments.length > 0 ? ` (${e.comments.length})` : ""}
+          </span>
+          <span>{commentsOpen ? "▲" : "▼"}</span>
+        </button>
+        {commentsOpen && (
+          <div className="mt-2 space-y-2">
+            {e.comments.length > 0 && (
+              <div className="space-y-1.5">
+                {e.comments.map((c) => (
+                  <div
+                    key={c.id}
+                    className="rounded border border-white/15 bg-black/30 px-2 py-1.5"
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-display text-[10px] font-bold uppercase tracking-wider text-white">
+                        {c.author.name}
+                      </span>
+                      <span className="font-mono text-[9px] text-gray-500">
+                        {new Date(c.createdAt).toLocaleString("de-CH", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 whitespace-pre-line text-xs text-gray-200">
+                      {c.text}
+                    </p>
+                    {c.author.id === meId && (
+                      <button
+                        onClick={() => deleteComment(c.id)}
+                        className="mt-0.5 text-[9px] text-gray-500 hover:text-red-400"
+                      >
+                        loeschen
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-1">
+              <input
+                value={newComment}
+                onChange={(ev) => setNewComment(ev.target.value)}
+                onKeyDown={(ev) => ev.key === "Enter" && addComment()}
+                placeholder="z.B. 'Margherita bitte'"
+                maxLength={500}
+                className="flex-1 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white placeholder-gray-500 focus:border-white/50 focus:outline-none"
+              />
+              <button
+                onClick={addComment}
+                disabled={busy || !newComment.trim()}
+                className="rounded bg-white px-2 py-1 font-mono text-[10px] font-bold uppercase text-black hover:brightness-90 disabled:opacity-50"
+              >
+                ↵
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

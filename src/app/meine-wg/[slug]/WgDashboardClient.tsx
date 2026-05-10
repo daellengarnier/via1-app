@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   SLOT_ICON,
   SLOT_LABEL,
@@ -129,16 +129,37 @@ export function WgDashboardClient({ slug, meId, meName }: Props) {
     loadAll();
   }, [loadAll]);
 
+  // Linke Spalte (Aemtli + Termine) misst sich selber — die rechte
+  // Spalte (Einkauf) bekommt diese Hoehe als max-height, damit sie nicht
+  // ueber den Stack hinauswaechst und intern scrollt.
+  const leftRef = useRef<HTMLDivElement | null>(null);
+  const [leftHeight, setLeftHeight] = useState<number | null>(null);
+  useEffect(() => {
+    if (!leftRef.current) return;
+    const el = leftRef.current;
+    const ro = new ResizeObserver(() => {
+      setLeftHeight(el.offsetHeight);
+    });
+    ro.observe(el);
+    setLeftHeight(el.offsetHeight);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <div className="space-y-3">
       <KochTile slug={slug} meId={meId} meName={meName} data={koch} onChanged={loadAll} />
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-2 items-start gap-3">
+        <div ref={leftRef} className="flex flex-col gap-3">
           <AemtliTile slug={slug} data={aemtli} meId={meId} onChanged={loadAll} />
           <TermineTile slug={slug} data={termine} doodles={doodles} />
         </div>
-        <ShoppingTile slug={slug} items={shopping} onChanged={loadAll} />
+        <ShoppingTile
+          slug={slug}
+          items={shopping}
+          onChanged={loadAll}
+          maxHeight={leftHeight}
+        />
       </div>
 
       <PinnwandInline slug={slug} notes={pinnwand} onChanged={loadAll} />
@@ -482,10 +503,12 @@ function ShoppingTile({
   slug,
   items,
   onChanged,
+  maxHeight,
 }: {
   slug: string;
   items: ShoppingItem[] | null;
   onChanged: () => void;
+  maxHeight: number | null;
 }) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -527,7 +550,10 @@ function ShoppingTile({
   }
 
   return (
-    <div className="wg-tile flex h-full min-h-0 flex-col p-3">
+    <div
+      className="wg-tile flex min-h-0 flex-col p-3"
+      style={maxHeight ? { height: maxHeight, maxHeight } : undefined}
+    >
       <div className="mb-2 flex items-baseline justify-between">
         <a
           href={`/meine-wg/${slug}/einkauf`}
