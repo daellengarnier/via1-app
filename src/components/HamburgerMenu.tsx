@@ -262,7 +262,7 @@ export function HamburgerMenu() {
         }
       >
         {snakeTopScore !== null && snakeTopScore > 0 ? (
-          <span className="font-mono text-[11px] font-bold text-cyan-300">
+          <span className="font-mono text-[11px] font-bold text-white">
             {snakeTopScore > 9999
               ? `${Math.floor(snakeTopScore / 1000)}k`
               : snakeTopScore}
