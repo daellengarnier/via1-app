@@ -281,7 +281,7 @@ function KochSlotMini({
 }) {
   if (!eintrag) {
     return (
-      <div className="rounded-lg border border-dashed border-gray-700 bg-black/30 p-2">
+      <div className="wg-glow-border rounded-lg border border-dashed border-gray-700 bg-black/30 p-2">
         <p className="font-mono text-[10px] uppercase tracking-wider text-gray-400">
           {SLOT_ICON[slot]} {SLOT_LABEL[slot]}
         </p>
@@ -310,7 +310,7 @@ function KochSlotMini({
   const meIsCook = eintrag.cook?.id === meId;
 
   return (
-    <div className="rounded-lg bg-black/30 p-2">
+    <div className="wg-glow-border rounded-lg border border-white/15 bg-black/30 p-2">
       <p className="font-mono text-[10px] uppercase tracking-wider text-secondary">
         {SLOT_ICON[slot]} {SLOT_LABEL[slot]}
         {eintrag.time && (
@@ -721,7 +721,7 @@ function TermineTile({
       </div>
 
       {next ? (
-        <div className="rounded bg-black/30 p-2">
+        <div className="wg-glow-border rounded-lg border border-white/15 bg-black/30 p-2">
           <p className="truncate font-display text-sm font-bold uppercase tracking-wider text-white">
             {next.title}
           </p>
