@@ -3,6 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { COOKING_PRESETS } from "@/lib/wg-koch-presets";
+import {
+  DEFAULT_TIME,
+  SLOTS,
+  SLOT_ICON,
+  SLOT_LABEL,
+  TIME_PRESETS,
+  type Slot,
+} from "@/lib/wg-koch-slots";
 
 interface Person {
   id: string;
@@ -28,8 +36,9 @@ interface Signup {
 interface Eintrag {
   id: string;
   date: string;
+  slot: Slot;
   time: string | null;
-  title: string;
+  menu: string | null;
   description: string | null;
   cook: Person | null;
   createdBy: { id: string; name: string };
@@ -76,10 +85,15 @@ function formatDateLabel(iso: string, todayIso: string): string {
   return `${wd}, ${dd}.${mm}`;
 }
 
+interface SlotKey {
+  date: string;
+  slot: Slot;
+}
+
 export function KochplanClient({ slug, wgName, meId, meName }: Props) {
   const [data, setData] = useState<ApiData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState<string | null>(null);
+  const [showCook, setShowCook] = useState<SlotKey | null>(null);
   const [showSignup, setShowSignup] = useState<Eintrag | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showKinder, setShowKinder] = useState(false);
@@ -102,13 +116,12 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
     load();
   }, [load]);
 
-  const byDay = useMemo(() => {
-    if (!data) return new Map<string, Eintrag[]>();
-    const map = new Map<string, Eintrag[]>();
+  // Index: (date, slot) -> Eintrag
+  const bySlot = useMemo(() => {
+    if (!data) return new Map<string, Eintrag>();
+    const map = new Map<string, Eintrag>();
     for (const e of data.eintraege) {
-      const list = map.get(e.date) ?? [];
-      list.push(e);
-      map.set(e.date, list);
+      map.set(`${e.date}_${e.slot}`, e);
     }
     return map;
   }, [data]);
@@ -166,7 +179,6 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
 
       <div className="space-y-3">
         {days.map((day) => {
-          const items = byDay.get(day) ?? [];
           const isToday = day === data.today;
           return (
             <div
@@ -177,45 +189,36 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
                   : "border-gray-800 bg-gray-900/30"
               }`}
             >
-              <div className="mb-2 flex items-center justify-between">
-                <p
-                  className={`font-mono text-xs font-bold uppercase tracking-wider ${
-                    isToday ? "text-accent" : "text-gray-400"
-                  }`}
-                >
-                  {formatDateLabel(day, data.today)}
-                </p>
-                <button
-                  onClick={() => {
-                    setEditing(null);
-                    setShowAdd(day);
-                  }}
-                  className="rounded border border-secondary/40 bg-secondary/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-secondary hover:bg-secondary/20"
-                >
-                  + Essen
-                </button>
-              </div>
+              <p
+                className={`mb-2 font-mono text-xs font-bold uppercase tracking-wider ${
+                  isToday ? "text-accent" : "text-gray-400"
+                }`}
+              >
+                {formatDateLabel(day, data.today)}
+              </p>
 
-              {items.length === 0 ? (
-                <p className="py-2 text-center text-[11px] italic text-gray-600">
-                  noch nichts geplant
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {items.map((e) => (
-                    <EintragCard
-                      key={e.id}
-                      e={e}
+              <div className="space-y-2">
+                {SLOTS.map((slot) => {
+                  const eintrag = bySlot.get(`${day}_${slot}`);
+                  return (
+                    <SlotBox
+                      key={slot}
+                      slot={slot}
+                      eintrag={eintrag}
                       meId={meId}
                       members={data.members}
                       kinder={data.kinder}
-                      onSignup={() => setShowSignup(e)}
-                      onEdit={() => {
-                        setShowAdd(null);
+                      onIchKoche={() => {
+                        setEditing(null);
+                        setShowCook({ date: day, slot });
+                      }}
+                      onSignup={(e) => setShowSignup(e)}
+                      onEdit={(e) => {
+                        setShowCook(null);
                         setEditing(e);
                       }}
-                      onDelete={async () => {
-                        if (!confirm("Wirklich loeschen?")) return;
+                      onDelete={async (e) => {
+                        if (!confirm("Eintrag loeschen?")) return;
                         await fetch(
                           `/api/meine-wg/${slug}/kochplan/eintraege/${e.id}`,
                           { method: "DELETE" }
@@ -223,27 +226,31 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
                         load();
                       }}
                     />
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
           );
         })}
       </div>
 
-      {(showAdd || editing) && (
-        <EintragModal
+      {(showCook || editing) && (
+        <CookModal
           slug={slug}
-          initialDate={editing?.date ?? showAdd ?? data.today}
+          slotKey={
+            editing
+              ? { date: editing.date, slot: editing.slot }
+              : showCook!
+          }
           editing={editing}
           templates={data.templates}
           meName={meName}
           onClose={() => {
-            setShowAdd(null);
+            setShowCook(null);
             setEditing(null);
           }}
           onSaved={() => {
-            setShowAdd(null);
+            setShowCook(null);
             setEditing(null);
             load();
           }}
@@ -286,6 +293,58 @@ export function KochplanClient({ slug, wgName, meId, meName }: Props) {
   );
 }
 
+function SlotBox({
+  slot,
+  eintrag,
+  meId,
+  members,
+  kinder,
+  onIchKoche,
+  onSignup,
+  onEdit,
+  onDelete,
+}: {
+  slot: Slot;
+  eintrag: Eintrag | undefined;
+  meId: string;
+  members: Person[];
+  kinder: Kind[];
+  onIchKoche: () => void;
+  onSignup: (e: Eintrag) => void;
+  onEdit: (e: Eintrag) => void;
+  onDelete: (e: Eintrag) => void;
+}) {
+  if (!eintrag) {
+    return (
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-gray-700 bg-black/30 p-3">
+        <p className="font-mono text-xs text-gray-500">
+          {SLOT_ICON[slot]} {SLOT_LABEL[slot]}
+          <span className="ml-2 italic text-gray-600">
+            niemand kocht
+          </span>
+        </p>
+        <button
+          onClick={onIchKoche}
+          className="rounded-md bg-accent px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-black hover:brightness-110"
+        >
+          🍳 Ich koche!
+        </button>
+      </div>
+    );
+  }
+  return (
+    <EintragCard
+      e={eintrag}
+      meId={meId}
+      members={members}
+      kinder={kinder}
+      onSignup={() => onSignup(eintrag)}
+      onEdit={() => onEdit(eintrag)}
+      onDelete={() => onDelete(eintrag)}
+    />
+  );
+}
+
 function EintragCard({
   e,
   meId,
@@ -306,7 +365,6 @@ function EintragCard({
   const going = e.signups.filter((s) => s.status === "going");
   const declined = e.signups.filter((s) => s.status === "declined");
   const respondedIds = new Set(e.signups.map((s) => s.user.id));
-  // Cook gilt automatisch als dabei → von noResponse ausschliessen
   if (e.cook) respondedIds.add(e.cook.id);
   const noResponse = members.filter((m) => !respondedIds.has(m.id));
 
@@ -317,17 +375,25 @@ function EintragCard({
 
   const mySignup = e.signups.find((s) => s.user.id === meId);
   const myStatus = mySignup?.status ?? null;
+  const meIsCook = e.cook?.id === meId;
 
   return (
     <div className="rounded-lg border border-gray-800 bg-black/40 p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-secondary">
+            {SLOT_ICON[e.slot]} {SLOT_LABEL[e.slot]}
             {e.time && (
-              <span className="font-mono text-xs text-secondary">{e.time}</span>
+              <span className="ml-2 text-gray-300">{e.time}</span>
             )}
-            <p className="truncate font-medium text-white">{e.title}</p>
-          </div>
+          </p>
+          {e.menu ? (
+            <p className="mt-0.5 font-medium text-white">{e.menu}</p>
+          ) : (
+            <p className="mt-0.5 text-sm italic text-gray-500">
+              (Menu noch offen)
+            </p>
+          )}
           {e.description && (
             <p className="mt-0.5 text-xs text-gray-400">{e.description}</p>
           )}
@@ -370,22 +436,24 @@ function EintragCard({
             <span className="italic text-gray-600">noch keine Anmeldungen</span>
           )}
         </div>
-        <button
-          onClick={onSignup}
-          className={`rounded-md px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider ${
-            myStatus === "going"
-              ? "border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20"
+        {!meIsCook && (
+          <button
+            onClick={onSignup}
+            className={`rounded-md px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider ${
+              myStatus === "going"
+                ? "border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20"
+                : myStatus === "declined"
+                  ? "border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                  : "bg-accent text-black hover:brightness-110"
+            }`}
+          >
+            {myStatus === "going"
+              ? "✓ dabei"
               : myStatus === "declined"
-                ? "border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
-                : "bg-accent text-black hover:brightness-110"
-          }`}
-        >
-          {myStatus === "going"
-            ? "✓ dabei"
-            : myStatus === "declined"
-              ? "✗ kann nicht"
-              : "antworten"}
-        </button>
+                ? "✗ kann nicht"
+                : "antworten"}
+          </button>
+        )}
       </div>
 
       {(going.length > 0 || declined.length > 0 || noResponse.length > 0) && (
@@ -462,9 +530,9 @@ function SignupBadge({ signup, kinder }: { signup: Signup; kinder: Kind[] }) {
   );
 }
 
-function EintragModal({
+function CookModal({
   slug,
-  initialDate,
+  slotKey,
   editing,
   templates,
   meName,
@@ -472,37 +540,35 @@ function EintragModal({
   onSaved,
 }: {
   slug: string;
-  initialDate: string;
+  slotKey: SlotKey;
   editing: Eintrag | null;
   templates: Template[];
   meName: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [date, setDate] = useState(editing?.date ?? initialDate);
-  const [title, setTitle] = useState(editing?.title ?? "");
-  const [time, setTime] = useState(editing?.time ?? "");
+  const [date, setDate] = useState(editing?.date ?? slotKey.date);
+  const [slot, setSlot] = useState<Slot>(editing?.slot ?? slotKey.slot);
+  const [menu, setMenu] = useState(editing?.menu ?? "");
+  const [time, setTime] = useState(
+    editing?.time ?? DEFAULT_TIME[slotKey.slot]
+  );
   const [description, setDescription] = useState(editing?.description ?? "");
-  const [selfCook, setSelfCook] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function applyPreset(s: string) {
-    setTitle(s);
+    setMenu(s);
   }
 
   function applyTemplate(t: Template) {
-    setTitle(t.title);
+    setMenu(t.title);
     if (t.description) setDescription(t.description);
     if (t.defaultTime) setTime(t.defaultTime);
   }
 
   async function save() {
     setError(null);
-    if (!title.trim()) {
-      setError("Titel fehlt.");
-      return;
-    }
     setBusy(true);
     try {
       const url = editing
@@ -514,10 +580,12 @@ function EintragModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           date,
-          title: title.trim(),
+          slot,
+          menu: menu.trim() || null,
           time: time || null,
-          description: description || null,
-          selfCook: editing ? false : selfCook,
+          description: description.trim() || null,
+          // Wenn neu angelegt: Ersteller ist auch Cook ("Ich koche!")
+          selfCook: editing ? false : true,
         }),
       });
       if (!res.ok) {
@@ -531,15 +599,54 @@ function EintragModal({
     }
   }
 
+  const presets = TIME_PRESETS[slot];
+
   return (
-    <Modal title={editing ? "Essen bearbeiten" : "Neues Essen"} onClose={onClose}>
-      <Field label="Schnellauswahl">
-        <div className="flex flex-wrap gap-1">
+    <Modal
+      title={editing ? "Eintrag bearbeiten" : `🍳 ${SLOT_LABEL[slot]} — ${meName} kocht`}
+      onClose={onClose}
+    >
+      {/* Slot-Toggle (nur sichtbar wenn editierbar — bei Neuanlage fix vom Click) */}
+      {editing && (
+        <Field label="Slot">
+          <div className="grid grid-cols-2 gap-2">
+            {SLOTS.map((s) => (
+              <button
+                key={s}
+                onClick={() => setSlot(s)}
+                className={`rounded-lg py-2 font-mono text-xs font-bold uppercase tracking-wider ${
+                  slot === s
+                    ? "bg-accent text-black"
+                    : "border border-gray-700 bg-gray-900 text-gray-400"
+                }`}
+              >
+                {SLOT_ICON[s]} {SLOT_LABEL[s]}
+              </button>
+            ))}
+          </div>
+        </Field>
+      )}
+
+      <Field label="Menu — was gibt's? (optional)">
+        <input
+          type="text"
+          value={menu}
+          onChange={(e) => setMenu(e.target.value)}
+          placeholder="z.B. Pasta mit Pesto"
+          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          autoFocus
+        />
+        <div className="mt-2 flex flex-wrap gap-1">
           {COOKING_PRESETS.map((s) => (
             <button
               key={s}
+              type="button"
               onClick={() => applyPreset(s)}
-              className="rounded-full border border-secondary/40 bg-secondary/10 px-2 py-1 text-xs text-secondary hover:bg-secondary/20"
+              className={`rounded-full border px-2 py-1 text-xs ${
+                menu === s
+                  ? "border-secondary bg-secondary/30 text-white"
+                  : "border-secondary/40 bg-secondary/10 text-secondary hover:bg-secondary/20"
+              }`}
             >
               {s}
             </button>
@@ -547,6 +654,7 @@ function EintragModal({
           {templates.map((t) => (
             <button
               key={t.id}
+              type="button"
               onClick={() => applyTemplate(t)}
               className="rounded-full border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-300 hover:border-accent hover:text-accent"
               title="Eigene Vorlage"
@@ -555,6 +663,31 @@ function EintragModal({
             </button>
           ))}
         </div>
+      </Field>
+
+      <Field label="Zeit">
+        <div className="mb-1 flex flex-wrap gap-1">
+          {presets.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setTime(p)}
+              className={`rounded-md border px-2 py-1 font-mono text-xs ${
+                time === p
+                  ? "border-accent bg-accent text-black"
+                  : "border-gray-700 bg-gray-900 text-gray-300 hover:border-accent"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+        <input
+          type="time"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+        />
       </Field>
 
       <Field label="Datum">
@@ -566,47 +699,15 @@ function EintragModal({
         />
       </Field>
 
-      <Field label="Titel">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="z.B. Bolognese"
-          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
-          autoFocus
-        />
-      </Field>
-
-      <Field label="Zeit (optional)">
-        <input
-          type="time"
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-          className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
-        />
-      </Field>
-
-      <Field label="Beschreibung (optional)">
+      <Field label="Notiz / Beschreibung (optional)">
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={2}
           className="w-full resize-none rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
-          placeholder="Was wird's geben?"
+          placeholder="z.B. 'bringt jemand Salat?'"
         />
       </Field>
-
-      {!editing && (
-        <label className="mb-3 flex items-center gap-2 text-sm text-gray-300">
-          <input
-            type="checkbox"
-            checked={selfCook}
-            onChange={(e) => setSelfCook(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-accent"
-          />
-          Ich ({meName}) koche
-        </label>
-      )}
 
       {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
 
@@ -616,7 +717,7 @@ function EintragModal({
           disabled={busy}
           className="flex-1 rounded-lg bg-accent px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 disabled:opacity-50"
         >
-          {busy ? "..." : editing ? "Speichern" : "Anlegen"}
+          {busy ? "..." : editing ? "Speichern" : "🍳 Los geht's!"}
         </button>
         <button
           onClick={onClose}
@@ -698,8 +799,12 @@ function SignupModal({
     }
   }
 
+  const headline = `${SLOT_ICON[eintrag.slot]} ${SLOT_LABEL[eintrag.slot]}${
+    eintrag.menu ? ` — ${eintrag.menu}` : ""
+  }`;
+
   return (
-    <Modal title={`Antwort: ${eintrag.title}`} onClose={onClose}>
+    <Modal title={headline} onClose={onClose}>
       <div className="mb-3 grid grid-cols-2 gap-2">
         <button
           onClick={() => setStatus("going")}
@@ -723,28 +828,33 @@ function SignupModal({
         </button>
       </div>
 
+      {/* Kinder direkt als prominente Toggle-Buttons */}
       {status === "going" && myKinder.length > 0 && (
-        <Field label="Kinder dabei?">
-          <div className="space-y-1">
-            {myKinder.map((k) => {
-              const checked = childrenIds.includes(k.id);
-              return (
-                <label
-                  key={k.id}
-                  className="flex items-center gap-2 rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-sm text-gray-200"
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggleChild(k.id)}
-                    className="h-4 w-4 rounded border-gray-600 bg-gray-900 text-accent"
-                  />
-                  {k.name}
-                </label>
-              );
-            })}
-          </div>
-        </Field>
+        <div className="mb-3 space-y-1.5">
+          {myKinder.map((k) => {
+            const checked = childrenIds.includes(k.id);
+            return (
+              <button
+                key={k.id}
+                type="button"
+                onClick={() => toggleChild(k.id)}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 font-mono text-sm font-bold uppercase tracking-wider ${
+                  checked
+                    ? "bg-accent/20 text-accent ring-1 ring-accent"
+                    : "border border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-500"
+                }`}
+              >
+                <span>
+                  {checked ? "✓ " : ""}
+                  {k.name} isst mit
+                </span>
+                <span className="text-[10px] opacity-70">
+                  {checked ? "tippen zum entfernen" : "tippen zum hinzufuegen"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       )}
 
       {status === "going" && (
@@ -840,8 +950,8 @@ function TemplatesModal({
   return (
     <Modal title="Vorlagen" onClose={onClose}>
       <p className="mb-3 text-xs text-gray-500">
-        Wiederkehrende Essen als Vorlage speichern. Beim Anlegen eines Essens
-        erscheint sie als Quick-Pick.
+        Wiederkehrende Essen als Vorlage speichern. Erscheint als Quick-Pick
+        beim Anlegen.
       </p>
 
       <div className="mb-3 space-y-2">
@@ -977,8 +1087,8 @@ function KinderModal({
   return (
     <Modal title="Kinder" onClose={onClose}>
       <p className="mb-3 text-xs text-gray-500">
-        Kinder werden beim Sign-up der Eltern als Toggles angezeigt
-        ("Nori dabei?"). Mehrere Eltern moeglich.
+        Kinder werden beim Sign-up der Eltern als Toggle-Buttons angezeigt
+        ("Nori isst mit"). Mehrere Eltern moeglich.
       </p>
 
       <div className="mb-3 space-y-2">

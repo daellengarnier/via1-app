@@ -36,7 +36,7 @@ export async function GET(
           },
         },
       },
-      orderBy: [{ date: "asc" }, { time: "asc" }],
+      orderBy: [{ date: "asc" }, { slot: "asc" }, { time: "asc" }],
     }),
     prisma.wgKochTemplate.findMany({
       where: { wgId: access.wg.id },
@@ -66,8 +66,9 @@ export async function GET(
     eintraege: eintraege.map((e) => ({
       id: e.id,
       date: isoDate(e.date),
+      slot: e.slot,
       time: e.time,
-      title: e.title,
+      menu: e.menu,
       description: e.description,
       cook: e.cook,
       createdBy: e.createdBy,
