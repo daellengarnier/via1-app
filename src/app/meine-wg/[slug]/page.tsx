@@ -67,7 +67,11 @@ export default async function MeineWgSlugPage({ params }: Props) {
       ) : !unlocked ? (
         <UnlockForm wgSlug={params.slug} wgName={wg.name} />
       ) : (
-        <WgDashboardClient slug={params.slug} meId={session.user.id} />
+        <WgDashboardClient
+          slug={params.slug}
+          meId={session.user.id}
+          meName={session.user.name ?? ""}
+        />
       )}
     </div>
   );

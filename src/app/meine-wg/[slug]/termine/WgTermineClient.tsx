@@ -225,7 +225,7 @@ export function WgTermineClient({ slug, wgName }: Props) {
 
 function TerminRow({ termin, slug }: { termin: Termin; slug: string }) {
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-3 hover:border-white/50">
+    <div className="wg-tile-light p-3">
       <Link href={`/meine-wg/${slug}/termine/${termin.id}`} className="block">
         <p className="font-display text-base font-bold uppercase tracking-wider text-white">
           {termin.title}
