@@ -181,6 +181,26 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function impersonate(u: AdminUser) {
+    if (!confirm(`Als ${u.name} einloggen?\n\nDu kannst die Impersonation oben am Banner stoppen.`)) return;
+    try {
+      const res = await fetch("/api/admin/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: u.id }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        alert(data.error ?? "Login als User fehlgeschlagen.");
+        return;
+      }
+      window.location.href = "/";
+    } catch (err) {
+      console.error("impersonate", err);
+      alert("Netzwerkfehler.");
+    }
+  }
+
   async function deleteUser(id: string, name: string) {
     if (
       !confirm(
@@ -445,6 +465,13 @@ export default function AdminUsersPage() {
                     className="rounded-lg border border-orange-500/40 bg-orange-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-orange-200 hover:bg-orange-500/20 disabled:opacity-50"
                   >
                     {resetting === u.id ? "…" : "Reset"}
+                  </button>
+                  <button
+                    onClick={() => impersonate(u)}
+                    className="rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-purple-200 hover:bg-purple-500/20"
+                    title="Als diesen User einloggen (zum Testen)"
+                  >
+                    🎭
                   </button>
                   <button
                     onClick={() => deleteUser(u.id, u.name)}
