@@ -153,8 +153,36 @@ export default function TerminePage() {
     name: string;
     diet: GuestDiet;
   }
+  interface MyKid {
+    id: string;
+    name: string;
+    diet: "FLEISCH" | "VEGI" | "VEGAN";
+    allergies: string;
+  }
   const [signupOpen, setSignupOpen] = useState<string | null>(null);
   const [signupGuests, setSignupGuests] = useState<SignupGuest[]>([]);
+  const [myKids, setMyKids] = useState<MyKid[]>([]);
+
+  useEffect(() => {
+    fetch("/api/family-kids")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((kids: MyKid[]) => setMyKids(kids))
+      .catch(() => {});
+  }, []);
+
+  function dietEnumToLabel(d: "FLEISCH" | "VEGI" | "VEGAN"): GuestDiet {
+    return d === "FLEISCH" ? "Fleisch" : d === "VEGI" ? "Vegi" : "Vegan";
+  }
+  function isKidSelected(kid: MyKid): boolean {
+    return signupGuests.some((g) => g.name === kid.name);
+  }
+  function toggleKid(kid: MyKid) {
+    setSignupGuests((prev) => {
+      const idx = prev.findIndex((g) => g.name === kid.name);
+      if (idx >= 0) return prev.filter((_, i) => i !== idx);
+      return [...prev, { name: kid.name, diet: dietEnumToLabel(kid.diet) }];
+    });
+  }
 
   // Detail-Popup für Anmeldungen
   interface DetailPopupData {
@@ -1041,6 +1069,39 @@ export default function TerminePage() {
                   <p className="mb-2 text-[10px] text-gray-500">
                     Deine Ernährung wird aus dem Profil übernommen.
                   </p>
+
+                  {myKids.length > 0 && (
+                    <div className="mb-2">
+                      <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-amber-300">
+                        Meine Kinder
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {myKids.map((k) => {
+                          const sel = isKidSelected(k);
+                          return (
+                            <button
+                              key={k.id}
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                toggleKid(k);
+                              }}
+                              className={`rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${
+                                sel
+                                  ? "border-amber-400 bg-amber-400 text-dark"
+                                  : "border-gray-700 text-gray-300 hover:border-amber-400"
+                              }`}
+                            >
+                              {sel ? "✓" : "+"} {k.name}
+                              <span className="ml-1 opacity-60">
+                                ({dietEnumToLabel(k.diet)})
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-xs text-gray-300">
