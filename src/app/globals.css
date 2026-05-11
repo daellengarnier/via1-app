@@ -406,8 +406,10 @@ body {
 }
 
 /* Sternschnuppen fuer den "Meine WG"-Bereich:
-   3 Streifen die in unregelmaessigen Abstaenden quer ueber den Hintergrund sausen.
-   Mit blur(2px) wirken sie wie weiche Lichtspuren. */
+   Streifen die in unregelmaessigen Abstaenden quer ueber den Hintergrund
+   sausen. Mit blur(2px) wirken sie wie weiche Lichtspuren.
+   X + Y beide in vw, damit der Trajektorien-Winkel auf allen Displays
+   exakt mit der CSS-Rotation matched (sonst auf schmalen Phones schraeg). */
 .wg-shooting-star {
   position: absolute;
   width: 140px;
@@ -426,40 +428,60 @@ body {
   pointer-events: none;
   will-change: transform, opacity;
 }
+
+/* Shoot1: links nach rechts, sanft nach unten. rotate(22deg) entspricht
+   einer Verschiebung von 130vw horizontal + 130*tan(22°)=52.5vw vertikal. */
 @keyframes wgShoot1 {
-  0%, 88% { transform: translate3d(-15vw, -10vh, 0) rotate(22deg); opacity: 0; }
+  0%, 88% { transform: translate3d(-15vw, 0vw, 0) rotate(22deg); opacity: 0; }
   90%     { opacity: 1; }
-  100%    { transform: translate3d(115vw, 65vh, 0) rotate(22deg); opacity: 0; }
+  100%    { transform: translate3d(115vw, 52.5vw, 0) rotate(22deg); opacity: 0; }
 }
+/* Shoot2: rechts nach links, nach unten. rotate(158deg) heisst Richtungs-
+   vektor (cos158, sin158) ≈ (-0.927, 0.375). Bei 125vw horizontal sind
+   125 * tan(180-158)° = 50.5vw vertikal noetig. */
 @keyframes wgShoot2 {
-  0%, 60%, 92% { transform: translate3d(110vw, -5vh, 0) rotate(155deg); opacity: 0; }
+  0%, 60%, 92% { transform: translate3d(110vw, -5vw, 0) rotate(158deg); opacity: 0; }
   62%          { opacity: 1; }
-  72%          { transform: translate3d(-15vw, 60vh, 0) rotate(155deg); opacity: 0; }
-  100%         { transform: translate3d(-15vw, 60vh, 0) rotate(155deg); opacity: 0; }
+  72%          { transform: translate3d(-15vw, 45.5vw, 0) rotate(158deg); opacity: 0; }
+  100%         { transform: translate3d(-15vw, 45.5vw, 0) rotate(158deg); opacity: 0; }
 }
+/* Shoot3: links nach rechts, leicht nach oben. rotate(-10deg) →
+   horizontal 135vw, vertikal -135*tan(10°) = -23.8vw. */
 @keyframes wgShoot3 {
-  0%, 30%, 78% { transform: translate3d(-20vw, 30vh, 0) rotate(-10deg); opacity: 0; }
+  0%, 30%, 78% { transform: translate3d(-20vw, 30vw, 0) rotate(-10deg); opacity: 0; }
   32%          { opacity: 1; }
-  44%          { transform: translate3d(115vw, 50vh, 0) rotate(-10deg); opacity: 0; }
-  100%         { transform: translate3d(115vw, 50vh, 0) rotate(-10deg); opacity: 0; }
+  44%          { transform: translate3d(115vw, 6.2vw, 0) rotate(-10deg); opacity: 0; }
+  100%         { transform: translate3d(115vw, 6.2vw, 0) rotate(-10deg); opacity: 0; }
 }
-.wg-shooting-star-1 {
-  top: 10%;
-  left: 0;
-  animation: wgShoot1 11s linear infinite;
+/* Shoot4: steilerer Winkel links nach rechts. rotate(35deg) →
+   tan(35°)=0.70, 130vw horizontal = 91vw vertikal. */
+@keyframes wgShoot4 {
+  0%, 85% { transform: translate3d(-15vw, -25vw, 0) rotate(35deg); opacity: 0; }
+  87%     { opacity: 1; }
+  100%    { transform: translate3d(115vw, 66vw, 0) rotate(35deg); opacity: 0; }
 }
-.wg-shooting-star-2 {
-  top: 25%;
-  left: 0;
-  animation: wgShoot2 14s linear infinite;
-  animation-delay: -3s;
+/* Shoot5: fast horizontaler Streifen. rotate(8deg) → tan(8°)=0.14,
+   135vw → 19vw vertikal. */
+@keyframes wgShoot5 {
+  0%, 75% { transform: translate3d(-15vw, 20vw, 0) rotate(8deg); opacity: 0; }
+  77%     { opacity: 1; }
+  100%    { transform: translate3d(115vw, 39vw, 0) rotate(8deg); opacity: 0; }
 }
-.wg-shooting-star-3 {
-  top: 60%;
-  left: 0;
-  animation: wgShoot3 9s linear infinite;
-  animation-delay: -6s;
-}
+
+.wg-shooting-star-1 { top: 10%; left: 0; animation: wgShoot1 11s linear infinite; }
+.wg-shooting-star-2 { top: 25%; left: 0; animation: wgShoot2 14s linear infinite; animation-delay: -3s; }
+.wg-shooting-star-3 { top: 60%; left: 0; animation: wgShoot3 9s linear infinite; animation-delay: -6s; }
+
+/* Sternschnuppen-Schauer: zusaetzliche Streifen die clusterweise feuern.
+   Verschiedene Delays + Trajektorien sorgen dafuer dass alle ~20-30 Sekunden
+   gleichzeitig mehrere Sternschnuppen ueber den Himmel fliegen. */
+.wg-shooting-star-4 { top: 5%;  left: 0; animation: wgShoot4 13s linear infinite; animation-delay: -1.5s; }
+.wg-shooting-star-5 { top: 35%; left: 0; animation: wgShoot5 12s linear infinite; animation-delay: -8s; }
+.wg-shooting-star-6 { top: 45%; left: 0; animation: wgShoot1 10s linear infinite; animation-delay: -4.5s; }
+.wg-shooting-star-7 { top: 70%; left: 0; animation: wgShoot4 15s linear infinite; animation-delay: -11s; }
+.wg-shooting-star-8 { top: 18%; left: 0; animation: wgShoot5 9s linear infinite; animation-delay: -2s; }
+.wg-shooting-star-9 { top: 50%; left: 0; animation: wgShoot2 11s linear infinite; animation-delay: -7s; }
+.wg-shooting-star-10 { top: 80%; left: 0; animation: wgShoot3 13s linear infinite; animation-delay: -12s; }
 
 /* Umkreisende Linie um eine Kachel — heller Punkt der einmal pro
    Loop um den Border laeuft. Subtiler Hinweis "hier passiert was". */
