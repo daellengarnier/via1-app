@@ -98,33 +98,66 @@ interface Props {
   meName: string;
 }
 
+interface DashboardData {
+  koch: KochData;
+  shopping: ShoppingItem[];
+  aemtli: AemtliData | null;
+  termine: TermineData;
+  doodles: DoodleItem[];
+  pinnwand: PinnwandNote[];
+}
+
+// Stale-while-revalidate cache: beim Wiederoeffnen der App zeigen wir
+// sofort die letzten gesehenen Daten aus localStorage und holen im
+// Hintergrund frische Daten. So fuehlt sich das Dashboard nie "leer"
+// oder langsam an, auch wenn der Server-Roundtrip Sekunden dauert.
+function cacheKey(slug: string): string {
+  return `via1-wg-dashboard-${slug}`;
+}
+
+function loadCachedDashboard(slug: string): DashboardData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(cacheKey(slug));
+    if (!raw) return null;
+    return JSON.parse(raw) as DashboardData;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedDashboard(slug: string, data: DashboardData): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(cacheKey(slug), JSON.stringify(data));
+  } catch {
+    // Quota voll oder kein Storage — kein Fail, einfach nicht cachen
+  }
+}
+
 export function WgDashboardClient({ slug, meId, meName }: Props) {
-  const [koch, setKoch] = useState<KochData | null>(null);
-  const [shopping, setShopping] = useState<ShoppingItem[] | null>(null);
-  const [aemtli, setAemtli] = useState<AemtliData | null>(null);
-  const [termine, setTermine] = useState<TermineData | null>(null);
-  const [doodles, setDoodles] = useState<DoodleItem[] | null>(null);
-  const [pinnwand, setPinnwand] = useState<PinnwandNote[] | null>(null);
+  // Lazy-init aus localStorage, damit beim Mount sofort die letzten
+  // gesehenen Daten gerendert werden (kein leeres Skeleton bei Reopen).
+  const [koch, setKoch] = useState<KochData | null>(() => loadCachedDashboard(slug)?.koch ?? null);
+  const [shopping, setShopping] = useState<ShoppingItem[] | null>(() => loadCachedDashboard(slug)?.shopping ?? null);
+  const [aemtli, setAemtli] = useState<AemtliData | null>(() => loadCachedDashboard(slug)?.aemtli ?? null);
+  const [termine, setTermine] = useState<TermineData | null>(() => loadCachedDashboard(slug)?.termine ?? null);
+  const [doodles, setDoodles] = useState<DoodleItem[] | null>(() => loadCachedDashboard(slug)?.doodles ?? null);
+  const [pinnwand, setPinnwand] = useState<PinnwandNote[] | null>(() => loadCachedDashboard(slug)?.pinnwand ?? null);
 
   // Ein einziger API-Call statt 6 separate Round-Trips fuer schnelleres
-  // erstes Rendering.
+  // erstes Rendering. Cache wird nach erfolgreicher Antwort aktualisiert.
   const loadAll = useCallback(async () => {
     const res = await fetch(`/api/meine-wg/${slug}/dashboard`);
     if (!res.ok) return;
-    const data = (await res.json()) as {
-      koch: KochData;
-      shopping: ShoppingItem[];
-      aemtli: AemtliData | null;
-      termine: TermineData;
-      doodles: DoodleItem[];
-      pinnwand: PinnwandNote[];
-    };
+    const data = (await res.json()) as DashboardData;
     setKoch(data.koch);
     setShopping(data.shopping);
     setAemtli(data.aemtli);
     setTermine(data.termine);
     setDoodles(data.doodles);
     setPinnwand(data.pinnwand);
+    saveCachedDashboard(slug, data);
   }, [slug]);
 
   useEffect(() => {
