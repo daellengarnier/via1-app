@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { compressImage } from "@/lib/image-compress";
@@ -196,6 +197,16 @@ export default function HausbuchPage() {
       </div>
       <h1 className="mb-1 text-center font-display font-bold uppercase tracking-wider text-3xl text-violet-300">Hausbuch</h1>
       <p className="mb-4 text-center text-sm text-violet-300/70">Anleitungen, Orte und Wissen rund ums Via 1</p>
+
+      <Link
+        href="/hausbuch/sitzungsprotokolle"
+        className="mb-3 flex items-center justify-between rounded-2xl border border-violet-500/30 bg-violet-500/5 px-4 py-3 transition-colors hover:bg-violet-500/10"
+      >
+        <span className="font-display text-[11px] font-bold uppercase tracking-widest text-violet-300">
+          📜 Sitzungsprotokolle
+        </span>
+        <span className="font-mono text-[10px] text-violet-400">→</span>
+      </Link>
 
       <button
         onClick={() => {

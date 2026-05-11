@@ -448,7 +448,7 @@ export default function TerminDetailPage() {
     }
   }
 
-  function exportPdf() {
+  async function exportPdf() {
     if (!termin) return;
 
     // A4 = 210 x 297 mm, margin 20mm
@@ -591,6 +591,28 @@ export default function TerminDetailPage() {
     );
 
     doc.save(`${termin.title.replace(/\s+/g, "_")}_Protokoll.pdf`);
+
+    // Zusaetzlich ins Hausbuch (Sitzungsprotokolle) ablegen — automatisch
+    // datiert und sortiert sichtbar fuer alle. PDF als data-URL upload.
+    try {
+      const pdfData = doc.output("datauristring");
+      const title = termin.isHaussitzung
+        ? `Haussitzung ${termin.responsibleWg?.name ?? ""}`.trim()
+        : termin.title;
+      await fetch("/api/sitzungsprotokolle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          terminId: termin.id,
+          title,
+          date: termin.date || new Date().toISOString(),
+          wgName: termin.responsibleWg?.name ?? null,
+          pdfData,
+        }),
+      });
+    } catch (err) {
+      console.error("Protokoll-Upload fehlgeschlagen", err);
+    }
   }
 
   return (

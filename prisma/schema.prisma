@@ -152,6 +152,7 @@ model User {
   wgPinnwandComments   WgPinnwandComment[]   @relation("WgPinnwandCommentAuthor")
   wgGuestMemberships   WgGuest[]
   familyKids           FamilyKid[]           @relation("FamilyKidParents")
+  protokolleCreated    Sitzungsprotokoll[]   @relation("ProtokollCreator")
 
   @@map("users")
 }
@@ -240,6 +241,7 @@ model Termin {
   attendances       Attendance[]
   mealSignups       MealSignup[]
   comments          TerminComment[]
+  protokolle        Sitzungsprotokoll[]
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
@@ -585,6 +587,26 @@ model ActivityComment {
 
   @@index([activityId])
   @@map("activity_comments")
+}
+
+// Sitzungsprotokolle: jeder Haussitzung wird beim PDF-Erstellen automatisch
+// hier abgelegt. Dauerhaft sortiert + datierte Liste fuer die Allgemeinheit.
+model Sitzungsprotokoll {
+  id          String   @id @default(cuid())
+  title       String
+  date        DateTime
+  wgName      String?
+  terminId    String?
+  termin      Termin?  @relation(fields: [terminId], references: [id], onDelete: SetNull)
+  // Base64 Data-URL (data:application/pdf;base64,...)
+  pdfData     String
+  createdBy   User     @relation("ProtokollCreator", fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date])
+  @@index([terminId])
 }
 
 model HausbuchArticle {
