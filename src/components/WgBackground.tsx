@@ -88,11 +88,19 @@ export function WgBackground() {
           }}
         />
       ))}
-      {/* 3 Sternschnuppen mit unterschiedlichen Trajektorien + Delays —
-         saust ungefaehr alle 7-11s eine vorbei */}
+      {/* Sternschnuppen — eine Mischung aus solo-Streifen und gelegentlichen
+         Schauern. Verschiedene Delays sorgen dafuer dass meistens nur 1-2
+         gleichzeitig fliegen, aber alle 20-30s ein paar zusammen feuern. */}
       <span className="wg-shooting-star wg-shooting-star-1" />
       <span className="wg-shooting-star wg-shooting-star-2" />
       <span className="wg-shooting-star wg-shooting-star-3" />
+      <span className="wg-shooting-star wg-shooting-star-4" />
+      <span className="wg-shooting-star wg-shooting-star-5" />
+      <span className="wg-shooting-star wg-shooting-star-6" />
+      <span className="wg-shooting-star wg-shooting-star-7" />
+      <span className="wg-shooting-star wg-shooting-star-8" />
+      <span className="wg-shooting-star wg-shooting-star-9" />
+      <span className="wg-shooting-star wg-shooting-star-10" />
     </div>
   );
 }
