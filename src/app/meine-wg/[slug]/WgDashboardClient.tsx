@@ -735,13 +735,8 @@ function AemtliTile({
         <p className="text-[10px] text-gray-400">ist dran</p>
         {data.lastDoneBy && data.lastDoneAt && (
           <div className="mt-2 border-t border-white/10 pt-1.5">
-            <p className="font-mono text-[9px] uppercase tracking-wider text-gray-500">
-              zuletzt
-            </p>
-            <p className="truncate font-display text-[11px] font-bold uppercase tracking-wider text-white">
-              {data.lastDoneBy.name}
-            </p>
-            <p className="font-mono text-[10px] text-gray-300">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-gray-300">
+              <span className="text-gray-500">Zuletzt: </span>
               {new Date(data.lastDoneAt).toLocaleDateString("de-CH", {
                 day: "numeric",
                 month: "long",
