@@ -238,6 +238,19 @@ export default function TerminePage() {
     return a.date.localeCompare(b.date);
   });
 
+  // Letzte Haussitzung fuer Info-Banner: juengster vergangener Termin
+  // mit isHaussitzung=true.
+  const lastHaussitzung = [...termine]
+    .filter((t) => t.isHaussitzung && t.date && t.date < todayStr)
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  const lastHaussitzungLabel = lastHaussitzung
+    ? new Date(lastHaussitzung.date).toLocaleDateString("de-CH", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     try {
@@ -752,6 +765,22 @@ export default function TerminePage() {
           </button>
         ))}
       </div>
+
+      {/* Info: letzte Haussitzung */}
+      {lastHaussitzungLabel && (
+        <div className="mb-3 rounded-md border border-white/10 bg-white/5 px-3 py-2">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-gray-400">
+            Letzte Haussitzung:{" "}
+            <span className="text-white">{lastHaussitzungLabel}</span>
+            {lastHaussitzung?.responsibleWg && (
+              <span className="text-gray-500">
+                {" "}
+                · {lastHaussitzung.responsibleWg.name}
+              </span>
+            )}
+          </p>
+        </div>
+      )}
 
       {/* Liste — kompakt */}
       <div className="space-y-2">
