@@ -24,6 +24,8 @@ interface ApiUser {
   roomKey: string | null;
   roomNumber: number | null;
   wgName: string | null;
+  tetrisHighscore: number;
+  snakeHighscore: number;
 }
 
 function initials(name: string): string {
@@ -177,6 +179,28 @@ function UserProfileModal({
                 Noch keine weiteren Infos hinterlegt.
               </p>
             )}
+
+          {/* Game-Highscores — fuer alle sichtbar */}
+          {(user.tetrisHighscore > 0 || user.snakeHighscore > 0) && (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-yellow-400/30 bg-yellow-400/5 p-2.5 text-center">
+                <p className="font-mono text-[9px] uppercase tracking-widest text-yellow-300">
+                  🎮 Tetris
+                </p>
+                <p className="mt-0.5 font-mono text-lg font-bold text-white">
+                  {user.tetrisHighscore || "–"}
+                </p>
+              </div>
+              <div className="rounded-lg border border-emerald-400/30 bg-emerald-400/5 p-2.5 text-center">
+                <p className="font-mono text-[9px] uppercase tracking-widest text-emerald-300">
+                  🐍 Snake
+                </p>
+                <p className="mt-0.5 font-mono text-lg font-bold text-white">
+                  {user.snakeHighscore || "–"}
+                </p>
+              </div>
+            </div>
+          )}
           {isAdmin && user.id !== currentUserId && (
             <button
               onClick={() => onDelete(user.id, user.name)}
