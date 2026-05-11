@@ -11,6 +11,10 @@ declare module "next-auth" {
       name: string;
       email: string;
       roles: string[];
+      // Wenn gesetzt: User ist aktuell impersoniert. Enthaelt den
+      // Original-Admin der die Impersonation gestartet hat — wird
+      // verwendet um die Impersonation zu beenden + den Banner zu zeigen.
+      impersonatedBy?: { id: string; name: string };
     };
   }
 }
@@ -18,5 +22,6 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     roles: string[];
+    impersonatedBy?: { id: string; name: string };
   }
 }

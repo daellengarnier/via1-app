@@ -76,6 +76,9 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.sub as string;
         session.user.roles = token.roles as string[];
+        if (token.impersonatedBy) {
+          session.user.impersonatedBy = token.impersonatedBy;
+        }
       }
       return session;
     },

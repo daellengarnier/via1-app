@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ConditionalNav } from "@/components/ConditionalNav";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { Providers } from "@/components/Providers";
 export const metadata: Metadata = {
   title: "Via 1 – Hausgemeinschaft",
@@ -56,6 +57,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen font-sans antialiased">
         <Providers>
+          <ImpersonationBanner />
           <div className="relative mx-auto max-w-lg">{children}</div>
           <ConditionalNav />
         </Providers>
