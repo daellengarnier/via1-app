@@ -76,11 +76,15 @@ interface TerminDetail {
   traktanden: Traktandum[];
   mealSignups: MealSignup[];
   comments: TerminComment[];
+  isHaussitzung: boolean;
+  responsibleWg: { id: string; name: string } | null;
 }
 
 
 function formatDate(iso: string): string {
+  if (!iso) return "Datum offen";
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Datum offen";
   return d.toLocaleDateString("de-CH", {
     weekday: "long",
     day: "numeric",
@@ -601,7 +605,9 @@ export default function TerminDetailPage() {
 
       <div className="mb-5">
         <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-orange-300">
-          {formatDate(termin.date).toUpperCase()}
+          {termin.date
+            ? formatDate(termin.date).toUpperCase()
+            : `📌 DATUM FOLGT${termin.responsibleWg ? ` · ${termin.responsibleWg.name.toUpperCase()}` : ""}`}
         </p>
         <h1 className="mt-0.5 font-display text-xl font-bold uppercase tracking-wider text-white">
           {termin.title}
@@ -611,6 +617,17 @@ export default function TerminDetailPage() {
             </span>
           )}
         </h1>
+        {termin.isHaussitzung && !termin.date && (
+          <div className="mt-2 rounded-md border border-orange-500/40 bg-orange-500/10 p-2">
+            <p className="mb-2 text-[11px] text-orange-200">
+              Datum noch offen — {termin.responsibleWg?.name ?? "verantwortliche WG"} legt fest. Traktanden koennen schon erfasst werden.
+            </p>
+            <SetDateForm
+              terminId={termin.id}
+              onSaved={() => loadTermin()}
+            />
+          </div>
+        )}
         {termin.organizer && (
           <p className="mt-0.5 text-[10px] text-gray-600">
             organisiert von {termin.organizer}
@@ -1251,6 +1268,59 @@ export default function TerminDetailPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Kleines Inline-Formular zum Setzen des Datums + Uhrzeit fuer eine
+// Platzhalter-Haussitzung. Schickt PATCH /api/termine/[id] und triggert
+// danach ein loadTermin im Parent.
+function SetDateForm({ terminId, onSaved }: { terminId: string; onSaved: () => void }) {
+  const [date, setDate] = useState<string>("");
+  const [time, setTime] = useState<string>("19:30");
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (!date) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/termine/${terminId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, time }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(data.error ?? "Datum setzen fehlgeschlagen.");
+        return;
+      }
+      onSaved();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <input
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        className="rounded border border-orange-500/40 bg-gray-900 px-2 py-1 text-xs text-white focus:border-orange-500 focus:outline-none"
+      />
+      <input
+        type="time"
+        value={time}
+        onChange={(e) => setTime(e.target.value)}
+        className="rounded border border-orange-500/40 bg-gray-900 px-2 py-1 text-xs text-white focus:border-orange-500 focus:outline-none"
+      />
+      <button
+        onClick={submit}
+        disabled={busy || !date}
+        className="rounded bg-orange-500 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-white hover:brightness-110 disabled:opacity-50"
+      >
+        {busy ? "..." : "Datum festlegen"}
+      </button>
     </div>
   );
 }

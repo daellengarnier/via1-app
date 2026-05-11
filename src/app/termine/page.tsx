@@ -33,6 +33,8 @@ interface Termin {
   agendaCount: number;
   mealSignupCount: number;
   commentCount: number;
+  isHaussitzung: boolean;
+  responsibleWg: { id: string; name: string } | null;
 }
 
 const wgNames = [
@@ -58,8 +60,10 @@ const typeBg: Record<TerminType, string> = {
 };
 
 function formatDateUpper(iso: string): string {
+  if (!iso) return "📌 DATUM FOLGT";
   // "DO. 30. APRIL 2026"
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "📌 DATUM FOLGT";
   const wd = d
     .toLocaleDateString("de-CH", { weekday: "short" })
     .replace(/\.$/, "")
@@ -1122,7 +1126,9 @@ export default function TerminePage() {
               {/* Kopf: Datum + Aktionen */}
               <div className="flex items-start justify-between gap-2">
                 <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-orange-300">
-                  {formatDateUpper(t.date)}
+                  {t.date
+                    ? formatDateUpper(t.date)
+                    : `📌 DATUM FOLGT${t.responsibleWg ? ` · ${t.responsibleWg.name.toUpperCase()}` : ""}`}
                 </p>
                 <div className="flex shrink-0 items-center gap-1">
                   <button

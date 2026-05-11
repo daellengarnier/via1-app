@@ -39,6 +39,9 @@ export interface TerminListDTO {
   agendaCount: number;
   mealSignupCount: number;
   commentCount: number;
+  // Haussitzungs-Tournus
+  isHaussitzung: boolean;
+  responsibleWg: { id: string; name: string } | null;
 }
 
 export interface TerminCommentDTO {
@@ -124,7 +127,8 @@ export function toDiet(s: string): Diet | null {
   return null;
 }
 
-function splitDate(d: Date): { date: string; time: string } {
+function splitDate(d: Date | null): { date: string; time: string } {
+  if (!d) return { date: "", time: "" };
   // Stored as UTC — convert to local for display
   const local = new Date(d);
   const iso = local.toISOString();
@@ -195,6 +199,7 @@ export function serializeTerminList(
     dinnerOrganizer?: string | null;
     dinnerMenu?: string | null;
     createdBy?: { name: string };
+    responsibleWg?: { id: string; name: string } | null;
   },
   currentUserId: string | null,
   attendances: { status: AttendanceStatus; userId: string }[],
@@ -236,6 +241,8 @@ export function serializeTerminList(
     agendaCount,
     mealSignupCount: extras.mealSignupCount,
     commentCount: extras.commentCount,
+    isHaussitzung: termin.isHaussitzung,
+    responsibleWg: termin.responsibleWg ?? null,
   };
 }
 

@@ -213,8 +213,9 @@ model PinnwandComment {
 model Termin {
   id                String           @id @default(cuid())
   title             String
-  // date = Start-Datum mit Uhrzeit, als UTC gespeichert
-  date              DateTime
+  // date = Start-Datum mit Uhrzeit, als UTC gespeichert. Nullable, damit
+  // wir Platzhalter-Sitzungen (Tournus, "Datum folgt") darstellen koennen.
+  date              DateTime?
   location          String           @default("")
   type              TerminType
   organizer         String?
@@ -227,6 +228,12 @@ model Termin {
   withAttendance    Boolean          @default(false)
   sitzungsleitung   String           @default("")
   protokollfuehrung String           @default("")
+  // Haussitzung-Tournus: wenn isHaussitzung true ist, gehoert dieser
+  // Termin zur Haussitzungs-Rotation und responsibleWgId zeigt auf die
+  // WG die diese Sitzung organisiert.
+  isHaussitzung     Boolean          @default(false)
+  responsibleWg     Wg?              @relation("HaussitzungResponsible", fields: [responsibleWgId], references: [id])
+  responsibleWgId   String?
   createdBy         User             @relation("TerminCreator", fields: [createdById], references: [id])
   createdById       String
   traktanden        Traktandum[]
@@ -237,7 +244,21 @@ model Termin {
   updatedAt         DateTime         @updatedAt
 
   @@index([date])
+  @@index([isHaussitzung])
   @@map("termine")
+}
+
+// Reihenfolge der WGs in der Haussitzungs-Rotation. Niedrigster position-
+// Wert = aktuell dran (rotiert nach jeder durchgefuehrten Sitzung).
+model HaussitzungRotation {
+  id       String   @id @default(cuid())
+  wg       Wg       @relation("HaussitzungRotationWg", fields: [wgId], references: [id], onDelete: Cascade)
+  wgId     String   @unique
+  position Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([position])
 }
 
 model TerminComment {
@@ -644,6 +665,8 @@ model Wg {
   doodles             WgDoodle[]
   pinnwandNotes       WgPinnwandNote[]
   guests              WgGuest[]
+  haussitzungen       Termin[]              @relation("HaussitzungResponsible")
+  haussitzungRotation HaussitzungRotation?  @relation("HaussitzungRotationWg")
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 }
