@@ -1272,12 +1272,17 @@ export default function TerminDetailPage() {
   );
 }
 
-// Kleines Inline-Formular zum Setzen des Datums + Uhrzeit fuer eine
-// Platzhalter-Haussitzung. Schickt PATCH /api/termine/[id] und triggert
-// danach ein loadTermin im Parent.
+// Inline-Formular zum Setzen des Datums fuer eine Platzhalter-
+// Haussitzung — analog zur normalen Sitzungserstellung: Datum, Zeit,
+// Ort, optional inkl. Nachtessen mit Zeit/Ort/Menue.
 function SetDateForm({ terminId, onSaved }: { terminId: string; onSaved: () => void }) {
   const [date, setDate] = useState<string>("");
   const [time, setTime] = useState<string>("19:30");
+  const [location, setLocation] = useState<string>("Saal");
+  const [withDinner, setWithDinner] = useState(false);
+  const [dinnerTime, setDinnerTime] = useState<string>("18:30");
+  const [dinnerLocation, setDinnerLocation] = useState<string>("Saal");
+  const [dinnerMenu, setDinnerMenu] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
   async function submit() {
@@ -1287,7 +1292,15 @@ function SetDateForm({ terminId, onSaved }: { terminId: string; onSaved: () => v
       const res = await fetch(`/api/termine/${terminId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, time }),
+        body: JSON.stringify({
+          date,
+          time,
+          location: location.trim(),
+          withDinner,
+          dinnerTime: withDinner ? dinnerTime : null,
+          dinnerLocation: withDinner ? dinnerLocation.trim() : null,
+          dinnerMenu: withDinner ? dinnerMenu.trim() || null : null,
+        }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -1301,23 +1314,92 @@ function SetDateForm({ terminId, onSaved }: { terminId: string; onSaved: () => v
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-        className="rounded border border-orange-500/40 bg-gray-900 px-2 py-1 text-xs text-white focus:border-orange-500 focus:outline-none"
-      />
-      <input
-        type="time"
-        value={time}
-        onChange={(e) => setTime(e.target.value)}
-        className="rounded border border-orange-500/40 bg-gray-900 px-2 py-1 text-xs text-white focus:border-orange-500 focus:outline-none"
-      />
+    <div className="space-y-2">
+      {/* Datum + Zeit */}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="rounded border border-orange-500/40 bg-gray-900 px-2 py-1 text-xs text-white focus:border-orange-500 focus:outline-none"
+        />
+        <input
+          type="time"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+          className="rounded border border-orange-500/40 bg-gray-900 px-2 py-1 text-xs text-white focus:border-orange-500 focus:outline-none"
+        />
+      </div>
+
+      {/* Ort */}
+      <div>
+        <label className="mb-0.5 block text-[10px] uppercase tracking-wider text-orange-300">
+          Ort
+        </label>
+        <input
+          type="text"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="z.B. Saal"
+          className="w-full rounded border border-orange-500/40 bg-gray-900 px-2 py-1 text-xs text-white focus:border-orange-500 focus:outline-none"
+        />
+      </div>
+
+      {/* Mit Nachtessen */}
+      <label className="flex cursor-pointer items-center gap-2 text-xs text-orange-200">
+        <input
+          type="checkbox"
+          checked={withDinner}
+          onChange={(e) => setWithDinner(e.target.checked)}
+          className="h-4 w-4 rounded border-orange-500/40 bg-gray-900"
+        />
+        🍽 Inkl. Nachtessen
+      </label>
+
+      {withDinner && (
+        <div className="space-y-2 rounded border border-orange-500/20 bg-orange-500/5 p-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-[10px] uppercase tracking-wider text-orange-300">
+              Essen-Zeit
+            </label>
+            <input
+              type="time"
+              value={dinnerTime}
+              onChange={(e) => setDinnerTime(e.target.value)}
+              className="rounded border border-orange-500/40 bg-gray-900 px-2 py-1 text-xs text-white focus:border-orange-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-0.5 block text-[10px] uppercase tracking-wider text-orange-300">
+              Essen-Ort
+            </label>
+            <input
+              type="text"
+              value={dinnerLocation}
+              onChange={(e) => setDinnerLocation(e.target.value)}
+              placeholder="z.B. Saal"
+              className="w-full rounded border border-orange-500/40 bg-gray-900 px-2 py-1 text-xs text-white focus:border-orange-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-0.5 block text-[10px] uppercase tracking-wider text-orange-300">
+              Menu (optional)
+            </label>
+            <input
+              type="text"
+              value={dinnerMenu}
+              onChange={(e) => setDinnerMenu(e.target.value)}
+              placeholder="z.B. Lasagne + Salat"
+              className="w-full rounded border border-orange-500/40 bg-gray-900 px-2 py-1 text-xs text-white focus:border-orange-500 focus:outline-none"
+            />
+          </div>
+        </div>
+      )}
+
       <button
         onClick={submit}
         disabled={busy || !date}
-        className="rounded bg-orange-500 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-white hover:brightness-110 disabled:opacity-50"
+        className="w-full rounded bg-orange-500 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-white hover:brightness-110 disabled:opacity-50"
       >
         {busy ? "..." : "Datum festlegen"}
       </button>
