@@ -55,6 +55,26 @@ interface AareData {
 
 // Pinnwand wird aus /api/pinnwand gelesen
 
+// Stale-while-revalidate helpers fuer Home-Tile-State.
+function readLs<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeLs<T>(key: string, value: T): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Quota
+  }
+}
+
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Guten Morgen";
@@ -130,9 +150,17 @@ export default function HomeScreen() {
   const [openAufgabenCount, setOpenAufgabenCount] = useState<number | null>(
     null
   );
-  const [nextTermin, setNextTermin] = useState<NextTermin | null>(null);
-  const [nextActivity, setNextActivity] = useState<NextActivity | null>(null);
-  const [pinnwand, setPinnwand] = useState<PinnwandEintrag[]>([]);
+  // Cached state: zeigt sofort die letzten gesehenen Daten beim Mount,
+  // statt erst den Server-Roundtrip abzuwarten.
+  const [nextTermin, setNextTermin] = useState<NextTermin | null>(
+    () => readLs<NextTermin | null>("via1-home-nextTermin", null)
+  );
+  const [nextActivity, setNextActivity] = useState<NextActivity | null>(
+    () => readLs<NextActivity | null>("via1-home-nextActivity", null)
+  );
+  const [pinnwand, setPinnwand] = useState<PinnwandEintrag[]>(
+    () => readLs<PinnwandEintrag[]>("via1-home-pinnwand", [])
+  );
   const [pinnwandCommentsOpen, setPinnwandCommentsOpen] = useState<
     string | null
   >(null);
@@ -217,6 +245,7 @@ export default function HomeScreen() {
       }
       const data = (await res.json()) as PinnwandEintrag[];
       setPinnwand(data);
+      writeLs("via1-home-pinnwand", data);
       setPinnwandError(null);
     } catch (err) {
       console.error("Pinnwand laden fehlgeschlagen", err);
@@ -342,7 +371,9 @@ export default function HomeScreen() {
               ? a.time.localeCompare(b.time)
               : a.date.localeCompare(b.date)
           );
-        setNextTermin(upcoming[0] ?? null);
+        const next = upcoming[0] ?? null;
+        setNextTermin(next);
+        writeLs("via1-home-nextTermin", next);
       })
       .catch(() => {});
   }, []);
@@ -366,16 +397,19 @@ export default function HomeScreen() {
         const first = sorted[0];
         if (!first) {
           setNextActivity(null);
+          writeLs("via1-home-nextActivity", null);
           return;
         }
-        setNextActivity({
+        const next: NextActivity = {
           id: first.id,
           title: first.title,
           startAt: first.startAt,
           location: first.location,
           createdBy: first.createdBy,
           participantsGoing: first.participants.filter((p) => p.going).length,
-        });
+        };
+        setNextActivity(next);
+        writeLs("via1-home-nextActivity", next);
       })
       .catch(() => {});
   }, []);

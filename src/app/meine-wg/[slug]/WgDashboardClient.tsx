@@ -147,22 +147,38 @@ export function WgDashboardClient({ slug, meId, meName }: Props) {
 
   // Ein einziger API-Call statt 6 separate Round-Trips fuer schnelleres
   // erstes Rendering. Cache wird nach erfolgreicher Antwort aktualisiert.
-  const loadAll = useCallback(async () => {
-    const res = await fetch(`/api/meine-wg/${slug}/dashboard`);
-    if (!res.ok) return;
-    const data = (await res.json()) as DashboardData;
-    setKoch(data.koch);
-    setShopping(data.shopping);
-    setAemtli(data.aemtli);
-    setTermine(data.termine);
-    setDoodles(data.doodles);
-    setPinnwand(data.pinnwand);
-    saveCachedDashboard(slug, data);
+  // AbortController: wenn User zu einem anderen Tab navigiert wird die
+  // Anfrage abgebrochen — sonst blockiert sie HTTP-Connection-Slots fuer
+  // die neue Tab-Seite.
+  const loadAllWithSignal = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const res = await fetch(`/api/meine-wg/${slug}/dashboard`, { signal });
+      if (!res.ok) return;
+      const data = (await res.json()) as DashboardData;
+      if (signal?.aborted) return;
+      setKoch(data.koch);
+      setShopping(data.shopping);
+      setAemtli(data.aemtli);
+      setTermine(data.termine);
+      setDoodles(data.doodles);
+      setPinnwand(data.pinnwand);
+      saveCachedDashboard(slug, data);
+    } catch (err) {
+      if ((err as { name?: string })?.name === "AbortError") return;
+      console.error("dashboard fetch", err);
+    }
   }, [slug]);
 
+  // Versions without signal for use as onChanged callbacks
+  const loadAll = useCallback(() => {
+    loadAllWithSignal();
+  }, [loadAllWithSignal]);
+
   useEffect(() => {
-    loadAll();
-  }, [loadAll]);
+    const ctrl = new AbortController();
+    loadAllWithSignal(ctrl.signal);
+    return () => ctrl.abort();
+  }, [loadAllWithSignal]);
 
   // Linke Spalte (Aemtli + Termine) misst sich selber — die rechte
   // Spalte (Einkauf) bekommt diese Hoehe als max-height, damit sie nicht
