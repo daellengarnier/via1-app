@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { WgPasswordsSection } from "./WgPasswordsSection";
 
 interface AdminUser {
   id: string;
@@ -304,6 +305,8 @@ export default function AdminUsersPage() {
           <p className="text-[10px] text-gray-500">ausstehend</p>
         </div>
       </div>
+
+      <WgPasswordsSection />
 
       <input
         type="text"
