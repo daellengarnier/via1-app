@@ -731,15 +731,19 @@ model WgKochSignup {
 // Kinder pro WG: keine eigenen User-Accounts, sondern als
 // Mit-Esser beim Eltern-Account beim Kochplan-Sign-up auswaehlbar.
 model WgKochKind {
-  id        String   @id @default(cuid())
-  wgId      String
-  wg        Wg       @relation(fields: [wgId], references: [id], onDelete: Cascade)
-  name      String
-  parentIds String[] @default([]) // User-IDs der Eltern
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  wgId        String
+  wg          Wg       @relation(fields: [wgId], references: [id], onDelete: Cascade)
+  name        String
+  parentIds   String[] @default([]) // User-IDs der Eltern
+  // Wenn aus FamilyKid (globalem Modell) gespiegelt: Verbindung fuer
+  // Auto-Sync bei Name/Diet/Eltern-Aenderungen.
+  familyKidId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([wgId])
+  @@index([familyKidId])
 }
 
 model WgEinkauf {

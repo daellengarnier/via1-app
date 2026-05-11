@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { syncFamilyKidToWgKochKind } from "@/lib/family-kid-sync";
 import type { Diet } from "@prisma/client";
 
 const VALID_DIETS: Diet[] = ["FLEISCH", "VEGI", "VEGAN"];
@@ -94,5 +95,12 @@ export async function POST(req: Request) {
       parents: { connect: valid.map((p) => ({ id: p.id })) },
     },
   });
+
+  // In jeder Eltern-WG ein WgKochKind-Mirror erzeugen, damit das Kind
+  // auch im WG-Kochplan-Sign-up der Eltern auswaehlbar ist.
+  await syncFamilyKidToWgKochKind(kid.id).catch((err) => {
+    console.error("syncFamilyKidToWgKochKind nach POST fehlgeschlagen", err);
+  });
+
   return NextResponse.json({ id: kid.id });
 }

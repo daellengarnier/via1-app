@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  removeWgKochKindMirrors,
+  syncFamilyKidToWgKochKind,
+} from "@/lib/family-kid-sync";
 import type { Diet } from "@prisma/client";
 
 const VALID_DIETS: Diet[] = ["FLEISCH", "VEGI", "VEGAN"];
@@ -78,6 +82,11 @@ export async function PATCH(
     },
   });
 
+  // WgKochKind-Mirrors aktualisieren (Name + Eltern-WGs)
+  await syncFamilyKidToWgKochKind(kid.id).catch((err) => {
+    console.error("syncFamilyKidToWgKochKind nach PATCH fehlgeschlagen", err);
+  });
+
   return NextResponse.json({ ok: true });
 }
 
@@ -95,6 +104,12 @@ export async function DELETE(
   if (kid === "forbidden") {
     return NextResponse.json({ error: "Nicht erlaubt" }, { status: 403 });
   }
+
+  // WgKochKind-Mirrors zuerst entfernen (FK ist nullable, also nicht
+  // strikt noetig, aber sauberer)
+  await removeWgKochKindMirrors(kid.id).catch((err) => {
+    console.error("removeWgKochKindMirrors fehlgeschlagen", err);
+  });
 
   await prisma.familyKid.delete({ where: { id: kid.id } });
   return NextResponse.json({ ok: true });
