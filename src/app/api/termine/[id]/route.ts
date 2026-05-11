@@ -22,6 +22,7 @@ const terminDetailInclude = {
     include: { author: true },
     orderBy: { createdAt: "asc" as const },
   },
+  responsibleWg: { select: { id: true, name: true } },
 };
 
 // GET /api/termine/[id]

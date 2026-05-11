@@ -10,6 +10,7 @@ import {
   collectAllergies,
 } from "@/lib/termine-serialize";
 import { notify } from "@/lib/notify";
+import { ensureNextHaussitzungPlaceholder } from "@/lib/haussitzung-rotation";
 
 // GET /api/termine — alle Termine
 export async function GET() {
@@ -18,8 +19,17 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Sicherstellen dass es immer einen Platzhalter fuer die naechste
+  // Haussitzung gibt — der naechste in der Rotation bekommt einen
+  // "Datum folgt"-Termin in den schon Traktanden eingetragen werden
+  // koennen, bevor die verantwortliche WG ein Datum festlegt.
+  await ensureNextHaussitzungPlaceholder(session.user.id).catch((err) => {
+    console.error("ensureNextHaussitzungPlaceholder", err);
+  });
+
   const termine = await prisma.termin.findMany({
-    orderBy: { date: "desc" },
+    // Platzhalter (date IS NULL) zuerst, dann nach Datum absteigend
+    orderBy: [{ date: { sort: "desc", nulls: "first" } }],
     include: {
       _count: { select: { traktanden: true, comments: true } },
       createdBy: { select: { name: true } },
@@ -27,6 +37,7 @@ export async function GET() {
       mealSignups: {
         include: { guests: true },
       },
+      responsibleWg: { select: { id: true, name: true } },
     },
   });
 
