@@ -227,9 +227,16 @@ export default function TerminePage() {
       ? termine
       : termine.filter((t) => t.type === filter);
 
-  // Nur heutige und zukünftige Termine anzeigen
-  const upcoming = filtered.filter((t) => t.date >= todayStr);
-  const sorted = [...upcoming].sort((a, b) => a.date.localeCompare(b.date));
+  // Heutige und zukuenftige Termine anzeigen — Platzhalter (date="")
+  // sind noch ohne Datum aber gehoeren immer ans Top der Liste.
+  const upcoming = filtered.filter((t) => !t.date || t.date >= todayStr);
+  // Platzhalter zuerst, dann nach Datum aufsteigend.
+  const sorted = [...upcoming].sort((a, b) => {
+    if (!a.date && !b.date) return 0;
+    if (!a.date) return -1;
+    if (!b.date) return 1;
+    return a.date.localeCompare(b.date);
+  });
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -1131,13 +1138,15 @@ export default function TerminePage() {
                     : `📌 DATUM FOLGT${t.responsibleWg ? ` · ${t.responsibleWg.name.toUpperCase()}` : ""}`}
                 </p>
                 <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    onClick={() => exportIcs(t)}
-                    className="rounded px-1.5 py-0.5 font-mono text-[9px] text-gray-500 hover:text-orange-300"
-                    title="In Kalender exportieren"
-                  >
-                    📅
-                  </button>
+                  {t.date && (
+                    <button
+                      onClick={() => exportIcs(t)}
+                      className="rounded px-1.5 py-0.5 font-mono text-[9px] text-gray-500 hover:text-orange-300"
+                      title="In Kalender exportieren"
+                    >
+                      📅
+                    </button>
+                  )}
                   {canEdit && (
                     <>
                       <button
