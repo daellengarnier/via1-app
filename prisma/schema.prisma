@@ -156,6 +156,7 @@ model User {
   pinnwandReactions    PinnwandReaction[]    @relation("PinnwandReactionUser")
   wgPinnwandReactions  WgPinnwandReaction[]  @relation("WgPinnwandReactionUser")
   kaffeeWuensche       KaffeeWunsch[]        @relation("KaffeeWunschCreator")
+  kaffeeWunschReactions KaffeeWunschReaction[] @relation("KaffeeWunschReactionUser")
 
   @@map("users")
 }
@@ -1188,10 +1189,25 @@ model KaffeeWunsch {
   kind        String   @default("want_to_try")
   createdBy   User     @relation("KaffeeWunschCreator", fields: [createdById], references: [id], onDelete: Cascade)
   createdById String
+  reactions   KaffeeWunschReaction[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([createdAt])
+}
+
+// Emoji-Reactions auf Kaffeewuensche (analog zur Pinnwand).
+model KaffeeWunschReaction {
+  id        String       @id @default(cuid())
+  wunsch    KaffeeWunsch @relation(fields: [wunschId], references: [id], onDelete: Cascade)
+  wunschId  String
+  user      User         @relation("KaffeeWunschReactionUser", fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  emoji     String
+  createdAt DateTime     @default(now())
+
+  @@unique([wunschId, userId, emoji])
+  @@index([wunschId])
 }
 
 model Feedback {

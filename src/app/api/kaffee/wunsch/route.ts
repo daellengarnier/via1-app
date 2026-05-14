@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { summarizeReactions } from "@/lib/reactions";
 
 const VALID_KINDS = new Set(["liked", "want_to_try"]);
 
@@ -23,9 +24,11 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     include: {
       createdBy: { select: { id: true, name: true, avatar: true } },
+      reactions: { select: { emoji: true, userId: true } },
     },
   });
 
+  const meId = session.user.id;
   return NextResponse.json(
     list.map((w) => ({
       id: w.id,
@@ -35,6 +38,7 @@ export async function GET() {
       kind: w.kind,
       createdAt: w.createdAt.toISOString(),
       createdBy: w.createdBy,
+      reactions: summarizeReactions(w.reactions, meId),
     }))
   );
 }
