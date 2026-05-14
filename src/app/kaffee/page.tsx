@@ -807,7 +807,11 @@ export default function KaffeePage() {
           </p>
           <p>
             Ohne Abo können einzelne Kaffees bezogen werden (50 Rp. / Espresso,
-            Bezahlung via Kässeli neben der Maschine).
+            Bezahlung via <strong className="text-white">Twintcode der Spinnerei</strong>).
+          </p>
+          <p className="pt-1 text-sm text-gray-300">
+            Für <strong className="text-amber-200">Abonnent*innen</strong> bitte einen
+            Dauerauftrag einrichten:
           </p>
         </div>
 
