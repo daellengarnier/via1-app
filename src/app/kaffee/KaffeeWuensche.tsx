@@ -1,8 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ReactionBar } from "@/components/ReactionBar";
 
 type Kind = "liked" | "want_to_try";
+
+interface ReactionSummary {
+  emoji: string;
+  count: number;
+  mine: boolean;
+}
 
 interface Wunsch {
   id: string;
@@ -12,6 +19,7 @@ interface Wunsch {
   kind: Kind;
   createdAt: string;
   createdBy: { id: string; name: string; avatar: string | null };
+  reactions?: ReactionSummary[];
 }
 
 interface Props {
@@ -175,6 +183,14 @@ export function KaffeeWuensche({ myUserId, isAdmin }: Props) {
                       ✕
                     </button>
                   )}
+                </div>
+                <div className="mt-2">
+                  <ReactionBar
+                    reactions={w.reactions ?? []}
+                    toggleUrl={`/api/kaffee/wunsch/${w.id}/reactions`}
+                    onChanged={load}
+                    variant="amber"
+                  />
                 </div>
               </div>
             );
