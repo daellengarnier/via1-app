@@ -6,9 +6,15 @@ import { useSession } from "next-auth/react";
 import { TabHeader } from "./TabHeader";
 import { LaundryTimers } from "./LaundryTimers";
 import { SaunaSparkline } from "./SaunaChart";
+import { ReactionBar } from "./ReactionBar";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { usePutzplan } from "@/lib/putzplan-store";
 
+interface ReactionSummary {
+  emoji: string;
+  count: number;
+  mine: boolean;
+}
 interface PinnwandEintrag {
   id: string;
   text: string;
@@ -16,6 +22,7 @@ interface PinnwandEintrag {
   authorId: string;
   date: string;
   commentCount: number;
+  reactions?: ReactionSummary[];
 }
 
 interface PinnwandComment {
@@ -1148,6 +1155,14 @@ export default function HomeScreen() {
                     </div>
                   </div>
                 )}
+                <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                  <ReactionBar
+                    reactions={p.reactions ?? []}
+                    toggleUrl={`/api/pinnwand/${p.id}/reactions`}
+                    onChanged={loadPinnwand}
+                    variant="amber"
+                  />
+                </div>
               </div>
             );
           })}

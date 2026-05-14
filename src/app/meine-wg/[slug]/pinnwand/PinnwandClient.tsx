@@ -6,6 +6,7 @@ import {
   type PinnwandColor,
 } from "@/lib/wg-pinnwand-colors";
 import { WgPageHeader } from "@/components/WgPageHeader";
+import { ReactionBar } from "@/components/ReactionBar";
 
 interface Person {
   id: string;
@@ -20,6 +21,11 @@ interface Comment {
   createdAt: string;
 }
 
+interface ReactionSummary {
+  emoji: string;
+  count: number;
+  mine: boolean;
+}
 interface Note {
   id: string;
   text: string;
@@ -27,6 +33,7 @@ interface Note {
   author: Person;
   createdAt: string;
   comments: Comment[];
+  reactions?: ReactionSummary[];
 }
 
 interface Props {
@@ -199,6 +206,17 @@ function NoteCard({
       >
         {note.text}
       </p>
+      <div
+        className="relative mt-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <ReactionBar
+          reactions={note.reactions ?? []}
+          toggleUrl={`/api/meine-wg/${slug}/pinnwand/${note.id}/reactions`}
+          onChanged={onChanged}
+          variant="white"
+        />
+      </div>
       <div
         className={`absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[10px] ${NOTE_META}`}
       >

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notify";
 import { getWgMemberUserIds, requireWgAccess } from "@/lib/wg-access";
 import { isValidColor } from "@/lib/wg-pinnwand-colors";
+import { summarizeReactions } from "@/lib/reactions";
 
 interface CreateBody {
   text?: string;
@@ -27,6 +28,7 @@ export async function GET(
         },
         orderBy: { createdAt: "asc" },
       },
+      reactions: { select: { emoji: true, userId: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -44,6 +46,7 @@ export async function GET(
         author: c.author,
         createdAt: c.createdAt.toISOString(),
       })),
+      reactions: summarizeReactions(n.reactions, access.user.id),
     }))
   );
 }

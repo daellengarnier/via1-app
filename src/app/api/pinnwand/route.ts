@@ -3,11 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notify";
+import { summarizeReactions } from "@/lib/reactions";
 
 // GET /api/pinnwand — alle Eintraege, neueste zuerst
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -16,9 +17,11 @@ export async function GET() {
     include: {
       author: { select: { id: true, name: true } },
       _count: { select: { comments: true } },
+      reactions: { select: { emoji: true, userId: true } },
     },
   });
 
+  const meId = session.user.id;
   return NextResponse.json(
     notes.map((n) => ({
       id: n.id,
@@ -27,6 +30,7 @@ export async function GET() {
       authorId: n.author.id,
       date: n.createdAt.toISOString(),
       commentCount: n._count.comments,
+      reactions: summarizeReactions(n.reactions, meId),
     }))
   );
 }

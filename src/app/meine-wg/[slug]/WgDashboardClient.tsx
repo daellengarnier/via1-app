@@ -9,6 +9,7 @@ import {
   type Slot,
 } from "@/lib/wg-koch-slots";
 import { CookModal } from "@/components/wg/CookModal";
+import { ReactionBar } from "@/components/ReactionBar";
 
 // Minimale Datenshapes — wiederverwendete Public-API der Feature-Routen.
 interface KochSignup {
@@ -83,6 +84,11 @@ interface DoodleItem {
   totalVotes: number;
 }
 
+interface ReactionSummary {
+  emoji: string;
+  count: number;
+  mine: boolean;
+}
 interface PinnwandNote {
   id: string;
   text: string;
@@ -90,6 +96,7 @@ interface PinnwandNote {
   author: { id: string; name: string };
   createdAt: string;
   comments: { id: string }[];
+  reactions?: ReactionSummary[];
 }
 
 interface Props {
@@ -1146,6 +1153,16 @@ function PinnwandNoteCard({
       <p className="relative line-clamp-4 pt-1 text-sm font-medium leading-relaxed">
         {note.text}
       </p>
+      {(note.reactions?.length ?? 0) > 0 && (
+        <div className="relative mt-2" onClick={(e) => e.stopPropagation()}>
+          <ReactionBar
+            reactions={note.reactions ?? []}
+            toggleUrl={`/api/meine-wg/${slug}/pinnwand/${note.id}/reactions`}
+            onChanged={onChanged}
+            variant="white"
+          />
+        </div>
+      )}
       <div className="absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[10px] text-gray-300">
         <span>— {note.author.name}</span>
         {note.comments.length > 0 && (

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWgAccess, wgMemberFilter } from "@/lib/wg-access";
+import { summarizeReactions } from "@/lib/reactions";
 import {
   addDaysUTC,
   effectiveKochDay,
@@ -104,6 +105,7 @@ export async function GET(
       include: {
         author: { select: { id: true, name: true, avatar: true } },
         comments: { select: { id: true } },
+        reactions: { select: { emoji: true, userId: true } },
       },
       orderBy: { createdAt: "desc" },
       take: 20,
@@ -219,6 +221,7 @@ export async function GET(
       author: n.author,
       createdAt: n.createdAt.toISOString(),
       comments: n.comments,
+      reactions: summarizeReactions(n.reactions, access.user.id),
     })),
   });
 }
