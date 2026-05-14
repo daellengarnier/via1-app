@@ -1215,10 +1215,20 @@ export default function TerminePage() {
             </div>
           );
 
+          const isPlaceholder = t.isHaussitzung && !t.date;
           return (
             <div
               key={t.id}
-              className="rounded-lg border border-gray-800 bg-white/10 p-3 transition-colors hover:border-gray-700"
+              className={`wg-glow-border rounded-lg border bg-white/10 p-3 transition-colors ${
+                isPlaceholder
+                  ? "border-red-500/60 hover:border-red-500/80"
+                  : "border-gray-800 hover:border-gray-700"
+              }`}
+              style={{
+                ["--tile-glow-rgb" as string]: isPlaceholder
+                  ? "239, 68, 68"
+                  : "253, 186, 116",
+              }}
             >
               {/* Kopf: Datum + Aktionen */}
               <div className="flex items-start justify-between gap-2">
