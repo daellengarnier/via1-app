@@ -153,6 +153,8 @@ model User {
   wgGuestMemberships   WgGuest[]
   familyKids           FamilyKid[]           @relation("FamilyKidParents")
   protokolleCreated    Sitzungsprotokoll[]   @relation("ProtokollCreator")
+  pinnwandReactions    PinnwandReaction[]    @relation("PinnwandReactionUser")
+  wgPinnwandReactions  WgPinnwandReaction[]  @relation("WgPinnwandReactionUser")
 
   @@map("users")
 }
@@ -191,11 +193,27 @@ model PinnwandNote {
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  String
   comments  PinnwandComment[]
+  reactions PinnwandReaction[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([createdAt])
   @@map("pinnwand_notes")
+}
+
+// Emoji-Reactions auf Pinnwand-Posts. Jeder User darf jeden Emoji
+// einmal pro Post setzen (toggle).
+model PinnwandReaction {
+  id        String       @id @default(cuid())
+  note      PinnwandNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  noteId    String
+  user      User         @relation("PinnwandReactionUser", fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  emoji     String
+  createdAt DateTime     @default(now())
+
+  @@unique([noteId, userId, emoji])
+  @@index([noteId])
 }
 
 model PinnwandComment {
@@ -982,10 +1000,25 @@ model WgPinnwandNote {
   authorId  String
   author    User                @relation("WgPinnwandAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   comments  WgPinnwandComment[]
+  reactions WgPinnwandReaction[]
   createdAt DateTime            @default(now())
   updatedAt DateTime            @updatedAt
 
   @@index([wgId, createdAt])
+}
+
+// Emoji-Reactions auf WG-Pinnwand-Posts (analog zu PinnwandReaction).
+model WgPinnwandReaction {
+  id        String         @id @default(cuid())
+  note      WgPinnwandNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  noteId    String
+  user      User           @relation("WgPinnwandReactionUser", fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  emoji     String
+  createdAt DateTime       @default(now())
+
+  @@unique([noteId, userId, emoji])
+  @@index([noteId])
 }
 
 model WgPinnwandComment {
