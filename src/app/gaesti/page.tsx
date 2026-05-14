@@ -281,7 +281,7 @@ export default function GaestiPage() {
       )}
 
       {/* Kalender */}
-      <div className="mb-4 rounded-lg border border-gray-800 bg-white/5 p-4">
+      <div className="mb-4 rounded-lg border border-gray-800 bg-white/10 p-4">
         {/* Monat Navigation */}
         <div className="mb-3 flex items-center justify-between">
           <button
@@ -476,7 +476,8 @@ export default function GaestiPage() {
             return (
               <div
                 key={b.id}
-                className="rounded-lg border border-gray-800 bg-white/5 p-3"
+                style={{ ["--tile-glow-rgb" as string]: "255, 107, 43" }}
+                className="wg-glow-border rounded-lg border border-gray-800 bg-white/10 p-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">

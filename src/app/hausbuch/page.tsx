@@ -279,7 +279,11 @@ export default function HausbuchPage() {
         {filtered.map((a) => {
           const isOpen = expanded === a.id;
           return (
-          <div key={a.id} className="rounded-lg border border-gray-800 bg-gray-900/60">
+          <div
+            key={a.id}
+            style={{ ["--tile-glow-rgb" as string]: "139, 92, 246" }}
+            className="wg-glow-border rounded-lg border border-gray-800 bg-gray-900/60"
+          >
             <button
               onClick={() => {
                 setExpanded(isOpen ? null : a.id);

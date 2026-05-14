@@ -211,7 +211,7 @@ export default function SchaedenPage() {
 function DamageCard({ damage, selected, canEdit, onSelect, onPatch, onFeedback }: { damage: Damage; selected: boolean; canEdit: boolean; onSelect: () => void; onPatch: (data: Record<string, unknown>) => void; onFeedback: (text: string) => void }) {
   const [feedback, setFeedback] = useState("");
   return (
-    <article onClick={onSelect} className={`rounded-xl border bg-gray-900/70 p-4 ${selected ? "border-orange-400" : "border-gray-800"}`}>
+    <article onClick={onSelect} style={{ ["--tile-glow-rgb" as string]: "251, 146, 60" }} className={`wg-glow-border rounded-xl border bg-gray-900/70 p-4 ${selected ? "border-orange-400" : "border-gray-800"}`}>
       <div className="flex items-start justify-between gap-3"><div><h2 className="font-display text-lg text-white">{damage.title}</h2><p className="text-xs text-gray-500">gemeldet {formatDate(damage.reportedAt)} · {damage.reportedBy ?? "unbekannt"}</p></div><span className="rounded-full border border-orange-500/30 px-2 py-1 text-[10px] text-orange-200">{statusLabels[damage.status]}</span></div>
       <p className="mt-2 whitespace-pre-line text-sm text-gray-300">{damage.description}</p>
       <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-gray-400"><span>🏷 {damage.category}</span><span>⚠️ {damage.severity}</span>{damage.location && <span>📍 {damage.location}</span>}{damage.appointmentAt && <span>📅 {formatDate(damage.appointmentAt)}</span>}{damage.costCents != null && <span>💸 {formatMoney(damage.costCents)}</span>}</div>

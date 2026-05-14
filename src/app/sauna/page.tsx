@@ -210,7 +210,10 @@ export default function SaunaPage() {
       {/* Live-Sensor-Werte */}
       <div className="mb-6 grid grid-cols-2 gap-3">
         {/* Temperatur oben */}
-        <div className="flex flex-col items-center rounded-lg border border-gray-800 bg-white/5 p-4">
+        <div
+          style={{ ["--tile-glow-rgb" as string]: "239, 68, 68" }}
+          className="wg-glow-border flex flex-col items-center rounded-lg border border-gray-800 bg-white/10 p-4"
+        >
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-red-400">
             OBEN
           </p>
@@ -227,7 +230,7 @@ export default function SaunaPage() {
         </div>
 
         {/* Temperatur unten */}
-        <div className="flex flex-col items-center rounded-lg border border-gray-800 bg-white/5 p-4 opacity-60">
+        <div className="flex flex-col items-center rounded-lg border border-gray-800 bg-white/10 p-4 opacity-60">
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500">
             UNTEN
           </p>
@@ -256,7 +259,7 @@ export default function SaunaPage() {
       <div className="mt-8">
         <button
           onClick={() => setShowReglement(!showReglement)}
-          className="flex w-full items-center justify-between rounded-lg border border-gray-800 bg-white/5 p-3"
+          className="flex w-full items-center justify-between rounded-lg border border-gray-800 bg-white/10 p-3"
         >
           <span className="font-display text-[10px] font-bold uppercase tracking-widest text-red-400">
             SAUNA-REGLEMENT
@@ -265,7 +268,7 @@ export default function SaunaPage() {
         </button>
 
         {showReglement && (
-          <div className="mt-2 space-y-4 rounded-lg border border-gray-800 bg-white/5 p-4">
+          <div className="mt-2 space-y-4 rounded-lg border border-gray-800 bg-white/10 p-4">
             <p className="text-center font-mono text-[10px] text-gray-600">
               Sauna Via 1 · 03/2026
             </p>
