@@ -155,6 +155,7 @@ model User {
   protokolleCreated    Sitzungsprotokoll[]   @relation("ProtokollCreator")
   pinnwandReactions    PinnwandReaction[]    @relation("PinnwandReactionUser")
   wgPinnwandReactions  WgPinnwandReaction[]  @relation("WgPinnwandReactionUser")
+  kaffeeWuensche       KaffeeWunsch[]        @relation("KaffeeWunschCreator")
 
   @@map("users")
 }
@@ -1169,6 +1170,28 @@ model KaffeeCurrent {
   updatedAt   DateTime @updatedAt
 
   @@map("kaffee_current")
+}
+
+// Kaffeewuensche: Abo-Mitglieder koennen Kaffees vermerken die sie
+// ausprobieren wollen oder die ihnen besonders geschmeckt haben.
+// Wer das Abo verwaltet, kann das bei der naechsten Bestellung beruecksichtigen.
+model KaffeeWunsch {
+  id          String   @id @default(cuid())
+  // Name des Kaffees / der Sorte
+  kaffeeName  String
+  // Was der User dazu zu sagen hat (z.B. "hat mir bei Pina geschmeckt"
+  // oder "moechte ich gern probieren — laut Rast hat es Bluetennoten")
+  notes       String   @default("")
+  // Optional: direkter Link auf rastshop.ch oder anderes
+  shopUrl     String?
+  // "liked" = hat dem User geschmeckt; "want_to_try" = moechte probieren
+  kind        String   @default("want_to_try")
+  createdBy   User     @relation("KaffeeWunschCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
 }
 
 model Feedback {

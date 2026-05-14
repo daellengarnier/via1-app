@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { compressImage } from "@/lib/image-compress";
+import { KaffeeWuensche } from "./KaffeeWuensche";
 
 type AboType = "1-espresso" | "1-doppio" | "2-doppio" | "kein";
 
@@ -246,6 +247,8 @@ const rastSortiment: RastKaffee[] = [
 
 export default function KaffeePage() {
   const { data: session } = useSession();
+  const myUserId = session?.user?.id ?? "";
+  const isAdmin = (session?.user?.roles ?? []).includes("ADMIN");
   const [abo, setAbo] = useState<AboType>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("via1-kaffee-abo-type");
@@ -800,6 +803,8 @@ export default function KaffeePage() {
           </p>
         </div>
       </section>
+
+      {myUserId && <KaffeeWuensche myUserId={myUserId} isAdmin={isAdmin} />}
 
       {/* Info */}
       <div className="rounded-lg border border-gray-800 bg-black/20 p-4">
