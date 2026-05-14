@@ -549,3 +549,72 @@ body {
 .home-tile-pulse {
   animation: homeTilePulse 1.8s ease-in-out infinite;
 }
+
+/* Rainbow-Glow-Border — kraeftige rotierende Regenbogen-Linie fuer
+   besondere Termine (z.B. GV Via). Im Gegensatz zur weichen Standard-
+   wg-glow-border ist die Farbe sehr gesaettigt und der Lichtpunkt
+   verteilt sich ueber den ganzen Umfang. Geht zusaetzlich mit einem
+   Aussen-Glow-Pulse einher. */
+@keyframes rainbowGlowRotate {
+  to {
+    --wg-angle: 360deg;
+  }
+}
+@keyframes rainbowGlowPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 12px 2px rgba(236, 72, 153, 0.45),
+      0 0 24px 6px rgba(59, 130, 246, 0.25);
+  }
+  50% {
+    box-shadow:
+      0 0 18px 4px rgba(34, 197, 94, 0.55),
+      0 0 36px 10px rgba(168, 85, 247, 0.35);
+  }
+}
+.rainbow-glow-border {
+  position: relative;
+  isolation: isolate;
+  animation: rainbowGlowPulse 3s ease-in-out infinite;
+}
+.rainbow-glow-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2.5px;
+  background: conic-gradient(
+    from var(--wg-angle),
+    #ef4444,
+    #f97316,
+    #facc15,
+    #22c55e,
+    #06b6d4,
+    #3b82f6,
+    #a855f7,
+    #ec4899,
+    #ef4444
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: rainbowGlowRotate 3.5s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+@supports not (background: paint(something)) {
+  .rainbow-glow-border::before {
+    background: linear-gradient(
+      135deg,
+      #ef4444,
+      #facc15,
+      #22c55e,
+      #3b82f6,
+      #a855f7,
+      #ec4899
+    );
+    animation: none;
+  }
+}
