@@ -7,6 +7,7 @@ import { TabHeader } from "./TabHeader";
 import { LaundryTimers } from "./LaundryTimers";
 import { SaunaSparkline } from "./SaunaChart";
 import { ReactionBar } from "./ReactionBar";
+import { RaveOverlay } from "./RaveOverlay";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { usePutzplan } from "@/lib/putzplan-store";
 
@@ -182,6 +183,17 @@ export default function HomeScreen() {
   const [pinnwand, setPinnwand] = useState<PinnwandEintrag[]>(
     () => readLs<PinnwandEintrag[]>("via1-home-pinnwand", [])
   );
+  const [raveActive, setRaveActive] = useState(false);
+
+  // Triple-Tap auf Pyramide → Rave-Modus aktivieren (Konfetti, Sternschnuppen,
+  // Blitze, Strobe). Das CustomEvent wird im AnimatedBackground gefired.
+  useEffect(() => {
+    function onRave() {
+      setRaveActive(true);
+    }
+    window.addEventListener("via1:rave-trigger", onRave);
+    return () => window.removeEventListener("via1:rave-trigger", onRave);
+  }, []);
   const [pinnwandCommentsOpen, setPinnwandCommentsOpen] = useState<
     string | null
   >(null);
@@ -1300,6 +1312,7 @@ export default function HomeScreen() {
           </div>
         );
       })()}
+      {raveActive && <RaveOverlay onDone={() => setRaveActive(false)} />}
     </div>
   );
 }
