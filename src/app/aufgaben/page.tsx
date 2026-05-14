@@ -130,7 +130,10 @@ function GelaendeMap({
   }, [mapReady, pendingPin]);
 
   return (
-    <div className="mb-4 overflow-hidden rounded-lg border border-gray-800">
+    <div
+      style={{ ["--tile-glow-rgb" as string]: "250, 204, 21" }}
+      className="wg-glow-border mb-4 overflow-hidden rounded-lg border border-gray-800"
+    >
       <iframe
         ref={iframeRef}
         src="/satellite-map.html"
