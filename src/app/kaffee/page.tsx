@@ -720,54 +720,62 @@ export default function KaffeePage() {
         )}
       </div>
 
-      {/* Mein Abo — mit Preisen */}
+      {myUserId && <KaffeeWuensche myUserId={myUserId} isAdmin={isAdmin} />}
+
+      {/* Mein Abo — kompakt: eine Zeile pro Abo */}
       <section className="mb-6">
         <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
           MONATS-ABO
         </h2>
-        <div className="space-y-2">
-          {aboOptions.map(({ type, label, price, detail }) => (
-            <button
-              key={type}
-              onClick={() => setAbo(type)}
-              className={`flex w-full items-center justify-between rounded-lg border p-3 transition-colors ${
-                abo === type
-                  ? type === "kein"
-                    ? "border-gray-600 bg-gray-800/50"
-                    : "border-amber-600/50 bg-amber-600/10"
-                  : "border-gray-800 bg-black/20 hover:border-gray-700"
-              }`}
-            >
-              <div>
-                <p
-                  className={`text-sm ${
-                    abo === type
-                      ? type === "kein"
-                        ? "text-gray-400"
-                        : "font-semibold text-amber-200"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {label}
-                </p>
-                <p className="text-[10px] text-gray-500">{detail}</p>
-              </div>
-              <div className="text-right">
-                {type !== "kein" && (
-                  <p
-                    className={`font-mono text-sm font-bold ${
-                      abo === type ? "text-amber-300" : "text-gray-500"
+        <div className="space-y-1.5">
+          {aboOptions.map(({ type, label, price, detail }) => {
+            const selected = abo === type;
+            const isKein = type === "kein";
+            return (
+              <button
+                key={type}
+                onClick={() => setAbo(type)}
+                className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors ${
+                  selected
+                    ? isKein
+                      ? "border-gray-600 bg-gray-800/50"
+                      : "border-amber-600/50 bg-amber-600/10"
+                    : "border-gray-800 bg-black/20 hover:border-gray-700"
+                }`}
+              >
+                <div className="flex min-w-0 items-baseline gap-2">
+                  {selected && (
+                    <span className={`text-xs ${isKein ? "text-gray-400" : "text-amber-500"}`}>
+                      ✓
+                    </span>
+                  )}
+                  <span
+                    className={`text-sm ${
+                      selected
+                        ? isKein
+                          ? "text-gray-400"
+                          : "font-semibold text-amber-200"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {label}
+                  </span>
+                  <span className="truncate text-[10px] text-gray-500">
+                    {detail}
+                  </span>
+                </div>
+                {!isKein && (
+                  <span
+                    className={`shrink-0 font-mono text-sm font-bold ${
+                      selected ? "text-amber-300" : "text-gray-500"
                     }`}
                   >
                     {price}
-                  </p>
+                  </span>
                 )}
-                {abo === type && (
-                  <span className="text-xs text-amber-500">✓</span>
-                )}
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
 
         <button
@@ -803,8 +811,6 @@ export default function KaffeePage() {
           </p>
         </div>
       </section>
-
-      {myUserId && <KaffeeWuensche myUserId={myUserId} isAdmin={isAdmin} />}
 
       {/* Info */}
       <div className="rounded-lg border border-gray-800 bg-black/20 p-4">
