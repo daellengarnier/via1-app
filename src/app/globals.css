@@ -600,7 +600,7 @@ body {
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: rainbowGlowRotate 3.5s linear infinite;
+  animation: rainbowGlowRotate 1.2s linear infinite;
   pointer-events: none;
   z-index: 1;
 }
