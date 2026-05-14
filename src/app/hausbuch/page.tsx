@@ -119,11 +119,6 @@ function structuredToText(type: ArticleType, s: StructuredContent, fallback: str
   return lines.join("\n").trim() || fallback;
 }
 
-function shortText(value: string, max = 120) {
-  const clean = value.replace(/\s+/g, " ").trim();
-  return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
-}
-
 export default function HausbuchPage() {
   const { data: session } = useSession();
   const currentUserId = session?.user?.id ?? "";
@@ -280,34 +275,43 @@ export default function HausbuchPage() {
         </button>
       </div>
 
-      <div className="space-y-2">
-        {filtered.map((a) => (
-          <div key={a.id} className="rounded-xl border border-gray-800 bg-gradient-to-br from-gray-900/90 to-gray-900/50">
+      <div className="space-y-1.5">
+        {filtered.map((a) => {
+          const isOpen = expanded === a.id;
+          return (
+          <div key={a.id} className="rounded-lg border border-gray-800 bg-gray-900/60">
             <button
               onClick={() => {
-                setExpanded(expanded === a.id ? null : a.id);
+                setExpanded(isOpen ? null : a.id);
                 setEditingId(null);
               }}
-              className="flex w-full items-start justify-between gap-3 p-4 text-left"
+              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
             >
               <div className="min-w-0 flex-1">
-                <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                  {a.pinned && <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-bold text-dark">WICHTIG</span>}
-                  <span className="rounded bg-violet-500/20 px-1.5 py-0.5 text-[10px] text-violet-200">{typeLabels[a.type] ?? a.type}</span>
-                  <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-300">{a.category}</span>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  {a.pinned && (
+                    <span className="shrink-0 rounded bg-amber-400 px-1 py-0.5 font-mono text-[8px] font-bold text-dark">!</span>
+                  )}
+                  <span className="shrink-0 font-mono text-[10px] text-violet-300/80">
+                    {typeLabels[a.type]?.split(" ")[0] ?? a.type}
+                  </span>
+                  <h3 className="min-w-0 truncate text-sm font-medium text-white">
+                    {a.title}
+                  </h3>
                 </div>
-                <h3 className="font-medium text-white">{a.title}</h3>
-                <p className="mt-1 text-xs text-gray-400">{shortText(a.summary || a.content, 110)}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-2 font-mono text-[10px] text-gray-500">
-                  <span>👤 {a.owner}</span>
-                  {a.images.length > 0 && <span>📷 {a.images.length}</span>}
-                  {a.links.length > 0 && <span>🔗 {a.links.length}</span>}
-                  {a.tags.slice(0, 3).map((tag) => (
-                    <span key={tag}>#{tag}</span>
-                  ))}
-                </div>
+                {!isOpen && (
+                  <p className="mt-0.5 truncate text-[11px] text-gray-500">
+                    <span className="text-gray-600">{a.category}</span>
+                    {" · "}
+                    <span>{a.owner}</span>
+                    {a.images.length > 0 && <span> · 📷{a.images.length}</span>}
+                    {a.links.length > 0 && <span> · 🔗{a.links.length}</span>}
+                  </p>
+                )}
               </div>
-              <span className="mt-1 shrink-0 text-gray-500">{expanded === a.id ? "▲" : "▼"}</span>
+              <span className="shrink-0 font-mono text-[10px] text-gray-600">
+                {isOpen ? "▲" : "▼"}
+              </span>
             </button>
 
             {expanded === a.id && editingId !== a.id && (
@@ -329,7 +333,8 @@ export default function HausbuchPage() {
               />
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {loading && filtered.length === 0 && <p className="mt-8 text-center text-gray-600">Lade Artikel …</p>}
