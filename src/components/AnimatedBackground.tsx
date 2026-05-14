@@ -72,38 +72,49 @@ export function AnimatedBackground({
   } as CSSProperties;
 
   return (
-    <div
-      className={scrollable ? "via-bg via-bg-scroll" : "via-bg"}
-      aria-hidden="true"
-      style={bgStyle}
-    >
+    <>
+      <div
+        className={scrollable ? "via-bg via-bg-scroll" : "via-bg"}
+        aria-hidden="true"
+        style={bgStyle}
+      >
+        {showIcon && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={icon}
+            alt=""
+            className={`via-tab-icon ${glowClass}`}
+            loading="eager"
+          />
+        )}
+        <div className="via-glow via-glow-1" />
+        <div className="via-glow via-glow-2" />
+        <div className="via-glow via-glow-3" />
+        <div className="via-glow via-glow-4" />
+        {/* Floating glow particles */}
+        {PARTICLES.map((p, i) => (
+          <span
+            key={i}
+            className={`via-particle ${p.blur}`}
+            style={{
+              left: p.left,
+              top: p.top,
+              animation: `particle-float-${p.anim} ${p.duration}s ease-in-out ${p.delay}s infinite`,
+            }}
+          />
+        ))}
+      </div>
+      {/* Unsichtbarer Click-Hotspot exakt ueber dem Tab-Icon — der img
+         selber sitzt in einem z-index:-1 Layer und ist nicht klickbar. */}
       {showIcon && (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={icon}
-          alt=""
-          className={`via-tab-icon ${glowClass}`}
-          loading="eager"
+        <button
+          type="button"
           onClick={handleIconTap}
-          style={{ pointerEvents: "auto", cursor: "pointer" }}
+          aria-label="Tab-Icon"
+          className="absolute left-1/2 top-[10px] z-10 h-40 w-40 -translate-x-1/2 cursor-pointer rounded-full bg-transparent"
+          style={{ touchAction: "manipulation" }}
         />
       )}
-      <div className="via-glow via-glow-1" />
-      <div className="via-glow via-glow-2" />
-      <div className="via-glow via-glow-3" />
-      <div className="via-glow via-glow-4" />
-      {/* Floating glow particles */}
-      {PARTICLES.map((p, i) => (
-        <span
-          key={i}
-          className={`via-particle ${p.blur}`}
-          style={{
-            left: p.left,
-            top: p.top,
-            animation: `particle-float-${p.anim} ${p.duration}s ease-in-out ${p.delay}s infinite`,
-          }}
-        />
-      ))}
-    </div>
+    </>
   );
 }
