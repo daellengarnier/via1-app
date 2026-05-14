@@ -46,9 +46,7 @@ body {
   position: absolute;
 }
 
-/* Tab-Icon oben (einheitliche Grösse & Position für alle Tabs)
-   Position via left: calc statt translateX, damit transform fuer
-   die Dauer-Rotation frei ist. */
+/* Tab-Icon oben (einheitliche Grösse & Position für alle Tabs) */
 .via-tab-icon {
   position: absolute;
   top: 10px;
@@ -57,12 +55,7 @@ body {
   height: 160px;
   object-fit: contain;
   opacity: 0.9;
-  animation:
-    icon-glow 4s ease-in-out infinite alternate,
-    iconIdleSpin 40s linear infinite;
-}
-@keyframes iconIdleSpin {
-  to { transform: rotate(360deg); }
+  animation: icon-glow 4s ease-in-out infinite alternate;
 }
 
 @keyframes icon-glow {
@@ -599,20 +592,24 @@ body {
    ganzen Screen — wechselnd schnell durch alle Akzentfarben + harte
    Weiss-Flashes dazwischen. Soll richtig knallen. */
 @keyframes raveStrobe {
-  0%   { background: #ef4444; }       /* rot */
-  10%  { background: #ffffff; }       /* weiss */
-  20%  { background: #facc15; }       /* gelb */
-  30%  { background: #000000; }       /* schwarz */
-  40%  { background: #22c55e; }       /* gruen */
-  50%  { background: #ffffff; }       /* weiss */
-  60%  { background: #3b82f6; }       /* blau */
-  70%  { background: #000000; }       /* schwarz */
-  80%  { background: #a855f7; }       /* violett */
-  90%  { background: #ffffff; }       /* weiss */
-  100% { background: #ec4899; }       /* pink */
+  0%   { background: rgba(239, 68, 68, 0.6); }   /* rot */
+  10%  { background: rgba(255, 255, 255, 0.7); } /* weiss-Flash */
+  20%  { background: rgba(250, 204, 21, 0.6); }  /* gelb */
+  30%  { background: rgba(0, 0, 0, 0); }         /* clear */
+  40%  { background: rgba(34, 197, 94, 0.6); }   /* gruen */
+  50%  { background: rgba(255, 255, 255, 0.7); } /* weiss-Flash */
+  60%  { background: rgba(59, 130, 246, 0.6); }  /* blau */
+  70%  { background: rgba(0, 0, 0, 0); }         /* clear */
+  80%  { background: rgba(168, 85, 247, 0.6); }  /* violett */
+  90%  { background: rgba(255, 255, 255, 0.7); } /* weiss-Flash */
+  100% { background: rgba(236, 72, 153, 0.6); }  /* pink */
 }
 .rave-strobe {
   animation: raveStrobe 0.4s steps(1, end) infinite;
+  /* mix-blend-mode: hard-light verstaerkt Farben deutlich, laesst aber
+     den Home-Screen darunter durchscheinen — viel besser als die
+     blickdichten Vollfarben vorher. */
+  mix-blend-mode: hard-light;
 }
 
 /* Wenn .via1-rave-active auf body sitzt: Pyramide rotiert fest, alle
@@ -671,20 +668,21 @@ body.via1-rave-active .max-w-lg > div {
   inset: 0;
   border-radius: inherit;
   padding: 2.5px;
-  /* Rainbow-Segment nimmt ca. 30% des Umfangs ein und reist als
-     Komet rund um die Kachel. Der Rest ist transparent damit man
-     sieht WIE die Linie unterwegs ist. */
+  /* Schmaler Regenbogen-Komet (~18% des Umfangs) reist mit fade-Tails
+     vorne und hinten um die Kachel — so sieht man den Bewegungsverlauf
+     deutlich. */
   background: conic-gradient(
     from var(--wg-angle),
     transparent 0%,
-    transparent 70%,
-    #ef4444 73%,
-    #f97316 77%,
-    #facc15 82%,
-    #22c55e 86%,
-    #3b82f6 91%,
-    #a855f7 95%,
-    #ec4899 99%,
+    transparent 80%,
+    rgba(239, 68, 68, 0.35) 82%,
+    #ef4444 85%,
+    #f97316 88%,
+    #facc15 91%,
+    #22c55e 93%,
+    #3b82f6 95%,
+    #a855f7 97%,
+    rgba(236, 72, 153, 0.35) 99%,
     transparent 100%
   );
   -webkit-mask:
