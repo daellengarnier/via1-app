@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useRef, type CSSProperties } from "react";
 
 interface AnimatedBackgroundProps {
   icon?: string;
@@ -36,6 +36,21 @@ export function AnimatedBackground({
   showIcon = true,
   scrollable = false,
 }: AnimatedBackgroundProps) {
+  // Triple-Tap-Detection auf dem Tab-Icon: 3× innerhalb 1.5s feuert
+  // ein "via1:rave-trigger"-CustomEvent ab. HomeScreen lauscht darauf.
+  const tapTimes = useRef<number[]>([]);
+  function handleIconTap(e: React.MouseEvent) {
+    e.stopPropagation();
+    const now = Date.now();
+    tapTimes.current = [...tapTimes.current, now].filter(
+      (t) => now - t < 1500
+    );
+    if (tapTimes.current.length >= 3) {
+      tapTimes.current = [];
+      window.dispatchEvent(new CustomEvent("via1:rave-trigger"));
+    }
+  }
+
   const colorMap: Record<string, string> = {
     "glow-orange": "255, 140, 30",
     "glow-blue": "50, 150, 255",
@@ -69,6 +84,8 @@ export function AnimatedBackground({
           alt=""
           className={`via-tab-icon ${glowClass}`}
           loading="eager"
+          onClick={handleIconTap}
+          style={{ pointerEvents: "auto", cursor: "pointer" }}
         />
       )}
       <div className="via-glow via-glow-1" />
