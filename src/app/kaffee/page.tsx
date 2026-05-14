@@ -790,34 +790,12 @@ export default function KaffeePage() {
         </button>
       </section>
 
-      {/* Bezahlung */}
-      <section className="mb-6">
+      {/* Info & Bezahlung zusammengefuehrt */}
+      <section className="rounded-lg border border-gray-800 bg-black/20 p-4">
         <h2 className="mb-3 font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
-          BEZAHLUNG
+          INFO &amp; BEZAHLUNG
         </h2>
-        <div className="rounded-lg border border-gray-800 bg-black/20 p-4">
-          <p className="mb-2 text-sm text-gray-300">
-            Bitte einen <strong className="text-white">Dauerauftrag</strong> einrichten:
-          </p>
-          <div className="rounded bg-black/30 p-3 font-mono text-xs leading-relaxed text-gray-300">
-            <p className="text-amber-200">CH19 0079 0016 9408 2010 4</p>
-            <p className="mt-1">Verein Viva Via</p>
-            <p>Spinnereiweg 17</p>
-            <p>3004 Bern</p>
-          </div>
-          <p className="mt-3 text-xs text-gray-400">
-            Bitte <strong className="text-amber-200">&quot;Kafiabo &amp; Name&quot;</strong> vermerken,
-            damit wir die Zahlung zuordnen können.
-          </p>
-        </div>
-      </section>
-
-      {/* Info */}
-      <div className="rounded-lg border border-gray-800 bg-black/20 p-4">
-        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
-          INFO
-        </p>
-        <div className="mt-2 space-y-2 text-sm text-gray-400">
+        <div className="space-y-2 text-sm text-gray-400">
           <p>
             Das Abo deckt die <strong className="text-white">Kosten der Kaffeebohnen</strong>.
             Wir beziehen den Kaffee von Rast Kaffee (Ebikon).
@@ -831,11 +809,26 @@ export default function KaffeePage() {
             Ohne Abo können einzelne Kaffees bezogen werden (50 Rp. / Espresso,
             Bezahlung via Kässeli neben der Maschine).
           </p>
-          <p className="text-xs text-amber-200/80">
-            Bei Fragen bei <strong>Dällen</strong> melden.
+        </div>
+
+        {/* Bezahl-Daten: kompakt als Sub-Karte */}
+        <div className="mt-3 rounded border border-amber-600/20 bg-amber-600/5 p-3">
+          <p className="mb-1.5 font-display text-[10px] font-bold uppercase tracking-widest text-amber-300">
+            💰 Dauerauftrag
+          </p>
+          <div className="rounded bg-black/40 p-2.5 font-mono text-xs leading-relaxed text-gray-300">
+            <p className="text-amber-200">CH19 0079 0016 9408 2010 4</p>
+            <p className="mt-1">Verein Viva Via · Spinnereiweg 17 · 3004 Bern</p>
+          </div>
+          <p className="mt-2 text-[11px] text-gray-400">
+            Vermerk: <strong className="text-amber-200">&quot;Kafiabo &amp; Name&quot;</strong>
           </p>
         </div>
-      </div>
+
+        <p className="mt-3 text-xs text-amber-200/80">
+          Bei Fragen bei <strong>Dällen</strong> melden.
+        </p>
+      </section>
     </div>
   );
 }

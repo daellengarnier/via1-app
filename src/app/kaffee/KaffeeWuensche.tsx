@@ -40,7 +40,8 @@ const KIND_META: Record<Kind, { label: string; emoji: string; cls: string }> = {
   },
 };
 
-// Sektion auf /kaffee: Liste aller Kaffeewuensche + Form zum Erfassen.
+// Sektion auf /kaffee: Liste aller Kaffeewuensche (UI: Kaffeewuensche
+// mit Umlaut) + Form zum Erfassen.
 // Sichtbar fuer alle, nur Ersteller + Admin koennen loeschen.
 export function KaffeeWuensche({ myUserId, isAdmin }: Props) {
   const [list, setList] = useState<Wunsch[]>([]);
@@ -98,7 +99,7 @@ export function KaffeeWuensche({ myUserId, isAdmin }: Props) {
   }
 
   async function del(id: string, name: string) {
-    if (!confirm(`Wunsch "${name}" loeschen?`)) return;
+    if (!confirm(`Wunsch "${name}" löschen?`)) return;
     const res = await fetch(`/api/kaffee/wunsch/${id}`, { method: "DELETE" });
     if (!res.ok) {
       alert("Loeschen fehlgeschlagen.");
@@ -109,9 +110,9 @@ export function KaffeeWuensche({ myUserId, isAdmin }: Props) {
 
   return (
     <section className="mb-6">
-      <div className="mb-3 flex items-baseline justify-between">
+      <div className="mb-2 flex items-baseline justify-between">
         <h2 className="font-display text-xs font-bold uppercase tracking-widest text-amber-300">
-          💭 Kaffeewuensche
+          💭 Kaffeewünsche
         </h2>
         <a
           href="https://www.rastshop.ch/de"
@@ -122,69 +123,70 @@ export function KaffeeWuensche({ myUserId, isAdmin }: Props) {
           🛒 Rast-Shop ↗
         </a>
       </div>
-      <p className="mb-3 text-xs text-gray-500">
+      <p className="mb-2 text-[11px] text-gray-500">
         Hat dir ein Kaffee besonders geschmeckt oder willst du etwas Neues
-        ausprobieren? Trag's hier ein — Daellen schaut bei der naechsten
+        ausprobieren? Trag's hier ein — Dällen schaut bei der nächsten
         Bestellung drauf.
       </p>
 
       {loading ? (
         <p className="text-xs text-gray-500">Lade...</p>
       ) : list.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-gray-800 p-4 text-center text-xs italic text-gray-600">
-          Noch keine Wuensche. Du machst den Anfang?
+        <p className="rounded-lg border border-dashed border-gray-800 p-3 text-center text-xs italic text-gray-600">
+          Noch keine Wünsche. Du machst den Anfang?
         </p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {list.map((w) => {
             const meta = KIND_META[w.kind];
             const canDelete = isAdmin || w.createdBy.id === myUserId;
             return (
               <div
                 key={w.id}
-                className="rounded-lg border border-amber-600/20 bg-black/30 p-3"
+                className="rounded-lg border border-amber-600/20 bg-black/30 px-2.5 py-2"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                      <span
-                        className={`rounded-full border px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider ${meta.cls}`}
-                      >
-                        {meta.emoji} {meta.label}
+                    <div className="flex min-w-0 items-baseline gap-1.5">
+                      <span className="shrink-0" title={meta.label}>
+                        {meta.emoji}
                       </span>
-                      <span className="font-mono text-[10px] text-gray-500">
-                        von {w.createdBy.name}
-                      </span>
+                      <p className="min-w-0 truncate text-sm font-semibold text-amber-100">
+                        {w.kaffeeName}
+                      </p>
+                      {w.shopUrl && (
+                        <a
+                          href={w.shopUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="shrink-0 font-mono text-[10px] text-amber-400 hover:text-amber-200"
+                          title="Link oeffnen"
+                        >
+                          🔗
+                        </a>
+                      )}
                     </div>
-                    <p className="text-sm font-semibold text-amber-100">
-                      {w.kaffeeName}
-                    </p>
                     {w.notes && (
-                      <p className="mt-0.5 whitespace-pre-line text-xs text-gray-400">
+                      <p className="mt-0.5 whitespace-pre-line text-[11px] leading-snug text-gray-400">
                         {w.notes}
                       </p>
                     )}
-                    {w.shopUrl && (
-                      <a
-                        href={w.shopUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1 inline-block font-mono text-[10px] text-amber-400 hover:text-amber-200"
-                      >
-                        🔗 Link
-                      </a>
-                    )}
+                    <p className="mt-0.5 font-mono text-[10px] text-gray-500">
+                      von {w.createdBy.name}
+                    </p>
                   </div>
                   {canDelete && (
                     <button
                       onClick={() => del(w.id, w.kaffeeName)}
-                      className="shrink-0 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-red-300 hover:bg-red-500/20"
+                      className="shrink-0 rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 font-mono text-[10px] text-red-300 hover:bg-red-500/20"
+                      title="Wunsch löschen"
                     >
                       ✕
                     </button>
                   )}
                 </div>
-                <div className="mt-2">
+                <div className="mt-1.5">
                   <ReactionBar
                     reactions={w.reactions ?? []}
                     toggleUrl={`/api/kaffee/wunsch/${w.id}/reactions`}
@@ -203,7 +205,7 @@ export function KaffeeWuensche({ myUserId, isAdmin }: Props) {
           onClick={() => setShowForm(true)}
           className="mt-3 w-full rounded-lg border border-dashed border-amber-600/40 bg-amber-600/5 p-3 font-mono text-xs font-semibold uppercase tracking-wider text-amber-200 hover:border-amber-500 hover:bg-amber-600/10"
         >
-          + Kaffeewunsch hinzufuegen
+          + Kaffeewunsch hinzufügen
         </button>
       ) : (
         <form
