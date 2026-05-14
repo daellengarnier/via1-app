@@ -681,7 +681,9 @@ body.via1-rave-active .max-w-lg > div {
   mix-blend-mode: screen;
   animation: raveScreenFlash 1.3s linear infinite;
   pointer-events: none;
-} kraeftige rotierende Regenbogen-Linie fuer
+}
+
+/* Rainbow-Glow-Border — kraeftige rotierende Regenbogen-Linie fuer
    besondere Termine (z.B. GV Via). Im Gegensatz zur weichen Standard-
    wg-glow-border ist die Farbe sehr gesaettigt und der Lichtpunkt
    verteilt sich ueber den ganzen Umfang. Geht zusaetzlich mit einem
