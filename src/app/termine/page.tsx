@@ -187,7 +187,7 @@ export default function TerminePage() {
   // Detail-Popup für Anmeldungen
   interface DetailPopupData {
     terminId: string;
-    type: "sitzung" | "essen";
+    type: "sitzung" | "essen" | "sonstige";
     title: string;
     anwesend: { id: string; name: string }[];
     abgemeldet: { id: string; name: string }[];
@@ -202,7 +202,7 @@ export default function TerminePage() {
   }
   const [detailPopup, setDetailPopup] = useState<DetailPopupData | null>(null);
 
-  async function openDetailPopup(terminId: string, type: "sitzung" | "essen", title: string) {
+  async function openDetailPopup(terminId: string, type: "sitzung" | "essen" | "sonstige", title: string) {
     try {
       const res = await fetch(`/api/termine/${terminId}`);
       if (!res.ok) return;
@@ -827,7 +827,7 @@ export default function TerminePage() {
 
           /* ─── Sitzung-Block ─── */
           const sitzungBlock = showSitzungBadge && (
-            <div className="mt-2 rounded-lg border border-accent/20 bg-accent/5 p-2.5">
+            <div className="mt-2 rounded-lg border border-accent/20 bg-accent/10 p-2.5">
               <button
                 type="button"
                 onClick={() => t.withAttendance && openDetailPopup(t.id, "sitzung", t.title)}
@@ -894,7 +894,7 @@ export default function TerminePage() {
 
           /* ─── Essen-Block ─── */
           const essenBlock = hasEssen && (
-            <div className="mt-2 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5">
+            <div className="mt-2 rounded-lg border border-amber-400/20 bg-amber-400/10 p-2.5">
               <button
                 type="button"
                 onClick={() => openDetailPopup(t.id, "essen", t.title)}
@@ -1218,7 +1218,7 @@ export default function TerminePage() {
           return (
             <div
               key={t.id}
-              className="rounded-lg border border-gray-800 bg-white/5 p-3 transition-colors hover:border-gray-700"
+              className="rounded-lg border border-gray-800 bg-white/10 p-3 transition-colors hover:border-gray-700"
             >
               {/* Kopf: Datum + Aktionen */}
               <div className="flex items-start justify-between gap-2">
@@ -1285,14 +1285,24 @@ export default function TerminePage() {
               {/* Sonstige: einfacher Block */}
               {t.type === "sonstige" && (
                 <div className="mt-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-600/20 px-2.5 py-0.5 font-mono text-[10px] font-bold text-gray-300 ring-1 ring-gray-600/40">
-                    {t.time}
-                    {t.withAttendance && (
+                  {t.withAttendance ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openDetailPopup(t.id, "sonstige", t.title)
+                      }
+                      className="inline-flex items-center gap-1.5 rounded-full bg-gray-600/20 px-2.5 py-0.5 font-mono text-[10px] font-bold text-gray-300 ring-1 ring-gray-600/40 transition-colors hover:bg-gray-600/35"
+                    >
+                      {t.time}
                       <span className="font-normal text-gray-400">
                         · {t.attendanceCount} dabei
                       </span>
-                    )}
-                  </span>
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-600/20 px-2.5 py-0.5 font-mono text-[10px] font-bold text-gray-300 ring-1 ring-gray-600/40">
+                      {t.time}
+                    </span>
+                  )}
                   {t.location && (
                     <p className="mt-1.5 text-[10px] text-gray-500">
                       📍 {t.location}
@@ -1389,7 +1399,7 @@ export default function TerminePage() {
             <div className="mb-3 flex items-start justify-between">
               <div>
                 <p className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  {detailPopup.type === "sitzung" ? "Sitzung" : "Essen"} — {detailPopup.title}
+                  {detailPopup.type === "essen" ? "Essen" : detailPopup.type === "sonstige" ? "Termin" : "Sitzung"} — {detailPopup.title}
                 </p>
               </div>
               <button
@@ -1401,7 +1411,8 @@ export default function TerminePage() {
             </div>
 
             <div className="max-h-[55vh] overflow-y-auto">
-              {detailPopup.type === "sitzung" && (
+              {(detailPopup.type === "sitzung" ||
+                detailPopup.type === "sonstige") && (
                 <>
                   {detailPopup.anwesend.length > 0 && (
                     <div className="mb-3">
@@ -1429,7 +1440,7 @@ export default function TerminePage() {
                                     );
                                     if (res.ok) {
                                       await loadTermine();
-                                      openDetailPopup(detailPopup.terminId, "sitzung", detailPopup.title);
+                                      openDetailPopup(detailPopup.terminId, detailPopup.type, detailPopup.title);
                                     }
                                   } catch { /* ignore */ }
                                 }}
