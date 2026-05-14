@@ -329,10 +329,11 @@ export default function EinkaufPage() {
           return (
             <div
               key={item.id}
+              style={{ ["--tile-glow-rgb" as string]: "139, 92, 246" }}
               className={`rounded-lg border p-3 transition-all ${
                 item.done
                   ? "border-gray-800 bg-gray-900/40 opacity-70"
-                  : "border-violet-500/30 bg-violet-500/5"
+                  : "wg-glow-border border-violet-500/30 bg-violet-500/10"
               }`}
             >
               <div className="flex items-start gap-3">

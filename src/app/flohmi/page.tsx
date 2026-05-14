@@ -463,11 +463,12 @@ export default function FlohmiPage() {
                 setSelectedId(ins.id);
                 setImageIndex(0);
               }}
+              style={{ ["--tile-glow-rgb" as string]: "236, 72, 153" }}
               className={`flex flex-col overflow-hidden rounded-lg border text-left ${
                 isTaken
                   ? "border-pink-500/30 opacity-60"
-                  : "border-gray-800 hover:border-gray-700"
-              } bg-white/5`}
+                  : "wg-glow-border border-gray-800 hover:border-gray-700"
+              } bg-white/10`}
             >
               {firstImg ? (
                 <div className="relative">

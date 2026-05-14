@@ -805,12 +805,13 @@ function AufgabenPage() {
             <div
               key={a.id}
               onClick={() => router.push(`/aufgaben/${a.id}`)}
-              className={`relative cursor-pointer rounded-lg border p-3 transition-colors ${
+              style={{ ["--tile-glow-rgb" as string]: "250, 204, 21" }}
+              className={`wg-glow-border relative cursor-pointer rounded-lg border p-3 transition-colors ${
                 a.done ? "opacity-50" : ""
               } ${
                 isSelected
                   ? "border-yellow-400 bg-yellow-400/10 shadow-[0_0_20px_rgba(251,191,36,0.2)]"
-                  : "border-gray-800 bg-white/5 hover:border-gray-700"
+                  : "border-gray-800 bg-white/10 hover:border-gray-700"
               }`}
             >
               {/* Edit + Delete */}

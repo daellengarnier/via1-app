@@ -617,10 +617,11 @@ export default function AktivitaetenPage() {
           return (
             <div
               key={a.id}
-              className={`rounded-lg border p-3 ${
+              style={{ ["--tile-glow-rgb" as string]: "96, 165, 250" }}
+              className={`wg-glow-border rounded-lg border p-3 ${
                 running
                   ? "border-blue-400/70 bg-blue-400/10 shadow-[0_0_20px_rgba(96,165,250,0.2)]"
-                  : "border-gray-800 bg-white/5"
+                  : "border-gray-800 bg-white/10"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
