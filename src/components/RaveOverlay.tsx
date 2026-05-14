@@ -4,28 +4,6 @@ import { useEffect, useMemo } from "react";
 
 const RAVE_DURATION_MS = 6000;
 
-const COLORS = [
-  "#ef4444", // rot
-  "#f97316", // orange
-  "#facc15", // gelb
-  "#22c55e", // gruen
-  "#06b6d4", // cyan
-  "#3b82f6", // blau
-  "#a855f7", // violett
-  "#ec4899", // pink
-];
-
-interface ConfettiPiece {
-  id: number;
-  left: number; // % horizontal Startposition (Pyramide ~50%)
-  delay: number;
-  duration: number;
-  color: string;
-  rotate: number;
-  size: number;
-  driftX: number;
-}
-
 interface ShootingStarConfig {
   id: number;
   topPercent: number;
@@ -37,23 +15,6 @@ interface ShootingStarConfig {
   fromY: number;
   toX: number;
   toY: number;
-}
-
-function buildConfetti(count = 120): ConfettiPiece[] {
-  const out: ConfettiPiece[] = [];
-  for (let i = 0; i < count; i++) {
-    out.push({
-      id: i,
-      left: 50 + (Math.random() - 0.5) * 30, // ueberwiegend aus Pyramide-Mitte
-      delay: Math.random() * 1.5,
-      duration: 2.5 + Math.random() * 2,
-      color: COLORS[i % COLORS.length]!,
-      rotate: Math.random() * 720 - 360,
-      size: 6 + Math.random() * 8,
-      driftX: (Math.random() - 0.5) * 80, // vw, weite seitliche Streuung
-    });
-  }
-  return out;
 }
 
 function buildStars(count = 50): ShootingStarConfig[] {
@@ -90,7 +51,6 @@ function buildStars(count = 50): ShootingStarConfig[] {
 // pulsierende Tiles + Strobe-Background. Selbst-zerstoert sich nach
 // RAVE_DURATION_MS.
 export function RaveOverlay({ onDone }: { onDone: () => void }) {
-  const confetti = useMemo(() => buildConfetti(), []);
   const stars = useMemo(() => buildStars(), []);
 
   useEffect(() => {
@@ -112,25 +72,6 @@ export function RaveOverlay({ onDone }: { onDone: () => void }) {
     >
       {/* Strobe-Background: schnelle Farbblitze */}
       <div className="rave-strobe absolute inset-0" />
-
-      {/* Konfetti-Schauer aus der Pyramide */}
-      {confetti.map((c) => (
-        <span
-          key={c.id}
-          className="rave-confetti absolute top-[110px]"
-          style={{
-            left: `${c.left}%`,
-            width: c.size,
-            height: c.size,
-            background: c.color,
-            // Custom CSS variables fuer Animation
-            ["--drift-x" as string]: `${c.driftX}vw`,
-            ["--rotate-end" as string]: `${c.rotate}deg`,
-            animationDelay: `${c.delay}s`,
-            animationDuration: `${c.duration}s`,
-          }}
-        />
-      ))}
 
       {/* Sternschnuppen-Sturm */}
       {stars.map((s) => (

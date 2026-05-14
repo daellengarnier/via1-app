@@ -678,7 +678,7 @@ export default function HomeScreen() {
       {/* Nächster Termin + Spinnerei — rund & nebeneinander */}
       <div className="mb-4 grid grid-cols-2 gap-3">
         <div
-          className={`wg-glow-border cursor-pointer rounded-full border border-accent/30 bg-accent/5 px-4 py-3 text-center transition-colors hover:bg-accent/10 ${
+          className={`wg-glow-border cursor-pointer rounded-full border border-accent/30 bg-accent/15 px-4 py-3 text-center transition-colors hover:bg-accent/25 ${
             nextTermin && isToday(nextTermin.date) ? "home-tile-pulse" : ""
           }`}
           style={{ ["--tile-glow-rgb" as string]: "184, 240, 104" }}
@@ -704,7 +704,7 @@ export default function HomeScreen() {
         </div>
         {nextActivity ? (
           <div
-            className={`wg-glow-border cursor-pointer rounded-full border border-blue-400/30 bg-blue-400/5 px-4 py-3 text-center transition-colors hover:bg-blue-400/10 ${
+            className={`wg-glow-border cursor-pointer rounded-full border border-blue-400/30 bg-blue-400/15 px-4 py-3 text-center transition-colors hover:bg-blue-400/25 ${
               isToday(nextActivity.startAt) ? "home-tile-pulse" : ""
             }`}
             style={{ ["--tile-glow-rgb" as string]: "96, 165, 250" }}
@@ -734,7 +734,7 @@ export default function HomeScreen() {
             href="https://kulturspinnerei.ch"
             target="_blank"
             rel="noopener noreferrer"
-            className={`wg-glow-border cursor-pointer rounded-full border border-secondary/30 bg-secondary/5 px-4 py-3 text-center transition-colors hover:bg-secondary/10 ${
+            className={`wg-glow-border cursor-pointer rounded-full border border-secondary/30 bg-secondary/15 px-4 py-3 text-center transition-colors hover:bg-secondary/25 ${
               spinnereiEvent && isToday(spinnereiEvent.startAt) ? "home-tile-pulse" : ""
             }`}
             style={{ ["--tile-glow-rgb" as string]: "255, 107, 43" }}
@@ -767,7 +767,7 @@ export default function HomeScreen() {
       {/* Glasige Neon-Kacheln — ohne Gästi */}
       <div className="mb-4 grid grid-cols-3 gap-3">
         <div
-          className={`wg-glow-border cursor-pointer rounded-xl border bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-red-500/30 hover:shadow-[0_0_20px_rgba(255,50,50,0.1)] ${
+          className={`wg-glow-border cursor-pointer rounded-xl border bg-black/50 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:border-red-500/30 hover:shadow-[0_0_20px_rgba(255,50,50,0.1)] ${
             saunaHeating
               ? "sauna-heating-pulse border-red-500/50"
               : "border-red-500/15"
@@ -797,7 +797,7 @@ export default function HomeScreen() {
           <SaunaSparkline />
         </div>
         <div
-          className="wg-glow-border cursor-pointer rounded-xl border border-yellow-400/15 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-yellow-400/30 hover:shadow-[0_0_20px_rgba(255,220,50,0.1)]"
+          className="wg-glow-border cursor-pointer rounded-xl border border-yellow-400/15 bg-black/50 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:border-yellow-400/30 hover:shadow-[0_0_20px_rgba(255,220,50,0.1)]"
           style={{ ["--tile-glow-rgb" as string]: "250, 204, 21" }}
           onClick={() => router.push("/aufgaben")}
         >
@@ -810,7 +810,7 @@ export default function HomeScreen() {
           <p className="mt-1 text-[10px] text-gray-500">offen</p>
         </div>
         <div
-          className="wg-glow-border cursor-pointer rounded-xl border border-violet-500/15 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-violet-500/30 hover:shadow-[0_0_20px_rgba(150,100,255,0.1)]"
+          className="wg-glow-border cursor-pointer rounded-xl border border-violet-500/15 bg-black/50 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:border-violet-500/30 hover:shadow-[0_0_20px_rgba(150,100,255,0.1)]"
           style={{ ["--tile-glow-rgb" as string]: "139, 92, 246" }}
           onClick={() => router.push("/putzplan")}
         >
@@ -888,7 +888,7 @@ export default function HomeScreen() {
         <div className="mb-5">
           <div className="grid grid-cols-2 gap-3">
             <div
-              className="wg-glow-border cursor-pointer rounded-2xl border border-amber-600/30 bg-gradient-to-br from-amber-700/15 to-transparent p-3 transition-all hover:border-amber-500/50"
+              className="wg-glow-border cursor-pointer rounded-2xl border border-amber-600/30 bg-gradient-to-br from-amber-700/40 to-amber-900/10 p-3 transition-all hover:border-amber-500/50"
               style={{ ["--tile-glow-rgb" as string]: "217, 119, 6" }}
               onClick={() => router.push("/kaffee")}
             >
@@ -918,7 +918,7 @@ export default function HomeScreen() {
               </div>
             </div>
             <div
-              className={`wg-glow-border group flex cursor-pointer flex-col rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 to-transparent p-3 transition-all hover:border-secondary/60 ${
+              className={`wg-glow-border group flex cursor-pointer flex-col rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/40 to-secondary/5 p-3 transition-all hover:border-secondary/60 ${
                 spinnereiEvent && isToday(spinnereiEvent.startAt) ? "home-tile-pulse" : ""
               }`}
               style={{ ["--tile-glow-rgb" as string]: "255, 107, 43" }}
