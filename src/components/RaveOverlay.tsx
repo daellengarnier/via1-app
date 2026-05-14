@@ -39,17 +39,6 @@ interface ShootingStarConfig {
   toY: number;
 }
 
-interface LightningConfig {
-  id: number;
-  delay: number; // Sekunden
-  // Position des Blitzes (zufaellig auf dem Screen verteilt)
-  leftPercent: number;
-  // Skalierung (manche grosse, manche kleine)
-  scale: number;
-  // Farbe (meistens weiss, manchmal cyan/violett fuer Effekt)
-  color: string;
-}
-
 function buildConfetti(count = 120): ConfettiPiece[] {
   const out: ConfettiPiece[] = [];
   for (let i = 0; i < count; i++) {
@@ -62,28 +51,6 @@ function buildConfetti(count = 120): ConfettiPiece[] {
       rotate: Math.random() * 720 - 360,
       size: 6 + Math.random() * 8,
       driftX: (Math.random() - 0.5) * 80, // vw, weite seitliche Streuung
-    });
-  }
-  return out;
-}
-
-function buildLightning(count = 18): LightningConfig[] {
-  const colors = [
-    "#ffffff",
-    "#ffffff",
-    "#ffffff", // weiss dominiert
-    "#a5f3fc", // cyan
-    "#e9d5ff", // violett-hell
-    "#fef08a", // gelb-hell
-  ];
-  const out: LightningConfig[] = [];
-  for (let i = 0; i < count; i++) {
-    out.push({
-      id: i,
-      delay: Math.random() * (RAVE_DURATION_MS / 1000) * 0.95,
-      leftPercent: 5 + Math.random() * 90,
-      scale: 0.6 + Math.random() * 1.4,
-      color: colors[Math.floor(Math.random() * colors.length)]!,
     });
   }
   return out;
@@ -125,7 +92,6 @@ function buildStars(count = 50): ShootingStarConfig[] {
 export function RaveOverlay({ onDone }: { onDone: () => void }) {
   const confetti = useMemo(() => buildConfetti(), []);
   const stars = useMemo(() => buildStars(), []);
-  const lightning = useMemo(() => buildLightning(), []);
 
   useEffect(() => {
     document.body.classList.add("via1-rave-active");
@@ -183,30 +149,6 @@ export function RaveOverlay({ onDone }: { onDone: () => void }) {
         />
       ))}
 
-      {/* Donnerblitze ⚡ — zackige SVGs blitzen kurz auf, dazu Vollbild-Flash */}
-      {lightning.map((l) => (
-        <svg
-          key={l.id}
-          viewBox="0 0 24 80"
-          className="rave-lightning absolute top-0"
-          style={{
-            left: `${l.leftPercent}%`,
-            width: `${l.scale * 60}px`,
-            height: `${l.scale * 200}px`,
-            color: l.color,
-            animationDelay: `${l.delay}s`,
-          }}
-        >
-          <path
-            d="M 14 0 L 4 36 L 12 36 L 6 80 L 22 30 L 14 30 Z"
-            fill="currentColor"
-            stroke="white"
-            strokeWidth="0.6"
-          />
-        </svg>
-      ))}
-      {/* Vollbild-Flash bei jedem Blitz: kurzer weisser Stoss */}
-      <div className="rave-screen-flash absolute inset-0" />
     </div>
   );
 }
