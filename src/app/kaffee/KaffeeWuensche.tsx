@@ -106,7 +106,7 @@ export function KaffeeWuensche({ myUserId, isAdmin }: Props) {
           💭 Kaffeewuensche
         </h2>
         <a
-          href="https://www.rastshop.ch/shop/"
+          href="https://www.rastshop.ch/de"
           target="_blank"
           rel="noopener noreferrer"
           className="font-mono text-[10px] uppercase tracking-wider text-amber-400 hover:text-amber-200"
