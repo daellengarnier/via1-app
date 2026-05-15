@@ -63,7 +63,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await req.json()) as { score?: unknown; game?: unknown };
+  const body = (await req.json()) as {
+    score?: unknown;
+    game?: unknown;
+    durationSec?: unknown;
+  };
   const score = typeof body.score === "number" ? Math.floor(body.score) : 0;
   if (score <= 0) {
     return NextResponse.json({ error: "Invalid score" }, { status: 400 });
@@ -72,6 +76,11 @@ export async function POST(req: Request) {
     typeof body.game === "string" && VALID_GAMES.has(body.game)
       ? body.game
       : "tetris";
+  // Spielzeit in Sekunden — geclampt auf [0, 4h]. Schuetzt vor
+  // schlafenden Tabs die nach Stunden zurueckkommen.
+  const rawDuration =
+    typeof body.durationSec === "number" ? Math.floor(body.durationSec) : 0;
+  const durationSec = Math.max(0, Math.min(rawDuration, 4 * 3600));
 
   const prevBest = await prisma.gameScore.findFirst({
     where: { userId: session.user.id, game },
@@ -86,6 +95,7 @@ export async function POST(req: Request) {
       userId: session.user.id,
       score,
       game,
+      durationSec,
     },
   });
 

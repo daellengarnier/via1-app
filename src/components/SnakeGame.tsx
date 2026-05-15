@@ -117,7 +117,7 @@ function initGame(): Game {
 }
 
 interface SnakeGameProps {
-  onGameOver: (score: number) => void;
+  onGameOver: (score: number, durationSec: number) => void;
   onScoreChange?: (score: number) => void;
 }
 
@@ -127,6 +127,7 @@ export function SnakeGame({ onGameOver, onScoreChange }: SnakeGameProps) {
   const touchRef = useRef<{ x: number; y: number } | null>(null);
   const onGameOverRef = useRef(onGameOver);
   const onScoreChangeRef = useRef(onScoreChange);
+  const gameStartedAtRef = useRef<number>(0);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [started, setStarted] = useState(false);
@@ -146,6 +147,7 @@ export function SnakeGame({ onGameOver, onScoreChange }: SnakeGameProps) {
     setScore(0);
     setGameOver(false);
     setStarted(true);
+    gameStartedAtRef.current = Date.now();
   }, []);
 
   useEffect(() => {
@@ -174,7 +176,10 @@ export function SnakeGame({ onGameOver, onScoreChange }: SnakeGameProps) {
         g.running = false;
         g.shake = 2;
         setGameOver(true);
-        onGameOverRef.current(g.score);
+        const durationSec = Math.floor(
+          (Date.now() - gameStartedAtRef.current) / 1000
+        );
+        onGameOverRef.current(g.score, durationSec);
         return;
       }
 

@@ -56,13 +56,13 @@ export default function SnakePage() {
   }, [loadLB]);
 
   const handleGameOver = useCallback(
-    (score: number) => {
+    (score: number, durationSec: number) => {
       setFinalScore(score);
       if (score <= 0) return;
       fetch("/api/game/highscore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ score, game: "snake" }),
+        body: JSON.stringify({ score, game: "snake", durationSec }),
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((d: { isNewRecord?: boolean } | null) => {

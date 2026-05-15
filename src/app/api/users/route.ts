@@ -34,10 +34,11 @@ export async function GET() {
         },
       },
     }),
-    // Highscores pro User + Game in einem Sweep aggregieren
+    // Highscore + Total-Spielzeit pro User + Game in einem Sweep
     prisma.gameScore.groupBy({
       by: ["userId", "game"],
       _max: { score: true },
+      _sum: { durationSec: true },
     }),
   ]);
 
@@ -47,17 +48,35 @@ export async function GET() {
     VEGAN: "Vegan",
   } as const;
 
-  const scoreMap = new Map<string, { tetris: number; snake: number }>();
+  interface Stats {
+    tetrisHighscore: number;
+    snakeHighscore: number;
+    tetrisSec: number;
+    snakeSec: number;
+  }
+  const empty = (): Stats => ({
+    tetrisHighscore: 0,
+    snakeHighscore: 0,
+    tetrisSec: 0,
+    snakeSec: 0,
+  });
+  const scoreMap = new Map<string, Stats>();
   for (const row of scoreRows) {
-    const cur = scoreMap.get(row.userId) ?? { tetris: 0, snake: 0 };
-    if (row.game === "tetris") cur.tetris = row._max.score ?? 0;
-    if (row.game === "snake") cur.snake = row._max.score ?? 0;
+    const cur = scoreMap.get(row.userId) ?? empty();
+    if (row.game === "tetris") {
+      cur.tetrisHighscore = row._max.score ?? 0;
+      cur.tetrisSec = row._sum.durationSec ?? 0;
+    }
+    if (row.game === "snake") {
+      cur.snakeHighscore = row._max.score ?? 0;
+      cur.snakeSec = row._sum.durationSec ?? 0;
+    }
     scoreMap.set(row.userId, cur);
   }
 
   return NextResponse.json(
     users.map((u) => {
-      const scores = scoreMap.get(u.id) ?? { tetris: 0, snake: 0 };
+      const stats = scoreMap.get(u.id) ?? empty();
       return {
         id: u.id,
         name: u.name,
@@ -70,8 +89,10 @@ export async function GET() {
         roomKey: u.room?.keyNumber ?? null,
         roomNumber: u.room?.number ?? null,
         wgName: u.room?.wg.name ?? null,
-        tetrisHighscore: scores.tetris,
-        snakeHighscore: scores.snake,
+        tetrisHighscore: stats.tetrisHighscore,
+        snakeHighscore: stats.snakeHighscore,
+        tetrisSec: stats.tetrisSec,
+        snakeSec: stats.snakeSec,
       };
     })
   );
