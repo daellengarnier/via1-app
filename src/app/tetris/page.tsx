@@ -322,6 +322,8 @@ export default function TetrisPage() {
   const [isNewRecord, setIsNewRecord] = useState(false);
   const [cellSize, setCellSize] = useState(28);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  // Spielzeit-Tracking: Start-Zeit pro Game-Session (Reset auf Restart).
+  const gameStartRef = useRef<number>(Date.now());
   const [showLB, setShowLB] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
   const music = useGameMusic();
@@ -348,11 +350,14 @@ export default function TetrisPage() {
 
   const handleGameOver = useCallback((score: number) => {
     setFinalScore(score);
+    const durationSec = Math.floor(
+      (Date.now() - gameStartRef.current) / 1000
+    );
     if (score > 0) {
       fetch("/api/game/highscore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ score, game: "tetris" }),
+        body: JSON.stringify({ score, game: "tetris", durationSec }),
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((d: { isNewRecord?: boolean } | null) => {
@@ -368,6 +373,7 @@ export default function TetrisPage() {
     setFinalScore(null);
     setIsNewRecord(false);
     setGameKey((k) => k + 1);
+    gameStartRef.current = Date.now();
   }
 
   function toggleMusic() {

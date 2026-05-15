@@ -26,6 +26,17 @@ interface ApiUser {
   wgName: string | null;
   tetrisHighscore: number;
   snakeHighscore: number;
+  tetrisSec: number;
+  snakeSec: number;
+}
+
+function formatDuration(seconds: number): string {
+  if (!seconds || seconds <= 0) return "—";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h} h ${m} min`;
+  if (m > 0) return `${m} min`;
+  return `${seconds} s`;
 }
 
 function initials(name: string): string {
@@ -180,7 +191,7 @@ function UserProfileModal({
               </p>
             )}
 
-          {/* Game-Highscores — fuer alle sichtbar */}
+          {/* Game-Highscores + Spielzeit — fuer alle sichtbar */}
           {(user.tetrisHighscore > 0 || user.snakeHighscore > 0) && (
             <div className="mt-4 grid grid-cols-2 gap-2">
               <div className="rounded-lg border border-yellow-400/30 bg-yellow-400/5 p-2.5 text-center">
@@ -190,6 +201,9 @@ function UserProfileModal({
                 <p className="mt-0.5 font-mono text-lg font-bold text-white">
                   {user.tetrisHighscore || "–"}
                 </p>
+                <p className="mt-0.5 font-mono text-[9px] text-yellow-400/70">
+                  ⏱ {formatDuration(user.tetrisSec)}
+                </p>
               </div>
               <div className="rounded-lg border border-emerald-400/30 bg-emerald-400/5 p-2.5 text-center">
                 <p className="font-mono text-[9px] uppercase tracking-widest text-emerald-300">
@@ -197,6 +211,9 @@ function UserProfileModal({
                 </p>
                 <p className="mt-0.5 font-mono text-lg font-bold text-white">
                   {user.snakeHighscore || "–"}
+                </p>
+                <p className="mt-0.5 font-mono text-[9px] text-emerald-400/70">
+                  ⏱ {formatDuration(user.snakeSec)}
                 </p>
               </div>
             </div>

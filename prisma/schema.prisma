@@ -176,12 +176,15 @@ model FamilyKid {
 }
 
 model GameScore {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  score     Int
-  game      String   @default("tetris")
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  score       Int
+  // Spielzeit in Sekunden (von Game-Start bis Game-Over). Wird vom
+  // Client beim POST mitgeschickt. Optional fuer alte Eintraege.
+  durationSec Int      @default(0)
+  game        String   @default("tetris")
+  createdAt   DateTime @default(now())
 
   @@index([score(sort: Desc)])
   @@index([userId])
