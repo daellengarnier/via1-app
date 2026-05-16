@@ -30,6 +30,7 @@ interface Aufgabe {
   createdBy: string;
   createdAt: string;
   completedAt: string | null;
+  completedBy: string | null;
   activeWorkers: string[];
   subTodos: SubTodo[];
   images: string[];
@@ -892,6 +893,18 @@ function AufgabenPage() {
                   {a.assignee && (
                     <p className="mt-0.5 text-[9px] text-yellow-400">
                       → {a.assignee}
+                    </p>
+                  )}
+                  {a.done && a.completedAt && (
+                    <p className="mt-0.5 text-[9px] text-emerald-400/80">
+                      ✓ erledigt
+                      {a.completedBy ? ` von ${a.completedBy}` : ""}
+                      {" · "}
+                      {new Date(a.completedAt).toLocaleDateString("de-CH", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </p>
                   )}
                   {a.subTodos.length > 0 && (() => {

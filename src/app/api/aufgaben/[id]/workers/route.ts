@@ -50,6 +50,7 @@ export async function POST(
     where: { id: params.id },
     include: {
       createdBy: true,
+      completedBy: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
       images: true,
@@ -99,6 +100,7 @@ export async function DELETE(
     where: { id: params.id },
     include: {
       createdBy: true,
+      completedBy: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
       images: true,

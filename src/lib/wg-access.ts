@@ -102,6 +102,17 @@ export async function requireWgAccess(
     // refreshen (die naechste API-Call refresht dann).
   }
 
+  // Merken: zuletzt besuchte WG fuer den /meine-wg Auto-Redirect.
+  // Fire-and-forget, blockiert die Antwort nicht.
+  prisma.user
+    .update({
+      where: { id: session.user.id },
+      data: { lastVisitedWgId: wg.id },
+    })
+    .catch(() => {
+      // Falls die Migration noch nicht durch ist (Feld fehlt): ignorieren
+    });
+
   return {
     ok: true,
     user: {

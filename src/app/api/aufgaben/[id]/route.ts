@@ -17,6 +17,7 @@ export async function GET(
     where: { id: params.id },
     include: {
       createdBy: true,
+      completedBy: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
       images: true,
@@ -88,13 +89,16 @@ export async function PATCH(
       .slice(0, 8);
   }
 
-  // Done-Toggle aktualisiert completedAt und raeumt activeWorkers auf
+  // Done-Toggle aktualisiert completedAt + completedBy und raeumt
+  // activeWorkers auf
   if (typeof body.done === "boolean") {
     data.done = body.done;
     if (body.done) {
       data.completedAt = new Date();
+      data.completedById = session.user.id;
     } else {
       data.completedAt = null;
+      data.completedById = null;
     }
   }
 
@@ -128,6 +132,7 @@ export async function PATCH(
       where: { id: u.id },
       include: {
         createdBy: true,
+      completedBy: true,
         activeWorkers: { include: { user: true } },
         subTodos: true,
         images: true,
