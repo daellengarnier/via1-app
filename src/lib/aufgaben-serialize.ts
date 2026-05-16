@@ -29,6 +29,7 @@ export interface AufgabeDTO {
   createdBy: string;
   createdAt: string;
   completedAt: string | null;
+  completedBy: string | null;
   activeWorkers: string[];
   subTodos: SubTodoDTO[];
   images: string[];
@@ -46,6 +47,7 @@ export function serializeSubTodo(s: AufgabeSubTodo): SubTodoDTO {
 export function serializeAufgabe(
   a: Aufgabe & {
     createdBy: User;
+    completedBy?: User | null;
     activeWorkers: (AufgabeActiveWorker & { user: User })[];
     subTodos?: AufgabeSubTodo[];
     images?: AufgabeImage[];
@@ -65,6 +67,7 @@ export function serializeAufgabe(
     createdBy: a.createdBy.name,
     createdAt: a.createdAt.toISOString(),
     completedAt: a.completedAt ? a.completedAt.toISOString() : null,
+    completedBy: a.completedBy?.name ?? null,
     activeWorkers: a.activeWorkers.map((w) => w.user.name),
     subTodos: (a.subTodos ?? [])
       .slice()

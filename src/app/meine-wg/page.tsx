@@ -18,13 +18,20 @@ export default async function MeineWgIndexPage({
 
   const me = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { room: { include: { wg: true } } },
+    include: {
+      room: { include: { wg: true } },
+      lastVisitedWg: true,
+    },
   });
   const myWg = me?.room?.wg ?? null;
+  // Auto-Redirect-Ziel: zuletzt besuchte WG, sonst eigene WG.
+  // So sieht z.B. Ambar nach einmaligem Family-WG-Login dort die
+  // Uebersicht statt ihrer offiziellen Ostblock-WG.
+  const defaultWg = me?.lastVisitedWg ?? myWg;
 
   const forceList = !!(searchParams?.all || searchParams?.select);
-  if (myWg && !forceList) {
-    redirect(`/meine-wg/${wgSlug(myWg.name)}`);
+  if (defaultWg && !forceList) {
+    redirect(`/meine-wg/${wgSlug(defaultWg.name)}`);
   }
 
   const allWgs = await prisma.wg.findMany({

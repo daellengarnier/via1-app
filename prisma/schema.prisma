@@ -98,6 +98,10 @@ model User {
   gameHighScore         Int     @default(0)
   room        Room?     @relation(fields: [roomId], references: [id])
   roomId      String?
+  // Zuletzt besuchte WG im "Meine WG"-Bereich (fuer Auto-Redirect).
+  // Wenn null: fallback auf Room.wgId (eigene WG).
+  lastVisitedWgId String?
+  lastVisitedWg   Wg?    @relation("UserLastVisitedWg", fields: [lastVisitedWgId], references: [id], onDelete: SetNull)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -108,6 +112,7 @@ model User {
   attendances          Attendance[]
   mealSignups          MealSignup[]
   createdAufgaben      Aufgabe[]             @relation("AufgabeCreator")
+  completedAufgaben    Aufgabe[]             @relation("AufgabeCompleter")
   activeAufgabenWorker AufgabeActiveWorker[]
   createdBookings      Booking[]             @relation("BookingCreator")
   bookingComments      BookingComment[]
@@ -367,6 +372,9 @@ model Aufgabe {
   location      String                @default("")
   done          Boolean               @default(false)
   completedAt   DateTime?
+  // Wer hat die Aufgabe als erledigt markiert (im Archiv sichtbar)
+  completedBy   User?                 @relation("AufgabeCompleter", fields: [completedById], references: [id], onDelete: SetNull)
+  completedById String?
   // Optionaler Pin auf der Satellit-Karte
   pinLat        Float?
   pinLng        Float?
@@ -381,6 +389,7 @@ model Aufgabe {
   updatedAt     DateTime              @updatedAt
 
   @@index([done, createdAt])
+  @@index([completedById])
   @@map("aufgaben")
 }
 
@@ -712,6 +721,7 @@ model Wg {
   guests              WgGuest[]
   haussitzungen       Termin[]              @relation("HaussitzungResponsible")
   haussitzungRotation HaussitzungRotation?  @relation("HaussitzungRotationWg")
+  lastVisitedByUsers  User[]                @relation("UserLastVisitedWg")
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 }

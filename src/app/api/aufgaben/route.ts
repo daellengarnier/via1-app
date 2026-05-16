@@ -16,6 +16,7 @@ export async function GET() {
     orderBy: [{ done: "asc" }, { createdAt: "desc" }],
     include: {
       createdBy: true,
+      completedBy: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
       images: true,
@@ -110,6 +111,7 @@ export async function POST(req: Request) {
     },
     include: {
       createdBy: true,
+      completedBy: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
       images: true,
