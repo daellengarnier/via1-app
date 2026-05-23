@@ -20,6 +20,20 @@ const SOURCE_URLS = [
 ];
 const FALLBACK_URL = "https://kulturspinnerei.ch/";
 
+// Hardgecodete Fallback-Events fuer den Fall dass der Scrape nichts
+// liefert (z.B. Plugin-Aenderung auf kulturspinnerei.ch, kein
+// JSON-LD mehr ausgeliefert, etc.). Wird nur genutzt wenn die
+// Live-Scrape keine kommenden Events liefert.
+const FALLBACK_EVENTS: SpinnereiEvent[] = [
+  {
+    title: "Hausfest 2026",
+    // Sa 5. Sept 2026 12:00 bis So 6. Sept 07:00 (CEST = UTC+2)
+    startAt: "2026-09-05T12:00:00+02:00",
+    endAt: "2026-09-06T07:00:00+02:00",
+    url: "https://kulturspinnerei.ch/",
+  },
+];
+
 interface JsonLdEvent {
   "@type"?: string | string[];
   name?: string;
@@ -106,17 +120,25 @@ async function fetchNextEvent(): Promise<SpinnereiEvent | null> {
     allEvents.push(...collectEventsFromJsonLd(html));
     if (allEvents.length > 0) break;
   }
-  if (allEvents.length === 0) return null;
 
   const now = Date.now();
+  const isUpcoming = (e: SpinnereiEvent): boolean => {
+    const t = Date.parse(e.startAt);
+    return Number.isFinite(t) && t >= now - 6 * 60 * 60 * 1000;
+  };
+
   const upcoming = allEvents
-    .filter((e) => {
-      const t = Date.parse(e.startAt);
-      return Number.isFinite(t) && t >= now - 6 * 60 * 60 * 1000;
-    })
+    .filter(isUpcoming)
     .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt));
 
-  return upcoming[0] ?? null;
+  if (upcoming[0]) return upcoming[0];
+
+  // Fallback: kein scrape-Event verfuegbar → hardgecodete Fallbacks
+  // nehmen (z.B. Hausfest 2026 das wir manuell pflegen).
+  const fallbackUpcoming = FALLBACK_EVENTS.filter(isUpcoming).sort(
+    (a, b) => Date.parse(a.startAt) - Date.parse(b.startAt)
+  );
+  return fallbackUpcoming[0] ?? null;
 }
 
 export async function GET() {
