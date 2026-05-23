@@ -1292,8 +1292,8 @@ export default function TerminePage() {
                     organisiert von {t.organizer}
                   </p>
                 )}
-                {t.type === "sonstige" && t.createdBy && !t.organizer && (
-                  <p className="mt-0.5 text-[10px] text-gray-500">
+                {t.createdBy && (
+                  <p className="mt-0.5 text-[10px] text-gray-600">
                     erstellt von {t.createdBy}
                   </p>
                 )}
