@@ -1,27 +1,26 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notify";
 
-// POST /api/drohne — wird vom 3-Tap auf die Pyramide getriggert.
-// Schickt eine Push-Notification an alle anderen User: "Drohne fliegt
-// gerade" — Livio (Stussi) oder Johann (Nachbar) gehoeren typischer-
-// weise dazu.
+// API fuer die Drohne (3-Tap-Easter-Egg).
 //
-// Rate-Limit: pro User max 1 Trigger / 5 Minuten, damit niemand spammt.
-// Wird simpel ueber In-Memory-Map gemacht (per Server-Instanz).
-const lastTriggerByUser = new Map<string, number>();
-const RATE_LIMIT_MS = 5 * 60 * 1000;
+// GET  /api/drohne  → liefert den aktuell aktiven Flight (oder null)
+//                     inkl. Starter-Info + Beschwerden. Wird von allen
+//                     Clients gepollt.
+// POST /api/drohne  → startet einen Flight (current user = starter).
+//                     Schickt Push an alle anderen.
+//
+// Stop und Complaint laufen ueber separate Sub-Routen.
 
 // Grobe Sonnenauf-/Untergangs-Stunden fuer Bern (47°N), lokale Zeit
-// inkl. DST. Bei Nacht versenden wir keine Notif — Livio fliegt eh
-// nicht. Doppelt gemoppelt: Client gated auch schon.
+// inkl. DST. Bei Nacht versenden wir keine Notif und starten keinen
+// Flight — Livio fliegt eh nicht.
 const SUNRISE_BY_MONTH = [8.0, 7.5, 6.5, 6.5, 5.5, 5.5, 5.5, 6.0, 7.0, 7.5, 7.5, 8.0];
 const SUNSET_BY_MONTH  = [17.0, 17.8, 19.0, 20.3, 21.0, 21.5, 21.5, 20.8, 19.8, 18.5, 16.8, 16.5];
 
 function isDaylightInBern(): boolean {
-  // Aktuelle Zeit in Europe/Zurich. Der Server koennte UTC laufen —
-  // wir bauen die lokale Stunde via Intl explizit zusammen.
   const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone: "Europe/Zurich",
     hour: "2-digit",
@@ -39,6 +38,56 @@ function isDaylightInBern(): boolean {
   return decimal >= sunrise && decimal < sunset;
 }
 
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Bei Nacht alle noch offenen Flights silent beenden.
+  if (!isDaylightInBern()) {
+    await prisma.droneFlight.updateMany({
+      where: { endedAt: null },
+      data: { endedAt: new Date() },
+    });
+    return NextResponse.json({ flight: null });
+  }
+
+  const flight = await prisma.droneFlight.findFirst({
+    where: { endedAt: null },
+    orderBy: { startedAt: "desc" },
+    include: {
+      startedBy: { select: { id: true, name: true, avatar: true } },
+      complaints: {
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        include: {
+          author: { select: { id: true, name: true } },
+        },
+      },
+    },
+  });
+
+  if (!flight) {
+    return NextResponse.json({ flight: null });
+  }
+
+  return NextResponse.json({
+    flight: {
+      id: flight.id,
+      startedAt: flight.startedAt.toISOString(),
+      startedBy: flight.startedBy,
+      isMine: flight.startedById === session.user.id,
+      complaints: flight.complaints.map((c) => ({
+        id: c.id,
+        text: c.text,
+        author: c.author,
+        createdAt: c.createdAt.toISOString(),
+      })),
+    },
+  });
+}
+
 export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -46,15 +95,21 @@ export async function POST() {
   }
 
   if (!isDaylightInBern()) {
-    return NextResponse.json({ ok: true, skipped: "nighttime" });
+    return NextResponse.json({ error: "Nachts fliegt keiner." }, { status: 400 });
   }
 
-  const now = Date.now();
-  const last = lastTriggerByUser.get(session.user.id) ?? 0;
-  if (now - last < RATE_LIMIT_MS) {
-    return NextResponse.json({ ok: true, skipped: "rate-limit" });
+  // Schon ein Flight aktiv? Dann nicht doppelt starten.
+  const existing = await prisma.droneFlight.findFirst({
+    where: { endedAt: null },
+    orderBy: { startedAt: "desc" },
+  });
+  if (existing) {
+    return NextResponse.json({ ok: true, flightId: existing.id, skipped: "already-active" });
   }
-  lastTriggerByUser.set(session.user.id, now);
+
+  const flight = await prisma.droneFlight.create({
+    data: { startedById: session.user.id },
+  });
 
   notify({
     kind: "DROHNE_AKTIV",
@@ -65,5 +120,5 @@ export async function POST() {
     excludeUserId: session.user.id,
   }).catch((err) => console.error("notify Drohne", err));
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, flightId: flight.id });
 }

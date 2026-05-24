@@ -7,7 +7,7 @@ import { TabHeader } from "./TabHeader";
 import { LaundryTimers } from "./LaundryTimers";
 import { SaunaSparkline } from "./SaunaChart";
 import { ReactionBar } from "./ReactionBar";
-import { DroneOverlay, isDaylight } from "./DroneOverlay";
+import { DroneOverlay, isDaylight, type DroneFlightInfo } from "./DroneOverlay";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { usePutzplan } from "@/lib/putzplan-store";
 
@@ -183,26 +183,50 @@ export default function HomeScreen() {
   const [pinnwand, setPinnwand] = useState<PinnwandEintrag[]>(
     () => readLs<PinnwandEintrag[]>("via1-home-pinnwand", [])
   );
-  const [droneActive, setDroneActive] = useState(false);
+  // Drohne ist ein globaler Server-State: ein aktiver Flight ist fuer
+  // alle User sichtbar. Wir pollen /api/drohne im aktiven Zustand alle
+  // 4s (fuer Beschwerden), inaktiv alle 12s (nur zum Start-Erkennen).
+  const [droneFlight, setDroneFlight] = useState<DroneFlightInfo | null>(null);
 
-  // Triple-Tap auf Pyramide → toggled die Drohne. Beim Aktivieren wird
-  // eine Push-Notification an alle anderen User gesendet ("Livio oder
-  // Johann fliegt"). Beim Ausschalten (erneuter 3-Tap) keine Notif.
-  // Bei Nacht ignorieren wir den Trigger komplett — Livio fliegt eh
-  // nicht im Dunkeln. CustomEvent wird im AnimatedBackground gefired.
+  const fetchDroneState = useCallback(async () => {
+    try {
+      const res = await fetch("/api/drohne", { cache: "no-store" });
+      if (!res.ok) return;
+      const data: { flight: DroneFlightInfo | null } = await res.json();
+      setDroneFlight(data.flight);
+    } catch {
+      // ignore — Polling laeuft weiter
+    }
+  }, []);
+
   useEffect(() => {
-    function onDroneTrigger() {
-      setDroneActive((current) => {
-        if (current) return false;
-        if (!isDaylight()) return false;
-        fetch("/api/drohne", { method: "POST" }).catch(() => {});
-        return true;
-      });
+    fetchDroneState();
+    const intervalMs = droneFlight ? 4000 : 12000;
+    const id = window.setInterval(fetchDroneState, intervalMs);
+    return () => window.clearInterval(id);
+  }, [droneFlight, fetchDroneState]);
+
+  // Triple-Tap auf Pyramide → startet einen Flight oder stoppt den
+  // eigenen. Bei Nacht ignorieren wir den Trigger komplett.
+  useEffect(() => {
+    async function onDroneTrigger() {
+      if (!isDaylight()) return;
+      if (droneFlight) {
+        if (droneFlight.isMine) {
+          await fetch("/api/drohne/stop", { method: "POST" }).catch(() => {});
+          fetchDroneState();
+        }
+        // Anderer User hat sie gestartet: nichts tun (oder ggf. Klick
+        // auf die Drohne zum Beschweren).
+        return;
+      }
+      await fetch("/api/drohne", { method: "POST" }).catch(() => {});
+      fetchDroneState();
     }
     window.addEventListener("via1:rave-trigger", onDroneTrigger);
     return () =>
       window.removeEventListener("via1:rave-trigger", onDroneTrigger);
-  }, []);
+  }, [droneFlight, fetchDroneState]);
   const [pinnwandCommentsOpen, setPinnwandCommentsOpen] = useState<
     string | null
   >(null);
@@ -1321,7 +1345,17 @@ export default function HomeScreen() {
           </div>
         );
       })()}
-      {droneActive && <DroneOverlay onDone={() => setDroneActive(false)} />}
+      {droneFlight && (
+        <DroneOverlay
+          flight={droneFlight}
+          onStopped={async () => {
+            // Sonnenuntergang oder eigener Stop: lokal sofort weg, Server-State refreshen.
+            setDroneFlight(null);
+            fetchDroneState();
+          }}
+          onComplaintAdded={fetchDroneState}
+        />
+      )}
     </div>
   );
 }
