@@ -166,6 +166,7 @@ model User {
   kaffeeWunschReactions KaffeeWunschReaction[] @relation("KaffeeWunschReactionUser")
   droneFlights         DroneFlight[]         @relation("DroneFlightStarter")
   droneComplaints      DroneComplaint[]      @relation("DroneComplaintAuthor")
+  droneComplaintLikes  DroneComplaintLike[]  @relation("DroneComplaintLikeUser")
 
   @@map("users")
 }
@@ -1302,7 +1303,23 @@ model DroneComplaint {
   authorId  String
   text      String
   createdAt DateTime    @default(now())
+  likes     DroneComplaintLike[]
 
   @@index([flightId, createdAt])
   @@map("drone_complaints")
+}
+
+// "Anschliessen": jeder User kann sich einer Beschwerde anschliessen
+// (= Like). Pro (Beschwerde, User) max 1 Eintrag.
+model DroneComplaintLike {
+  id          String         @id @default(cuid())
+  complaint   DroneComplaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  complaintId String
+  user        User           @relation("DroneComplaintLikeUser", fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  createdAt   DateTime       @default(now())
+
+  @@unique([complaintId, userId])
+  @@index([complaintId])
+  @@map("drone_complaint_likes")
 }

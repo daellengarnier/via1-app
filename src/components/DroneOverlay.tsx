@@ -26,6 +26,8 @@ export interface DroneFlightInfo {
     text: string;
     author: { id: string; name: string };
     createdAt: string;
+    likeCount: number;
+    likedByMe: boolean;
   }[];
 }
 
@@ -100,7 +102,14 @@ export function DroneOverlay({ flight, onStopped, onComplaintAdded }: Props) {
         >
           {currentComplaint && (
             <div className="drone-bubble" role="status">
-              <div className="drone-bubble-author">{currentComplaint.author.name}</div>
+              <div className="drone-bubble-author">
+                <span>{currentComplaint.author.name}</span>
+                {currentComplaint.likeCount > 0 && (
+                  <span className="drone-bubble-likes">
+                    👍 {currentComplaint.likeCount}
+                  </span>
+                )}
+              </div>
               <div className="drone-bubble-text">{currentComplaint.text}</div>
             </div>
           )}
@@ -132,21 +141,23 @@ export function DroneOverlay({ flight, onStopped, onComplaintAdded }: Props) {
 const QUICK_COMPLAINTS = [
   "Bitte höher fliegen",
   "Bitte ganz weg",
-  "Bitte leiser",
-  "Nicht über die Terrasse",
 ];
+
+interface HistoryComplaint {
+  id: string;
+  text: string;
+  author: { id: string; name: string };
+  createdAt: string;
+  likeCount: number;
+  likedByMe: boolean;
+}
 
 interface HistoryFlight {
   id: string;
   startedAt: string;
   endedAt: string | null;
   startedBy: { id: string; name: string };
-  complaints: {
-    id: string;
-    text: string;
-    author: { id: string; name: string };
-    createdAt: string;
-  }[];
+  complaints: HistoryComplaint[];
 }
 
 function ComplaintModal({
@@ -208,11 +219,11 @@ function ComplaintModal({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-md overflow-hidden rounded-t-2xl border border-gray-800 bg-gray-950 sm:rounded-2xl"
+        className="max-h-[90vh] w-full max-w-md overflow-hidden rounded-2xl border border-gray-800 bg-gray-950"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -308,7 +319,31 @@ function ComplaintModal({
               </button>
             </>
           ) : (
-            <HistoryList loading={historyLoading} flights={history} />
+            <HistoryList
+              loading={historyLoading}
+              flights={history}
+              onLikeToggled={(cid, liked) => {
+                setHistory((prev) =>
+                  prev === null
+                    ? prev
+                    : prev.map((f) => ({
+                        ...f,
+                        complaints: f.complaints.map((c) =>
+                          c.id !== cid
+                            ? c
+                            : {
+                                ...c,
+                                likedByMe: liked,
+                                likeCount: Math.max(
+                                  0,
+                                  c.likeCount + (liked ? 1 : -1)
+                                ),
+                              }
+                        ),
+                      }))
+                );
+              }}
+            />
           )}
         </div>
       </div>
@@ -319,9 +354,11 @@ function ComplaintModal({
 function HistoryList({
   loading,
   flights,
+  onLikeToggled,
 }: {
   loading: boolean;
   flights: HistoryFlight[] | null;
+  onLikeToggled: (complaintId: string, liked: boolean) => void;
 }) {
   if (loading || flights === null) {
     return (
@@ -376,11 +413,22 @@ function HistoryList({
             {f.complaints.length > 0 && (
               <ul className="mt-2 space-y-1.5 border-t border-gray-800 pt-2">
                 {f.complaints.map((c) => (
-                  <li key={c.id} className="text-xs">
-                    <span className="font-semibold text-gray-300">
-                      {c.author.name}:
-                    </span>{" "}
-                    <span className="text-gray-400">{c.text}</span>
+                  <li
+                    key={c.id}
+                    className="flex items-start justify-between gap-2 text-xs"
+                  >
+                    <div className="flex-1">
+                      <span className="font-semibold text-gray-300">
+                        {c.author.name}:
+                      </span>{" "}
+                      <span className="text-gray-400">{c.text}</span>
+                    </div>
+                    <LikeButton
+                      complaintId={c.id}
+                      count={c.likeCount}
+                      liked={c.likedByMe}
+                      onToggled={onLikeToggled}
+                    />
                   </li>
                 ))}
               </ul>
@@ -389,6 +437,51 @@ function HistoryList({
         );
       })}
     </ul>
+  );
+}
+
+function LikeButton({
+  complaintId,
+  count,
+  liked,
+  onToggled,
+}: {
+  complaintId: string;
+  count: number;
+  liked: boolean;
+  onToggled: (complaintId: string, liked: boolean) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  async function toggle() {
+    if (busy) return;
+    setBusy(true);
+    onToggled(complaintId, !liked);
+    try {
+      const res = await fetch(`/api/drohne/complaint/${complaintId}/like`, {
+        method: "POST",
+      });
+      if (!res.ok) onToggled(complaintId, liked);
+    } catch {
+      onToggled(complaintId, liked);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={busy}
+      title={liked ? "Anschluss zurueckziehen" : "Beschwerde anschliessen"}
+      className={`flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] transition-colors ${
+        liked
+          ? "border-accent bg-accent/10 text-accent"
+          : "border-gray-700 bg-black/40 text-gray-400 hover:border-gray-500 hover:text-gray-200"
+      }`}
+    >
+      <span>👍</span>
+      <span>{count}</span>
+    </button>
   );
 }
 
