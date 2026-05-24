@@ -7,7 +7,7 @@ import { TabHeader } from "./TabHeader";
 import { LaundryTimers } from "./LaundryTimers";
 import { SaunaSparkline } from "./SaunaChart";
 import { ReactionBar } from "./ReactionBar";
-import { RaveOverlay } from "./RaveOverlay";
+import { DroneOverlay, isDaylight } from "./DroneOverlay";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { usePutzplan } from "@/lib/putzplan-store";
 
@@ -183,16 +183,25 @@ export default function HomeScreen() {
   const [pinnwand, setPinnwand] = useState<PinnwandEintrag[]>(
     () => readLs<PinnwandEintrag[]>("via1-home-pinnwand", [])
   );
-  const [raveActive, setRaveActive] = useState(false);
+  const [droneActive, setDroneActive] = useState(false);
 
-  // Triple-Tap auf Pyramide → Rave-Modus aktivieren (Konfetti, Sternschnuppen,
-  // Blitze, Strobe). Das CustomEvent wird im AnimatedBackground gefired.
+  // Triple-Tap auf Pyramide → toggled die Drohne. Beim Aktivieren wird
+  // eine Push-Notification an alle anderen User gesendet ("Livio oder
+  // Johann fliegt"). Beim Ausschalten (erneuter 3-Tap) keine Notif.
+  // Bei Nacht ignorieren wir den Trigger komplett — Livio fliegt eh
+  // nicht im Dunkeln. CustomEvent wird im AnimatedBackground gefired.
   useEffect(() => {
-    function onRave() {
-      setRaveActive(true);
+    function onDroneTrigger() {
+      setDroneActive((current) => {
+        if (current) return false;
+        if (!isDaylight()) return false;
+        fetch("/api/drohne", { method: "POST" }).catch(() => {});
+        return true;
+      });
     }
-    window.addEventListener("via1:rave-trigger", onRave);
-    return () => window.removeEventListener("via1:rave-trigger", onRave);
+    window.addEventListener("via1:rave-trigger", onDroneTrigger);
+    return () =>
+      window.removeEventListener("via1:rave-trigger", onDroneTrigger);
   }, []);
   const [pinnwandCommentsOpen, setPinnwandCommentsOpen] = useState<
     string | null
@@ -1312,7 +1321,7 @@ export default function HomeScreen() {
           </div>
         );
       })()}
-      {raveActive && <RaveOverlay onDone={() => setRaveActive(false)} />}
+      {droneActive && <DroneOverlay onDone={() => setDroneActive(false)} />}
     </div>
   );
 }
