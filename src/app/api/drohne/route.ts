@@ -63,6 +63,7 @@ export async function GET() {
         take: 10,
         include: {
           author: { select: { id: true, name: true } },
+          likes: { select: { userId: true } },
         },
       },
     },
@@ -72,17 +73,20 @@ export async function GET() {
     return NextResponse.json({ flight: null });
   }
 
+  const me = session.user.id;
   return NextResponse.json({
     flight: {
       id: flight.id,
       startedAt: flight.startedAt.toISOString(),
       startedBy: flight.startedBy,
-      isMine: flight.startedById === session.user.id,
+      isMine: flight.startedById === me,
       complaints: flight.complaints.map((c) => ({
         id: c.id,
         text: c.text,
         author: c.author,
         createdAt: c.createdAt.toISOString(),
+        likeCount: c.likes.length,
+        likedByMe: c.likes.some((l) => l.userId === me),
       })),
     },
   });

@@ -22,11 +22,13 @@ export async function GET() {
         take: 50,
         include: {
           author: { select: { id: true, name: true } },
+          likes: { select: { userId: true } },
         },
       },
     },
   });
 
+  const me = session.user.id;
   return NextResponse.json({
     flights: flights.map((f) => ({
       id: f.id,
@@ -38,6 +40,8 @@ export async function GET() {
         text: c.text,
         author: c.author,
         createdAt: c.createdAt.toISOString(),
+        likeCount: c.likes.length,
+        likedByMe: c.likes.some((l) => l.userId === me),
       })),
     })),
   });
