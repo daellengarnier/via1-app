@@ -62,6 +62,7 @@ const kindToPref: Record<NotificationKind, keyof PrefFields> = {
   WG_AEMTLI_SWAP_DECISION: "notifyMeineWg",
   WG_AEMTLI_DONE: "notifyMeineWg",
   WG_EINKAUF_COMMENT: "notifyMeineWg",
+  DROHNE_AKTIV: "notifyDrohne",
 };
 
 type PrefFields = {
@@ -77,6 +78,7 @@ type PrefFields = {
   notifyMyPostsComment: boolean;
   notifyLaundry: boolean;
   notifyMeineWg: boolean;
+  notifyDrohne: boolean;
 };
 
 interface NotifyParams {

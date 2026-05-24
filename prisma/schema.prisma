@@ -64,6 +64,7 @@ enum NotificationKind {
   WG_AEMTLI_SWAP_DECISION
   WG_AEMTLI_DONE
   WG_EINKAUF_COMMENT
+  DROHNE_AKTIV
 }
 
 model User {
@@ -93,6 +94,7 @@ model User {
   notifyMyPostsComment  Boolean @default(true)
   notifyLaundry         Boolean @default(true)
   notifyMeineWg         Boolean @default(true)
+  notifyDrohne          Boolean @default(true)
   hasKaffeeAbo          Boolean @default(false)
   favoriteAnimal        String?
   gameHighScore         Int     @default(0)

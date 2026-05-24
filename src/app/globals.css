@@ -549,89 +549,57 @@ body {
   animation: homeTilePulse 1.8s ease-in-out infinite;
 }
 
-/* ===== RAVE-MODE — 3-Tap auf Pyramide aktiviert das fuer ~6s. ===== */
+/* ===== DROHNE — 3-Tap auf Pyramide aktiviert das fuer 30s. =====
+   Idee: Livio (Stussi, 12) hat eine Drohne, soll vor dem Fliegen das
+   Haus informieren. Tipps er 3x auf die Pyramide, fliegt eine Drohne
+   um den Spitz + alle anderen User kriegen eine Push-Notification. */
 
-/* Sternschnuppen-Sturm: bewegt sich entlang from→to mit gerader Linie.
-   Rotation matcht Trajektorie damit der Schweif gerade ist. */
-@keyframes raveShoot {
-  0% {
-    transform: translate3d(var(--from-x), var(--from-y), 0)
-      rotate(var(--rotate));
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  100% {
-    transform: translate3d(var(--to-x), var(--to-y), 0)
-      rotate(var(--rotate));
-    opacity: 0;
-  }
+/* Orbit-Wrapper rotiert um den Pyramiden-Spitz. */
+@keyframes droneOrbitRotate {
+  to { transform: rotate(360deg); }
 }
-.rave-shooting-star {
-  width: 180px;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 30%,
-    rgba(255, 255, 255, 1) 78%,
-    rgba(255, 255, 255, 0.7) 90%,
-    transparent 100%
-  );
-  filter: blur(1.5px) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
-  animation-name: raveShoot;
-  animation-timing-function: linear;
-  animation-fill-mode: both;
-  top: 0;
-  left: 0;
+.drone-orbit-spin {
+  position: absolute;
+  width: 0;
+  height: 0;
+  animation: droneOrbitRotate 4s linear infinite;
+  transform-origin: 0 0;
 }
 
-/* Strobe-Background: kraeftige Farb-Vollflaechen-Stoesse ueber den
-   ganzen Screen — wechselnd schnell durch alle Akzentfarben + harte
-   Weiss-Flashes dazwischen. Soll richtig knallen. */
-@keyframes raveStrobe {
-  0%   { background: rgba(239, 68, 68, 0.6); }   /* rot */
-  10%  { background: rgba(255, 255, 255, 0.7); } /* weiss-Flash */
-  20%  { background: rgba(250, 204, 21, 0.6); }  /* gelb */
-  30%  { background: rgba(0, 0, 0, 0); }         /* clear */
-  40%  { background: rgba(34, 197, 94, 0.6); }   /* gruen */
-  50%  { background: rgba(255, 255, 255, 0.7); } /* weiss-Flash */
-  60%  { background: rgba(59, 130, 246, 0.6); }  /* blau */
-  70%  { background: rgba(0, 0, 0, 0); }         /* clear */
-  80%  { background: rgba(168, 85, 247, 0.6); }  /* violett */
-  90%  { background: rgba(255, 255, 255, 0.7); } /* weiss-Flash */
-  100% { background: rgba(236, 72, 153, 0.6); }  /* pink */
+/* Inneres div haelt die Drohne aufrecht (counter-rotate) und macht
+   ein leichtes Auf-Ab-Bobbing wie ein echter Quadcopter im Hover. */
+@keyframes droneCounterRotate {
+  to { transform: rotate(-360deg); }
 }
-.rave-strobe {
-  animation: raveStrobe 0.4s steps(1, end) infinite;
-  /* mix-blend-mode: hard-light verstaerkt Farben deutlich, laesst aber
-     den Home-Screen darunter durchscheinen — viel besser als die
-     blickdichten Vollfarben vorher. */
-  mix-blend-mode: hard-light;
+@keyframes droneBob {
+  0%, 100% { transform: translate(85px, -8px); }
+  50%      { transform: translate(85px, -12px); }
+}
+.drone-orbit-bob {
+  position: absolute;
+  animation: droneBob 1.2s ease-in-out infinite;
+}
+/* Die Drohne selbst kontert die Orbit-Rotation, damit der Quadcopter
+   immer aufrecht bleibt waehrend er fliegt. */
+.drone-svg {
+  animation: droneCounterRotate 4s linear infinite;
 }
 
-/* Wenn .via1-rave-active auf body sitzt: Pyramide rotiert fest, alle
-   wg-glow-border-Elemente kreiseln viel schneller, alle Tiles wackeln. */
-@keyframes ravePyramidSpin {
-  to { transform: rotate(360deg) scale(1.15); }
+/* Rotor-Bluetter drehen sich schnell (Motion-Blur via Ellipse-Form). */
+@keyframes droneRotorSpin {
+  to { transform: rotate(360deg); }
 }
-@keyframes raveTileBounce {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.04) rotate(0.5deg); }
+.drone-rotor {
+  animation: droneRotorSpin 0.08s linear infinite;
 }
-body.via1-rave-active .via-tab-icon {
-  animation: ravePyramidSpin 0.8s linear infinite, icon-glow 4s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.9))
-    drop-shadow(0 0 60px rgba(168, 85, 247, 0.7));
+
+/* Status-LED blinkt rot wie ein echter Quadcopter. */
+@keyframes droneLedBlink {
+  0%, 60%, 100% { fill: #f87171; opacity: 1; }
+  70%, 90%      { fill: #f87171; opacity: 0.15; }
 }
-body.via1-rave-active .wg-glow-border::before {
-  animation: wgGlowRotate 0.4s linear infinite;
-}
-body.via1-rave-active main,
-body.via1-rave-active .max-w-lg > div {
-  animation: raveTileBounce 0.35s ease-in-out infinite;
+.drone-led {
+  animation: droneLedBlink 1s linear infinite;
 }
 
 
