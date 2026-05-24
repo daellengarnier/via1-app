@@ -127,18 +127,23 @@ async function fetchNextEvent(): Promise<SpinnereiEvent | null> {
     return Number.isFinite(t) && t >= now - 6 * 60 * 60 * 1000;
   };
 
-  const upcoming = allEvents
+  // Scrape + Manual-Fallbacks beide in den Kandidaten-Pool.
+  // Dedupe nach (Titel + Startdatum) damit manuell gepflegte Events
+  // nicht doppelt erscheinen wenn die Spinnerei sie nachtraeglich auf
+  // der Website eintraegt.
+  const combined = [...allEvents, ...FALLBACK_EVENTS];
+  const seen = new Set<string>();
+  const upcoming = combined
     .filter(isUpcoming)
+    .filter((e) => {
+      const key = `${e.title}|${e.startAt.slice(0, 10)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt));
 
-  if (upcoming[0]) return upcoming[0];
-
-  // Fallback: kein scrape-Event verfuegbar → hardgecodete Fallbacks
-  // nehmen (z.B. Hausfest 2026 das wir manuell pflegen).
-  const fallbackUpcoming = FALLBACK_EVENTS.filter(isUpcoming).sort(
-    (a, b) => Date.parse(a.startAt) - Date.parse(b.startAt)
-  );
-  return fallbackUpcoming[0] ?? null;
+  return upcoming[0] ?? null;
 }
 
 export async function GET() {
