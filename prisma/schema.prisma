@@ -164,6 +164,8 @@ model User {
   wgPinnwandReactions  WgPinnwandReaction[]  @relation("WgPinnwandReactionUser")
   kaffeeWuensche       KaffeeWunsch[]        @relation("KaffeeWunschCreator")
   kaffeeWunschReactions KaffeeWunschReaction[] @relation("KaffeeWunschReactionUser")
+  droneFlights         DroneFlight[]         @relation("DroneFlightStarter")
+  droneComplaints      DroneComplaint[]      @relation("DroneComplaintAuthor")
 
   @@map("users")
 }
@@ -1274,4 +1276,33 @@ model SaunaHeating {
   updatedAt     DateTime @updatedAt
 
   @@map("sauna_heating")
+}
+
+// Drohne (3-Tap-Easter-Egg). Genau 1 aktiver Flight pro Zeit, alle
+// User sehen die Drohne ueber das Polling. Wer sie startet wird per
+// Klick auf die Drohne sichtbar; andere koennen Beschwerden hinter-
+// lassen die mit der Drohne als Sprechblasen mitfliegen.
+model DroneFlight {
+  id          String           @id @default(cuid())
+  startedBy   User             @relation("DroneFlightStarter", fields: [startedById], references: [id], onDelete: Cascade)
+  startedById String
+  startedAt   DateTime         @default(now())
+  endedAt     DateTime?
+  complaints  DroneComplaint[]
+
+  @@index([endedAt])
+  @@map("drone_flights")
+}
+
+model DroneComplaint {
+  id        String      @id @default(cuid())
+  flight    DroneFlight @relation(fields: [flightId], references: [id], onDelete: Cascade)
+  flightId  String
+  author    User        @relation("DroneComplaintAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  text      String
+  createdAt DateTime    @default(now())
+
+  @@index([flightId, createdAt])
+  @@map("drone_complaints")
 }
