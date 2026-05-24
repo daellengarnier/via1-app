@@ -121,42 +121,67 @@ export function DroneOverlay({ flight, onStopped, onComplaintAdded }: Props) {
         <ComplaintModal
           flight={flight}
           onClose={() => setModalOpen(false)}
-          onComplaintAdded={() => {
-            onComplaintAdded();
-            setModalOpen(false);
-          }}
-          onStopRequested={() => {
-            setModalOpen(false);
-            onStopped();
-          }}
+          onComplaintAdded={onComplaintAdded}
         />
       )}
     </>
   );
 }
 
+// Vordefinierte Beschwerden — Klick = direkt absenden.
+const QUICK_COMPLAINTS = [
+  "Bitte höher fliegen",
+  "Bitte ganz weg",
+  "Bitte leiser",
+  "Nicht über die Terrasse",
+];
+
+interface HistoryFlight {
+  id: string;
+  startedAt: string;
+  endedAt: string | null;
+  startedBy: { id: string; name: string };
+  complaints: {
+    id: string;
+    text: string;
+    author: { id: string; name: string };
+    createdAt: string;
+  }[];
+}
+
 function ComplaintModal({
   flight,
   onClose,
   onComplaintAdded,
-  onStopRequested,
 }: {
   flight: DroneFlightInfo;
   onClose: () => void;
   onComplaintAdded: () => void;
-  onStopRequested: () => void;
 }) {
+  const [tab, setTab] = useState<"beschwerde" | "historie">("beschwerde");
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryFlight[] | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (tab === "beschwerde") inputRef.current?.focus();
+  }, [tab]);
 
-  async function submit() {
-    const v = text.trim();
+  useEffect(() => {
+    if (tab !== "historie" || history !== null) return;
+    setHistoryLoading(true);
+    fetch("/api/drohne/history")
+      .then((r) => r.json())
+      .then((d: { flights: HistoryFlight[] }) => setHistory(d.flights))
+      .catch(() => setHistory([]))
+      .finally(() => setHistoryLoading(false));
+  }, [tab, history]);
+
+  async function sendComplaint(value: string) {
+    const v = value.trim();
     if (!v) return;
     setSending(true);
     setError(null);
@@ -171,6 +196,8 @@ function ComplaintModal({
         throw new Error(d.error ?? "Fehler beim Senden");
       }
       setText("");
+      // History neu laden falls offen — neue Beschwerde soll dort auftauchen.
+      setHistory(null);
       onComplaintAdded();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Fehler");
@@ -179,90 +206,189 @@ function ComplaintModal({
     }
   }
 
-  async function stopFlight() {
-    setSending(true);
-    try {
-      const res = await fetch("/api/drohne/stop", { method: "POST" });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.error ?? "Stop fehlgeschlagen");
-      }
-      onStopRequested();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Fehler");
-      setSending(false);
-    }
-  }
-
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm p-0 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl"
+        className="max-h-[90vh] w-full max-w-md overflow-hidden rounded-t-2xl border border-gray-800 bg-gray-950 sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-3 flex items-center gap-2 text-lg font-semibold">
-          <span>🚁</span>
-          <span>Drohne erwischt!</span>
-        </div>
-
-        <div className="mb-4 rounded-lg bg-slate-800/60 p-3 text-sm">
-          <div className="text-slate-400">Gestartet von</div>
-          <div className="text-base font-semibold">{flight.startedBy.name}</div>
-        </div>
-
-        <label className="mb-1 block text-sm text-slate-300">
-          Beschwerde / Kommentar
-        </label>
-        <textarea
-          ref={inputRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          maxLength={200}
-          placeholder="Geht das nicht etwas ruhiger?"
-          className="mb-2 h-24 w-full resize-none rounded-lg border border-slate-700 bg-slate-800 p-2 text-sm text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
-        />
-        <div className="mb-3 text-right text-xs text-slate-500">{text.length}/200</div>
-
-        {error && (
-          <div className="mb-3 rounded-lg bg-red-900/40 p-2 text-sm text-red-200">
-            {error}
-          </div>
-        )}
-
-        <div className="flex gap-2">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-800 px-4 py-3">
+          <h2 className="font-display text-base font-bold uppercase tracking-wider text-white">
+            <span className="mr-2">🚁</span>Drohne erwischt
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            disabled={sending}
-            className="flex-1 rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-50"
+            aria-label="Schliessen"
+            className="text-2xl leading-none text-gray-500 hover:text-white"
           >
-            Abbrechen
-          </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={sending || !text.trim()}
-            className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold hover:bg-emerald-500 disabled:opacity-50"
-          >
-            {sending ? "..." : "Beschwerde senden"}
+            ×
           </button>
         </div>
 
-        {flight.isMine && (
-          <button
-            type="button"
-            onClick={stopFlight}
-            disabled={sending}
-            className="mt-3 w-full rounded-lg border border-red-700 px-3 py-2 text-sm text-red-300 hover:bg-red-900/30 disabled:opacity-50"
-          >
-            Drohne landen
-          </button>
-        )}
+        {/* Starter-Info */}
+        <div className="border-b border-gray-800 px-4 py-3">
+          <div className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
+            Gestartet von
+          </div>
+          <div className="text-base font-semibold text-white">
+            {flight.startedBy.name}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-800">
+          {(["beschwerde", "historie"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={`flex-1 px-3 py-2.5 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+                tab === t
+                  ? "border-b-2 border-accent text-white"
+                  : "border-b-2 border-transparent text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              {t === "beschwerde" ? "Beschwerde" : "Historie"}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab-Content */}
+        <div className="max-h-[55vh] overflow-y-auto p-4">
+          {tab === "beschwerde" ? (
+            <>
+              {/* Quick-Replies: ein Klick = direkt senden. */}
+              <div className="mb-4 flex flex-wrap gap-2">
+                {QUICK_COMPLAINTS.map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => sendComplaint(q)}
+                    disabled={sending}
+                    className="rounded-full border border-gray-700 bg-black/40 px-3 py-1.5 text-xs text-gray-200 hover:border-accent hover:text-white disabled:opacity-40"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+
+              <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-gray-500">
+                ...oder eigene Beschwerde
+              </label>
+              <textarea
+                ref={inputRef}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                maxLength={200}
+                placeholder="Geht das nicht etwas ruhiger?"
+                className="h-20 w-full resize-none rounded-lg border border-gray-800 bg-black/50 p-2.5 text-sm text-white placeholder:text-gray-600 focus:border-accent focus:outline-none"
+              />
+              <div className="mt-1 text-right font-mono text-[10px] text-gray-600">
+                {text.length}/200
+              </div>
+
+              {error && (
+                <div className="mt-3 rounded-lg border border-red-900/50 bg-red-950/40 p-2.5 text-sm text-red-200">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => sendComplaint(text)}
+                disabled={sending || !text.trim()}
+                className="mt-4 w-full rounded-lg bg-accent px-3 py-2.5 text-sm font-semibold text-black hover:brightness-110 disabled:opacity-40"
+              >
+                {sending ? "Senden..." : "Beschwerde senden"}
+              </button>
+            </>
+          ) : (
+            <HistoryList loading={historyLoading} flights={history} />
+          )}
+        </div>
       </div>
     </div>
+  );
+}
+
+function HistoryList({
+  loading,
+  flights,
+}: {
+  loading: boolean;
+  flights: HistoryFlight[] | null;
+}) {
+  if (loading || flights === null) {
+    return (
+      <div className="py-8 text-center font-mono text-xs uppercase tracking-wider text-gray-500">
+        Lade...
+      </div>
+    );
+  }
+  if (flights.length === 0) {
+    return (
+      <div className="py-8 text-center font-mono text-xs uppercase tracking-wider text-gray-500">
+        Noch keine Flights
+      </div>
+    );
+  }
+  const fmt = new Intl.DateTimeFormat("de-CH", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return (
+    <ul className="space-y-3">
+      {flights.map((f) => {
+        const started = new Date(f.startedAt);
+        const ended = f.endedAt ? new Date(f.endedAt) : null;
+        const durationMin = ended
+          ? Math.max(1, Math.round((ended.getTime() - started.getTime()) / 60000))
+          : null;
+        return (
+          <li
+            key={f.id}
+            className="rounded-lg border border-gray-800 bg-black/40 p-3"
+          >
+            <div className="flex items-baseline justify-between gap-2">
+              <div className="text-sm font-semibold text-white">
+                {f.startedBy.name}
+              </div>
+              <div className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
+                {fmt.format(started)}
+              </div>
+            </div>
+            <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-gray-600">
+              {ended ? `${durationMin} min` : "Aktiv"}
+              {f.complaints.length > 0 &&
+                ` · ${f.complaints.length} Beschwerde${
+                  f.complaints.length === 1 ? "" : "n"
+                }`}
+            </div>
+            {f.complaints.length > 0 && (
+              <ul className="mt-2 space-y-1.5 border-t border-gray-800 pt-2">
+                {f.complaints.map((c) => (
+                  <li key={c.id} className="text-xs">
+                    <span className="font-semibold text-gray-300">
+                      {c.author.name}:
+                    </span>{" "}
+                    <span className="text-gray-400">{c.text}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
