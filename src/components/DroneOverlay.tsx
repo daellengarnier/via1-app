@@ -83,6 +83,22 @@ export function DroneOverlay({ flight, onStopped, onComplaintAdded }: Props) {
     return () => window.clearInterval(id);
   }, [flight.complaints.length]);
 
+  // Klick auf die mit-fliegende Sprechblase = Like-Toggle.
+  // Optimistisches Refetch via onComplaintAdded (Parent polled neu).
+  async function toggleBubbleLike(complaintId: string, currentlyLiked: boolean) {
+    try {
+      const res = await fetch(`/api/drohne/complaint/${complaintId}/like`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        onComplaintAdded();
+      }
+    } catch {
+      // ignore — naechstes Polling holt den echten State
+    }
+    void currentlyLiked;
+  }
+
   const currentComplaint =
     flight.complaints.length > 0
       ? flight.complaints[bubbleIdx % flight.complaints.length]
@@ -102,21 +118,33 @@ export function DroneOverlay({ flight, onStopped, onComplaintAdded }: Props) {
           }}
         >
           {currentComplaint && (
-            <div className="drone-bubble" role="status">
-              {currentComplaint.likeCount > 0 && (
-                <div className="drone-bubble-likes-row">
-                  <span className="drone-bubble-likes">
-                    👍 {currentComplaint.likeCount}
-                  </span>
-                </div>
-              )}
+            <button
+              type="button"
+              aria-label={
+                currentComplaint.likedByMe
+                  ? "Anschluss zurueckziehen"
+                  : "Beschwerde anschliessen"
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleBubbleLike(currentComplaint.id, currentComplaint.likedByMe);
+              }}
+              className={`drone-bubble pointer-events-auto ${
+                currentComplaint.likedByMe ? "drone-bubble-liked" : ""
+              }`}
+            >
+              <div className="drone-bubble-likes-row">
+                <span className="drone-bubble-likes">
+                  👍 {currentComplaint.likeCount}
+                </span>
+              </div>
               <div className="drone-bubble-text">
                 <span className="drone-bubble-author">
-                  {currentComplaint.author.name.toUpperCase()}
+                  {currentComplaint.author.name.toUpperCase()}:
                 </span>{" "}
-                sagt: {currentComplaint.text}
+                {currentComplaint.text}
               </div>
-            </div>
+            </button>
           )}
           <div className="drone-bob">
             <button
@@ -460,9 +488,9 @@ function HistoryList({
                   >
                     <div className="flex-1">
                       <span className="font-semibold tracking-wider text-gray-200">
-                        {c.author.name.toUpperCase()}
+                        {c.author.name.toUpperCase()}:
                       </span>{" "}
-                      <span className="text-gray-400">sagt: {c.text}</span>
+                      <span className="text-gray-400">{c.text}</span>
                     </div>
                     <LikeButton
                       complaintId={c.id}
@@ -598,6 +626,103 @@ function DroneSvg() {
         <ellipse cx="54" cy="54" rx="9" ry="1.5" fill="rgba(148,163,184,0.35)" />
       </g>
     </svg>
+  );
+}
+
+// Geparkter Drohne-Button (Standard sichtbar unten rechts auf Home wenn
+// gerade keine Drohne fliegt). Oeffnet ein read-only History-Modal —
+// jeder darf die History inkl. Beschwerden + Likes sehen.
+export function DroneHistoryButton() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Drohnen-Historie"
+        title="Drohnen-Historie"
+        className="drone-park-button"
+      >
+        <DroneSvg />
+      </button>
+      {open && <DroneHistoryModal onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function DroneHistoryModal({ onClose }: { onClose: () => void }) {
+  const [history, setHistory] = useState<HistoryFlight[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/drohne/history")
+      .then((r) => r.json())
+      .then((d: { flights: HistoryFlight[] }) => setHistory(d.flights))
+      .catch(() => setHistory([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-md overflow-hidden rounded-2xl border border-gray-800 bg-gray-950"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-gray-800 px-4 py-3">
+          <h2 className="font-display text-base font-bold uppercase tracking-wider text-white">
+            <span className="mr-2">🚁</span>Drohnen-Historie
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Schliessen"
+            className="text-2xl leading-none text-gray-500 hover:text-white"
+          >
+            ×
+          </button>
+        </div>
+        <div className="max-h-[70vh] overflow-y-auto p-4">
+          <HistoryList
+            loading={loading}
+            flights={history}
+            onLikeToggled={(cid, liked) => {
+              setHistory((prev) =>
+                prev === null
+                  ? prev
+                  : prev.map((f) => ({
+                      ...f,
+                      complaints: f.complaints.map((c) =>
+                        c.id !== cid
+                          ? c
+                          : {
+                              ...c,
+                              likedByMe: liked,
+                              likeCount: Math.max(
+                                0,
+                                c.likeCount + (liked ? 1 : -1)
+                              ),
+                            }
+                      ),
+                    }))
+              );
+            }}
+            onDeleted={(cid) => {
+              setHistory((prev) =>
+                prev === null
+                  ? prev
+                  : prev.map((f) => ({
+                      ...f,
+                      complaints: f.complaints.filter((c) => c.id !== cid),
+                    }))
+              );
+            }}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
