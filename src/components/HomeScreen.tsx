@@ -743,12 +743,12 @@ export default function HomeScreen() {
               SPINNEREI
             </p>
             <p className="mt-0.5 truncate text-xs font-medium text-white">
-              {spinnereiEvent?.title ?? "Los Palms"}
+              {spinnereiEvent?.title ?? "Hausfest 2026"}
             </p>
             <p className="font-mono text-[10px] text-gray-500">
               {spinnereiEvent
                 ? `${spinnereiEvent.dateLabel} · ${spinnereiEvent.startTime}`
-                : "Sa 23. Mai · 21:00"}
+                : "Sa 5. Sept · 12:00"}
             </p>
           </a>
         ) : (
@@ -943,13 +943,13 @@ export default function HomeScreen() {
                 </p>
               </div>
               <p className="truncate text-sm font-semibold text-orange-200">
-                {spinnereiEvent?.title ?? "Los Palms"}
+                {spinnereiEvent?.title ?? "Hausfest 2026"}
               </p>
               <p className="mt-0.5 font-mono text-[10px] text-gray-500">
-                {spinnereiEvent?.dateLabel ?? "Sa 23. Mai"}
+                {spinnereiEvent?.dateLabel ?? "Sa 5. Sept"}
               </p>
               <p className="font-mono text-[10px] text-gray-500">
-                {spinnereiEvent?.timeRange ?? "21:00 – 00:00"}
+                {spinnereiEvent?.timeRange ?? "12:00 – 07:00"}
               </p>
               <button
                 type="button"
