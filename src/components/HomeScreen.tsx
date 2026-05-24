@@ -7,7 +7,12 @@ import { TabHeader } from "./TabHeader";
 import { LaundryTimers } from "./LaundryTimers";
 import { SaunaSparkline } from "./SaunaChart";
 import { ReactionBar } from "./ReactionBar";
-import { DroneOverlay, isDaylight, type DroneFlightInfo } from "./DroneOverlay";
+import {
+  DroneOverlay,
+  DroneHistoryButton,
+  isDaylight,
+  type DroneFlightInfo,
+} from "./DroneOverlay";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { usePutzplan } from "@/lib/putzplan-store";
 
@@ -1345,7 +1350,7 @@ export default function HomeScreen() {
           </div>
         );
       })()}
-      {droneFlight && (
+      {droneFlight ? (
         <DroneOverlay
           flight={droneFlight}
           onStopped={async () => {
@@ -1355,6 +1360,8 @@ export default function HomeScreen() {
           }}
           onComplaintAdded={fetchDroneState}
         />
+      ) : (
+        <DroneHistoryButton />
       )}
     </div>
   );
