@@ -28,6 +28,7 @@ export interface DroneFlightInfo {
     createdAt: string;
     likeCount: number;
     likedByMe: boolean;
+    isMine: boolean;
   }[];
 }
 
@@ -102,15 +103,19 @@ export function DroneOverlay({ flight, onStopped, onComplaintAdded }: Props) {
         >
           {currentComplaint && (
             <div className="drone-bubble" role="status">
-              <div className="drone-bubble-author">
-                <span>{currentComplaint.author.name}</span>
-                {currentComplaint.likeCount > 0 && (
+              {currentComplaint.likeCount > 0 && (
+                <div className="drone-bubble-likes-row">
                   <span className="drone-bubble-likes">
                     👍 {currentComplaint.likeCount}
                   </span>
-                )}
+                </div>
+              )}
+              <div className="drone-bubble-text">
+                <span className="drone-bubble-author">
+                  {currentComplaint.author.name.toUpperCase()}
+                </span>{" "}
+                sagt: {currentComplaint.text}
               </div>
-              <div className="drone-bubble-text">{currentComplaint.text}</div>
             </div>
           )}
           <div className="drone-bob">
@@ -143,6 +148,25 @@ const QUICK_COMPLAINTS = [
   "Bitte ganz weg",
 ];
 
+const TIME_FMT = new Intl.DateTimeFormat("de-CH", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+function formatStartTime(iso: string): string {
+  const started = new Date(iso);
+  const minutesAgo = Math.max(
+    0,
+    Math.round((Date.now() - started.getTime()) / 60000)
+  );
+  const time = TIME_FMT.format(started);
+  if (minutesAgo < 1) return `${time} Uhr · gerade gestartet`;
+  if (minutesAgo === 1) return `${time} Uhr · seit 1 min`;
+  if (minutesAgo < 60) return `${time} Uhr · seit ${minutesAgo} min`;
+  const hours = Math.floor(minutesAgo / 60);
+  return `${time} Uhr · seit ${hours}h ${minutesAgo % 60}min`;
+}
+
 interface HistoryComplaint {
   id: string;
   text: string;
@@ -150,6 +174,7 @@ interface HistoryComplaint {
   createdAt: string;
   likeCount: number;
   likedByMe: boolean;
+  isMine: boolean;
 }
 
 interface HistoryFlight {
@@ -249,6 +274,9 @@ function ComplaintModal({
           <div className="text-base font-semibold text-white">
             {flight.startedBy.name}
           </div>
+          <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-gray-500">
+            {formatStartTime(flight.startedAt)}
+          </div>
         </div>
 
         {/* Tabs */}
@@ -343,6 +371,17 @@ function ComplaintModal({
                       }))
                 );
               }}
+              onDeleted={(cid) => {
+                setHistory((prev) =>
+                  prev === null
+                    ? prev
+                    : prev.map((f) => ({
+                        ...f,
+                        complaints: f.complaints.filter((c) => c.id !== cid),
+                      }))
+                );
+                onComplaintAdded();
+              }}
             />
           )}
         </div>
@@ -355,10 +394,12 @@ function HistoryList({
   loading,
   flights,
   onLikeToggled,
+  onDeleted,
 }: {
   loading: boolean;
   flights: HistoryFlight[] | null;
   onLikeToggled: (complaintId: string, liked: boolean) => void;
+  onDeleted: (complaintId: string) => void;
 }) {
   if (loading || flights === null) {
     return (
@@ -418,10 +459,10 @@ function HistoryList({
                     className="flex items-start justify-between gap-2 text-xs"
                   >
                     <div className="flex-1">
-                      <span className="font-semibold text-gray-300">
-                        {c.author.name}:
+                      <span className="font-semibold tracking-wider text-gray-200">
+                        {c.author.name.toUpperCase()}
                       </span>{" "}
-                      <span className="text-gray-400">{c.text}</span>
+                      <span className="text-gray-400">sagt: {c.text}</span>
                     </div>
                     <LikeButton
                       complaintId={c.id}
@@ -429,6 +470,12 @@ function HistoryList({
                       liked={c.likedByMe}
                       onToggled={onLikeToggled}
                     />
+                    {c.isMine && (
+                      <DeleteButton
+                        complaintId={c.id}
+                        onDeleted={onDeleted}
+                      />
+                    )}
                   </li>
                 ))}
               </ul>
@@ -481,6 +528,41 @@ function LikeButton({
     >
       <span>👍</span>
       <span>{count}</span>
+    </button>
+  );
+}
+
+function DeleteButton({
+  complaintId,
+  onDeleted,
+}: {
+  complaintId: string;
+  onDeleted: (complaintId: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  async function del() {
+    if (busy) return;
+    if (!confirm("Eigene Beschwerde wirklich loeschen?")) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/drohne/complaint/${complaintId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) onDeleted(complaintId);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={del}
+      disabled={busy}
+      aria-label="Beschwerde loeschen"
+      title="Eigene Beschwerde loeschen"
+      className="flex shrink-0 items-center rounded-full border border-gray-700 bg-black/40 px-2 py-0.5 text-[11px] text-gray-400 hover:border-red-500 hover:text-red-400 disabled:opacity-40"
+    >
+      🗑
     </button>
   );
 }

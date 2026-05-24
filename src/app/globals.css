@@ -645,13 +645,13 @@ body {
   border-top: 6px solid rgba(15, 23, 42, 0.95);
 }
 .drone-bubble-author {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #e2e8f0;
+}
+.drone-bubble-likes-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  font-weight: 600;
-  font-size: 11px;
-  color: #94a3b8;
+  justify-content: flex-end;
   margin-bottom: 2px;
 }
 .drone-bubble-likes {
