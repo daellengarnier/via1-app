@@ -54,6 +54,52 @@ const monthNames = [
   "Dezember",
 ];
 
+// Gaestewohnwagen-Reglement (Sitzungsprotokoll AG Gaestewohnwagen
+// von Elena, Mara und Davina). Wird ausklappbar am Ende der Seite
+// angezeigt — analog zum Sauna-Reglement.
+const reglementSections: { title: string; items: string[] }[] = [
+  {
+    title: "1. Preis & Kosten",
+    items: [
+      "Unterhaltsbeitrag: Richtpreis CHF 5.– pro Nacht",
+      "Zahlung per QR-Code auf Konto von Verein U → Elena organisiert den QR Code",
+    ],
+  },
+  {
+    title: "2. Vermietungsreglement / Organisation",
+    items: [
+      "Nächte werden im gemeinsamen Kalender erfasst. Für mehr als 5 Nächte muss das Haus gefragt werden. Unter 5 Nächte kann man sich selbstständig im Kalender eintragen.",
+      "Reinigung gemäss Checkliste, Putzmaterial organisiert die verantwortliche Person vom Haus.",
+      "Die Verantwortung liegt bei der Person, die im Haus wohnt und die Gäste empfängt. Bei Fragen kann man sich immer an die AG Gästewohnwagen wenden.",
+      "Der Wohnwagen bleibt abgeschlossen, der Schlüssel kann bei der AG Gästewohnwagen geholt werden.",
+    ],
+  },
+  {
+    title: "3. Inventar & Material",
+    items: [
+      "Boiler: Nein. Kalte Dusche möglich, für warme Dusche kann man ins Haus.",
+      "Heizung: Gasheizung nicht in Stand setzen. Im Winter kann bei Bedarf ein Öfeli vom Haus in den Wohnwagen genommen werden.",
+      "Klimaanlage/Trockner: Besser keine Klimaanlage drin lassen, wegen Befürchtung, dass diese dann im Sommer unüberlegt laufen gelassen werden könnte. Falls nötig, kann ein separater Trockner gekauft werden (Luftfeuchtigkeit aktuell mal prüfen).",
+      "Bettwäsche: Elena organisiert Duvets/Kissen. Diese werden in einem Duvetsack verstaut im Wohnwagen gelagert. Fixleintücher und Bettwäsche organisiert Davina.",
+    ],
+  },
+  {
+    title: "Checkliste vor Abreise",
+    items: [
+      "Kühlschrank ausschalten und offen lassen",
+      "Fenster schliessen",
+      "Alle Lichter ausschalten",
+      "Bettwäsche waschen",
+      "Duvets/Kissen in Sack verstauen",
+      "Oberflächen abwischen",
+      "Boden putzen (Staubsaugen und wenn nötig aufnehmen)",
+      "Falls irgendwelche Schäden entstanden sind, bitte an AG Gästewohnwagen melden",
+      "Abschliessen & Schlüssel zurückgeben",
+      "Unterhaltsbeitrag von 5.– pro Nacht bezahlen (Richtpreis)",
+    ],
+  },
+];
+
 export default function GaestiPage() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -66,6 +112,7 @@ export default function GaestiPage() {
   const [newFrom, setNewFrom] = useState("");
   const [newTo, setNewTo] = useState("");
   const [showBookings, setShowBookings] = useState(true);
+  const [showReglement, setShowReglement] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
     null
@@ -572,6 +619,45 @@ export default function GaestiPage() {
             </p>
           )}
       </div>}
+
+      {/* Gaestewohnwagen-Reglement (ausklappbar) */}
+      <div className="mt-8">
+        <button
+          onClick={() => setShowReglement(!showReglement)}
+          className="flex w-full items-center justify-between rounded-lg border border-gray-800 bg-white/10 p-3"
+        >
+          <span className="font-display text-[10px] font-bold uppercase tracking-widest text-blue-300">
+            REGLEMENT GÄSTEWOHNWAGEN
+          </span>
+          <span className="text-gray-500">{showReglement ? "▲" : "▼"}</span>
+        </button>
+
+        {showReglement && (
+          <div className="mt-2 space-y-4 rounded-lg border border-gray-800 bg-white/10 p-4">
+            <p className="text-center font-mono text-[10px] text-gray-600">
+              Sitzungsprotokoll AG Gästewohnwagen · Elena, Mara, Davina
+            </p>
+            {reglementSections.map((section) => (
+              <div key={section.title}>
+                <h3 className="mb-1.5 text-sm font-semibold text-white">
+                  {section.title}
+                </h3>
+                <ul className="space-y-1">
+                  {section.items.map((item, i) => (
+                    <li
+                      key={i}
+                      className="flex gap-2 text-xs leading-relaxed text-gray-400"
+                    >
+                      <span className="mt-0.5 shrink-0 text-blue-300">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
