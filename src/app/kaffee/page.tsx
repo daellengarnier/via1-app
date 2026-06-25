@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { compressImage } from "@/lib/image-compress";
+import {
+  FALLBACK_RAST_SORTIMENT,
+  type RastKaffee,
+} from "@/lib/rast-sortiment";
 import { KaffeeWuensche } from "./KaffeeWuensche";
 
 type AboType = "1-espresso" | "1-doppio" | "2-doppio" | "kein";
@@ -41,209 +45,11 @@ const aboOptions: {
   },
 ];
 
-interface RastKaffee {
-  name: string;
-  herkunft: string;
-  duftnotizen: string;
-  fairtrade: boolean;
-}
-
 // Sucht den Kaffee auf rastshop.ch via WordPress-Suche.
 function rastShopUrl(name: string): string {
   return `https://www.rastshop.ch/?s=${encodeURIComponent(name)}`;
 }
 
-// Sortiment Rast Kaffee (Ebikon) — nach rastshop.ch.
-// Falls eine Sorte fehlt, kann sie via Foto-Scan oder manuell erfasst werden.
-const rastSortiment: RastKaffee[] = [
-  // Italienische Espresso-Blends
-  {
-    name: "Milano",
-    herkunft: "Guatemala, Costa Rica, Brasilien, Java",
-    duftnotizen: "Kräftig, schokoladig, voller Körper",
-    fairtrade: false,
-  },
-  {
-    name: "Napoli",
-    herkunft: "Indonesien, Brasilien, Guatemala",
-    duftnotizen: "Dunkel geröstet, intensiv, kräftige Crema",
-    fairtrade: false,
-  },
-  {
-    name: "Vesuvio",
-    herkunft: "Brasilien, Guatemala, Indonesien",
-    duftnotizen: "Bittermandel, Schokolade",
-    fairtrade: false,
-  },
-  {
-    name: "Torino",
-    herkunft: "Brasilien, Guatemala, Costa Rica",
-    duftnotizen: "Rund, harmonisch, leichte Schokoladennote",
-    fairtrade: false,
-  },
-  {
-    name: "Roma",
-    herkunft: "Brasilien, Guatemala, Indien",
-    duftnotizen: "Klassisch italienisch, kräftig, schokoladig",
-    fairtrade: false,
-  },
-  {
-    name: "Sicilia",
-    herkunft: "Brasilien, Indonesien, Indien",
-    duftnotizen: "Dunkel, würzig, kräftiger Körper",
-    fairtrade: false,
-  },
-  {
-    name: "Firenze",
-    herkunft: "Brasilien, Guatemala, Costa Rica",
-    duftnotizen: "Mittelkräftig, nussig, fein",
-    fairtrade: false,
-  },
-  {
-    name: "Verona",
-    herkunft: "Brasilien, Kolumbien, Guatemala",
-    duftnotizen: "Ausgewogen, mild, süsslich",
-    fairtrade: false,
-  },
-  {
-    name: "Genova",
-    herkunft: "Brasilien, Kolumbien, Indien",
-    duftnotizen: "Mild, nussig, wenig Säure",
-    fairtrade: false,
-  },
-
-  // Bio / Fairtrade Blends
-  {
-    name: "Bologna Bio Fairtrade",
-    herkunft: "Bio Arabica Blend",
-    duftnotizen: "Klassisch italienisch, modern & frisch",
-    fairtrade: true,
-  },
-  {
-    name: "Como Bio Fairtrade",
-    herkunft: "Bio Arabica",
-    duftnotizen: "Bittermandel, Schokolade, feine Zitrusnote",
-    fairtrade: true,
-  },
-  {
-    name: "Bio Espresso",
-    herkunft: "Brasilien, Indonesien (Bio)",
-    duftnotizen: "Beeren, dunkle Nussschokolade",
-    fairtrade: true,
-  },
-  {
-    name: "Koffeinfrei Bio Fairtrade",
-    herkunft: "Bio Arabica",
-    duftnotizen: "Mild, rund, Schokolade",
-    fairtrade: true,
-  },
-
-  // Hausblends / spezielle
-  {
-    name: "Barista Espresso",
-    herkunft: "Kenia, Guatemala, Indonesien, Indien, Brasilien",
-    duftnotizen: "Komplex, intensiv, lange Crema",
-    fairtrade: false,
-  },
-  {
-    name: "Eldorado",
-    herkunft: "Indien, Guatemala, Brasilien, Costa Rica",
-    duftnotizen: "Ausgewogen, süsslich, Karamell",
-    fairtrade: false,
-  },
-  {
-    name: "Premium",
-    herkunft: "Indonesien, Guatemala, Brasilien, Indien",
-    duftnotizen: "Vollmundig, nussig, wenig Säure",
-    fairtrade: false,
-  },
-  {
-    name: "Wiener",
-    herkunft: "Guatemala, Costa Rica, Brasilien, Indonesien",
-    duftnotizen: "Traditionell, weich, nussig",
-    fairtrade: false,
-  },
-  {
-    name: "Festival",
-    herkunft: "Kenia, Guatemala, Brasilien, Costa Rica",
-    duftnotizen: "Fruchtig, lebendig, feine Säure",
-    fairtrade: false,
-  },
-  {
-    name: "Jubiläums-Edition",
-    herkunft: "Papua-Neuguinea, Costa Rica, Guatemala, Kolumbien, Brasilien",
-    duftnotizen: "Komplex, festlich, ausgewogen",
-    fairtrade: false,
-  },
-  {
-    name: "Home-Office",
-    herkunft: "Blend",
-    duftnotizen: "Mild, ausgewogen, für jede Tageszeit",
-    fairtrade: false,
-  },
-  {
-    name: "Crema Italia",
-    herkunft: "Brasilien, Indien, Guatemala",
-    duftnotizen: "Cremig, ausgewogen, leichte Schokoladennote",
-    fairtrade: false,
-  },
-
-  // Länder-Kaffees (Single Origin)
-  {
-    name: "Yirga Cheffe Bio",
-    herkunft: "Äthiopien (1500–2200m)",
-    duftnotizen: "Jasmin, Bergamotte, Blumen",
-    fairtrade: true,
-  },
-  {
-    name: "Guatemala Huehuetenango",
-    herkunft: "Guatemala (Huehuetenango)",
-    duftnotizen: "Zart, fruchtig, Kakao, feine Säure",
-    fairtrade: false,
-  },
-  {
-    name: "Brasil Santos",
-    herkunft: "Brasilien (Santos)",
-    duftnotizen: "Nussig, mild, Karamell",
-    fairtrade: false,
-  },
-  {
-    name: "Colombia Supremo",
-    herkunft: "Kolumbien",
-    duftnotizen: "Ausgewogen, fruchtig, würzig",
-    fairtrade: false,
-  },
-  {
-    name: "Kenia AA",
-    herkunft: "Kenia (Hochland)",
-    duftnotizen: "Beerig, weinig, intensive Säure",
-    fairtrade: false,
-  },
-  {
-    name: "Costa Rica Tarrazu",
-    herkunft: "Costa Rica (Tarrazu)",
-    duftnotizen: "Hell, zitrusfrisch, klare Süsse",
-    fairtrade: false,
-  },
-  {
-    name: "Indonesia Mandheling",
-    herkunft: "Indonesien (Sumatra)",
-    duftnotizen: "Erdig, dunkel, wenig Säure",
-    fairtrade: false,
-  },
-  {
-    name: "India Monsooned Malabar",
-    herkunft: "Indien (Malabar)",
-    duftnotizen: "Würzig, erdig, wenig Säure, voller Körper",
-    fairtrade: false,
-  },
-  {
-    name: "APG Coatepec Veracruz",
-    herkunft: "Mexiko (Coatepec, Veracruz)",
-    duftnotizen: "Nussig, Karamell, milde Säure",
-    fairtrade: false,
-  },
-];
 
 export default function KaffeePage() {
   const { data: session } = useSession();
@@ -302,10 +108,28 @@ export default function KaffeePage() {
   const [showCustom, setShowCustom] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [scannedToast, setScannedToast] = useState<string | null>(null);
   const [customName, setCustomName] = useState("");
   const [customHerkunft, setCustomHerkunft] = useState("");
   const [customDuftnotizen, setCustomDuftnotizen] = useState("");
   const [customFairtrade, setCustomFairtrade] = useState(false);
+
+  // Rast-Sortiment kommt von /api/kaffee/rast-sortiment (1×/Woche
+  // gescraped + cached). Startwert ist der hardkodierte Fallback —
+  // dann hat man sofort eine Liste, der Fetch ueberschreibt async.
+  const [rastSortiment, setRastSortiment] = useState<RastKaffee[]>(
+    FALLBACK_RAST_SORTIMENT
+  );
+  useEffect(() => {
+    fetch("/api/kaffee/rast-sortiment")
+      .then((r) => r.json())
+      .then((d: { sortiment?: RastKaffee[] }) => {
+        if (Array.isArray(d.sortiment) && d.sortiment.length > 0) {
+          setRastSortiment(d.sortiment);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const currentBeans = currentKaffee.name;
   const currentInfo = rastSortiment.find((k) => k.name === currentBeans) ?? currentKaffee;
@@ -376,11 +200,26 @@ export default function KaffeePage() {
         duftnotizen: string;
         fairtrade: boolean;
       };
-      if (data.name) setCustomName(data.name);
-      if (data.herkunft) setCustomHerkunft(data.herkunft);
-      if (data.duftnotizen) setCustomDuftnotizen(data.duftnotizen);
-      setCustomFairtrade(data.fairtrade);
-      if (!showCustom) setShowCustom(true);
+      if (!data.name) {
+        setScanError("Kein Name erkannt — bitte erneut oder manuell.");
+        return;
+      }
+      // Direct-Set: erkannte Werte sofort als aktuellen Kaffee speichern.
+      // Wenn der erkannte Name 1:1 im Rast-Sortiment ist, uebernehmen
+      // wir die kuratierten Daten dort (oft besser als OCR).
+      const fromSortiment = rastSortiment.find(
+        (k) => k.name.toLowerCase() === data.name.toLowerCase()
+      );
+      applyKaffee(
+        fromSortiment ?? {
+          name: data.name,
+          herkunft: data.herkunft,
+          duftnotizen: data.duftnotizen,
+          fairtrade: data.fairtrade,
+        }
+      );
+      setScannedToast(data.name);
+      window.setTimeout(() => setScannedToast(null), 4500);
     } catch (err) {
       console.error("Scan", err);
       setScanError("Bild konnte nicht verarbeitet werden.");
@@ -408,6 +247,19 @@ export default function KaffeePage() {
         glowClass="glow-amber"
         showIcon={false}
       />
+
+      {/* Scan-Erfolgs-Toast — oben fixed, verschwindet nach ~4.5s. */}
+      {scannedToast && (
+        <div className="fixed inset-x-0 top-[env(safe-area-inset-top,0px)] z-50 flex justify-center px-4 pt-2">
+          <div className="flex items-center gap-2 rounded-full border border-amber-500/60 bg-amber-900/80 px-4 py-2 text-xs text-amber-100 shadow-lg backdrop-blur">
+            <span>📷</span>
+            <span>
+              Erkannt &amp; eingetragen:{" "}
+              <span className="font-semibold text-white">{scannedToast}</span>
+            </span>
+          </div>
+        </div>
+      )}
       <div className="mb-2 flex justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
