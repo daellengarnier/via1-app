@@ -746,9 +746,12 @@ export default function TerminDetailPage() {
         const noteLines = cleaned.trim()
           ? doc.splitTextToSize(cleaned, contentWidth - 16)
           : ["— keine Notizen —"];
-        // Pendenzen-Hoehe schaetzen: Header + 1 Zeile pro Pendenz
+        // Pendenzen-Hoehe schaetzen: Box-Padding + Header + pro
+        // Pendenz: 1 Zeile Titel + 1 Zeile Verantwortlich.
         const pendenzenHeight =
-          traktPendenzen.length > 0 ? 6 + traktPendenzen.length * 5 : 0;
+          traktPendenzen.length > 0
+            ? 4 + 6 + traktPendenzen.length * 9 + 3
+            : 0;
         const boxHeight =
           8 + // Padding oben
           titleLines.length * 6 +
@@ -805,25 +808,54 @@ export default function TerminDetailPage() {
         }
         cursor += noteLines.length * 5;
 
-        // Pendenzen aus diesem Traktandum
+        // Pendenzen aus diesem Traktandum — eigene Mini-Box mit
+        // Olive-Akzent links + dezent getoenter Hintergrund.
         if (traktPendenzen.length > 0) {
-          cursor += 2;
+          cursor += 3;
+          const blockX = marginX + 8;
+          const blockW = contentWidth - 16;
+          const blockH = 6 + traktPendenzen.length * 9 + 2;
+          // Hintergrund: sehr blasses Olive ueber Cream
+          doc.setFillColor(244, 240, 215);
+          doc.rect(blockX, cursor, blockW, blockH, "F");
+          // Olive-Akzent-Streifen links
+          doc.setFillColor(...C.olive);
+          doc.rect(blockX, cursor, 1.5, blockH, "F");
+          // Header "PENDENZEN" in olive small-caps
           doc.setFont("times", "bold");
-          doc.setFontSize(9);
-          doc.setTextColor(...C.burnt);
-          doc.text("Pendenzen:", marginX + 8, cursor);
-          cursor += 4;
-          doc.setFont("times", "normal");
-          doc.setFontSize(10);
-          doc.setTextColor(...C.teal);
+          doc.setFontSize(8);
+          doc.setTextColor(...C.olive);
+          doc.text(
+            `PENDENZEN${traktPendenzen.length > 1 ? ` (${traktPendenzen.length})` : ""}`,
+            blockX + 4,
+            cursor + 4
+          );
+          let py = cursor + 9;
           for (const p of traktPendenzen) {
+            // Checkbox-Symbol + Titel in Times-normal Teal
+            doc.setFont("times", "normal");
+            doc.setFontSize(10.5);
+            doc.setTextColor(...C.teal);
+            const titleLine = doc.splitTextToSize(
+              p.title,
+              blockW - 12
+            )[0]!;
+            // Kleines leeres Quadrat (Checkbox)
+            doc.setDrawColor(...C.teal);
+            doc.setLineWidth(0.3);
+            doc.rect(blockX + 4, py - 2.5, 2.4, 2.4, "S");
+            doc.text(titleLine, blockX + 8, py);
+            py += 4;
+            // Verantwortliche darunter italic olive
             const names =
-              p.assignees.map((a) => a.name).join(", ") || "—";
-            const line = `→ ${p.title}  (${names})`;
-            const wrapped = doc.splitTextToSize(line, contentWidth - 20);
-            doc.text(wrapped, marginX + 12, cursor);
-            cursor += wrapped.length * 5;
+              p.assignees.map((a) => a.name).join(", ") || "noch nicht zugewiesen";
+            doc.setFont("times", "italic");
+            doc.setFontSize(9);
+            doc.setTextColor(...C.olive);
+            doc.text(`verantwortlich: ${names}`, blockX + 8, py);
+            py += 5;
           }
+          cursor += blockH;
         }
 
         y += boxHeight + 5;
