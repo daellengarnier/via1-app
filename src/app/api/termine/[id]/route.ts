@@ -145,6 +145,15 @@ export async function PATCH(
     data.archivedAt = body.archived ? new Date() : null;
   }
 
+  // Externe Teilnehmende: komplettes Array ersetzen wenn geschickt
+  if (Array.isArray(body.externalAttendees)) {
+    data.externalAttendees = body.externalAttendees
+      .filter((n): n is string => typeof n === "string")
+      .map((n) => n.trim())
+      .filter((n) => n.length > 0)
+      .slice(0, 50);
+  }
+
   // Co-Bearbeiter (editors) komplett ersetzen wenn editorIds geschickt wird.
   // Leeres Array = alle entfernen.
   if (Array.isArray(body.editorIds)) {

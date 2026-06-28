@@ -103,6 +103,7 @@ interface TerminDetail {
   protokollfuehrung: string;
   anwesend: PersonRef[];
   abgemeldet: PersonRef[];
+  externalAttendees: string[];
   editors: PersonRef[];
   canEdit: boolean;
   isArchived: boolean;
@@ -704,8 +705,11 @@ export default function TerminDetailPage() {
     if (termin.protokollfuehrung)
       metaRows.push(["Protokollführung", termin.protokollfuehrung]);
     metaRows.push([
-      `Anwesend (${termin.anwesend.length})`,
-      termin.anwesend.map((p) => p.name).join(", ") || "–",
+      `Anwesend (${termin.anwesend.length + termin.externalAttendees.length})`,
+      [
+        ...termin.anwesend.map((p) => p.name),
+        ...termin.externalAttendees,
+      ].join(", ") || "–",
     ]);
 
     // Vorab-Hoehe schaetzen
@@ -1260,11 +1264,14 @@ export default function TerminDetailPage() {
               className="rounded-lg border border-gray-800 bg-white/5 p-2.5 text-left transition-colors hover:border-accent/40"
             >
               <p className="mb-0.5 font-mono text-[10px] text-accent">
-                Anwesend ({termin.anwesend.length})
+                Anwesend (
+                {termin.anwesend.length + termin.externalAttendees.length})
               </p>
               <p className="line-clamp-2 text-[10px] leading-relaxed text-gray-500">
-                {termin.anwesend.map((p) => p.name).join(", ") ||
-                  "Tippe zum Auswählen…"}
+                {[
+                  ...termin.anwesend.map((p) => p.name),
+                  ...termin.externalAttendees,
+                ].join(", ") || "Tippe zum Auswählen…"}
               </p>
             </button>
             <button
@@ -1281,6 +1288,7 @@ export default function TerminDetailPage() {
               </p>
             </button>
           </div>
+
 
           {/* Pendenzen aus frueheren Sitzungen */}
           <PendenzenBlock data={pendenzen} onReload={loadPendenzen} />
@@ -1900,6 +1908,27 @@ export default function TerminDetailPage() {
                 );
               })}
             </div>
+
+            {/* Manuell hinzufuegen — nur im Anwesend-Modus.
+                Fuer Personen die nicht in der App sind (Gaeste, neue
+                Bewohner:innen die noch nicht registriert haben). */}
+            {attendanceMode === "anwesend" && (
+              <ManualAttendees
+                names={termin.externalAttendees}
+                onChange={async (next) => {
+                  setTermin({ ...termin, externalAttendees: next });
+                  try {
+                    await fetch(`/api/termine/${id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ externalAttendees: next }),
+                    });
+                  } catch (err) {
+                    console.error("externalAttendees", err);
+                  }
+                }}
+              />
+            )}
           </div>
         </div>
       )}
@@ -2444,6 +2473,76 @@ function DraftListForTraktandum({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+// Manuelle Anwesenheits-Eintraege (Personen die nicht in der App
+// registriert sind). Wird im Attendance-Modal angezeigt — die Namen
+// werden gemeinsam mit den App-Usern als "Anwesend" gezaehlt.
+function ManualAttendees({
+  names,
+  onChange,
+}: {
+  names: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [input, setInput] = useState("");
+
+  function add(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    if (names.some((n) => n.toLowerCase() === trimmed.toLowerCase())) {
+      setInput("");
+      return;
+    }
+    onChange([...names, trimmed]);
+    setInput("");
+  }
+
+  return (
+    <div className="mt-4 border-t border-gray-800 pt-3">
+      <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-accent">
+        Manuell hinzufügen{" "}
+        <span className="text-gray-500">(nicht in der App)</span>
+      </p>
+      {names.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {names.map((name) => (
+            <span
+              key={name}
+              className="flex items-center gap-1.5 rounded-full border border-accent bg-accent text-dark px-3 py-1 text-xs"
+            >
+              {name}
+              <button
+                type="button"
+                onClick={() => onChange(names.filter((n) => n !== name))}
+                className="text-dark/60 hover:text-dark"
+                aria-label="Entfernen"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <form onSubmit={add} className="flex gap-2">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Name eintragen…"
+          className="flex-1 rounded border border-gray-700 bg-gray-900 px-2.5 py-1.5 text-xs text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+        />
+        <button
+          type="submit"
+          disabled={!input.trim()}
+          className="rounded bg-accent px-3 py-1.5 font-mono text-xs font-bold text-dark disabled:opacity-40"
+        >
+          +
+        </button>
+      </form>
     </div>
   );
 }

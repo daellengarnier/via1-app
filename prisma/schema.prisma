@@ -277,6 +277,11 @@ model Termin {
   // Archiv-Tab. Bei Sitzungen typischerweise nach "Protokoll
   // abschliessen". Wiedereroeffnen setzt das Feld auf null.
   archivedAt        DateTime?
+  // Externe Sitzungsteilnehmende — Personen die nicht in der App
+  // registriert sind (Gaeste, Genossenschaftler:innen anderer Haeuser,
+  // noch nicht angemeldete Bewohner:innen). Wird einfach als Liste
+  // von Namen gepflegt.
+  externalAttendees String[]         @default([])
   // Zusaetzliche User die den Termin bearbeiten duerfen (Traktanden,
   // Notizen, Datum, etc.) — vom Ersteller beim Anlegen festgelegt.
   // Creator ist implizit immer Bearbeiter und muss hier nicht stehen.
