@@ -43,7 +43,13 @@ export async function GET(
   if (!termin) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  return NextResponse.json(serializeTerminDetail(termin, session.user.id));
+  return NextResponse.json(
+    serializeTerminDetail(termin, session.user.id, {
+      id: session.user.id,
+      name: session.user.name,
+      roles: session.user.roles ?? [],
+    })
+  );
 }
 
 // PATCH /api/termine/[id] — Titel, Ort, Sitzungsleitung, Protokollfuehrung,
@@ -129,7 +135,13 @@ export async function PATCH(
     data,
     include: terminDetailInclude,
   });
-  return NextResponse.json(serializeTerminDetail(termin, session.user.id));
+  return NextResponse.json(
+    serializeTerminDetail(termin, session.user.id, {
+      id: session.user.id,
+      name: session.user.name,
+      roles: session.user.roles ?? [],
+    })
+  );
 }
 
 // DELETE /api/termine/[id]
