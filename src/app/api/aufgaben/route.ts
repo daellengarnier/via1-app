@@ -17,6 +17,8 @@ export async function GET() {
     include: {
       createdBy: true,
       completedBy: true,
+      assignedTo: true,
+      sourceTermin: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
       images: true,
@@ -39,6 +41,9 @@ export async function POST(req: Request) {
     location?: unknown;
     pin?: unknown;
     assignee?: unknown;
+    assignedToId?: unknown;
+    sourceTerminId?: unknown;
+    sourceTraktandumId?: unknown;
     subTodos?: unknown;
     images?: unknown;
   };
@@ -84,12 +89,29 @@ export async function POST(req: Request) {
         .slice(0, 8)
     : [];
 
+  const assignedToId =
+    typeof body.assignedToId === "string" && body.assignedToId.trim() !== ""
+      ? body.assignedToId.trim()
+      : null;
+  const sourceTerminId =
+    typeof body.sourceTerminId === "string" && body.sourceTerminId.trim() !== ""
+      ? body.sourceTerminId.trim()
+      : null;
+  const sourceTraktandumId =
+    typeof body.sourceTraktandumId === "string" &&
+    body.sourceTraktandumId.trim() !== ""
+      ? body.sourceTraktandumId.trim()
+      : null;
+
   const created = await prisma.aufgabe.create({
     data: {
       title,
       description,
       location,
       assignee,
+      assignedToId,
+      sourceTerminId,
+      sourceTraktandumId,
       pinLat,
       pinLng,
       createdById: session.user.id,
@@ -112,20 +134,34 @@ export async function POST(req: Request) {
     include: {
       createdBy: true,
       completedBy: true,
+      assignedTo: true,
+      sourceTermin: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
       images: true,
     },
   });
 
-  notify({
-    kind: "AUFGABE_NEW",
-    title: `Neue Aufgabe: ${title}`,
-    body: description || location || undefined,
-    link: "/aufgaben",
-    audience: "all",
-    excludeUserId: session.user.id,
-  }).catch((e) => console.error("notify", e));
+  // Wenn jemandem explizit zugewiesen: priorisierter Push an die
+  // Person. Sonst (oder zusaetzlich) die normale "alle"-Notif.
+  if (assignedToId && assignedToId !== session.user.id) {
+    notify({
+      kind: "AUFGABE_NEW",
+      title: `Dir wurde eine Aufgabe zugewiesen: ${title}`,
+      body: description || undefined,
+      link: "/aufgaben",
+      audience: [assignedToId],
+    }).catch((e) => console.error("notify-assignee", e));
+  } else {
+    notify({
+      kind: "AUFGABE_NEW",
+      title: `Neue Aufgabe: ${title}`,
+      body: description || location || undefined,
+      link: "/aufgaben",
+      audience: "all",
+      excludeUserId: session.user.id,
+    }).catch((e) => console.error("notify", e));
+  }
 
   return NextResponse.json(serializeAufgabe(created));
 }

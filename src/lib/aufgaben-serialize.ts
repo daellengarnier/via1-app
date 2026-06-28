@@ -3,6 +3,7 @@ import type {
   AufgabeActiveWorker,
   AufgabeImage,
   AufgabeSubTodo,
+  Termin,
   User,
 } from "@prisma/client";
 
@@ -18,6 +19,17 @@ export interface SubTodoDTO {
   position: number;
 }
 
+export interface AssignedToDTO {
+  id: string;
+  name: string;
+}
+
+export interface SourceTerminDTO {
+  id: string;
+  title: string;
+  date: string | null;
+}
+
 export interface AufgabeDTO {
   id: string;
   title: string;
@@ -25,11 +37,19 @@ export interface AufgabeDTO {
   location: string;
   done: boolean;
   assignee: string | null;
+  // Strukturierte Zuweisung (z.B. aus Sitzungs-Pendenz). Parallel
+  // zum freien String-Feld 'assignee'.
+  assignedTo: AssignedToDTO | null;
   pin: PinDTO | null;
   createdBy: string;
   createdAt: string;
   completedAt: string | null;
   completedBy: string | null;
+  // Optionaler "Was wurde gemacht"-Text vom Abhaken
+  completionNote: string | null;
+  // Wenn aus einer Sitzung entstanden: Bezug zurueck zum Termin
+  sourceTermin: SourceTerminDTO | null;
+  sourceTraktandumId: string | null;
   activeWorkers: string[];
   subTodos: SubTodoDTO[];
   images: string[];
@@ -48,6 +68,8 @@ export function serializeAufgabe(
   a: Aufgabe & {
     createdBy: User;
     completedBy?: User | null;
+    assignedTo?: User | null;
+    sourceTermin?: Termin | null;
     activeWorkers: (AufgabeActiveWorker & { user: User })[];
     subTodos?: AufgabeSubTodo[];
     images?: AufgabeImage[];
@@ -60,6 +82,9 @@ export function serializeAufgabe(
     location: a.location,
     done: a.done,
     assignee: a.assignee,
+    assignedTo: a.assignedTo
+      ? { id: a.assignedTo.id, name: a.assignedTo.name }
+      : null,
     pin:
       a.pinLat != null && a.pinLng != null
         ? { lat: a.pinLat, lng: a.pinLng }
@@ -68,6 +93,17 @@ export function serializeAufgabe(
     createdAt: a.createdAt.toISOString(),
     completedAt: a.completedAt ? a.completedAt.toISOString() : null,
     completedBy: a.completedBy?.name ?? null,
+    completionNote: a.completionNote ?? null,
+    sourceTermin: a.sourceTermin
+      ? {
+          id: a.sourceTermin.id,
+          title: a.sourceTermin.title,
+          date: a.sourceTermin.date
+            ? a.sourceTermin.date.toISOString()
+            : null,
+        }
+      : null,
+    sourceTraktandumId: a.sourceTraktandumId ?? null,
     activeWorkers: a.activeWorkers.map((w) => w.user.name),
     subTodos: (a.subTodos ?? [])
       .slice()

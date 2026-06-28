@@ -26,11 +26,15 @@ interface Aufgabe {
   location: string;
   done: boolean;
   assignee: string | null;
+  assignedTo: { id: string; name: string } | null;
   pin: Pin | null;
   createdBy: string;
   createdAt: string;
   completedAt: string | null;
   completedBy: string | null;
+  completionNote: string | null;
+  sourceTermin: { id: string; title: string; date: string | null } | null;
+  sourceTraktandumId: string | null;
   activeWorkers: string[];
   subTodos: SubTodo[];
   images: string[];
@@ -890,9 +894,14 @@ function AufgabenPage() {
                       month: "short",
                     })}
                   </p>
-                  {a.assignee && (
+                  {(a.assignee || a.assignedTo) && (
                     <p className="mt-0.5 text-[9px] text-yellow-400">
-                      → {a.assignee}
+                      → {a.assignedTo?.name ?? a.assignee}
+                    </p>
+                  )}
+                  {a.sourceTermin && (
+                    <p className="mt-0.5 text-[9px] text-amber-300/80">
+                      🪧 Pendenz aus {a.sourceTermin.title}
                     </p>
                   )}
                   {a.done && a.completedAt && (
@@ -905,6 +914,11 @@ function AufgabenPage() {
                         month: "short",
                         year: "numeric",
                       })}
+                    </p>
+                  )}
+                  {a.completionNote && (
+                    <p className="mt-0.5 rounded bg-emerald-900/20 px-1.5 py-1 text-[10px] italic text-emerald-200">
+                      💬 {a.completionNote}
                     </p>
                   )}
                   {a.subTodos.length > 0 && (() => {

@@ -15,6 +15,12 @@ interface Props {
   // auf dem Laptop praktisch.
   allowFullscreen?: boolean;
   label?: string;
+  // Wenn beide gesetzt: zeigt "+ Pendenz"-Button in der Toolbar.
+  pendenzUsers?: { id: string; name: string }[];
+  onCreatePendenz?: (
+    title: string,
+    assignedToId: string
+  ) => Promise<{ ok: boolean }>;
 }
 
 // Wiederverwendbares Notes-Feld mit Markdown-Toolbar (Bold / Italic /
@@ -36,10 +42,20 @@ export function RichNotes({
   minHeight = 80,
   allowFullscreen = true,
   label,
+  pendenzUsers,
+  onCreatePendenz,
 }: Props) {
   const [fullscreen, setFullscreen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [pendenzOpen, setPendenzOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  function appendPendenzLine(title: string, assigneeName: string) {
+    const line = `- [ ] ${title} — @${assigneeName}`;
+    const sep = value && !value.endsWith("\n") ? "\n" : "";
+    onChange(value + sep + line);
+    onBlur?.(value + sep + line);
+  }
 
   function wrapSelection(before: string, after: string = before) {
     const ta = textareaRef.current;
@@ -91,6 +107,7 @@ export function RichNotes({
 
   // Vollbild via portal-aehnlicher Modal-Komponente — die normale
   // textarea wird ausgetauscht durch eine grosse Fullscreen-Version.
+  const canPendenz = !!(pendenzUsers && onCreatePendenz);
   return (
     <>
       <NotesBody
@@ -102,6 +119,7 @@ export function RichNotes({
         showPreview={showPreview}
         setShowPreview={setShowPreview}
         onFullscreen={allowFullscreen ? () => setFullscreen(true) : undefined}
+        onPendenz={canPendenz ? () => setPendenzOpen(true) : undefined}
         textareaRef={textareaRef}
         wrapSelection={wrapSelection}
         prefixLines={prefixLines}
@@ -115,9 +133,113 @@ export function RichNotes({
           placeholder={placeholder}
           onClose={() => setFullscreen(false)}
           label={label}
+          onPendenz={canPendenz ? () => setPendenzOpen(true) : undefined}
+        />
+      )}
+      {pendenzOpen && pendenzUsers && onCreatePendenz && (
+        <PendenzPopup
+          users={pendenzUsers}
+          onCancel={() => setPendenzOpen(false)}
+          onSubmit={async (title, assignedToId) => {
+            const res = await onCreatePendenz(title, assignedToId);
+            if (res.ok) {
+              const user = pendenzUsers.find((u) => u.id === assignedToId);
+              appendPendenzLine(title, user?.name ?? "?");
+              setPendenzOpen(false);
+            }
+          }}
         />
       )}
     </>
+  );
+}
+
+function PendenzPopup({
+  users,
+  onCancel,
+  onSubmit,
+}: {
+  users: { id: string; name: string }[];
+  onCancel: () => void;
+  onSubmit: (title: string, assignedToId: string) => Promise<void>;
+}) {
+  const [title, setTitle] = useState("");
+  const [userId, setUserId] = useState(users[0]?.id ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !userId || submitting) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(title.trim(), userId);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={onCancel}
+    >
+      <form
+        onSubmit={submit}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-2xl border border-gray-800 bg-gray-950 p-4"
+      >
+        <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-wider text-white">
+          + Pendenz erstellen
+        </h3>
+        <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-gray-500">
+          Was ist zu tun?
+        </label>
+        <input
+          ref={inputRef}
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="z.B. Wandtafel kaufen"
+          className="mb-3 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+          required
+        />
+        <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-gray-500">
+          Verantwortlich
+        </label>
+        <select
+          value={userId}
+          onChange={(e) => setUserId(e.target.value)}
+          className="mb-4 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          required
+        >
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
+            </option>
+          ))}
+        </select>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded border border-gray-700 px-3 py-2 text-xs text-gray-300 hover:text-white"
+          >
+            Abbrechen
+          </button>
+          <button
+            type="submit"
+            disabled={submitting || !title.trim()}
+            className="flex-1 rounded bg-accent px-3 py-2 text-xs font-bold text-dark hover:brightness-110 disabled:opacity-40"
+          >
+            {submitting ? "Speichert…" : "Pendenz erstellen"}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -130,6 +252,7 @@ interface BodyProps {
   showPreview: boolean;
   setShowPreview: (b: boolean) => void;
   onFullscreen?: () => void;
+  onPendenz?: () => void;
   textareaRef: React.RefObject<HTMLTextAreaElement>;
   wrapSelection: (before: string, after?: string) => void;
   prefixLines: (prefix: string | ((i: number) => string)) => void;
@@ -145,6 +268,7 @@ function NotesBody({
   showPreview,
   setShowPreview,
   onFullscreen,
+  onPendenz,
   textareaRef,
   wrapSelection,
   prefixLines,
@@ -158,6 +282,7 @@ function NotesBody({
         showPreview={showPreview}
         onTogglePreview={() => setShowPreview(!showPreview)}
         onFullscreen={onFullscreen}
+        onPendenz={onPendenz}
         label={label}
       />
       {showPreview ? (
@@ -193,6 +318,7 @@ interface ToolbarProps {
   showPreview: boolean;
   onTogglePreview: () => void;
   onFullscreen?: () => void;
+  onPendenz?: () => void;
   label?: string;
 }
 
@@ -202,6 +328,7 @@ function Toolbar({
   showPreview,
   onTogglePreview,
   onFullscreen,
+  onPendenz,
   label,
 }: ToolbarProps) {
   const btn =
@@ -258,6 +385,17 @@ function Toolbar({
       >
         1. Liste
       </button>
+      {onPendenz && (
+        <button
+          type="button"
+          onClick={onPendenz}
+          className={`${btn} border-accent/40 text-accent`}
+          title="Pendenz erstellen: jemandem zuweisen"
+          disabled={showPreview}
+        >
+          + Pendenz
+        </button>
+      )}
       <div className="ml-auto flex gap-1">
         <button
           type="button"
@@ -289,6 +427,7 @@ interface FullscreenProps {
   placeholder?: string;
   onClose: () => void;
   label?: string;
+  onPendenz?: () => void;
 }
 
 function FullscreenEditor({
@@ -298,6 +437,7 @@ function FullscreenEditor({
   placeholder,
   onClose,
   label,
+  onPendenz,
 }: FullscreenProps) {
   const taRef = useRef<HTMLTextAreaElement>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -383,6 +523,7 @@ function FullscreenEditor({
           prefixLines={prefixLines}
           showPreview={showPreview}
           onTogglePreview={() => setShowPreview(!showPreview)}
+          onPendenz={onPendenz}
         />
       </div>
       <div className="flex-1 overflow-hidden p-4 md:grid md:grid-cols-2 md:gap-4">
