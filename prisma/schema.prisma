@@ -273,6 +273,10 @@ model Termin {
   responsibleWgId   String?
   createdBy         User             @relation("TerminCreator", fields: [createdById], references: [id])
   createdById       String
+  // Wenn gesetzt: Termin ist archiviert und erscheint nur noch im
+  // Archiv-Tab. Bei Sitzungen typischerweise nach "Protokoll
+  // abschliessen". Wiedereroeffnen setzt das Feld auf null.
+  archivedAt        DateTime?
   // Zusaetzliche User die den Termin bearbeiten duerfen (Traktanden,
   // Notizen, Datum, etc.) — vom Ersteller beim Anlegen festgelegt.
   // Creator ist implizit immer Bearbeiter und muss hier nicht stehen.
@@ -289,6 +293,7 @@ model Termin {
 
   @@index([date])
   @@index([isHaussitzung])
+  @@index([archivedAt])
   @@map("termine")
 }
 

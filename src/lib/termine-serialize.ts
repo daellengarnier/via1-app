@@ -13,7 +13,12 @@ import type {
 import { canEditTermin, canEditTraktandum } from "./termin-permissions";
 
 // Serialisierte Typen fuer das Frontend
-export interface TerminListDTO {
+export interface TerminBaseDTO {
+  isArchived: boolean;
+  archivedAt: string | null;
+}
+
+export interface TerminListDTO extends TerminBaseDTO {
   id: string;
   title: string;
   date: string; // ISO "2026-04-16"
@@ -256,6 +261,10 @@ export function serializeTerminList(
     commentCount: extras.commentCount,
     isHaussitzung: termin.isHaussitzung,
     responsibleWg: termin.responsibleWg ?? null,
+    isArchived: termin.archivedAt != null,
+    archivedAt: termin.archivedAt
+      ? termin.archivedAt.toISOString()
+      : null,
   };
 }
 

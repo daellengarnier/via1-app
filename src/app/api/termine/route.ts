@@ -12,12 +12,17 @@ import {
 import { notify } from "@/lib/notify";
 import { ensureNextHaussitzungPlaceholder } from "@/lib/haussitzung-rotation";
 
-// GET /api/termine — alle Termine
-export async function GET() {
+// GET /api/termine?archived=true&false
+// Filter: archived=true zeigt nur archivierte Termine,
+//         archived=false (default) zeigt nur aktive.
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const url = new URL(req.url);
+  const showArchived = url.searchParams.get("archived") === "true";
 
   // Sicherstellen dass es immer einen Platzhalter fuer die naechste
   // Haussitzung gibt — der naechste in der Rotation bekommt einen
@@ -28,6 +33,7 @@ export async function GET() {
   });
 
   const termine = await prisma.termin.findMany({
+    where: showArchived ? { archivedAt: { not: null } } : { archivedAt: null },
     // Platzhalter (date IS NULL) zuerst, dann nach Datum absteigend
     orderBy: [{ date: { sort: "desc", nulls: "first" } }],
     include: {

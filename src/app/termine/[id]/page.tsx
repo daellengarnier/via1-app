@@ -95,6 +95,8 @@ interface TerminDetail {
   abgemeldet: PersonRef[];
   editors: PersonRef[];
   canEdit: boolean;
+  isArchived: boolean;
+  archivedAt: string | null;
   traktanden: Traktandum[];
   mealSignups: MealSignup[];
   comments: TerminComment[];
@@ -875,7 +877,10 @@ export default function TerminDetailPage() {
     if (!termin || archiving) return;
     if (
       !confirm(
-        "Protokoll abschliessen und im Hausbuch ablegen? Es wird unter „Hausbuch → Sitzungsprotokolle“ für alle sichtbar."
+        "Protokoll abschliessen?\n\n" +
+          "• Das PDF wird im Hausbuch unter „Sitzungsprotokolle“ abgelegt\n" +
+          "• Die Sitzung wandert ins Archiv (Tab „Termine → 📦 Archiv“)\n\n" +
+          "Du kannst die Sitzung später wieder eröffnen, falls eine Korrektur nötig ist."
       )
     ) {
       return;
@@ -901,6 +906,13 @@ export default function TerminDetailPage() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setArchivedAt(new Date().toISOString());
+      // Termin im selben Schritt archivieren
+      await fetch(`/api/termine/${termin.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived: true }),
+      }).catch(() => {});
+      loadTermin();
     } catch (err) {
       console.error("Protokoll abschliessen", err);
       alert(
@@ -908,6 +920,37 @@ export default function TerminDetailPage() {
       );
     } finally {
       setArchiving(false);
+    }
+  }
+
+  async function toggleArchive() {
+    if (!termin) return;
+    const willArchive = !termin.isArchived;
+    if (willArchive) {
+      if (
+        !confirm(
+          "Termin archivieren? Er wird aus der Hauptliste entfernt und ist nur noch im Archiv-Tab sichtbar. Du kannst ihn jederzeit wieder eröffnen."
+        )
+      ) {
+        return;
+      }
+    }
+    try {
+      const res = await fetch(`/api/termine/${termin.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived: willArchive }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
+      loadTermin();
+    } catch (err) {
+      console.error("Archivieren", err);
+      alert(err instanceof Error ? err.message : "Aktion fehlgeschlagen.");
     }
   }
 
@@ -920,6 +963,41 @@ export default function TerminDetailPage() {
       >
         ← Termine
       </button>
+
+      {/* Archiv-Banner */}
+      {termin.isArchived && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-600 bg-gray-800/60 p-3">
+          <div className="flex-1">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-gray-400">
+              📦 Termin archiviert
+            </p>
+            <p className="text-xs text-gray-300">
+              Diese Sitzung wurde archiviert
+              {termin.archivedAt && (
+                <>
+                  {" "}
+                  am{" "}
+                  {new Date(termin.archivedAt).toLocaleDateString("de-CH", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </>
+              )}
+              . Für Korrekturen kannst du sie wieder eröffnen.
+            </p>
+          </div>
+          {termin.canEdit && (
+            <button
+              type="button"
+              onClick={toggleArchive}
+              className="rounded border border-emerald-500/40 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10"
+            >
+              ↻ Wieder eröffnen
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="mb-5">
         <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-orange-300">
@@ -1337,6 +1415,18 @@ export default function TerminDetailPage() {
             )}
           </p>
         </>
+      )}
+
+      {/* Termin archivieren — nur Nicht-Sitzungen (Sitzungen haben das
+          ueber "Protokoll abschliessen"), nur wenn noch nicht archiviert,
+          nur wer bearbeiten darf. */}
+      {!isSitzung && termin.canEdit && !termin.isArchived && (
+        <button
+          onClick={toggleArchive}
+          className="mb-5 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-600 bg-gray-800/40 py-2.5 text-xs font-semibold text-gray-300 transition-colors hover:bg-gray-800/70"
+        >
+          📦 Termin archivieren
+        </button>
       )}
 
       {/* Essens-Anmeldung (bei Essen oder Sitzung mit Dinner) */}
