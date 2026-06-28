@@ -354,7 +354,6 @@ function NotesBody({
         showPreview={showPreview}
         onTogglePreview={() => setShowPreview(!showPreview)}
         onFullscreen={onFullscreen}
-        onPendenz={onPendenz}
         label={label}
       />
       {showPreview ? (
@@ -380,6 +379,9 @@ function NotesBody({
           className="w-full resize-y rounded border border-gray-700 bg-gray-900 px-3 py-2 font-mono text-xs text-white placeholder-gray-600 focus:border-accent focus:outline-none"
         />
       )}
+      {onPendenz && !showPreview && (
+        <PendenzCallout onClick={onPendenz} />
+      )}
     </div>
   );
 }
@@ -390,7 +392,6 @@ interface ToolbarProps {
   showPreview: boolean;
   onTogglePreview: () => void;
   onFullscreen?: () => void;
-  onPendenz?: () => void;
   label?: string;
 }
 
@@ -400,7 +401,6 @@ function Toolbar({
   showPreview,
   onTogglePreview,
   onFullscreen,
-  onPendenz,
   label,
 }: ToolbarProps) {
   const btn =
@@ -457,17 +457,6 @@ function Toolbar({
       >
         1. Liste
       </button>
-      {onPendenz && (
-        <button
-          type="button"
-          onClick={onPendenz}
-          className={`${btn} border-accent/40 text-accent`}
-          title="Pendenz erstellen: jemandem zuweisen"
-          disabled={showPreview}
-        >
-          + Pendenz
-        </button>
-      )}
       <div className="ml-auto flex gap-1">
         <button
           type="button"
@@ -595,19 +584,23 @@ function FullscreenEditor({
           prefixLines={prefixLines}
           showPreview={showPreview}
           onTogglePreview={() => setShowPreview(!showPreview)}
-          onPendenz={onPendenz}
         />
       </div>
       <div className="flex-1 overflow-hidden p-4 md:grid md:grid-cols-2 md:gap-4">
-        <textarea
-          ref={taRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className={`h-full w-full resize-none rounded border border-gray-700 bg-gray-900 p-3 font-mono text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none ${
-            showPreview ? "hidden md:block" : ""
+        <div
+          className={`flex h-full flex-col gap-2 ${
+            showPreview ? "hidden md:flex" : "flex"
           }`}
-        />
+        >
+          <textarea
+            ref={taRef}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="flex-1 w-full resize-none rounded border border-gray-700 bg-gray-900 p-3 font-mono text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+          />
+          {onPendenz && <PendenzCallout onClick={onPendenz} />}
+        </div>
         <div
           className={`markdown-body h-full overflow-y-auto rounded border border-gray-800 bg-black/40 p-3 text-sm text-white ${
             showPreview ? "" : "hidden md:block"
@@ -621,5 +614,32 @@ function FullscreenEditor({
         />
       </div>
     </div>
+  );
+}
+
+// Prominenter Call-To-Action für Pendenz-Erstellung. Wird unter dem
+// Notizfeld gezeigt damit klar ist: "hier kannst du eine Aufgabe
+// einer Person zuweisen" — der frühere kleine Toolbar-Knopf ging
+// im Formatierungs-Klein-Klein unter.
+function PendenzCallout({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="mt-2 flex w-full items-center gap-3 rounded-lg border border-dashed border-accent/50 bg-accent/5 px-3 py-2 text-left transition-colors hover:border-accent hover:bg-accent/10"
+    >
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-dark">
+        +
+      </span>
+      <span className="flex-1">
+        <span className="block text-xs font-semibold text-accent">
+          Pendenz aus diesem Traktandum erstellen
+        </span>
+        <span className="block text-[10px] text-gray-400">
+          Aufgabe einer Person zuweisen — wird beim Sitzungs-Abschluss
+          aktiv und erscheint im Aufgaben-Tab.
+        </span>
+      </span>
+    </button>
   );
 }

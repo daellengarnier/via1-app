@@ -847,51 +847,57 @@ export default function TerminDetailPage() {
         }
         cursor += noteLines.length * 5;
 
-        // Pendenzen aus diesem Traktandum — eigene Mini-Box mit
-        // Olive-Akzent links + dezent getoenter Hintergrund.
+        // Pendenzen aus diesem Traktandum — eigene Box mit Teal-
+        // Border + warmem Olive-Tan-Hintergrund, dezenter Schatten.
+        // Visuell klar abgesetzt vom Traktandum-Inhalt.
         if (traktPendenzen.length > 0) {
           cursor += 3;
           const blockX = marginX + 8;
           const blockW = contentWidth - 16;
-          const blockH = 6 + traktPendenzen.length * 9 + 2;
-          // Hintergrund: sehr blasses Olive ueber Cream
-          doc.setFillColor(244, 240, 215);
-          doc.rect(blockX, cursor, blockW, blockH, "F");
-          // Olive-Akzent-Streifen links
+          const blockH = 6 + traktPendenzen.length * 9 + 4;
+          // Haupt-Box: saettiges Olive-Tan + Teal-Border
+          doc.setFillColor(230, 222, 178);
+          doc.setDrawColor(...C.teal);
+          doc.setLineWidth(0.5);
+          doc.roundedRect(blockX, cursor, blockW, blockH, 2, 2, "FD");
+          // Kraeftiger Olive-Akzent-Streifen links
           doc.setFillColor(...C.olive);
-          doc.rect(blockX, cursor, 1.5, blockH, "F");
-          // Header "PENDENZEN" in olive small-caps
+          doc.rect(blockX + 0.5, cursor + 0.5, 2.5, blockH - 1, "F");
+
+          // Header "PENDENZEN" Burnt-Orange bold small-caps
           doc.setFont("times", "bold");
-          doc.setFontSize(8);
-          doc.setTextColor(...C.olive);
+          doc.setFontSize(9);
+          doc.setTextColor(...C.burnt);
           doc.text(
             `PENDENZEN${traktPendenzen.length > 1 ? ` (${traktPendenzen.length})` : ""}`,
-            blockX + 4,
-            cursor + 4
+            blockX + 6,
+            cursor + 5
           );
-          let py = cursor + 9;
+
+          let py = cursor + 11;
           for (const p of traktPendenzen) {
-            // Checkbox-Symbol + Titel in Times-normal Teal
-            doc.setFont("times", "normal");
+            // Checkbox in olive, kraeftiger
+            doc.setDrawColor(...C.olive);
+            doc.setLineWidth(0.4);
+            doc.rect(blockX + 6, py - 2.7, 2.6, 2.6, "S");
+            // Titel in Teal, fett
+            doc.setFont("times", "bold");
             doc.setFontSize(10.5);
             doc.setTextColor(...C.teal);
             const titleLine = doc.splitTextToSize(
               p.title,
-              blockW - 12
+              blockW - 14
             )[0]!;
-            // Kleines leeres Quadrat (Checkbox)
-            doc.setDrawColor(...C.teal);
-            doc.setLineWidth(0.3);
-            doc.rect(blockX + 4, py - 2.5, 2.4, 2.4, "S");
-            doc.text(titleLine, blockX + 8, py);
+            doc.text(titleLine, blockX + 11, py);
             py += 4;
             // Verantwortliche darunter italic olive
             const names =
-              p.assignees.map((a) => a.name).join(", ") || "noch nicht zugewiesen";
+              p.assignees.map((a) => a.name).join(", ") ||
+              "noch nicht zugewiesen";
             doc.setFont("times", "italic");
             doc.setFontSize(9);
             doc.setTextColor(...C.olive);
-            doc.text(`verantwortlich: ${names}`, blockX + 8, py);
+            doc.text(`verantwortlich: ${names}`, blockX + 11, py);
             py += 5;
           }
           cursor += blockH;
@@ -2436,8 +2442,7 @@ function DraftListForTraktandum({
       {!terminArchived ? (
         <p className="mb-1.5 text-[10px] italic text-amber-300/80">
           ⏳ Sobald die Sitzung abgeschlossen ist, werden die Aufgaben den
-          Verantwortlichen zugewiesen, im Aufgaben-Tab sichtbar und es
-          geht eine Push-Notification raus.
+          Verantwortlichen zugewiesen und im Aufgaben-Tab sichtbar.
         </p>
       ) : (
         <p className="mb-1.5 text-[10px] italic text-emerald-300/80">
