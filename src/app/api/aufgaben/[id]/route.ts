@@ -18,7 +18,7 @@ export async function GET(
     include: {
       createdBy: true,
       completedBy: true,
-      assignedTo: true,
+      assignees: true,
       sourceTermin: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
@@ -91,12 +91,18 @@ export async function PATCH(
       .slice(0, 8);
   }
 
-  // assignedToId: User explicit zuweisen. Leerer String = abwaehlen.
-  if (typeof body.assignedToId === "string" || body.assignedToId === null) {
-    data.assignedToId =
-      typeof body.assignedToId === "string" && body.assignedToId.trim() !== ""
-        ? body.assignedToId.trim()
-        : null;
+  // assignedToIds: User-Liste komplett ersetzen (set). Leeres Array
+  // = alle entfernen. Wird genutzt wenn jemand die Zuweisung im UI
+  // anpasst.
+  if (Array.isArray(body.assignedToIds)) {
+    const ids = Array.from(
+      new Set(
+        (body.assignedToIds as unknown[]).filter(
+          (id): id is string => typeof id === "string" && id !== ""
+        )
+      )
+    );
+    data.assignees = { set: ids.map((id) => ({ id })) };
   }
 
   // Done-Toggle aktualisiert completedAt + completedBy und raeumt
