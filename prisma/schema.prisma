@@ -400,6 +400,12 @@ model Aufgabe {
   // der naechsten Sitzung als Status-Update angezeigt, damit der
   // Protokollant das nicht doppelt eintragen muss.
   completionNote String?
+  // publishedAt: wenn null, ist die Aufgabe noch ein "Draft" — wird
+  // typischerweise im Sitzungs-Protokoll erstellt und erst beim
+  // "Protokoll abschliessen" publiziert (sichtbar fuer alle + Push).
+  // Alle alten Aufgaben werden in Migration 0093 auf createdAt
+  // gesetzt, sind also sofort sichtbar.
+  publishedAt   DateTime?
   // Optionaler Pin auf der Satellit-Karte
   pinLat        Float?
   pinLng        Float?
@@ -433,6 +439,7 @@ model Aufgabe {
   @@index([completedById])
   @@index([assignedToId])
   @@index([sourceTerminId])
+  @@index([publishedAt])
   @@map("aufgaben")
 }
 

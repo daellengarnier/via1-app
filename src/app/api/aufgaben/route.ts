@@ -13,6 +13,7 @@ export async function GET() {
   }
 
   const aufgaben = await prisma.aufgabe.findMany({
+    where: { publishedAt: { not: null } },
     orderBy: [{ done: "asc" }, { createdAt: "desc" }],
     include: {
       createdBy: true,
@@ -108,6 +109,21 @@ export async function POST(req: Request) {
       ? body.sourceTraktandumId.trim()
       : null;
 
+  // Draft-Logik: wenn die Aufgabe als Pendenz aus einer noch nicht
+  // abgeschlossenen Sitzung kommt, wird sie als Draft erstellt
+  // (publishedAt = null) und KEINE Notification verschickt. Beim
+  // "Protokoll abschliessen" werden alle Drafts dieses Termins
+  // publiziert + Pushes raus.
+  let isDraft = false;
+  if (sourceTerminId) {
+    const sourceTermin = await prisma.termin.findUnique({
+      where: { id: sourceTerminId },
+      select: { archivedAt: true },
+    });
+    isDraft = !!sourceTermin && sourceTermin.archivedAt === null;
+  }
+  const publishedAt = isDraft ? null : new Date();
+
   const created = await prisma.aufgabe.create({
     data: {
       title,
@@ -116,6 +132,7 @@ export async function POST(req: Request) {
       assignee,
       sourceTerminId,
       sourceTraktandumId,
+      publishedAt,
       pinLat,
       pinLng,
       createdById: session.user.id,
@@ -149,26 +166,30 @@ export async function POST(req: Request) {
     },
   });
 
-  // Wenn explizite Zuweisung(en) vorliegen: priorisierter Push an
-  // die Personen. Sonst die normale "alle"-Notif.
-  const notifyTargets = assignedToIds.filter((id) => id !== session.user.id);
-  if (notifyTargets.length > 0) {
-    notify({
-      kind: "AUFGABE_NEW",
-      title: `Dir wurde eine Aufgabe zugewiesen: ${title}`,
-      body: description || undefined,
-      link: "/aufgaben",
-      audience: notifyTargets,
-    }).catch((e) => console.error("notify-assignees", e));
-  } else {
-    notify({
-      kind: "AUFGABE_NEW",
-      title: `Neue Aufgabe: ${title}`,
-      body: description || location || undefined,
-      link: "/aufgaben",
-      audience: "all",
-      excludeUserId: session.user.id,
-    }).catch((e) => console.error("notify", e));
+  // Notifications nur bei publizierten Aufgaben — Drafts kommen
+  // beim Sitzungs-Abschluss raus.
+  if (!isDraft) {
+    const notifyTargets = assignedToIds.filter(
+      (id) => id !== session.user.id
+    );
+    if (notifyTargets.length > 0) {
+      notify({
+        kind: "AUFGABE_NEW",
+        title: `Dir wurde eine Aufgabe zugewiesen: ${title}`,
+        body: description || undefined,
+        link: "/aufgaben",
+        audience: notifyTargets,
+      }).catch((e) => console.error("notify-assignees", e));
+    } else {
+      notify({
+        kind: "AUFGABE_NEW",
+        title: `Neue Aufgabe: ${title}`,
+        body: description || location || undefined,
+        link: "/aufgaben",
+        audience: "all",
+        excludeUserId: session.user.id,
+      }).catch((e) => console.error("notify", e));
+    }
   }
 
   return NextResponse.json(serializeAufgabe(created));

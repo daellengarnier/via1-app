@@ -16,7 +16,7 @@ interface Props {
   allowFullscreen?: boolean;
   label?: string;
   // Wenn beide gesetzt: zeigt "+ Pendenz"-Button in der Toolbar.
-  pendenzUsers?: { id: string; name: string }[];
+  pendenzUsers?: { id: string; name: string; fullName?: string | null }[];
   onCreatePendenz?: (
     title: string,
     assignedToIds: string[]
@@ -162,18 +162,19 @@ function PendenzPopup({
   onCancel,
   onSubmit,
 }: {
-  users: { id: string; name: string }[];
+  users: { id: string; name: string; fullName?: string | null }[];
   onCancel: () => void;
   onSubmit: (title: string, assignedToIds: string[]) => Promise<void>;
 }) {
   const [title, setTitle] = useState("");
-  const [selectedIds, setSelectedIds] = useState<string[]>(
-    users[0]?.id ? [users[0].id] : []
-  );
+  // Standard: KEINE Vorauswahl — Protokollant waehlt bewusst aus.
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-    inputRef.current?.focus();
+    titleRef.current?.focus();
   }, []);
 
   function toggleUser(id: string) {
@@ -181,6 +182,22 @@ function PendenzPopup({
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   }
+
+  // Filter: case-insensitive Match auf name UND fullName
+  const filtered = users.filter((u) => {
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    return (
+      u.name.toLowerCase().includes(q) ||
+      (u.fullName ?? "").toLowerCase().includes(q)
+    );
+  });
+
+  // Alphabetisch nach Spitzname sortiert
+  const sortedUsers = filtered
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, "de"));
+  const selectedUsers = users.filter((u) => selectedIds.includes(u.id));
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -201,16 +218,17 @@ function PendenzPopup({
       <form
         onSubmit={submit}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-2xl border border-gray-800 bg-gray-950 p-4"
+        className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-950 p-4"
       >
         <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-wider text-white">
           + Pendenz erstellen
         </h3>
+
         <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-gray-500">
           Was ist zu tun?
         </label>
         <input
-          ref={inputRef}
+          ref={titleRef}
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -218,30 +236,71 @@ function PendenzPopup({
           className="mb-3 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
           required
         />
-        <div className="mb-1 flex items-baseline justify-between">
-          <label className="block font-mono text-[10px] uppercase tracking-wider text-gray-500">
-            Verantwortlich ({selectedIds.length} ausgewählt)
-          </label>
-        </div>
-        <div className="mb-4 max-h-48 overflow-y-auto rounded border border-gray-700 bg-gray-900">
-          {users.map((u) => {
-            const sel = selectedIds.includes(u.id);
-            return (
-              <label
+
+        <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-gray-500">
+          Verantwortlich
+        </label>
+
+        {/* Ausgewaehlte Personen als Chips */}
+        {selectedUsers.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {selectedUsers.map((u) => (
+              <button
                 key={u.id}
-                className="flex cursor-pointer items-center gap-2 border-b border-gray-800 px-3 py-2 text-sm text-white last:border-0 hover:bg-gray-800/50"
+                type="button"
+                onClick={() => toggleUser(u.id)}
+                className="flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs text-accent hover:bg-accent/20"
+                title="Entfernen"
               >
-                <input
-                  type="checkbox"
-                  checked={sel}
-                  onChange={() => toggleUser(u.id)}
-                  className="h-4 w-4 accent-accent"
-                />
                 <span>{u.name}</span>
-              </label>
-            );
-          })}
+                <span className="text-accent/60">×</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Suchfeld */}
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Nach Name oder vollem Namen suchen…"
+          className="mb-1 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+        />
+
+        <div className="mb-4 max-h-52 overflow-y-auto rounded border border-gray-800 bg-gray-900/50">
+          {sortedUsers.length === 0 ? (
+            <p className="p-3 text-center text-xs text-gray-500">
+              Niemand gefunden.
+            </p>
+          ) : (
+            sortedUsers.map((u) => {
+              const sel = selectedIds.includes(u.id);
+              return (
+                <label
+                  key={u.id}
+                  className={`flex cursor-pointer items-center gap-2 border-b border-gray-800/60 px-3 py-2 text-sm last:border-0 hover:bg-gray-800/40 ${
+                    sel ? "bg-accent/5" : ""
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={sel}
+                    onChange={() => toggleUser(u.id)}
+                    className="h-4 w-4 accent-accent"
+                  />
+                  <span className="font-semibold text-white">{u.name}</span>
+                  {u.fullName && u.fullName.trim() !== "" && u.fullName !== u.name && (
+                    <span className="text-xs text-gray-500">
+                      {u.fullName}
+                    </span>
+                  )}
+                </label>
+              );
+            })
+          )}
         </div>
+
         <div className="flex gap-2">
           <button
             type="button"
@@ -252,12 +311,14 @@ function PendenzPopup({
           </button>
           <button
             type="submit"
-            disabled={
-              submitting || !title.trim() || selectedIds.length === 0
-            }
+            disabled={submitting || !title.trim() || selectedIds.length === 0}
             className="flex-1 rounded bg-accent px-3 py-2 text-xs font-bold text-dark hover:brightness-110 disabled:opacity-40"
           >
-            {submitting ? "Speichert…" : "Pendenz erstellen"}
+            {submitting
+              ? "Speichert…"
+              : selectedIds.length === 0
+                ? "Person wählen"
+                : `Pendenz erstellen (${selectedIds.length})`}
           </button>
         </div>
       </form>
