@@ -91,6 +91,9 @@ export interface TerminDetailDTO extends TerminListDTO {
   protokollfuehrung: string;
   anwesend: { id: string; name: string }[];
   abgemeldet: { id: string; name: string }[];
+  // Externe Teilnehmende (nicht in App registriert) — frei erfasste
+  // Namen, manuell hinzugefuegt.
+  externalAttendees: string[];
   // Zusaetzliche User die diesen Termin bearbeiten duerfen
   // (vom Ersteller getaggt). Creator ist implizit immer Bearbeiter.
   editors: { id: string; name: string }[];
@@ -391,6 +394,7 @@ export function serializeTerminDetail(
     protokollfuehrung: termin.protokollfuehrung,
     anwesend,
     abgemeldet,
+    externalAttendees: termin.externalAttendees ?? [],
     editors,
     canEdit: terminCanEdit,
     traktanden,
