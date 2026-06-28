@@ -594,19 +594,7 @@ export default function TerminDetailPage() {
     };
     paintBackground();
 
-    // Bunte Punkt-Reihe zentriert — klassisches 70s-Speisekarten-Element
-    const drawDots = (yPos: number) => {
-      const count = 7;
-      const spacing = 5;
-      const totalW = (count - 1) * spacing;
-      const startX = pageWidth / 2 - totalW / 2;
-      for (let i = 0; i < count; i++) {
-        doc.setFillColor(...dotColors[i % dotColors.length]!);
-        doc.circle(startX + i * spacing, yPos, 1.8, "F");
-      }
-    };
-
-    // Box mit teal-Border + cream-Hintergrund (Restaurant-Karten-Look)
+    // Box mit teal-Border + cream-Hintergrund
     const drawBox = (xPos: number, yPos: number, w: number, h: number) => {
       doc.setFillColor(...C.cream);
       doc.setDrawColor(...C.teal);
@@ -622,52 +610,40 @@ export default function TerminDetailPage() {
       }
     };
 
-    // === Tagline ganz oben ===
-    doc.setFont("times", "italic");
+    // === Kleine Ueberschrift "Sitzungsprotokoll" ===
+    doc.setFont("times", "normal");
     doc.setFontSize(10);
     doc.setTextColor(...C.teal);
-    doc.text(
-      "✤ VIA 1 · SITZUNGSPROTOKOLL · seit 2026 ✤",
-      pageWidth / 2,
-      y,
-      { align: "center" }
-    );
-    y += 9;
+    doc.text("Sitzungsprotokoll", pageWidth / 2, y, { align: "center" });
+    y += 8;
 
-    // === Gross-Titel des Termins mit Schatten-Effekt ===
-    // Schatten (burnt orange leicht versetzt)
+    // === Titel des Termins, schlicht ===
     doc.setFont("times", "bold");
-    doc.setFontSize(30);
-    const title = termin.title.toUpperCase();
-    const titleLines = doc.splitTextToSize(title, contentWidth - 10);
-    doc.setTextColor(...C.mustard);
-    for (let i = 0; i < titleLines.length; i++) {
-      doc.text(titleLines[i]!, pageWidth / 2 + 0.7, y + 0.7 + i * 11, {
-        align: "center",
-      });
-    }
-    // Haupttitel in burnt orange
+    doc.setFontSize(24);
     doc.setTextColor(...C.burnt);
+    const titleLines = doc.splitTextToSize(termin.title, contentWidth - 10);
     for (let i = 0; i < titleLines.length; i++) {
-      doc.text(titleLines[i]!, pageWidth / 2, y + i * 11, { align: "center" });
+      doc.text(titleLines[i]!, pageWidth / 2, y + i * 9, { align: "center" });
     }
-    y += titleLines.length * 11 + 2;
+    y += titleLines.length * 9 + 1;
 
-    // Untertitel italic
+    // Datum + Zeit darunter, italic
     doc.setFont("times", "italic");
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setTextColor(...C.teal);
     doc.text(
-      `der runde Tisch — ${formatDate(termin.date)}, ${termin.time}`,
+      `${formatDate(termin.date)}, ${termin.time}`,
       pageWidth / 2,
       y,
       { align: "center" }
     );
-    y += 6;
+    y += 4;
 
-    // Bunte Punkt-Reihe als Trenner
-    drawDots(y);
-    y += 8;
+    // Duenne Trennlinie statt bunten Punkten
+    doc.setDrawColor(...C.teal);
+    doc.setLineWidth(0.4);
+    doc.line(marginX + 30, y + 4, pageWidth - marginX - 30, y + 4);
+    y += 10;
 
     // === Meta-Block als Karten-Box ===
     const metaRows: [string, string][] = [];
@@ -699,13 +675,11 @@ export default function TerminDetailPage() {
     addPageIfNeeded(metaHeight + 4);
     drawBox(marginX, y, contentWidth, metaHeight);
     const metaTop = y + metaPad;
-    // Section-Header "● Aus dem Sitzungsraum" mit Avocado-Kreis
-    doc.setFillColor(...C.olive);
-    doc.circle(marginX + 7, metaTop + 1, 1.8, "F");
+    // Section-Header "Sitzungsdetails"
     doc.setFont("times", "bold");
-    doc.setFontSize(13);
+    doc.setFontSize(12);
     doc.setTextColor(...C.burnt);
-    doc.text("Aus dem Sitzungsraum", marginX + 12, metaTop + 2.5);
+    doc.text("Sitzungsdetails", marginX + 5, metaTop + 2.5);
     let metaY = metaTop + 9;
     doc.setFontSize(10);
     for (const [label, value] of metaRows) {
@@ -720,15 +694,18 @@ export default function TerminDetailPage() {
     }
     y += metaHeight + 6;
 
-    // === Traktanden-Header ===
-    addPageIfNeeded(16);
+    // === Traktanden-Header — schlicht, linksbuendig ===
+    addPageIfNeeded(14);
     doc.setFont("times", "bold");
-    doc.setFontSize(18);
+    doc.setFontSize(14);
     doc.setTextColor(...C.burnt);
-    doc.text("✦ TRAKTANDEN ✦", pageWidth / 2, y + 2, { align: "center" });
-    y += 6;
-    drawDots(y);
-    y += 8;
+    doc.text("Traktanden", marginX, y + 2);
+    // Duenne Trennlinie rechts vom Text
+    const textW = doc.getTextWidth("Traktanden");
+    doc.setDrawColor(...C.teal);
+    doc.setLineWidth(0.3);
+    doc.line(marginX + textW + 4, y + 1, pageWidth - marginX, y + 1);
+    y += 9;
 
     if (termin.traktanden.length === 0) {
       doc.setFont("times", "italic");
@@ -823,28 +800,21 @@ export default function TerminDetailPage() {
       });
     }
 
-    // === Footer auf jeder Seite ===
+    // === Footer auf jeder Seite — schlicht ===
     const pages = doc.getNumberOfPages();
     for (let p = 1; p <= pages; p++) {
       doc.setPage(p);
-      // Bunte Punkt-Reihe als oberer Footer-Abschluss
-      drawDots(pageHeight - 16);
+      // Duenne Trennlinie
+      doc.setDrawColor(...C.teal);
+      doc.setLineWidth(0.3);
+      doc.line(marginX, pageHeight - 13, pageWidth - marginX, pageHeight - 13);
       doc.setFont("times", "italic");
-      doc.setFontSize(9);
-      doc.setTextColor(...C.teal);
-      doc.text(
-        "✤  VIA 1  ✤  SPINNEREIWEG 17  ✤  3004 BERN  ✤",
-        pageWidth / 2,
-        pageHeight - 10,
-        { align: "center" }
-      );
-      doc.setFont("times", "italic");
-      doc.setFontSize(7);
+      doc.setFontSize(8);
       doc.setTextColor(...C.muted);
       doc.text(
-        `Erstellt am ${new Date().toLocaleDateString("de-CH", { day: "numeric", month: "long", year: "numeric" })} · Seite ${p} von ${pages}`,
+        `Via 1 · Spinnereiweg 17, 3004 Bern · Erstellt am ${new Date().toLocaleDateString("de-CH", { day: "numeric", month: "long", year: "numeric" })} · Seite ${p} von ${pages}`,
         pageWidth / 2,
-        pageHeight - 5,
+        pageHeight - 8,
         { align: "center" }
       );
     }
