@@ -117,6 +117,7 @@ model User {
   createdAufgaben      Aufgabe[]             @relation("AufgabeCreator")
   completedAufgaben    Aufgabe[]             @relation("AufgabeCompleter")
   assignedAufgaben     Aufgabe[]             @relation("AufgabeAssignee")
+  assigneeAufgaben     Aufgabe[]             @relation("AufgabeAssignees")
   activeAufgabenWorker AufgabeActiveWorker[]
   createdBookings      Booking[]             @relation("BookingCreator")
   bookingComments      BookingComment[]
@@ -399,9 +400,13 @@ model Aufgabe {
   pinLng        Float?
   // assignee wird aktuell als freier Name-String gepflegt
   assignee      String?
-  // Strukturierter Assignee: optionaler User, an den die Aufgabe
-  // explizit zugewiesen wurde (z.B. aus dem Sitzungs-Protokoll als
-  // Pendenz). Funktioniert parallel zum Name-String oben.
+  // Strukturierte Assignees: ein oder mehrere User, an die die
+  // Aufgabe explizit zugewiesen wurde (z.B. aus dem Sitzungs-
+  // Protokoll als Pendenz).
+  assignees     User[]                @relation("AufgabeAssignees")
+  // Legacy single-FK (ersetzt durch assignees M2M oben). Wird vom
+  // Code nicht mehr neu geschrieben — bestehende Eintraege wurden
+  // in der Migration 0091 in die M2M-Tabelle uebertragen.
   assignedTo    User?                 @relation("AufgabeAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   assignedToId  String?
   // Wenn aus einer Sitzung als Pendenz entstanden: Quell-Termin

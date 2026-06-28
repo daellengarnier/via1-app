@@ -60,7 +60,7 @@ export async function GET(
         : { id: { not: termin.id } },
     },
     include: {
-      assignedTo: { select: { id: true, name: true } },
+      assignees: { select: { id: true, name: true } },
       sourceTermin: { select: { id: true, title: true, date: true } },
     },
     orderBy: { createdAt: "asc" },
@@ -77,7 +77,7 @@ export async function GET(
         : { id: { not: termin.id } },
     },
     include: {
-      assignedTo: { select: { id: true, name: true } },
+      assignees: { select: { id: true, name: true } },
       completedBy: { select: { id: true, name: true } },
       sourceTermin: { select: { id: true, title: true, date: true } },
     },
@@ -93,7 +93,7 @@ export async function GET(
     open: open.map((a) => ({
       id: a.id,
       title: a.title,
-      assignedTo: a.assignedTo,
+      assignees: a.assignees,
       sourceTermin: a.sourceTermin
         ? {
             id: a.sourceTermin.id,
@@ -105,7 +105,7 @@ export async function GET(
     completed: completed.map((a) => ({
       id: a.id,
       title: a.title,
-      assignedTo: a.assignedTo,
+      assignees: a.assignees,
       completedBy: a.completedBy,
       completedAt: a.completedAt?.toISOString() ?? null,
       completionNote: a.completionNote,

@@ -17,7 +17,7 @@ export async function GET() {
     include: {
       createdBy: true,
       completedBy: true,
-      assignedTo: true,
+      assignees: true,
       sourceTermin: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     location?: unknown;
     pin?: unknown;
     assignee?: unknown;
-    assignedToId?: unknown;
+    assignedToIds?: unknown;
     sourceTerminId?: unknown;
     sourceTraktandumId?: unknown;
     subTodos?: unknown;
@@ -89,10 +89,15 @@ export async function POST(req: Request) {
         .slice(0, 8)
     : [];
 
-  const assignedToId =
-    typeof body.assignedToId === "string" && body.assignedToId.trim() !== ""
-      ? body.assignedToId.trim()
-      : null;
+  const assignedToIds = Array.isArray(body.assignedToIds)
+    ? Array.from(
+        new Set(
+          body.assignedToIds.filter(
+            (id): id is string => typeof id === "string" && id !== ""
+          )
+        )
+      )
+    : [];
   const sourceTerminId =
     typeof body.sourceTerminId === "string" && body.sourceTerminId.trim() !== ""
       ? body.sourceTerminId.trim()
@@ -109,12 +114,14 @@ export async function POST(req: Request) {
       description,
       location,
       assignee,
-      assignedToId,
       sourceTerminId,
       sourceTraktandumId,
       pinLat,
       pinLng,
       createdById: session.user.id,
+      ...(assignedToIds.length > 0 && {
+        assignees: { connect: assignedToIds.map((id) => ({ id })) },
+      }),
       subTodos:
         subTodoTitles.length > 0
           ? {
@@ -134,7 +141,7 @@ export async function POST(req: Request) {
     include: {
       createdBy: true,
       completedBy: true,
-      assignedTo: true,
+      assignees: true,
       sourceTermin: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
@@ -142,16 +149,17 @@ export async function POST(req: Request) {
     },
   });
 
-  // Wenn jemandem explizit zugewiesen: priorisierter Push an die
-  // Person. Sonst (oder zusaetzlich) die normale "alle"-Notif.
-  if (assignedToId && assignedToId !== session.user.id) {
+  // Wenn explizite Zuweisung(en) vorliegen: priorisierter Push an
+  // die Personen. Sonst die normale "alle"-Notif.
+  const notifyTargets = assignedToIds.filter((id) => id !== session.user.id);
+  if (notifyTargets.length > 0) {
     notify({
       kind: "AUFGABE_NEW",
       title: `Dir wurde eine Aufgabe zugewiesen: ${title}`,
       body: description || undefined,
       link: "/aufgaben",
-      audience: [assignedToId],
-    }).catch((e) => console.error("notify-assignee", e));
+      audience: notifyTargets,
+    }).catch((e) => console.error("notify-assignees", e));
   } else {
     notify({
       kind: "AUFGABE_NEW",

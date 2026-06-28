@@ -26,7 +26,7 @@ interface Aufgabe {
   location: string;
   done: boolean;
   assignee: string | null;
-  assignedTo: { id: string; name: string } | null;
+  assignees: { id: string; name: string }[];
   pin: Pin | null;
   createdBy: string;
   createdAt: string;
@@ -894,9 +894,12 @@ function AufgabenPage() {
                       month: "short",
                     })}
                   </p>
-                  {(a.assignee || a.assignedTo) && (
+                  {(a.assignee || a.assignees.length > 0) && (
                     <p className="mt-0.5 text-[9px] text-yellow-400">
-                      → {a.assignedTo?.name ?? a.assignee}
+                      →{" "}
+                      {a.assignees.length > 0
+                        ? a.assignees.map((u) => u.name).join(", ")
+                        : a.assignee}
                     </p>
                   )}
                   {a.sourceTermin && (

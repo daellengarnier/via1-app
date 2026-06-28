@@ -19,7 +19,7 @@ interface Props {
   pendenzUsers?: { id: string; name: string }[];
   onCreatePendenz?: (
     title: string,
-    assignedToId: string
+    assignedToIds: string[]
   ) => Promise<{ ok: boolean }>;
 }
 
@@ -50,8 +50,9 @@ export function RichNotes({
   const [pendenzOpen, setPendenzOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  function appendPendenzLine(title: string, assigneeName: string) {
-    const line = `- [ ] ${title} — @${assigneeName}`;
+  function appendPendenzLine(title: string, assigneeNames: string[]) {
+    const tags = assigneeNames.map((n) => `@${n}`).join(" ");
+    const line = `- [ ] ${title}${tags ? ` — ${tags}` : ""}`;
     const sep = value && !value.endsWith("\n") ? "\n" : "";
     onChange(value + sep + line);
     onBlur?.(value + sep + line);
@@ -140,11 +141,13 @@ export function RichNotes({
         <PendenzPopup
           users={pendenzUsers}
           onCancel={() => setPendenzOpen(false)}
-          onSubmit={async (title, assignedToId) => {
-            const res = await onCreatePendenz(title, assignedToId);
+          onSubmit={async (title, assignedToIds) => {
+            const res = await onCreatePendenz(title, assignedToIds);
             if (res.ok) {
-              const user = pendenzUsers.find((u) => u.id === assignedToId);
-              appendPendenzLine(title, user?.name ?? "?");
+              const names = assignedToIds
+                .map((id) => pendenzUsers.find((u) => u.id === id)?.name)
+                .filter((n): n is string => !!n);
+              appendPendenzLine(title, names);
               setPendenzOpen(false);
             }
           }}
@@ -161,22 +164,30 @@ function PendenzPopup({
 }: {
   users: { id: string; name: string }[];
   onCancel: () => void;
-  onSubmit: (title: string, assignedToId: string) => Promise<void>;
+  onSubmit: (title: string, assignedToIds: string[]) => Promise<void>;
 }) {
   const [title, setTitle] = useState("");
-  const [userId, setUserId] = useState(users[0]?.id ?? "");
+  const [selectedIds, setSelectedIds] = useState<string[]>(
+    users[0]?.id ? [users[0].id] : []
+  );
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
+  function toggleUser(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || !userId || submitting) return;
+    if (!title.trim() || selectedIds.length === 0 || submitting) return;
     setSubmitting(true);
     try {
-      await onSubmit(title.trim(), userId);
+      await onSubmit(title.trim(), selectedIds);
     } finally {
       setSubmitting(false);
     }
@@ -207,21 +218,30 @@ function PendenzPopup({
           className="mb-3 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
           required
         />
-        <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-gray-500">
-          Verantwortlich
-        </label>
-        <select
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          className="mb-4 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
-          required
-        >
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.name}
-            </option>
-          ))}
-        </select>
+        <div className="mb-1 flex items-baseline justify-between">
+          <label className="block font-mono text-[10px] uppercase tracking-wider text-gray-500">
+            Verantwortlich ({selectedIds.length} ausgewählt)
+          </label>
+        </div>
+        <div className="mb-4 max-h-48 overflow-y-auto rounded border border-gray-700 bg-gray-900">
+          {users.map((u) => {
+            const sel = selectedIds.includes(u.id);
+            return (
+              <label
+                key={u.id}
+                className="flex cursor-pointer items-center gap-2 border-b border-gray-800 px-3 py-2 text-sm text-white last:border-0 hover:bg-gray-800/50"
+              >
+                <input
+                  type="checkbox"
+                  checked={sel}
+                  onChange={() => toggleUser(u.id)}
+                  className="h-4 w-4 accent-accent"
+                />
+                <span>{u.name}</span>
+              </label>
+            );
+          })}
+        </div>
         <div className="flex gap-2">
           <button
             type="button"
@@ -232,7 +252,9 @@ function PendenzPopup({
           </button>
           <button
             type="submit"
-            disabled={submitting || !title.trim()}
+            disabled={
+              submitting || !title.trim() || selectedIds.length === 0
+            }
             className="flex-1 rounded bg-accent px-3 py-2 text-xs font-bold text-dark hover:brightness-110 disabled:opacity-40"
           >
             {submitting ? "Speichert…" : "Pendenz erstellen"}

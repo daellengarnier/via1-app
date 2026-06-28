@@ -58,7 +58,7 @@ interface TerminComment {
 interface OpenPendenz {
   id: string;
   title: string;
-  assignedTo: { id: string; name: string } | null;
+  assignees: { id: string; name: string }[];
   sourceTermin: { id: string; title: string; date: string | null } | null;
 }
 interface CompletedPendenz extends OpenPendenz {
@@ -1004,14 +1004,14 @@ export default function TerminDetailPage() {
                         placeholder="Notizen / Was wurde besprochen..."
                         minHeight={80}
                         pendenzUsers={allUsers}
-                        onCreatePendenz={async (title, assignedToId) => {
+                        onCreatePendenz={async (title, assignedToIds) => {
                           try {
                             const res = await fetch("/api/aufgaben", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({
                                 title,
-                                assignedToId,
+                                assignedToIds,
                                 sourceTerminId: id,
                                 sourceTraktandumId: t.id,
                               }),
@@ -1648,12 +1648,15 @@ function PendenzenBlock({
                   <span className="text-emerald-300">
                     {p.completedBy?.name ?? "?"}
                   </span>
-                  {p.assignedTo && p.completedBy?.id !== p.assignedTo.id && (
-                    <span className="text-gray-500">
-                      {" "}
-                      (zugewiesen an {p.assignedTo.name})
-                    </span>
-                  )}
+                  {p.assignees.length > 0 &&
+                    p.completedBy &&
+                    !p.assignees.some((a) => a.id === p.completedBy?.id) && (
+                      <span className="text-gray-500">
+                        {" "}
+                        (zugewiesen an{" "}
+                        {p.assignees.map((a) => a.name).join(", ")})
+                      </span>
+                    )}
                   {p.sourceTermin && (
                     <span className="text-gray-600">
                       {" "}
@@ -1709,10 +1712,12 @@ function OpenPendenzRow({
         <div className="flex-1">
           <p className="text-sm font-medium text-white">{pendenz.title}</p>
           <p className="mt-0.5 text-xs text-gray-400">
-            {pendenz.assignedTo ? (
+            {pendenz.assignees.length > 0 ? (
               <>
                 zugewiesen an{" "}
-                <span className="text-amber-300">{pendenz.assignedTo.name}</span>
+                <span className="text-amber-300">
+                  {pendenz.assignees.map((a) => a.name).join(", ")}
+                </span>
               </>
             ) : (
               <span className="text-gray-500">niemand zugewiesen</span>

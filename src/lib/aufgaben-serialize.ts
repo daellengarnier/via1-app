@@ -38,8 +38,9 @@ export interface AufgabeDTO {
   done: boolean;
   assignee: string | null;
   // Strukturierte Zuweisung (z.B. aus Sitzungs-Pendenz). Parallel
-  // zum freien String-Feld 'assignee'.
-  assignedTo: AssignedToDTO | null;
+  // zum freien String-Feld 'assignee'. Eine Pendenz kann an mehrere
+  // User gleichzeitig vergeben sein.
+  assignees: AssignedToDTO[];
   pin: PinDTO | null;
   createdBy: string;
   createdAt: string;
@@ -68,7 +69,7 @@ export function serializeAufgabe(
   a: Aufgabe & {
     createdBy: User;
     completedBy?: User | null;
-    assignedTo?: User | null;
+    assignees?: User[];
     sourceTermin?: Termin | null;
     activeWorkers: (AufgabeActiveWorker & { user: User })[];
     subTodos?: AufgabeSubTodo[];
@@ -82,9 +83,7 @@ export function serializeAufgabe(
     location: a.location,
     done: a.done,
     assignee: a.assignee,
-    assignedTo: a.assignedTo
-      ? { id: a.assignedTo.id, name: a.assignedTo.name }
-      : null,
+    assignees: (a.assignees ?? []).map((u) => ({ id: u.id, name: u.name })),
     pin:
       a.pinLat != null && a.pinLng != null
         ? { lat: a.pinLat, lng: a.pinLng }
