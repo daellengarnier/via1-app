@@ -5,13 +5,17 @@ import { prisma } from "@/lib/prisma";
 
 // GET /api/termine/[id]/pendenzen
 //
-// Liefert zwei Listen fuer den Pendenzen-Block im Sitzungs-Detail:
+// Liefert drei Listen fuer den Pendenzen-Block im Sitzungs-Detail:
 //
 // • open      : Aufgaben mit sourceTerminId, die nicht abgehakt sind
 //               und aus einer Sitzung vor diesem Termin stammen.
+//               Nur publizierte.
 // • completed : Pendenzen die seit der letzten Sitzung (vor diesem
 //               Termin) erledigt wurden. Erscheinen einmalig in
 //               diesem Termin und verschwinden danach.
+// • drafts    : Pendenzen die in DIESEM Termin erstellt wurden und
+//               noch nicht publiziert sind (Sitzung noch offen).
+//               Werden beim "Protokoll abschliessen" publiziert.
 //
 // Logik fuer "seit der letzten Sitzung":
 //   1. Finde die letzte Sitzung mit einem Datum vor diesem Termin.
@@ -50,10 +54,11 @@ export async function GET(
 
   const cutoff = previousSitzung?.date ?? null;
 
-  // 1) Offene Pendenzen aus frueheren Sitzungen
+  // 1) Offene Pendenzen aus frueheren Sitzungen (nur publizierte)
   const openPromise = prisma.aufgabe.findMany({
     where: {
       done: false,
+      publishedAt: { not: null },
       sourceTerminId: { not: null },
       sourceTermin: termin.date
         ? { date: { lt: termin.date } }
@@ -70,6 +75,7 @@ export async function GET(
   const completedPromise = prisma.aufgabe.findMany({
     where: {
       done: true,
+      publishedAt: { not: null },
       sourceTerminId: { not: null },
       completedAt: cutoff ? { gt: cutoff } : { not: null },
       sourceTermin: termin.date
@@ -84,9 +90,24 @@ export async function GET(
     orderBy: { completedAt: "desc" },
   });
 
-  const [open, completed] = await Promise.all([
+  // 3) Drafts — Pendenzen die in diesem Termin angelegt aber noch
+  //    nicht publiziert sind (warten auf "Protokoll abschliessen")
+  const draftsPromise = prisma.aufgabe.findMany({
+    where: {
+      sourceTerminId: termin.id,
+      publishedAt: null,
+    },
+    include: {
+      assignees: { select: { id: true, name: true } },
+      sourceTraktandum: { select: { id: true, title: true } },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const [open, completed, drafts] = await Promise.all([
     openPromise,
     completedPromise,
+    draftsPromise,
   ]);
 
   return NextResponse.json({
@@ -116,6 +137,13 @@ export async function GET(
             date: a.sourceTermin.date?.toISOString() ?? null,
           }
         : null,
+    })),
+    drafts: drafts.map((a) => ({
+      id: a.id,
+      title: a.title,
+      assignees: a.assignees,
+      sourceTraktandumId: a.sourceTraktandumId,
+      sourceTraktandumTitle: a.sourceTraktandum?.title ?? null,
     })),
   });
 }

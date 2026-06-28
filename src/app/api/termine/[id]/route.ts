@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canEditTermin } from "@/lib/termin-permissions";
+import { notify } from "@/lib/notify";
 import {
   combineDateTime,
   serializeTerminDetail,
@@ -159,6 +160,37 @@ export async function PATCH(
     data,
     include: terminDetailInclude,
   });
+
+  // Sitzung wurde gerade abgeschlossen (archived=true)? Dann alle
+  // noch nicht publizierten Pendenzen (Drafts) publizieren und
+  // Push-Notifications an die jeweiligen Zugewiesenen.
+  if (body.archived === true && !existing.archivedAt) {
+    const drafts = await prisma.aufgabe.findMany({
+      where: { sourceTerminId: params.id, publishedAt: null },
+      include: { assignees: { select: { id: true } } },
+    });
+    if (drafts.length > 0) {
+      await prisma.aufgabe.updateMany({
+        where: { sourceTerminId: params.id, publishedAt: null },
+        data: { publishedAt: new Date() },
+      });
+      for (const a of drafts) {
+        const targets = a.assignees
+          .map((u) => u.id)
+          .filter((id) => id !== session.user.id);
+        if (targets.length > 0) {
+          notify({
+            kind: "AUFGABE_NEW",
+            title: `Dir wurde eine Aufgabe zugewiesen: ${a.title}`,
+            body: a.description || undefined,
+            link: "/aufgaben",
+            audience: targets,
+          }).catch((e) => console.error("notify-draft-publish", e));
+        }
+      }
+    }
+  }
+
   return NextResponse.json(
     serializeTerminDetail(termin, session.user.id, {
       id: session.user.id,

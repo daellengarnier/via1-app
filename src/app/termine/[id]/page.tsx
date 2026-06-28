@@ -48,6 +48,15 @@ interface MealSignup {
 interface PersonRef {
   id: string;
   name: string;
+  fullName?: string | null;
+}
+
+interface DraftPendenz {
+  id: string;
+  title: string;
+  assignees: { id: string; name: string }[];
+  sourceTraktandumId: string | null;
+  sourceTraktandumTitle: string | null;
 }
 
 interface TerminComment {
@@ -72,6 +81,7 @@ interface CompletedPendenz extends OpenPendenz {
 interface PendenzenResponse {
   open: OpenPendenz[];
   completed: CompletedPendenz[];
+  drafts: DraftPendenz[];
 }
 
 interface TerminDetail {
@@ -715,6 +725,12 @@ export default function TerminDetailPage() {
       y += 8;
     } else {
       termin.traktanden.forEach((t, i) => {
+        // Pendenzen aus diesem Termin/Traktandum (Drafts UND
+        // bereits publizierte — beide moegen im PDF erscheinen).
+        const traktPendenzen = (pendenzen?.drafts ?? []).filter(
+          (d) => d.sourceTraktandumId === t.id
+        );
+
         // Hoehe der Box vorab schaetzen
         doc.setFont("times", "bold");
         doc.setFontSize(13);
@@ -730,12 +746,16 @@ export default function TerminDetailPage() {
         const noteLines = cleaned.trim()
           ? doc.splitTextToSize(cleaned, contentWidth - 16)
           : ["— keine Notizen —"];
+        // Pendenzen-Hoehe schaetzen: Header + 1 Zeile pro Pendenz
+        const pendenzenHeight =
+          traktPendenzen.length > 0 ? 6 + traktPendenzen.length * 5 : 0;
         const boxHeight =
           8 + // Padding oben
           titleLines.length * 6 +
           (t.createdBy ? 5 : 0) +
-          3 + // Trenner
+          2 + // kleine Luft
           noteLines.length * 5 +
+          pendenzenHeight +
           6; // Padding unten
 
         addPageIfNeeded(boxHeight + 6);
@@ -770,19 +790,7 @@ export default function TerminDetailPage() {
           doc.text(`eingebracht von ${t.createdBy}`, marginX + 14, cursor);
           cursor += 4;
         }
-
-        // Duenne Trennlinie (gepunktet)
-        doc.setDrawColor(...C.teal);
-        doc.setLineWidth(0.2);
-        doc.setLineDashPattern([0.5, 1], 0);
-        doc.line(
-          marginX + 6,
-          cursor + 1,
-          marginX + contentWidth - 6,
-          cursor + 1
-        );
-        doc.setLineDashPattern([], 0);
-        cursor += 4;
+        cursor += 2;
 
         // Notizen
         doc.setFontSize(11);
@@ -794,6 +802,28 @@ export default function TerminDetailPage() {
           doc.setFont("times", "italic");
           doc.setTextColor(...C.muted);
           doc.text(noteLines, marginX + 8, cursor);
+        }
+        cursor += noteLines.length * 5;
+
+        // Pendenzen aus diesem Traktandum
+        if (traktPendenzen.length > 0) {
+          cursor += 2;
+          doc.setFont("times", "bold");
+          doc.setFontSize(9);
+          doc.setTextColor(...C.burnt);
+          doc.text("Pendenzen:", marginX + 8, cursor);
+          cursor += 4;
+          doc.setFont("times", "normal");
+          doc.setFontSize(10);
+          doc.setTextColor(...C.teal);
+          for (const p of traktPendenzen) {
+            const names =
+              p.assignees.map((a) => a.name).join(", ") || "—";
+            const line = `→ ${p.title}  (${names})`;
+            const wrapped = doc.splitTextToSize(line, contentWidth - 20);
+            doc.text(wrapped, marginX + 12, cursor);
+            cursor += wrapped.length * 5;
+          }
         }
 
         y += boxHeight + 5;
@@ -1202,11 +1232,6 @@ export default function TerminDetailPage() {
               {termin.traktanden.map((t, i) => (
                 <div
                   key={t.id}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.effectAllowed = "move";
-                    e.dataTransfer.setData("text/traktandum-id", t.id);
-                  }}
                   onDragOver={(e) => {
                     if (
                       e.dataTransfer.types.includes("text/traktandum-id")
@@ -1230,9 +1255,17 @@ export default function TerminDetailPage() {
                     <div className="flex flex-col items-center gap-0.5">
                       {termin.canEdit && (
                         <span
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.effectAllowed = "move";
+                            e.dataTransfer.setData(
+                              "text/traktandum-id",
+                              t.id
+                            );
+                          }}
                           className="cursor-grab select-none text-gray-600 hover:text-accent"
                           title="Zum Verschieben ziehen"
-                          aria-hidden
+                          aria-label="Traktandum verschieben"
                         >
                           ⋮⋮
                         </span>
@@ -1302,6 +1335,22 @@ export default function TerminDetailPage() {
                       ) : (
                         <ReadOnlyNotes notes={t.notes} />
                       )}
+
+                      {/* Drafts (Pendenzen die noch nicht publiziert sind) */}
+                      <DraftListForTraktandum
+                        drafts={(pendenzen?.drafts ?? []).filter(
+                          (d) => d.sourceTraktandumId === t.id
+                        )}
+                        terminArchived={termin.isArchived}
+                        canEdit={t.canEdit}
+                        onDelete={async (aufgabeId) => {
+                          if (!confirm("Pendenz wirklich löschen?")) return;
+                          await fetch(`/api/aufgaben/${aufgabeId}`, {
+                            method: "DELETE",
+                          }).catch(() => {});
+                          loadPendenzen();
+                        }}
+                      />
                     </div>
                     {t.canEdit && (
                       <button
@@ -2219,5 +2268,62 @@ function ReadOnlyNotes({ notes }: { notes: string }) {
         __html: renderMarkdown(notes),
       }}
     />
+  );
+}
+
+// Liste der angelegten (aber noch nicht publizierten) Pendenzen pro
+// Traktandum. Wird unter dem Notiz-Editor angezeigt. Solange die
+// Sitzung nicht abgeschlossen ist, sind das Drafts — die Aufgaben
+// erscheinen weder im Aufgaben-Tab noch wird ein Push verschickt.
+function DraftListForTraktandum({
+  drafts,
+  terminArchived,
+  canEdit,
+  onDelete,
+}: {
+  drafts: DraftPendenz[];
+  terminArchived: boolean;
+  canEdit: boolean;
+  onDelete: (id: string) => void;
+}) {
+  if (drafts.length === 0) return null;
+  const statusLabel = terminArchived
+    ? "✓ Aufgabe versendet"
+    : "⏳ Wird mit Abschluss versendet";
+  return (
+    <div className="mt-3 rounded-lg border border-accent/30 bg-accent/5 p-2.5">
+      <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-accent">
+        🪧 Pendenz{drafts.length === 1 ? "" : "n"} ({drafts.length})
+      </p>
+      <ul className="space-y-1.5">
+        {drafts.map((d) => (
+          <li
+            key={d.id}
+            className="flex items-start justify-between gap-2 rounded bg-black/30 px-2 py-1.5 text-xs"
+          >
+            <div className="flex-1">
+              <p className="text-white">{d.title}</p>
+              <p className="mt-0.5 text-[10px] text-gray-400">
+                {d.assignees.length > 0
+                  ? `→ ${d.assignees.map((a) => a.name).join(", ")}`
+                  : "→ niemand zugewiesen"}
+                <span className="ml-2 text-amber-300/70">{statusLabel}</span>
+              </p>
+            </div>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => onDelete(d.id)}
+                className="shrink-0 text-gray-500 hover:text-red-400"
+                title="Pendenz löschen"
+                aria-label="Pendenz löschen"
+              >
+                ×
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
