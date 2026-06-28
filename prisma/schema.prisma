@@ -109,6 +109,7 @@ model User {
 
   pinnwandNotes        PinnwandNote[]
   createdTermine       Termin[]              @relation("TerminCreator")
+  editorTermine        Termin[]              @relation("TerminEditor")
   createdTraktanden    Traktandum[]          @relation("TraktandumCreator")
   terminComments       TerminComment[]       @relation("TerminCommentAuthor")
   attendances          Attendance[]
@@ -270,6 +271,10 @@ model Termin {
   responsibleWgId   String?
   createdBy         User             @relation("TerminCreator", fields: [createdById], references: [id])
   createdById       String
+  // Zusaetzliche User die den Termin bearbeiten duerfen (Traktanden,
+  // Notizen, Datum, etc.) — vom Ersteller beim Anlegen festgelegt.
+  // Creator ist implizit immer Bearbeiter und muss hier nicht stehen.
+  editors           User[]           @relation("TerminEditor")
   traktanden        Traktandum[]
   attendances       Attendance[]
   mealSignups       MealSignup[]

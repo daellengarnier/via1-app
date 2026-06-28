@@ -81,6 +81,9 @@ export interface TerminDetailDTO extends TerminListDTO {
   protokollfuehrung: string;
   anwesend: { id: string; name: string }[];
   abgemeldet: { id: string; name: string }[];
+  // Zusaetzliche User die diesen Termin bearbeiten duerfen
+  // (vom Ersteller getaggt). Creator ist implizit immer Bearbeiter.
+  editors: { id: string; name: string }[];
   traktanden: TraktandumDTO[];
   mealSignups: MealSignupDTO[];
   comments: TerminCommentDTO[];
@@ -249,6 +252,7 @@ export function serializeTerminList(
 export function serializeTerminDetail(
   termin: Termin & {
     createdBy: User;
+    editors?: User[];
     traktanden: (Traktandum & { createdBy: User })[];
     attendances: (Attendance & { user: User })[];
     mealSignups: (MealSignup & {
@@ -340,12 +344,18 @@ export function serializeTerminDetail(
     })),
   }));
 
+  const editors = (termin.editors ?? []).map((u) => ({
+    id: u.id,
+    name: u.name,
+  }));
+
   return {
     ...base,
     sitzungsleitung: termin.sitzungsleitung,
     protokollfuehrung: termin.protokollfuehrung,
     anwesend,
     abgemeldet,
+    editors,
     traktanden,
     mealSignups,
     comments,

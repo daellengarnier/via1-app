@@ -9,6 +9,7 @@ import {
 
 const terminDetailInclude = {
   createdBy: true,
+  editors: true,
   traktanden: {
     include: { createdBy: true },
     orderBy: [{ order: "asc" as const }, { createdAt: "asc" as const }],
@@ -111,6 +112,16 @@ export async function PATCH(
     ) {
       data.date = combineDateTime(body.date, body.time);
     }
+  }
+
+  // Co-Bearbeiter (editors) komplett ersetzen wenn editorIds geschickt wird.
+  // Leeres Array = alle entfernen.
+  if (Array.isArray(body.editorIds)) {
+    const editorIds = body.editorIds.filter(
+      (id): id is string => typeof id === "string"
+    );
+    const filtered = editorIds.filter((id) => id !== existing.createdById);
+    data.editors = { set: filtered.map((id) => ({ id })) };
   }
 
   const termin = await prisma.termin.update({

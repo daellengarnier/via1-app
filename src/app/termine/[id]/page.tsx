@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { jsPDF } from "jspdf";
+import { RichNotes } from "@/components/RichNotes";
 
 interface Traktandum {
   id: string;
@@ -73,6 +74,7 @@ interface TerminDetail {
   protokollfuehrung: string;
   anwesend: PersonRef[];
   abgemeldet: PersonRef[];
+  editors: PersonRef[];
   traktanden: Traktandum[];
   mealSignups: MealSignup[];
   comments: TerminComment[];
@@ -267,6 +269,45 @@ export default function TerminDetailPage() {
     } catch (err) {
       console.error("Traktandum-Notizen speichern", err);
     }
+  }
+
+  // Reorder: neue Reihenfolge sofort lokal anwenden, dann an Server
+  // schicken. Auf Fehler nichts rollbacken — der naechste Reload
+  // bekommt den server-state.
+  async function persistOrder(newList: Traktandum[]) {
+    if (!termin) return;
+    setTermin({ ...termin, traktanden: newList });
+    try {
+      await fetch(`/api/termine/${id}/traktanden/reorder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: newList.map((t) => t.id) }),
+      });
+    } catch (err) {
+      console.error("Reorder", err);
+    }
+  }
+  function moveTraktandum(tId: string, delta: -1 | 1) {
+    if (!termin) return;
+    const idx = termin.traktanden.findIndex((t) => t.id === tId);
+    const next = idx + delta;
+    if (idx < 0 || next < 0 || next >= termin.traktanden.length) return;
+    const list = [...termin.traktanden];
+    const tmp = list[idx]!;
+    list[idx] = list[next]!;
+    list[next] = tmp;
+    persistOrder(list);
+  }
+  function reorderTo(fromId: string, toId: string) {
+    if (!termin || fromId === toId) return;
+    const list = [...termin.traktanden];
+    const fromIdx = list.findIndex((t) => t.id === fromId);
+    const toIdx = list.findIndex((t) => t.id === toId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const [moved] = list.splice(fromIdx, 1);
+    if (!moved) return;
+    list.splice(toIdx, 0, moved);
+    persistOrder(list);
   }
 
   async function handleMealSignup(e: React.FormEvent) {
@@ -554,12 +595,19 @@ export default function TerminDetailPage() {
         doc.text(titleLines, marginX, y);
         y += titleLines.length * 5 + 1;
 
-        // Notizen
+        // Notizen — Markdown-Syntax fuer den PDF-Output strippen,
+        // damit z.B. "**fett**" nicht buchstaeblich erscheint.
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         if (t.notes.trim()) {
           doc.setTextColor(68, 68, 68);
-          const noteLines = doc.splitTextToSize(t.notes, contentWidth - 4);
+          const cleaned = t.notes
+            .replace(/\*\*([^*]+)\*\*/g, "$1")
+            .replace(/\*([^*]+)\*/g, "$1")
+            .replace(/__([^_]+)__/g, "$1")
+            .replace(/_([^_]+)_/g, "$1")
+            .replace(/^[-*]\s+/gm, "• ");
+          const noteLines = doc.splitTextToSize(cleaned, contentWidth - 4);
           for (const line of noteLines) {
             addPageIfNeeded(6);
             doc.text(line, marginX + 4, y);
@@ -736,6 +784,18 @@ export default function TerminDetailPage() {
             </div>
           </div>
 
+          {/* Co-Bearbeiter:innen */}
+          {termin.editors.length > 0 && (
+            <div className="mb-3 rounded border border-gray-800 bg-gray-900/30 px-3 py-2">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
+                Co-Bearbeiter:innen
+              </p>
+              <p className="mt-0.5 text-xs text-gray-300">
+                {termin.editors.map((e) => e.name).join(", ")}
+              </p>
+            </div>
+          )}
+
           {/* Sitzungsort */}
           <div className="mb-3">
             <div className="mb-0.5 flex items-center justify-between">
@@ -831,37 +891,86 @@ export default function TerminDetailPage() {
 
           {/* Traktanden */}
           <section className="mb-6">
-            <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-accent">
-              Traktanden
-            </h2>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-accent">
+                Traktanden
+              </h2>
+              <span className="font-mono text-[10px] text-gray-600">
+                Reihenfolge: Pfeile oder ziehen
+              </span>
+            </div>
             <div className="space-y-3">
               {termin.traktanden.map((t, i) => (
                 <div
                   key={t.id}
-                  className="rounded-lg border border-gray-800 bg-white/5 p-3"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/traktandum-id", t.id);
+                  }}
+                  onDragOver={(e) => {
+                    if (
+                      e.dataTransfer.types.includes("text/traktandum-id")
+                    ) {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                    }
+                  }}
+                  onDrop={(e) => {
+                    const fromId = e.dataTransfer.getData(
+                      "text/traktandum-id"
+                    );
+                    if (fromId) {
+                      e.preventDefault();
+                      reorderTo(fromId, t.id);
+                    }
+                  }}
+                  className="rounded-lg border border-gray-800 bg-white/5 p-3 transition-colors hover:border-gray-700"
                 >
                   <div className="flex items-start gap-2">
-                    <span className="mt-0.5 font-mono text-xs font-bold text-accent">
-                      {i + 1}.
-                    </span>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span
+                        className="cursor-grab select-none text-gray-600 hover:text-accent"
+                        title="Zum Verschieben ziehen"
+                        aria-hidden
+                      >
+                        ⋮⋮
+                      </span>
+                      <span className="font-mono text-xs font-bold text-accent">
+                        {i + 1}.
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => moveTraktandum(t.id, -1)}
+                        disabled={i === 0}
+                        aria-label="Nach oben"
+                        className="leading-none text-gray-500 hover:text-accent disabled:opacity-20"
+                      >
+                        ▲
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveTraktandum(t.id, 1)}
+                        disabled={i === termin.traktanden.length - 1}
+                        aria-label="Nach unten"
+                        className="leading-none text-gray-500 hover:text-accent disabled:opacity-20"
+                      >
+                        ▼
+                      </button>
+                    </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-white">
                         {t.title}
                       </p>
-                      <p className="mt-0.5 text-xs text-gray-600">
+                      <p className="mt-0.5 mb-2 text-xs text-gray-600">
                         von {t.createdBy}
                       </p>
-                      <textarea
+                      <RichNotes
                         value={t.notes}
-                        onChange={(e) =>
-                          updateTraktandumNotes(t.id, e.target.value)
-                        }
-                        onBlur={(e) =>
-                          saveTraktandumNotes(t.id, e.target.value)
-                        }
+                        onChange={(v) => updateTraktandumNotes(t.id, v)}
+                        onBlur={(v) => saveTraktandumNotes(t.id, v)}
                         placeholder="Notizen / Was wurde besprochen..."
-                        rows={Math.max(2, t.notes.split("\n").length)}
-                        className="mt-2 min-h-[3.5rem] w-full resize-y rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+                        minHeight={80}
                       />
                     </div>
                     <button
