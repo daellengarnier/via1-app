@@ -50,13 +50,6 @@ export function RichNotes({
   const [pendenzOpen, setPendenzOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  function appendPendenzLine(title: string, assigneeNames: string[]) {
-    const tags = assigneeNames.map((n) => `@${n}`).join(" ");
-    const line = `- [ ] ${title}${tags ? ` — ${tags}` : ""}`;
-    const sep = value && !value.endsWith("\n") ? "\n" : "";
-    onChange(value + sep + line);
-    onBlur?.(value + sep + line);
-  }
 
   function wrapSelection(before: string, after: string = before) {
     const ta = textareaRef.current;
@@ -144,10 +137,6 @@ export function RichNotes({
           onSubmit={async (title, assignedToIds) => {
             const res = await onCreatePendenz(title, assignedToIds);
             if (res.ok) {
-              const names = assignedToIds
-                .map((id) => pendenzUsers.find((u) => u.id === id)?.name)
-                .filter((n): n is string => !!n);
-              appendPendenzLine(title, names);
               setPendenzOpen(false);
             }
           }}

@@ -142,6 +142,19 @@ export default function TerminDetailPage() {
   const [archiving, setArchiving] = useState(false);
   const [archivedAt, setArchivedAt] = useState<string | null>(null);
   const [newTraktandum, setNewTraktandum] = useState("");
+  // Ersteller des neuen Traktandums — Default: ich selbst.
+  // Termin-Bearbeiter:innen koennen auch jemand anderes auswaehlen
+  // (z.B. um ein Traktandum im Namen eines verspaeteten Mitglieds
+  // einzutragen).
+  const [newTraktandumCreatorId, setNewTraktandumCreatorId] = useState<string>(
+    ""
+  );
+  // Sobald die Session geladen ist: Default-Ersteller = ich
+  useEffect(() => {
+    if (currentUserId && !newTraktandumCreatorId) {
+      setNewTraktandumCreatorId(currentUserId);
+    }
+  }, [currentUserId, newTraktandumCreatorId]);
   const [showSignup, setShowSignup] = useState(false);
   const [signupGuestDetails, setSignupGuestDetails] = useState<Guest[]>([]);
   const [attendanceMode, setAttendanceMode] = useState<
@@ -279,18 +292,35 @@ export default function TerminDetailPage() {
     e.preventDefault();
     if (!newTraktandum.trim() || !termin) return;
     try {
+      const body: { title: string; createdById?: string } = {
+        title: newTraktandum,
+      };
+      // createdById nur senden wenn explizit jemand anderes gewaehlt
+      // (Server faellt sonst auf session.user.id zurueck)
+      if (
+        newTraktandumCreatorId &&
+        newTraktandumCreatorId !== currentUserId
+      ) {
+        body.createdById = newTraktandumCreatorId;
+      }
       const res = await fetch(`/api/termine/${id}/traktanden`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTraktandum }),
+        body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
       const created = (await res.json()) as Traktandum;
       setTermin({ ...termin, traktanden: [...termin.traktanden, created] });
       setNewTraktandum("");
+      setNewTraktandumCreatorId(currentUserId);
     } catch (err) {
       console.error("Traktandum erstellen", err);
-      alert("Konnte Traktandum nicht erstellen.");
+      alert(err instanceof Error ? err.message : "Konnte Traktandum nicht erstellen.");
     }
   }
 
@@ -667,10 +697,6 @@ export default function TerminDetailPage() {
     metaRows.push([
       `Anwesend (${termin.anwesend.length})`,
       termin.anwesend.map((p) => p.name).join(", ") || "–",
-    ]);
-    metaRows.push([
-      `Abgemeldet (${termin.abgemeldet.length})`,
-      termin.abgemeldet.map((p) => p.name).join(", ") || "–",
     ]);
 
     // Vorab-Hoehe schaetzen
@@ -1400,20 +1426,53 @@ export default function TerminDetailPage() {
             </div>
 
             {/* Neues Traktandum */}
-            <form onSubmit={addTraktandum} className="mt-3 flex gap-2">
-              <input
-                type="text"
-                value={newTraktandum}
-                onChange={(e) => setNewTraktandum(e.target.value)}
-                placeholder="Neues Traktandum..."
-                className="flex-1 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="rounded bg-accent px-3 py-2 font-mono text-xs font-bold text-dark"
-              >
-                +
-              </button>
+            <form onSubmit={addTraktandum} className="mt-3 space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newTraktandum}
+                  onChange={(e) => setNewTraktandum(e.target.value)}
+                  placeholder="Neues Traktandum..."
+                  className="flex-1 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="rounded bg-accent px-3 py-2 font-mono text-xs font-bold text-dark"
+                >
+                  +
+                </button>
+              </div>
+              {/* Ersteller-Picker — nur wenn man den Termin bearbeiten
+                  darf (Protokollant taggt im Namen einer anderen Person). */}
+              {termin.canEdit && allUsers.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="newTraktCreator"
+                    className="font-mono text-[10px] uppercase tracking-wider text-gray-500"
+                  >
+                    von
+                  </label>
+                  <select
+                    id="newTraktCreator"
+                    value={newTraktandumCreatorId}
+                    onChange={(e) =>
+                      setNewTraktandumCreatorId(e.target.value)
+                    }
+                    className="flex-1 rounded border border-gray-800 bg-gray-900/60 px-2.5 py-1 text-xs text-white focus:border-accent focus:outline-none"
+                  >
+                    {[...allUsers]
+                      .sort((a, b) => a.name.localeCompare(b.name, "de"))
+                      .map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.id === currentUserId ? `${u.name} (ich)` : u.name}
+                          {u.fullName && u.fullName !== u.name
+                            ? ` — ${u.fullName}`
+                            : ""}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
             </form>
           </section>
 
@@ -2319,14 +2378,23 @@ function DraftListForTraktandum({
   onDelete: (id: string) => void;
 }) {
   if (drafts.length === 0) return null;
-  const statusLabel = terminArchived
-    ? "✓ Aufgabe versendet"
-    : "⏳ Wird mit Abschluss versendet";
   return (
     <div className="mt-3 rounded-lg border border-accent/30 bg-accent/5 p-2.5">
       <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-accent">
         🪧 Pendenz{drafts.length === 1 ? "" : "n"} ({drafts.length})
       </p>
+      {!terminArchived ? (
+        <p className="mb-1.5 text-[10px] italic text-amber-300/80">
+          ⏳ Sobald die Sitzung abgeschlossen ist, werden die Aufgaben den
+          Verantwortlichen zugewiesen, im Aufgaben-Tab sichtbar und es
+          geht eine Push-Notification raus.
+        </p>
+      ) : (
+        <p className="mb-1.5 text-[10px] italic text-emerald-300/80">
+          ✓ Aufgaben wurden an die Verantwortlichen versendet und sind
+          im Aufgaben-Tab sichtbar.
+        </p>
+      )}
       <ul className="space-y-1.5">
         {drafts.map((d) => (
           <li
@@ -2339,7 +2407,6 @@ function DraftListForTraktandum({
                 {d.assignees.length > 0
                   ? `→ ${d.assignees.map((a) => a.name).join(", ")}`
                   : "→ niemand zugewiesen"}
-                <span className="ml-2 text-amber-300/70">{statusLabel}</span>
               </p>
             </div>
             {canEdit && (
