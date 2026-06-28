@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { canEditTermin } from "@/lib/termin-permissions";
 
 // POST /api/termine/[id]/traktanden/reorder
 // Body: { order: string[] }  — Liste der Traktandum-IDs in neuer Reihenfolge.
@@ -17,6 +18,24 @@ export async function POST(
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Reorder = Bearbeitung des Termins (alle Traktanden auf einmal),
+  // also gilt die Termin-Permission.
+  const termin = await prisma.termin.findUnique({
+    where: { id: params.id },
+    select: {
+      createdById: true,
+      sitzungsleitung: true,
+      protokollfuehrung: true,
+      editors: { select: { id: true } },
+    },
+  });
+  if (!termin) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (!canEditTermin(session, termin)) {
+    return NextResponse.json({ error: "Nicht berechtigt" }, { status: 403 });
   }
 
   const body = (await req.json()) as { order?: unknown };

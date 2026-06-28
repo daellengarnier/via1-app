@@ -10,6 +10,7 @@ import type {
   AttendanceStatus,
   Diet,
 } from "@prisma/client";
+import { canEditTermin, canEditTraktandum } from "./termin-permissions";
 
 // Serialisierte Typen fuer das Frontend
 export interface TerminListDTO {
@@ -53,6 +54,10 @@ export interface TerminCommentDTO {
 }
 
 export interface TraktandumDTO {
+  // canEdit: aus Sicht der aktuellen Session — sagt dem Frontend
+  // ob Edit-/Loesch-Controls angezeigt werden sollen.
+  canEdit: boolean;
+  createdById: string;
   id: string;
   title: string;
   notes: string;
@@ -84,6 +89,11 @@ export interface TerminDetailDTO extends TerminListDTO {
   // Zusaetzliche User die diesen Termin bearbeiten duerfen
   // (vom Ersteller getaggt). Creator ist implizit immer Bearbeiter.
   editors: { id: string; name: string }[];
+  // canEdit: aus Sicht der aktuellen Session — sagt dem Frontend
+  // ob Edit-/Loesch-/Reorder-Controls fuer den Termin angezeigt
+  // werden sollen. Setzt sich aus Termin-Permissions zusammen
+  // (Creator, Editor, Sitzungsleitung, Protokollfuehrung, Admin).
+  canEdit: boolean;
   traktanden: TraktandumDTO[];
   mealSignups: MealSignupDTO[];
   comments: TerminCommentDTO[];
@@ -261,7 +271,10 @@ export function serializeTerminDetail(
     })[];
     comments: (TerminCommentRow & { author: User })[];
   },
-  currentUserId: string | null
+  currentUserId: string | null,
+  // Optionaler Session-Kontext fuer canEdit-Berechnung. Wenn nicht
+  // angegeben werden alle canEdit-Flags auf false gesetzt.
+  sessionUser?: { id: string; name?: string | null; roles?: string[] }
 ): TerminDetailDTO {
   // mealSignupCount = goingSelf (1 falls true) + guests.length, summiert ueber alle signups
   const mealSignupCount = termin.mealSignups.reduce(
@@ -320,6 +333,16 @@ export function serializeTerminDetail(
     .filter((a) => a.status === "NOT_GOING")
     .map((a) => ({ id: a.user.id, name: a.user.name }));
 
+  // Permission-Berechnung: canEdit fuer Termin und Traktanden.
+  const session = sessionUser ? { user: sessionUser } : null;
+  const terminForPerm = {
+    createdById: termin.createdById,
+    sitzungsleitung: termin.sitzungsleitung,
+    protokollfuehrung: termin.protokollfuehrung,
+    editors: (termin.editors ?? []).map((u) => ({ id: u.id })),
+  };
+  const terminCanEdit = canEditTermin(session, terminForPerm);
+
   const traktanden: TraktandumDTO[] = termin.traktanden
     .sort((a, b) => a.order - b.order || a.createdAt.getTime() - b.createdAt.getTime())
     .map((t) => ({
@@ -327,7 +350,11 @@ export function serializeTerminDetail(
       title: t.title,
       notes: t.notes,
       createdBy: t.createdBy.name,
+      createdById: t.createdById,
       order: t.order,
+      canEdit: canEditTraktandum(session, terminForPerm, {
+        createdById: t.createdById,
+      }),
     }));
 
   const mealSignups: MealSignupDTO[] = termin.mealSignups.map((s) => ({
@@ -356,6 +383,7 @@ export function serializeTerminDetail(
     anwesend,
     abgemeldet,
     editors,
+    canEdit: terminCanEdit,
     traktanden,
     mealSignups,
     comments,

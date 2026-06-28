@@ -5,13 +5,16 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { jsPDF } from "jspdf";
 import { RichNotes } from "@/components/RichNotes";
+import { renderMarkdown } from "@/lib/markdown-light";
 
 interface Traktandum {
   id: string;
   title: string;
   notes: string;
   createdBy: string;
+  createdById: string;
   order: number;
+  canEdit: boolean;
 }
 
 interface Guest {
@@ -91,6 +94,7 @@ interface TerminDetail {
   anwesend: PersonRef[];
   abgemeldet: PersonRef[];
   editors: PersonRef[];
+  canEdit: boolean;
   traktanden: Traktandum[];
   mealSignups: MealSignup[];
   comments: TerminComment[];
@@ -297,6 +301,32 @@ export default function TerminDetailPage() {
       });
     } catch (err) {
       console.error("Traktandum-Notizen speichern", err);
+    }
+  }
+
+  async function saveTraktandumTitle(tId: string, title: string) {
+    const trimmed = title.trim();
+    if (!trimmed || !termin) return;
+    // Optimistisch lokal aktualisieren
+    setTermin({
+      ...termin,
+      traktanden: termin.traktanden.map((t) =>
+        t.id === tId ? { ...t, title: trimmed } : t
+      ),
+    });
+    try {
+      const res = await fetch(`/api/termine/${id}/traktanden/${tId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: trimmed }),
+      });
+      if (!res.ok) {
+        // Bei Fehler (z.B. 403) reload um echten State zu holen
+        loadTermin();
+      }
+    } catch (err) {
+      console.error("Traktandum-Titel speichern", err);
+      loadTermin();
     }
   }
 
@@ -961,77 +991,91 @@ export default function TerminDetailPage() {
                 >
                   <div className="flex items-start gap-2">
                     <div className="flex flex-col items-center gap-0.5">
-                      <span
-                        className="cursor-grab select-none text-gray-600 hover:text-accent"
-                        title="Zum Verschieben ziehen"
-                        aria-hidden
-                      >
-                        ⋮⋮
-                      </span>
+                      {termin.canEdit && (
+                        <span
+                          className="cursor-grab select-none text-gray-600 hover:text-accent"
+                          title="Zum Verschieben ziehen"
+                          aria-hidden
+                        >
+                          ⋮⋮
+                        </span>
+                      )}
                       <span className="font-mono text-xs font-bold text-accent">
                         {i + 1}.
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => moveTraktandum(t.id, -1)}
-                        disabled={i === 0}
-                        aria-label="Nach oben"
-                        className="leading-none text-gray-500 hover:text-accent disabled:opacity-20"
-                      >
-                        ▲
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveTraktandum(t.id, 1)}
-                        disabled={i === termin.traktanden.length - 1}
-                        aria-label="Nach unten"
-                        className="leading-none text-gray-500 hover:text-accent disabled:opacity-20"
-                      >
-                        ▼
-                      </button>
+                      {termin.canEdit && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => moveTraktandum(t.id, -1)}
+                            disabled={i === 0}
+                            aria-label="Nach oben"
+                            className="leading-none text-gray-500 hover:text-accent disabled:opacity-20"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveTraktandum(t.id, 1)}
+                            disabled={i === termin.traktanden.length - 1}
+                            aria-label="Nach unten"
+                            className="leading-none text-gray-500 hover:text-accent disabled:opacity-20"
+                          >
+                            ▼
+                          </button>
+                        </>
+                      )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-white">
-                        {t.title}
-                      </p>
+                      <TraktandumTitle
+                        traktandum={t}
+                        canEdit={t.canEdit}
+                        onSave={(newTitle) => saveTraktandumTitle(t.id, newTitle)}
+                      />
                       <p className="mt-0.5 mb-2 text-xs text-gray-600">
                         von {t.createdBy}
                       </p>
-                      <RichNotes
-                        value={t.notes}
-                        onChange={(v) => updateTraktandumNotes(t.id, v)}
-                        onBlur={(v) => saveTraktandumNotes(t.id, v)}
-                        placeholder="Notizen / Was wurde besprochen..."
-                        minHeight={80}
-                        pendenzUsers={allUsers}
-                        onCreatePendenz={async (title, assignedToIds) => {
-                          try {
-                            const res = await fetch("/api/aufgaben", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({
-                                title,
-                                assignedToIds,
-                                sourceTerminId: id,
-                                sourceTraktandumId: t.id,
-                              }),
-                            });
-                            if (res.ok) loadPendenzen();
-                            return { ok: res.ok };
-                          } catch {
-                            return { ok: false };
-                          }
-                        }}
-                      />
+                      {t.canEdit ? (
+                        <RichNotes
+                          value={t.notes}
+                          onChange={(v) => updateTraktandumNotes(t.id, v)}
+                          onBlur={(v) => saveTraktandumNotes(t.id, v)}
+                          placeholder="Notizen / Was wurde besprochen..."
+                          minHeight={80}
+                          pendenzUsers={allUsers}
+                          onCreatePendenz={async (title, assignedToIds) => {
+                            try {
+                              const res = await fetch("/api/aufgaben", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  title,
+                                  assignedToIds,
+                                  sourceTerminId: id,
+                                  sourceTraktandumId: t.id,
+                                }),
+                              });
+                              if (res.ok) loadPendenzen();
+                              return { ok: res.ok };
+                            } catch {
+                              return { ok: false };
+                            }
+                          }}
+                        />
+                      ) : (
+                        <ReadOnlyNotes notes={t.notes} />
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTraktandumId(t.id)}
-                      className="text-lg leading-none text-gray-600 hover:text-red-400"
-                      aria-label="Traktandum löschen"
-                    >
-                      ×
-                    </button>
+                    {t.canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTraktandumId(t.id)}
+                        className="text-lg leading-none text-gray-600 hover:text-red-400"
+                        aria-label="Traktandum löschen"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1809,5 +1853,88 @@ function CompletePopup({
         </div>
       </div>
     </div>
+  );
+}
+
+// Inline-Editierbarer Traktandum-Titel. Klick auf den Text macht
+// ein Input draus; on blur oder Enter speichert. Wenn !canEdit nur
+// statischer Text.
+function TraktandumTitle({
+  traktandum,
+  canEdit,
+  onSave,
+}: {
+  traktandum: { title: string };
+  canEdit: boolean;
+  onSave: (title: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(traktandum.title);
+
+  useEffect(() => {
+    if (!editing) setDraft(traktandum.title);
+  }, [traktandum.title, editing]);
+
+  if (!canEdit) {
+    return (
+      <p className="text-sm font-medium text-white">{traktandum.title}</p>
+    );
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="block w-full rounded text-left text-sm font-medium text-white hover:bg-white/5 focus:bg-white/5 focus:outline-none"
+        title="Klicken zum Bearbeiten"
+      >
+        {traktandum.title}
+      </button>
+    );
+  }
+
+  function commit() {
+    setEditing(false);
+    if (draft.trim() && draft.trim() !== traktandum.title) onSave(draft);
+  }
+
+  return (
+    <input
+      autoFocus
+      type="text"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          (e.target as HTMLInputElement).blur();
+        } else if (e.key === "Escape") {
+          setDraft(traktandum.title);
+          setEditing(false);
+        }
+      }}
+      className="w-full rounded border border-gray-700 bg-gray-900 px-2 py-1 text-sm font-medium text-white focus:border-accent focus:outline-none"
+    />
+  );
+}
+
+// Read-Only Anzeige der Notizen — gerendert als Markdown. Wird
+// gezeigt wenn der User das Traktandum nicht bearbeiten darf.
+function ReadOnlyNotes({ notes }: { notes: string }) {
+  if (!notes.trim()) {
+    return (
+      <p className="text-xs italic text-gray-600">— keine Notizen —</p>
+    );
+  }
+  return (
+    <div
+      className="markdown-body rounded border border-gray-800 bg-black/30 p-2 text-xs text-gray-300"
+      // eslint-disable-next-line react/no-danger
+      dangerouslySetInnerHTML={{
+        __html: renderMarkdown(notes),
+      }}
+    />
   );
 }
