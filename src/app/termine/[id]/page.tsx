@@ -567,31 +567,82 @@ export default function TerminDetailPage() {
     const contentWidth = pageWidth - marginX * 2;
     let y = 22;
 
-    const addPageIfNeeded = (need: number) => {
-      if (y + need > pageHeight - 20) {
-        doc.addPage();
-        y = 22;
+    // === 70s-Retro Farb-Palette ===
+    // Warmer Senf, gebranntes Orange, Avocado, Cremeweiss, Schoko-Braun
+    const C = {
+      mustard: [218, 165, 32] as const,      // #DAA520 — Senfgelb
+      burnt:   [196, 87, 26] as const,       // #C4571A — Burnt Orange
+      avocado: [122, 136, 66] as const,      // #7A8842 — Avocado
+      cream:   [245, 232, 199] as const,     // #F5E8C7 — Creme
+      chocolate: [78, 50, 30] as const,      // #4E321E — Schokobraun
+      paper:   [253, 247, 234] as const,     // #FDF7EA — Papier-Beige
+      muted:   [120, 100, 78] as const,      // gedeckter Braun-Ton
+    };
+
+    // Header- und Trennfunktionen
+    const drawHeaderBand = () => {
+      // Schoko-braunes Band oben + Senf-Akzentstreifen darunter
+      doc.setFillColor(...C.chocolate);
+      doc.rect(0, 0, pageWidth, 28, "F");
+      doc.setFillColor(...C.mustard);
+      doc.rect(0, 28, pageWidth, 2.5, "F");
+      doc.setFillColor(...C.burnt);
+      doc.rect(0, 30.5, pageWidth, 1.2, "F");
+    };
+
+    // Wellenlinie als Trennzeichen — typisch 70s
+    const drawWavy = (yPos: number, color: readonly [number, number, number]) => {
+      doc.setDrawColor(...color);
+      doc.setLineWidth(0.6);
+      const amp = 1.3;
+      const period = 5;
+      const start = marginX;
+      const end = pageWidth - marginX;
+      for (let x = start; x < end; x += 1) {
+        const yA = yPos + Math.sin(((x - start) / period) * Math.PI * 2) * amp;
+        const yB =
+          yPos + Math.sin(((x + 1 - start) / period) * Math.PI * 2) * amp;
+        doc.line(x, yA, x + 1, yB);
       }
     };
 
-    // Titel
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.setTextColor(26, 26, 26);
-    doc.text(termin.title, marginX, y);
-    y += 7;
+    const addPageIfNeeded = (need: number) => {
+      if (y + need > pageHeight - 25) {
+        doc.addPage();
+        drawHeaderBand();
+        y = 38;
+      }
+    };
 
-    // Subtitle
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.setTextColor(102, 102, 102);
-    doc.text("Sitzungsprotokoll", marginX, y);
-    y += 8;
+    // === Header-Band ===
+    drawHeaderBand();
 
-    // Trennlinie
-    doc.setDrawColor(221, 221, 221);
-    doc.setLineWidth(0.2);
-    doc.line(marginX, y, pageWidth - marginX, y);
+    // "VIA 1" Schriftzug oben links, Times-bold, creme
+    doc.setFont("times", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(...C.cream);
+    doc.text("VIA 1", marginX, 18);
+
+    // "PROTOKOLL" rechts, Senfgelb, getrackt
+    doc.setFont("times", "italic");
+    doc.setFontSize(13);
+    doc.setTextColor(...C.mustard);
+    doc.text("· P R O T O K O L L ·", pageWidth - marginX, 18, {
+      align: "right",
+    });
+
+    y = 42;
+
+    // Titel des Termins — Times-bold, Schoko-Braun, gross
+    doc.setFont("times", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(...C.chocolate);
+    const titleLines = doc.splitTextToSize(termin.title, contentWidth);
+    doc.text(titleLines, marginX, y);
+    y += titleLines.length * 9 + 1;
+
+    // Wellige Trennlinie unter dem Titel
+    drawWavy(y, C.burnt);
     y += 6;
 
     // Meta-Block als Label:Value-Zeilen
@@ -614,29 +665,45 @@ export default function TerminDetailPage() {
       termin.abgemeldet.map((p) => p.name).join(", ") || "–",
     ]);
 
+    // Meta-Block mit cremfarbenem Hintergrund — vorab Hoehe schaetzen
+    const metaBlockStart = y;
     doc.setFontSize(10);
+    const metaPad = 5;
+    let metaHeight = metaPad;
+    for (const [, value] of metaRows) {
+      const valueLines = doc.splitTextToSize(value, contentWidth - 50);
+      metaHeight += Math.max(6, valueLines.length * 5);
+    }
+    metaHeight += metaPad;
+    doc.setFillColor(...C.paper);
+    doc.rect(marginX - 2, metaBlockStart - 2, contentWidth + 4, metaHeight, "F");
+    // Linker Akzent-Streifen in Avocado
+    doc.setFillColor(...C.avocado);
+    doc.rect(marginX - 2, metaBlockStart - 2, 1.8, metaHeight, "F");
+
+    y += metaPad - 2;
     for (const [label, value] of metaRows) {
       addPageIfNeeded(8);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(102, 102, 102);
-      doc.text(label, marginX, y);
-      doc.setTextColor(17, 17, 17);
-      const valueLines = doc.splitTextToSize(value, contentWidth - 45);
-      doc.text(valueLines, marginX + 45, y);
+      doc.setFont("times", "italic");
+      doc.setTextColor(...C.avocado);
+      doc.text(label, marginX + 2, y + 4);
+      doc.setFont("times", "normal");
+      doc.setTextColor(...C.chocolate);
+      const valueLines = doc.splitTextToSize(value, contentWidth - 50);
+      doc.text(valueLines, marginX + 48, y + 4);
       y += Math.max(6, valueLines.length * 5);
     }
-    y += 4;
+    y += metaPad + 4;
 
-    // Traktanden-Header
-    addPageIfNeeded(12);
-    doc.setDrawColor(221, 221, 221);
-    doc.line(marginX, y, pageWidth - marginX, y);
-    y += 6;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.setTextColor(26, 26, 26);
-    doc.text("Traktanden", marginX, y);
+    // === Traktanden-Header ===
+    addPageIfNeeded(16);
+    drawWavy(y, C.mustard);
     y += 8;
+    doc.setFont("times", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(...C.burnt);
+    doc.text("☀ Traktanden", marginX, y);
+    y += 9;
 
     if (termin.traktanden.length === 0) {
       doc.setFont("helvetica", "italic");
@@ -646,56 +713,96 @@ export default function TerminDetailPage() {
       y += 8;
     } else {
       termin.traktanden.forEach((t, i) => {
-        // Titel fett
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.setTextColor(34, 34, 34);
-        const titleLines = doc.splitTextToSize(
-          `${i + 1}. ${t.title}`,
-          contentWidth
-        );
-        addPageIfNeeded(titleLines.length * 6 + 10);
-        doc.text(titleLines, marginX, y);
+        addPageIfNeeded(20);
+        // Senfgelber Nummern-Kreis links neben dem Titel
+        const circleX = marginX + 4;
+        const circleY = y - 1;
+        doc.setFillColor(...C.mustard);
+        doc.circle(circleX, circleY + 2, 4, "F");
+        doc.setFont("times", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(...C.chocolate);
+        doc.text(String(i + 1), circleX, circleY + 3.5, { align: "center" });
+
+        // Titel — Times-bold, Schoko-Braun
+        doc.setFont("times", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(...C.chocolate);
+        const titleLines = doc.splitTextToSize(t.title, contentWidth - 12);
+        doc.text(titleLines, marginX + 11, y + 2);
         y += titleLines.length * 5 + 1;
 
-        // Notizen — Markdown-Syntax fuer den PDF-Output strippen,
-        // damit z.B. "**fett**" nicht buchstaeblich erscheint.
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
+        // Wer hat das Traktandum eingebracht — kursiv, Avocado
+        if (t.createdBy) {
+          doc.setFont("times", "italic");
+          doc.setFontSize(9);
+          doc.setTextColor(...C.avocado);
+          addPageIfNeeded(5);
+          doc.text(`eingebracht von ${t.createdBy}`, marginX + 11, y + 2);
+          y += 5;
+        }
+        y += 1;
+
+        // Notizen — Times, Schoko-Braun. Markdown-Syntax fuer den PDF-
+        // Output strippen (** -> Text, listen-bullets zu •).
+        doc.setFont("times", "normal");
+        doc.setFontSize(11);
         if (t.notes.trim()) {
-          doc.setTextColor(68, 68, 68);
+          doc.setTextColor(...C.chocolate);
           const cleaned = t.notes
             .replace(/\*\*([^*]+)\*\*/g, "$1")
             .replace(/\*([^*]+)\*/g, "$1")
             .replace(/__([^_]+)__/g, "$1")
             .replace(/_([^_]+)_/g, "$1")
             .replace(/^[-*]\s+/gm, "• ");
-          const noteLines = doc.splitTextToSize(cleaned, contentWidth - 4);
+          const noteLines = doc.splitTextToSize(cleaned, contentWidth - 12);
           for (const line of noteLines) {
             addPageIfNeeded(6);
-            doc.text(line, marginX + 4, y);
+            doc.text(line, marginX + 11, y + 2);
             y += 5;
           }
         } else {
-          doc.setFont("helvetica", "italic");
-          doc.setTextColor(170, 170, 170);
-          doc.text("— keine Notizen —", marginX + 4, y);
+          doc.setFont("times", "italic");
+          doc.setTextColor(...C.muted);
+          doc.text("— keine Notizen —", marginX + 11, y + 2);
           y += 5;
         }
-        y += 4;
+
+        // Punkt-Trenner zwischen Traktanden (ausser nach letztem)
+        if (i < termin.traktanden.length - 1) {
+          y += 4;
+          addPageIfNeeded(4);
+          doc.setFillColor(...C.burnt);
+          for (let dx = 0; dx < 5; dx++) {
+            doc.circle(pageWidth / 2 - 6 + dx * 3, y, 0.6, "F");
+          }
+          y += 6;
+        } else {
+          y += 4;
+        }
       });
     }
 
-    // Footer mit Datum
-    doc.setFont("helvetica", "normal");
+    // Footer auf JEDER Seite — Senf-Streifen + Times-italic Text
+    const pages = doc.getNumberOfPages();
+    for (let p = 1; p <= pages; p++) {
+      doc.setPage(p);
+      // Senf-Streifen ueber dem Footer
+      doc.setFillColor(...C.mustard);
+      doc.rect(0, pageHeight - 18, pageWidth, 1.5, "F");
+      doc.setFillColor(...C.burnt);
+      doc.rect(0, pageHeight - 16.5, pageWidth, 0.6, "F");
+    }
+    doc.setPage(pages); // wieder auf letzte Seite fuer den Text
+    doc.setFont("times", "italic");
     doc.setFontSize(8);
-    doc.setTextColor(153, 153, 153);
-    const footerY = pageHeight - 12;
+    doc.setTextColor(...C.muted);
+    const footerY = pageHeight - 9;
     doc.text(
-      `Via 1 — Spinnereiweg 17, 3004 Bern · Erstellt am ${new Date().toLocaleDateString(
+      `★ Via 1 — Spinnereiweg 17, 3004 Bern · Erstellt am ${new Date().toLocaleDateString(
         "de-CH",
         { day: "numeric", month: "long", year: "numeric" }
-      )}`,
+      )} ★`,
       pageWidth / 2,
       footerY,
       { align: "center" }
