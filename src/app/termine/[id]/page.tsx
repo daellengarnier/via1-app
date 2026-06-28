@@ -127,6 +127,8 @@ export default function TerminDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [allUsers, setAllUsers] = useState<PersonRef[]>([]);
   const [pendenzen, setPendenzen] = useState<PendenzenResponse | null>(null);
+  const [archiving, setArchiving] = useState(false);
+  const [archivedAt, setArchivedAt] = useState<string | null>(null);
   const [newTraktandum, setNewTraktandum] = useState("");
   const [showSignup, setShowSignup] = useState(false);
   const [signupGuestDetails, setSignupGuestDetails] = useState<Guest[]>([]);
@@ -548,8 +550,10 @@ export default function TerminDetailPage() {
     }
   }
 
-  async function exportPdf() {
-    if (!termin) return;
+  // Baut das PDF-Dokument. Ruft KEINE Side-Effects auf — der Caller
+  // entscheidet ob er download/preview/archive macht.
+  function buildPdfDoc(): jsPDF | null {
+    if (!termin) return null;
 
     // A4 = 210 x 297 mm, margin 20mm
     const doc = new jsPDF({
@@ -697,16 +701,47 @@ export default function TerminDetailPage() {
       { align: "center" }
     );
 
-    doc.save(`${termin.title.replace(/\s+/g, "_")}_Protokoll.pdf`);
+    return doc;
+  }
 
-    // Zusaetzlich ins Hausbuch (Sitzungsprotokolle) ablegen — automatisch
-    // datiert und sortiert sichtbar fuer alle. PDF als data-URL upload.
+  function downloadPdf() {
+    const doc = buildPdfDoc();
+    if (!doc || !termin) return;
+    doc.save(`${termin.title.replace(/\s+/g, "_")}_Protokoll.pdf`);
+  }
+
+  function previewPdf() {
+    const doc = buildPdfDoc();
+    if (!doc) return;
+    // Blob-URL erzeugen und in neuem Tab oeffnen — Browser zeigt
+    // das PDF inline an, kein Download.
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, "_blank");
+    // Falls Pop-up geblockt: fallback in current tab
+    if (!win) window.location.href = url;
+    // URL nach kurzer Zeit wieder freigeben
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }
+
+  async function archiveProtokoll() {
+    if (!termin || archiving) return;
+    if (
+      !confirm(
+        "Protokoll abschliessen und im Hausbuch ablegen? Es wird unter „Hausbuch → Sitzungsprotokolle“ für alle sichtbar."
+      )
+    ) {
+      return;
+    }
+    const doc = buildPdfDoc();
+    if (!doc) return;
+    setArchiving(true);
     try {
       const pdfData = doc.output("datauristring");
       const title = termin.isHaussitzung
         ? `Haussitzung ${termin.responsibleWg?.name ?? ""}`.trim()
         : termin.title;
-      await fetch("/api/sitzungsprotokolle", {
+      const res = await fetch("/api/sitzungsprotokolle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -717,8 +752,15 @@ export default function TerminDetailPage() {
           pdfData,
         }),
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setArchivedAt(new Date().toISOString());
     } catch (err) {
-      console.error("Protokoll-Upload fehlgeschlagen", err);
+      console.error("Protokoll abschliessen", err);
+      alert(
+        "Konnte das Protokoll nicht ablegen. Bitte erneut versuchen."
+      );
+    } finally {
+      setArchiving(false);
     }
   }
 
@@ -1099,20 +1141,54 @@ export default function TerminDetailPage() {
             </form>
           </section>
 
-          {/* PDF Export */}
+          {/* PDF: Vorschau + Download nebeneinander */}
+          <div className="mb-2 flex gap-2">
+            <button
+              onClick={previewPdf}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-700 bg-white/5 py-2.5 text-xs font-semibold text-gray-200 transition-colors hover:bg-white/10"
+            >
+              👁 Vorschau
+            </button>
+            <button
+              onClick={downloadPdf}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-accent/30 bg-accent/5 py-2.5 text-xs font-semibold text-accent transition-colors hover:bg-accent/10"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <line x1="9" y1="15" x2="12" y2="18" />
+                <line x1="15" y1="15" x2="12" y2="18" />
+              </svg>
+              PDF herunterladen
+            </button>
+          </div>
+
+          {/* Protokoll abschliessen — legt das PDF im Hausbuch ab. */}
           <button
-            onClick={exportPdf}
-            className="mb-5 flex w-full items-center justify-center gap-2 rounded-lg border border-accent/30 bg-accent/5 py-2.5 text-xs font-semibold text-accent transition-colors hover:bg-accent/10"
+            onClick={archiveProtokoll}
+            disabled={archiving}
+            className="mb-1 flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 py-2.5 text-xs font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:opacity-50"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="12" y1="18" x2="12" y2="12" />
-              <line x1="9" y1="15" x2="12" y2="18" />
-              <line x1="15" y1="15" x2="12" y2="18" />
-            </svg>
-            Protokoll als PDF exportieren
+            {archiving ? "⋯ Wird abgelegt…" : archivedAt ? "✓ Abgelegt — erneut ablegen" : "✓ Protokoll abschliessen"}
           </button>
+          <p className="mb-5 px-1 text-center text-[10px] text-gray-500">
+            Beim Abschliessen wird das PDF unter{" "}
+            <span className="text-emerald-300/80">Hausbuch → Sitzungsprotokolle</span>{" "}
+            für alle Bewohner:innen sichtbar abgelegt.
+            {archivedAt && (
+              <>
+                {" "}
+                <span className="text-emerald-300/80">
+                  Zuletzt abgelegt:{" "}
+                  {new Date(archivedAt).toLocaleTimeString("de-CH", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </>
+            )}
+          </p>
         </>
       )}
 
