@@ -32,12 +32,14 @@ export async function POST(
 
   const body = (await req.json()) as {
     title?: unknown;
+    notes?: unknown;
     createdById?: unknown;
   };
   const title = typeof body.title === "string" ? body.title.trim() : "";
   if (!title) {
     return NextResponse.json({ error: "title erforderlich" }, { status: 400 });
   }
+  const notes = typeof body.notes === "string" ? body.notes : "";
 
   // Ersteller bestimmen — Default: ich. Override nur wenn berechtigt.
   let creatorId = session.user.id;
@@ -80,6 +82,7 @@ export async function POST(
     data: {
       terminId: params.id,
       title,
+      notes,
       order: nextOrder,
       createdById: creatorId,
     },

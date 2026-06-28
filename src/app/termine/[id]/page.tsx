@@ -142,6 +142,7 @@ export default function TerminDetailPage() {
   const [archiving, setArchiving] = useState(false);
   const [archivedAt, setArchivedAt] = useState<string | null>(null);
   const [newTraktandum, setNewTraktandum] = useState("");
+  const [newTraktandumNotes, setNewTraktandumNotes] = useState("");
   // Ersteller des neuen Traktandums — Default: ich selbst.
   // Termin-Bearbeiter:innen koennen auch jemand anderes auswaehlen
   // (z.B. um ein Traktandum im Namen eines verspaeteten Mitglieds
@@ -292,9 +293,16 @@ export default function TerminDetailPage() {
     e.preventDefault();
     if (!newTraktandum.trim() || !termin) return;
     try {
-      const body: { title: string; createdById?: string } = {
+      const body: {
+        title: string;
+        notes?: string;
+        createdById?: string;
+      } = {
         title: newTraktandum,
       };
+      if (newTraktandumNotes.trim()) {
+        body.notes = newTraktandumNotes;
+      }
       // createdById nur senden wenn explizit jemand anderes gewaehlt
       // (Server faellt sonst auf session.user.id zurueck)
       if (
@@ -317,6 +325,7 @@ export default function TerminDetailPage() {
       const created = (await res.json()) as Traktandum;
       setTermin({ ...termin, traktanden: [...termin.traktanden, created] });
       setNewTraktandum("");
+      setNewTraktandumNotes("");
       setNewTraktandumCreatorId(currentUserId);
     } catch (err) {
       console.error("Traktandum erstellen", err);
@@ -1427,52 +1436,64 @@ export default function TerminDetailPage() {
 
             {/* Neues Traktandum */}
             <form onSubmit={addTraktandum} className="mt-3 space-y-2">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newTraktandum}
-                  onChange={(e) => setNewTraktandum(e.target.value)}
-                  placeholder="Neues Traktandum..."
-                  className="flex-1 rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
-                />
+              <input
+                type="text"
+                value={newTraktandum}
+                onChange={(e) => setNewTraktandum(e.target.value)}
+                placeholder="Titel des Traktandums..."
+                className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+              />
+              <textarea
+                value={newTraktandumNotes}
+                onChange={(e) => setNewTraktandumNotes(e.target.value)}
+                placeholder="Beschreibung (optional)…"
+                rows={2}
+                className="w-full resize-y rounded border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-600 focus:border-accent focus:outline-none"
+              />
+              <div className="flex items-center gap-2">
+                {/* Ersteller-Picker — nur wenn man den Termin bearbeiten
+                    darf (Protokollant taggt im Namen einer anderen Person). */}
+                {termin.canEdit && allUsers.length > 0 ? (
+                  <>
+                    <label
+                      htmlFor="newTraktCreator"
+                      className="font-mono text-[10px] uppercase tracking-wider text-gray-500"
+                    >
+                      von
+                    </label>
+                    <select
+                      id="newTraktCreator"
+                      value={newTraktandumCreatorId}
+                      onChange={(e) =>
+                        setNewTraktandumCreatorId(e.target.value)
+                      }
+                      className="flex-1 rounded border border-gray-800 bg-gray-900/60 px-2.5 py-1 text-xs text-white focus:border-accent focus:outline-none"
+                    >
+                      {[...allUsers]
+                        .sort((a, b) => a.name.localeCompare(b.name, "de"))
+                        .map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.id === currentUserId
+                              ? `${u.name} (ich)`
+                              : u.name}
+                            {u.fullName && u.fullName !== u.name
+                              ? ` — ${u.fullName}`
+                              : ""}
+                          </option>
+                        ))}
+                    </select>
+                  </>
+                ) : (
+                  <div className="flex-1" />
+                )}
                 <button
                   type="submit"
-                  className="rounded bg-accent px-3 py-2 font-mono text-xs font-bold text-dark"
+                  disabled={!newTraktandum.trim()}
+                  className="rounded bg-accent px-4 py-1.5 font-mono text-xs font-bold text-dark disabled:opacity-40"
                 >
-                  +
+                  + Hinzufügen
                 </button>
               </div>
-              {/* Ersteller-Picker — nur wenn man den Termin bearbeiten
-                  darf (Protokollant taggt im Namen einer anderen Person). */}
-              {termin.canEdit && allUsers.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <label
-                    htmlFor="newTraktCreator"
-                    className="font-mono text-[10px] uppercase tracking-wider text-gray-500"
-                  >
-                    von
-                  </label>
-                  <select
-                    id="newTraktCreator"
-                    value={newTraktandumCreatorId}
-                    onChange={(e) =>
-                      setNewTraktandumCreatorId(e.target.value)
-                    }
-                    className="flex-1 rounded border border-gray-800 bg-gray-900/60 px-2.5 py-1 text-xs text-white focus:border-accent focus:outline-none"
-                  >
-                    {[...allUsers]
-                      .sort((a, b) => a.name.localeCompare(b.name, "de"))
-                      .map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.id === currentUserId ? `${u.name} (ich)` : u.name}
-                          {u.fullName && u.fullName !== u.name
-                            ? ` — ${u.fullName}`
-                            : ""}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              )}
             </form>
           </section>
 
