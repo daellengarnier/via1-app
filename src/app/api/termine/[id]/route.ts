@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { canEditTermin } from "@/lib/termin-permissions";
 import {
   combineDateTime,
   serializeTerminDetail,
@@ -63,12 +64,30 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const existing = await prisma.termin.findUnique({ where: { id: params.id } });
+  const existing = await prisma.termin.findUnique({
+    where: { id: params.id },
+    include: { editors: { select: { id: true } } },
+  });
   if (!existing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const body = (await req.json()) as Record<string, unknown>;
+
+  // archived ist eine sensible Aktion (versteckt den Termin) — hier
+  // schaerfen wir die Permission, auch wenn der Rest des PATCH aktuell
+  // offen ist (siehe Security-Audit, spaeter wird's komplett verschaerft).
+  if (typeof body.archived === "boolean") {
+    if (!canEditTermin(session, existing)) {
+      return NextResponse.json(
+        {
+          error:
+            "Nur Ersteller:in, Sitzungsleitung, Protokollführung, Co-Bearbeiter:in oder Admin",
+        },
+        { status: 403 }
+      );
+    }
+  }
   const data: Record<string, unknown> = {};
 
   if (typeof body.title === "string") data.title = body.title.trim();
@@ -118,6 +137,11 @@ export async function PATCH(
     ) {
       data.date = combineDateTime(body.date, body.time);
     }
+  }
+
+  // Archiv-Toggle: archived=true setzt archivedAt=jetzt, =false setzt null
+  if (typeof body.archived === "boolean") {
+    data.archivedAt = body.archived ? new Date() : null;
   }
 
   // Co-Bearbeiter (editors) komplett ersetzen wenn editorIds geschickt wird.

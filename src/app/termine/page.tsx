@@ -122,6 +122,7 @@ export default function TerminePage() {
   const currentUserId = session?.user?.id ?? "";
   const isAdmin = (session?.user?.roles || []).includes("ADMIN");
   const [filter, setFilter] = useState<TerminType | "alle">("alle");
+  const [showArchive, setShowArchive] = useState(false);
   const [termine, setTermine] = useState<Termin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -130,7 +131,9 @@ export default function TerminePage() {
 
   const loadTermine = useCallback(async () => {
     try {
-      const res = await fetch("/api/termine");
+      const res = await fetch(
+        showArchive ? "/api/termine?archived=true" : "/api/termine"
+      );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as Termin[];
       setTermine(data);
@@ -141,7 +144,7 @@ export default function TerminePage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showArchive]);
 
   useEffect(() => {
     loadTermine();
@@ -862,7 +865,31 @@ export default function TerminePage() {
         </form>
       )}
 
-      {/* Filter */}
+      {/* Aktuell / Archiv Switch */}
+      <div className="mb-3 flex justify-center gap-1">
+        <button
+          onClick={() => setShowArchive(false)}
+          className={`rounded-full px-4 py-1 font-mono text-xs font-bold transition-colors ${
+            !showArchive
+              ? "bg-orange-400 text-black"
+              : "border border-gray-700 text-gray-400 hover:text-white"
+          }`}
+        >
+          Aktuell
+        </button>
+        <button
+          onClick={() => setShowArchive(true)}
+          className={`rounded-full px-4 py-1 font-mono text-xs font-bold transition-colors ${
+            showArchive
+              ? "bg-gray-300 text-black"
+              : "border border-gray-700 text-gray-400 hover:text-white"
+          }`}
+        >
+          📦 Archiv
+        </button>
+      </div>
+
+      {/* Typ-Filter */}
       <div className="mb-4 flex justify-center gap-2">
         {(["alle", "sitzung", "essen", "sonstige"] as const).map((f) => (
           <button
