@@ -55,6 +55,22 @@ interface TerminComment {
   date: string;
 }
 
+interface OpenPendenz {
+  id: string;
+  title: string;
+  assignedTo: { id: string; name: string } | null;
+  sourceTermin: { id: string; title: string; date: string | null } | null;
+}
+interface CompletedPendenz extends OpenPendenz {
+  completedBy: { id: string; name: string } | null;
+  completedAt: string | null;
+  completionNote: string | null;
+}
+interface PendenzenResponse {
+  open: OpenPendenz[];
+  completed: CompletedPendenz[];
+}
+
 interface TerminDetail {
   id: string;
   title: string;
@@ -106,6 +122,7 @@ export default function TerminDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [allUsers, setAllUsers] = useState<PersonRef[]>([]);
+  const [pendenzen, setPendenzen] = useState<PendenzenResponse | null>(null);
   const [newTraktandum, setNewTraktandum] = useState("");
   const [showSignup, setShowSignup] = useState(false);
   const [signupGuestDetails, setSignupGuestDetails] = useState<Guest[]>([]);
@@ -182,13 +199,25 @@ export default function TerminDetailPage() {
     }
   }, [id]);
 
+  const loadPendenzen = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/termine/${id}/pendenzen`);
+      if (!res.ok) return;
+      const data = (await res.json()) as PendenzenResponse;
+      setPendenzen(data);
+    } catch {
+      // ignore
+    }
+  }, [id]);
+
   useEffect(() => {
     loadTermin();
+    loadPendenzen();
     fetch("/api/users")
       .then((r) => (r.ok ? r.json() : []))
       .then((u: PersonRef[]) => setAllUsers(u))
       .catch(() => {});
-  }, [loadTermin]);
+  }, [loadTermin, loadPendenzen]);
 
   if (loading) {
     return (
@@ -889,6 +918,9 @@ export default function TerminDetailPage() {
             </button>
           </div>
 
+          {/* Pendenzen aus frueheren Sitzungen */}
+          <PendenzenBlock data={pendenzen} onReload={loadPendenzen} />
+
           {/* Traktanden */}
           <section className="mb-6">
             <div className="mb-3 flex items-center justify-between">
@@ -971,6 +1003,25 @@ export default function TerminDetailPage() {
                         onBlur={(v) => saveTraktandumNotes(t.id, v)}
                         placeholder="Notizen / Was wurde besprochen..."
                         minHeight={80}
+                        pendenzUsers={allUsers}
+                        onCreatePendenz={async (title, assignedToId) => {
+                          try {
+                            const res = await fetch("/api/aufgaben", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                title,
+                                assignedToId,
+                                sourceTerminId: id,
+                                sourceTraktandumId: t.id,
+                              }),
+                            });
+                            if (res.ok) loadPendenzen();
+                            return { ok: res.ok };
+                          } catch {
+                            return { ok: false };
+                          }
+                        }}
                       />
                     </div>
                     <button
@@ -1534,6 +1585,224 @@ function SetDateForm({ terminId, onSaved }: { terminId: string; onSaved: () => v
       >
         {busy ? "..." : "Datum festlegen"}
       </button>
+    </div>
+  );
+}
+
+// ============================================================
+// Pendenzen-Block — wird oberhalb der Traktanden gerendert.
+// Zeigt zwei Sub-Bloecke:
+//   ⏳ Offen      — Pendenzen die aus frueheren Sitzungen offen sind
+//   ✅ Erledigt    — Pendenzen die seit der letzten Sitzung abgehakt wurden
+// ============================================================
+
+function PendenzenBlock({
+  data,
+  onReload,
+}: {
+  data: PendenzenResponse | null;
+  onReload: () => void;
+}) {
+  if (!data) return null;
+  if (data.open.length === 0 && data.completed.length === 0) return null;
+
+  return (
+    <section className="mb-6 space-y-3">
+      {data.open.length > 0 && (
+        <div className="rounded-lg border border-amber-600/40 bg-amber-900/10 p-3">
+          <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-amber-300">
+            ⏳ Offene Pendenzen aus früheren Sitzungen
+          </h3>
+          <ul className="space-y-2">
+            {data.open.map((p) => (
+              <OpenPendenzRow key={p.id} pendenz={p} onDone={onReload} />
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {data.completed.length > 0 && (
+        <div className="rounded-lg border border-emerald-600/40 bg-emerald-900/10 p-3">
+          <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-emerald-300">
+            ✅ Erledigt seit letzter Sitzung
+          </h3>
+          <ul className="space-y-2">
+            {data.completed.map((p) => (
+              <li
+                key={p.id}
+                className="rounded border border-emerald-700/30 bg-black/30 p-2"
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-sm font-medium text-white">{p.title}</p>
+                  <p className="font-mono text-[10px] text-gray-500">
+                    {p.completedAt
+                      ? new Date(p.completedAt).toLocaleDateString("de-CH", {
+                          day: "2-digit",
+                          month: "2-digit",
+                        })
+                      : ""}
+                  </p>
+                </div>
+                <p className="mt-0.5 text-xs text-gray-400">
+                  erledigt von{" "}
+                  <span className="text-emerald-300">
+                    {p.completedBy?.name ?? "?"}
+                  </span>
+                  {p.assignedTo && p.completedBy?.id !== p.assignedTo.id && (
+                    <span className="text-gray-500">
+                      {" "}
+                      (zugewiesen an {p.assignedTo.name})
+                    </span>
+                  )}
+                  {p.sourceTermin && (
+                    <span className="text-gray-600">
+                      {" "}
+                      · aus {p.sourceTermin.title}
+                    </span>
+                  )}
+                </p>
+                {p.completionNote && (
+                  <p className="mt-1.5 rounded bg-black/40 px-2 py-1 text-xs italic text-emerald-100">
+                    💬 {p.completionNote}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function OpenPendenzRow({
+  pendenz,
+  onDone,
+}: {
+  pendenz: OpenPendenz;
+  onDone: () => void;
+}) {
+  const [completing, setCompleting] = useState(false);
+
+  async function complete(note: string) {
+    try {
+      const res = await fetch(`/api/aufgaben/${pendenz.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          done: true,
+          completionNote: note,
+        }),
+      });
+      if (res.ok) {
+        setCompleting(false);
+        onDone();
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return (
+    <li className="rounded border border-amber-700/30 bg-black/30 p-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-white">{pendenz.title}</p>
+          <p className="mt-0.5 text-xs text-gray-400">
+            {pendenz.assignedTo ? (
+              <>
+                zugewiesen an{" "}
+                <span className="text-amber-300">{pendenz.assignedTo.name}</span>
+              </>
+            ) : (
+              <span className="text-gray-500">niemand zugewiesen</span>
+            )}
+            {pendenz.sourceTermin && (
+              <span className="text-gray-600">
+                {" "}
+                · aus {pendenz.sourceTermin.title}
+              </span>
+            )}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCompleting(true)}
+          className="shrink-0 rounded border border-emerald-600/40 px-2 py-1 text-xs font-semibold text-emerald-300 hover:bg-emerald-600/10"
+          title="Erledigt markieren"
+        >
+          ✓
+        </button>
+      </div>
+      {completing && (
+        <CompletePopup
+          title={pendenz.title}
+          onCancel={() => setCompleting(false)}
+          onSubmit={complete}
+        />
+      )}
+    </li>
+  );
+}
+
+function CompletePopup({
+  title,
+  onCancel,
+  onSubmit,
+}: {
+  title: string;
+  onCancel: () => void;
+  onSubmit: (note: string) => Promise<void>;
+}) {
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={onCancel}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-2xl border border-emerald-700/40 bg-gray-950 p-4"
+      >
+        <h3 className="mb-1 font-display text-sm font-bold uppercase tracking-wider text-emerald-300">
+          ✓ Pendenz erledigt
+        </h3>
+        <p className="mb-3 text-xs text-gray-400">{title}</p>
+        <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-gray-500">
+          Was wurde gemacht? (optional)
+        </label>
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Wird in der nächsten Sitzung angezeigt — der Protokollant muss es dann nicht extra eintragen."
+          className="mb-3 h-20 w-full resize-y rounded border border-gray-700 bg-gray-900 px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:border-emerald-400 focus:outline-none"
+        />
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded border border-gray-700 px-3 py-2 text-xs text-gray-300 hover:text-white"
+          >
+            Abbrechen
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await onSubmit(note);
+              } finally {
+                setBusy(false);
+              }
+            }}
+            className="flex-1 rounded bg-emerald-500 px-3 py-2 text-xs font-bold text-dark hover:brightness-110 disabled:opacity-40"
+          >
+            {busy ? "Speichert…" : "Erledigt"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

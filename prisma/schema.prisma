@@ -116,6 +116,7 @@ model User {
   mealSignups          MealSignup[]
   createdAufgaben      Aufgabe[]             @relation("AufgabeCreator")
   completedAufgaben    Aufgabe[]             @relation("AufgabeCompleter")
+  assignedAufgaben     Aufgabe[]             @relation("AufgabeAssignee")
   activeAufgabenWorker AufgabeActiveWorker[]
   createdBookings      Booking[]             @relation("BookingCreator")
   bookingComments      BookingComment[]
@@ -280,6 +281,8 @@ model Termin {
   mealSignups       MealSignup[]
   comments          TerminComment[]
   protokolle        Sitzungsprotokoll[]
+  // Pendenzen die aus diesem Termin entstanden sind.
+  sourceAufgaben    Aufgabe[]        @relation("AufgabeSourceTermin")
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
@@ -325,6 +328,8 @@ model Traktandum {
   createdById String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  // Pendenzen die aus diesem Traktandum entstanden sind.
+  sourceAufgaben Aufgabe[] @relation("AufgabeSourceTraktandum")
 
   @@index([terminId])
   @@map("traktanden")
@@ -385,11 +390,27 @@ model Aufgabe {
   // Wer hat die Aufgabe als erledigt markiert (im Archiv sichtbar)
   completedBy   User?                 @relation("AufgabeCompleter", fields: [completedById], references: [id], onDelete: SetNull)
   completedById String?
+  // Optionale Notiz beim Abhaken — "was wurde gemacht?". Wird in
+  // der naechsten Sitzung als Status-Update angezeigt, damit der
+  // Protokollant das nicht doppelt eintragen muss.
+  completionNote String?
   // Optionaler Pin auf der Satellit-Karte
   pinLat        Float?
   pinLng        Float?
   // assignee wird aktuell als freier Name-String gepflegt
   assignee      String?
+  // Strukturierter Assignee: optionaler User, an den die Aufgabe
+  // explizit zugewiesen wurde (z.B. aus dem Sitzungs-Protokoll als
+  // Pendenz). Funktioniert parallel zum Name-String oben.
+  assignedTo    User?                 @relation("AufgabeAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedToId  String?
+  // Wenn aus einer Sitzung als Pendenz entstanden: Quell-Termin
+  // und (optional) Quell-Traktandum. Per onDelete: SetNull, damit
+  // ein geloeschter Termin keine zugehoerige Aufgabe wegwirft.
+  sourceTermin       Termin?       @relation("AufgabeSourceTermin", fields: [sourceTerminId], references: [id], onDelete: SetNull)
+  sourceTerminId     String?
+  sourceTraktandum   Traktandum?   @relation("AufgabeSourceTraktandum", fields: [sourceTraktandumId], references: [id], onDelete: SetNull)
+  sourceTraktandumId String?
   createdBy     User                  @relation("AufgabeCreator", fields: [createdById], references: [id])
   createdById   String
   activeWorkers AufgabeActiveWorker[]
@@ -400,6 +421,8 @@ model Aufgabe {
 
   @@index([done, createdAt])
   @@index([completedById])
+  @@index([assignedToId])
+  @@index([sourceTerminId])
   @@map("aufgaben")
 }
 

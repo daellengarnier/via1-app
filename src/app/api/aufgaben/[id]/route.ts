@@ -18,6 +18,8 @@ export async function GET(
     include: {
       createdBy: true,
       completedBy: true,
+      assignedTo: true,
+      sourceTermin: true,
       activeWorkers: { include: { user: true } },
       subTodos: true,
       images: true,
@@ -89,17 +91,35 @@ export async function PATCH(
       .slice(0, 8);
   }
 
+  // assignedToId: User explicit zuweisen. Leerer String = abwaehlen.
+  if (typeof body.assignedToId === "string" || body.assignedToId === null) {
+    data.assignedToId =
+      typeof body.assignedToId === "string" && body.assignedToId.trim() !== ""
+        ? body.assignedToId.trim()
+        : null;
+  }
+
   // Done-Toggle aktualisiert completedAt + completedBy und raeumt
-  // activeWorkers auf
+  // activeWorkers auf. Zusaetzlich kann eine completionNote
+  // mitgegeben werden ("was wurde gemacht?") — wird in der naechsten
+  // Sitzung als Status-Update angezeigt.
   if (typeof body.done === "boolean") {
     data.done = body.done;
     if (body.done) {
       data.completedAt = new Date();
       data.completedById = session.user.id;
+      if (typeof body.completionNote === "string") {
+        const note = body.completionNote.trim();
+        data.completionNote = note === "" ? null : note;
+      }
     } else {
       data.completedAt = null;
       data.completedById = null;
+      data.completionNote = null;
     }
+  } else if (typeof body.completionNote === "string") {
+    const note = body.completionNote.trim();
+    data.completionNote = note === "" ? null : note;
   }
 
   const updated = await prisma.$transaction(async (tx) => {
