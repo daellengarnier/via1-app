@@ -13,6 +13,23 @@ body {
   overflow-x: hidden;
 }
 
+/* Rendering des Light-Markdown-Renderers (siehe lib/markdown-light.ts).
+   Tailwind preflight setzt Listen auf 'list-style: none' — hier
+   ueberschreiben damit Bullets und Nummerierung sichtbar bleiben. */
+.markdown-body p { margin: 0 0 0.4em; }
+.markdown-body p:last-child { margin-bottom: 0; }
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0 0 0.4em;
+  padding-left: 1.25em;
+}
+.markdown-body ul { list-style: disc; }
+.markdown-body ol { list-style: decimal; }
+.markdown-body li { margin: 0.1em 0; }
+.markdown-body strong { font-weight: 700; color: #fff; }
+.markdown-body em { font-style: italic; }
+.markdown-body u { text-decoration: underline; }
+
 .home-spin-vibration {
   animation: home-spin-vibration 0.11s linear infinite;
   transform-origin: center 18%;

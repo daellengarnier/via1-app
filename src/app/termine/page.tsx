@@ -238,6 +238,21 @@ export default function TerminePage() {
   >("wg");
   const [newDinnerMenu, setNewDinnerMenu] = useState("");
   const [newWithAttendance, setNewWithAttendance] = useState(false);
+  // Co-Bearbeiter (editors) die diesen Termin auch bearbeiten duerfen
+  const [newEditorIds, setNewEditorIds] = useState<string[]>([]);
+  const [allUsers, setAllUsers] = useState<
+    { id: string; name: string }[] | null
+  >(null);
+  const [editorPickerOpen, setEditorPickerOpen] = useState(false);
+  useEffect(() => {
+    if (!editorPickerOpen || allUsers !== null) return;
+    fetch("/api/users")
+      .then((r) => r.json())
+      .then((d: { id: string; name: string }[]) =>
+        setAllUsers(d.map((u) => ({ id: u.id, name: u.name })))
+      )
+      .catch(() => setAllUsers([]));
+  }, [editorPickerOpen, allUsers]);
 
   const WG_LOCATIONS = [
     "Nordwind",
@@ -301,6 +316,7 @@ export default function TerminePage() {
             : newType === "sonstige"
               ? newWithAttendance
               : false,
+        editorIds: newEditorIds,
       };
       if (editingId) {
         const res = await fetch(`/api/termine/${editingId}`, {
@@ -352,6 +368,14 @@ export default function TerminePage() {
     );
     setNewDinnerMenu(t.dinnerMenu ?? "");
     setNewWithAttendance(t.withAttendance);
+    // Editors aus dem Detail-Endpoint nachladen — Liste hat sie nicht.
+    setNewEditorIds([]);
+    fetch(`/api/termine/${t.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { editors?: { id: string }[] } | null) => {
+        if (d?.editors) setNewEditorIds(d.editors.map((e) => e.id));
+      })
+      .catch(() => {});
     setShowCreate(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -405,6 +429,8 @@ export default function TerminePage() {
     setNewDinnerMenu("");
     setNewWithAttendance(false);
     setNewType("sitzung");
+    setNewEditorIds([]);
+    setEditorPickerOpen(false);
   }
 
 
@@ -753,6 +779,65 @@ export default function TerminePage() {
               />
             </div>
           )}
+
+          {/* Co-Bearbeiter (Editors) */}
+          <div className="mb-3">
+            <label className="mb-1 block text-xs text-gray-400">
+              Co-Bearbeiter:innen{" "}
+              <span className="text-gray-600">
+                (optional, dürfen auch bearbeiten)
+              </span>
+            </label>
+            <button
+              type="button"
+              onClick={() => setEditorPickerOpen(!editorPickerOpen)}
+              className="flex w-full items-center justify-between rounded border border-gray-700 bg-gray-900 px-3 py-2 text-left text-sm text-white"
+            >
+              <span>
+                {newEditorIds.length === 0
+                  ? "Niemand ausgewählt"
+                  : `${newEditorIds.length} ausgewählt`}
+              </span>
+              <span className="text-gray-500">
+                {editorPickerOpen ? "▲" : "▼"}
+              </span>
+            </button>
+            {editorPickerOpen && (
+              <div className="mt-1 max-h-56 overflow-y-auto rounded border border-gray-800 bg-gray-950">
+                {allUsers === null ? (
+                  <p className="p-3 text-xs text-gray-500">Lade…</p>
+                ) : allUsers.length === 0 ? (
+                  <p className="p-3 text-xs text-gray-500">
+                    Keine User gefunden.
+                  </p>
+                ) : (
+                  allUsers.map((u) => {
+                    const selected = newEditorIds.includes(u.id);
+                    return (
+                      <label
+                        key={u.id}
+                        className="flex cursor-pointer items-center gap-2 border-b border-gray-900 px-3 py-2 text-sm text-white last:border-0 hover:bg-gray-900"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() =>
+                            setNewEditorIds((prev) =>
+                              selected
+                                ? prev.filter((x) => x !== u.id)
+                                : [...prev, u.id]
+                            )
+                          }
+                          className="h-4 w-4 accent-orange-400"
+                        />
+                        <span>{u.name}</span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Buttons */}
           <div className="flex gap-2">

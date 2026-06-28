@@ -98,6 +98,7 @@ export async function POST(req: Request) {
     dinnerOrganizer?: unknown;
     dinnerMenu?: unknown;
     withAttendance?: unknown;
+    editorIds?: unknown;
   };
 
   const title = typeof body.title === "string" ? body.title.trim() : "";
@@ -141,6 +142,14 @@ export async function POST(req: Request) {
       : null;
   const withAttendance = body.withAttendance === true || type === "SITZUNG";
 
+  // Co-Bearbeiter: User die ebenfalls den Termin bearbeiten duerfen
+  // (zusaetzlich zum Ersteller, der implizit immer darf).
+  const editorIds = Array.isArray(body.editorIds)
+    ? body.editorIds.filter(
+        (id): id is string => typeof id === "string" && id !== session.user.id
+      )
+    : [];
+
   const termin = await prisma.termin.create({
     data: {
       title,
@@ -155,6 +164,9 @@ export async function POST(req: Request) {
       dinnerMenu,
       withAttendance,
       createdById: session.user.id,
+      ...(editorIds.length > 0 && {
+        editors: { connect: editorIds.map((id) => ({ id })) },
+      }),
     },
     include: {
       _count: { select: { traktanden: true, comments: true } },
