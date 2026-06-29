@@ -129,6 +129,11 @@ export default function TerminePage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // Letzte Haussitzung — auch archivierte beruecksichtigen, sonst
+  // verschwindet sie aus dem Info-Banner sobald sie beim "Protokoll
+  // abschliessen" ins Archiv gewandert ist.
+  const [lastHaussitzung, setLastHaussitzung] = useState<Termin | null>(null);
+
   const loadTermine = useCallback(async () => {
     try {
       const res = await fetch(
@@ -145,6 +150,31 @@ export default function TerminePage() {
       setLoading(false);
     }
   }, [showArchive]);
+
+  // Letzte Haussitzung: kombiniert aktive + archivierte Liste,
+  // unabhaengig vom aktuellen Toggle-State.
+  useEffect(() => {
+    async function loadLast() {
+      try {
+        const [activeRes, archivedRes] = await Promise.all([
+          fetch("/api/termine"),
+          fetch("/api/termine?archived=true"),
+        ]);
+        const active = activeRes.ok ? ((await activeRes.json()) as Termin[]) : [];
+        const archived = archivedRes.ok
+          ? ((await archivedRes.json()) as Termin[])
+          : [];
+        const todayStr = new Date().toISOString().split("T")[0]!;
+        const last = [...active, ...archived]
+          .filter((t) => t.isHaussitzung && t.date && t.date <= todayStr)
+          .sort((a, b) => b.date.localeCompare(a.date))[0];
+        setLastHaussitzung(last ?? null);
+      } catch {
+        // ignore
+      }
+    }
+    loadLast();
+  }, []);
 
   useEffect(() => {
     loadTermine();
@@ -284,11 +314,8 @@ export default function TerminePage() {
     return a.date.localeCompare(b.date);
   });
 
-  // Letzte Haussitzung fuer Info-Banner: juengster vergangener Termin
-  // mit isHaussitzung=true.
-  const lastHaussitzung = [...termine]
-    .filter((t) => t.isHaussitzung && t.date && t.date < todayStr)
-    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  // lastHaussitzung kommt aus dem separaten Fetch oben — auch
+  // archivierte Sitzungen werden beruecksichtigt.
   const lastHaussitzungLabel = lastHaussitzung
     ? new Date(lastHaussitzung.date).toLocaleDateString("de-CH", {
         day: "numeric",
@@ -1406,7 +1433,9 @@ export default function TerminePage() {
                 )}
                 {t.createdBy && (
                   <p className="mt-0.5 text-[10px] text-gray-600">
-                    erstellt von {t.createdBy}
+                    {t.isHaussitzung && !t.date
+                      ? "automatisch erstellt"
+                      : `erstellt von ${t.createdBy}`}
                   </p>
                 )}
               </Link>
