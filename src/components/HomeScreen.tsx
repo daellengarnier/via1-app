@@ -1378,7 +1378,9 @@ interface ProtokollDTO {
 
 // Gepinntes Element ganz oben in der Pinnwand: zeigt das juengste
 // Sitzungsprotokoll und oeffnet das PDF direkt im neuen Tab.
-// Erscheint nur wenn ueberhaupt ein Protokoll abgelegt wurde.
+// Im gleichen Sticky-Note-Stil wie die anderen Pinnwand-Eintraege
+// (gelbe Variante, leicht nach links gekippt) — damit es als Teil
+// der Pinnwand wirkt, nicht als Fremdkoerper.
 function LatestProtokollPin() {
   const [item, setItem] = useState<ProtokollDTO | null>(null);
   useEffect(() => {
@@ -1392,7 +1394,7 @@ function LatestProtokollPin() {
   const d = new Date(item.date);
   const dateStr = d.toLocaleDateString("de-CH", {
     day: "numeric",
-    month: "long",
+    month: "short",
     year: "numeric",
   });
   const subline = [item.wgName, `von ${item.createdBy.name}`]
@@ -1404,24 +1406,24 @@ function LatestProtokollPin() {
       href={`/api/sitzungsprotokolle/${item.id}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="relative block overflow-hidden rounded-lg border border-emerald-500/50 bg-gradient-to-br from-emerald-500/15 to-emerald-700/5 p-3 transition-colors hover:border-emerald-400 hover:from-emerald-500/25"
+      className="relative block overflow-hidden rounded-2xl border border-yellow-400/30 bg-gradient-to-br from-yellow-400/30 to-yellow-600/10 p-3 pb-7 shadow-lg backdrop-blur-md -rotate-1 transition-transform hover:rotate-0 hover:scale-105"
+      style={{
+        boxShadow:
+          "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
+      }}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/10 to-transparent" />
-      <div className="relative flex items-center justify-between">
-        <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-emerald-300">
-          📝 Letztes Sitzungsprotokoll
-        </p>
-        <span className="font-mono text-[9px] text-emerald-300/70">
-          📄 PDF öffnen ›
-        </span>
-      </div>
-      <p className="relative mt-1 text-xs font-semibold text-emerald-100">
-        {item.title}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
+      <p className="relative text-xs font-semibold leading-relaxed text-yellow-100">
+        📝 Sitzungsprotokoll · {item.title}
       </p>
-      <p className="relative mt-0.5 text-[10px] text-emerald-200/70">
+      <p className="relative mt-1 text-[10px] leading-snug text-yellow-100/80">
         {dateStr}
         {subline ? ` · ${subline}` : ""}
       </p>
+      <div className="absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[9px] text-yellow-300/80">
+        <span>📄 PDF öffnen</span>
+        <span>— Via 1 ›</span>
+      </div>
     </a>
   );
 }
