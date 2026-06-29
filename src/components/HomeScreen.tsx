@@ -1068,6 +1068,7 @@ export default function HomeScreen() {
               </div>
             </button>
           )}
+          <LatestProtokollPin />
           {pinnwand.map((p, i) => {
             const styles = [
               {
@@ -1364,5 +1365,63 @@ export default function HomeScreen() {
         <DroneHistoryButton />
       )}
     </div>
+  );
+}
+
+interface ProtokollDTO {
+  id: string;
+  title: string;
+  date: string;
+  wgName: string | null;
+  createdBy: { id: string; name: string };
+}
+
+// Gepinntes Element ganz oben in der Pinnwand: zeigt das juengste
+// Sitzungsprotokoll und oeffnet das PDF direkt im neuen Tab.
+// Erscheint nur wenn ueberhaupt ein Protokoll abgelegt wurde.
+function LatestProtokollPin() {
+  const [item, setItem] = useState<ProtokollDTO | null>(null);
+  useEffect(() => {
+    fetch("/api/sitzungsprotokolle")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list: ProtokollDTO[]) => setItem(list[0] ?? null))
+      .catch(() => {});
+  }, []);
+  if (!item) return null;
+
+  const d = new Date(item.date);
+  const dateStr = d.toLocaleDateString("de-CH", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const subline = [item.wgName, `von ${item.createdBy.name}`]
+    .filter((s): s is string => !!s)
+    .join(" · ");
+
+  return (
+    <a
+      href={`/api/sitzungsprotokolle/${item.id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="relative block overflow-hidden rounded-lg border border-emerald-500/50 bg-gradient-to-br from-emerald-500/15 to-emerald-700/5 p-3 transition-colors hover:border-emerald-400 hover:from-emerald-500/25"
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/10 to-transparent" />
+      <div className="relative flex items-center justify-between">
+        <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-emerald-300">
+          📝 Letztes Sitzungsprotokoll
+        </p>
+        <span className="font-mono text-[9px] text-emerald-300/70">
+          📄 PDF öffnen ›
+        </span>
+      </div>
+      <p className="relative mt-1 text-xs font-semibold text-emerald-100">
+        {item.title}
+      </p>
+      <p className="relative mt-0.5 text-[10px] text-emerald-200/70">
+        {dateStr}
+        {subline ? ` · ${subline}` : ""}
+      </p>
+    </a>
   );
 }
