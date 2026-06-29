@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notify } from "@/lib/notify";
 
 // GET /api/sitzungsprotokolle — alle Protokolle, neueste zuerst.
 // Liefert OHNE pdfData (sonst riesige Antwort) — Download separat.
@@ -94,6 +95,51 @@ export async function POST(req: Request) {
     },
     select: { id: true },
   });
+
+  // Termin atomar archivieren + Pendenz-Drafts publizieren — beide
+  // gehoeren zum "Protokoll abschliessen"-Workflow. Vorher lief das
+  // ueber einen separaten PATCH-Call vom Frontend, der bei
+  // unzureichenden Permissions still scheiterte und den Termin in
+  // der aktiven Liste liess. Hier: wer ein Protokoll ablegen darf,
+  // darf auch archivieren.
+  if (terminId) {
+    const termin = await prisma.termin.findUnique({
+      where: { id: terminId },
+      select: { archivedAt: true },
+    });
+    if (termin && !termin.archivedAt) {
+      await prisma.termin.update({
+        where: { id: terminId },
+        data: { archivedAt: new Date() },
+      });
+      // Drafts (noch nicht publizierte Pendenzen) jetzt publizieren
+      // + Push-Notifications an die Assignees.
+      const drafts = await prisma.aufgabe.findMany({
+        where: { sourceTerminId: terminId, publishedAt: null },
+        include: { assignees: { select: { id: true } } },
+      });
+      if (drafts.length > 0) {
+        await prisma.aufgabe.updateMany({
+          where: { sourceTerminId: terminId, publishedAt: null },
+          data: { publishedAt: new Date() },
+        });
+        for (const a of drafts) {
+          const targets = a.assignees
+            .map((u) => u.id)
+            .filter((id) => id !== session.user.id);
+          if (targets.length > 0) {
+            notify({
+              kind: "AUFGABE_NEW",
+              title: `Dir wurde eine Aufgabe zugewiesen: ${a.title}`,
+              body: a.description || undefined,
+              link: "/aufgaben",
+              audience: targets,
+            }).catch((e) => console.error("notify-draft-publish", e));
+          }
+        }
+      }
+    }
+  }
 
   return NextResponse.json({ id: created.id });
 }
