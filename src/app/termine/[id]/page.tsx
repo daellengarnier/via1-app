@@ -983,12 +983,8 @@ export default function TerminDetailPage() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setArchivedAt(new Date().toISOString());
-      // Termin im selben Schritt archivieren
-      await fetch(`/api/termine/${termin.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ archived: true }),
-      }).catch(() => {});
+      // Termin wird im POST /api/sitzungsprotokolle automatisch
+      // archiviert + Pendenz-Drafts publiziert — atomar serverseitig.
       loadTermin();
     } catch (err) {
       console.error("Protokoll abschliessen", err);
