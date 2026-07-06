@@ -252,6 +252,26 @@ export default function SaunaPage() {
         </div>
       )}
 
+      {/* TWINT-Bezahlung */}
+      <a
+        href="https://pay.raisenow.io/hzqxq"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mb-6 flex items-center justify-between rounded-lg border border-red-500/40 bg-gradient-to-r from-red-500/15 to-red-600/10 p-4 transition-colors hover:from-red-500/25 hover:to-red-600/20"
+      >
+        <div>
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-red-300">
+            Beitrag
+          </p>
+          <p className="mt-0.5 text-sm text-white">
+            5.– pro Person / Saunagang
+          </p>
+        </div>
+        <div className="rounded-full bg-red-500 px-4 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]">
+          Mit TWINT bezahlen
+        </div>
+      </a>
+
       {/* Verlauf */}
       <SaunaChart hours={2} className="mb-6" />
 

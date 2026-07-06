@@ -504,6 +504,26 @@ export default function GaestiPage() {
         </button>
       </div>
 
+      {/* TWINT-Bezahlung */}
+      <a
+        href="https://pay.raisenow.io/hzqxq"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mb-4 flex items-center justify-between rounded-lg border border-red-500/40 bg-gradient-to-r from-red-500/15 to-red-600/10 p-4 transition-colors hover:from-red-500/25 hover:to-red-600/20"
+      >
+        <div>
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-red-300">
+            Unterhaltsbeitrag
+          </p>
+          <p className="mt-0.5 text-sm text-white">
+            Richtpreis 5.– pro Nacht
+          </p>
+        </div>
+        <div className="rounded-full bg-red-500 px-4 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]">
+          Mit TWINT bezahlen
+        </div>
+      </a>
+
       {/* Buchungsliste (ausklappbar) */}
       <button
         onClick={() => setShowBookings(!showBookings)}
