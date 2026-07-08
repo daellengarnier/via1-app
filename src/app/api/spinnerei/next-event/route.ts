@@ -27,9 +27,9 @@ const FALLBACK_URL = "https://kulturspinnerei.ch/";
 const FALLBACK_EVENTS: SpinnereiEvent[] = [
   {
     title: "Hausfest 2026",
-    // Sa 5. Sept 2026 12:00 bis So 6. Sept 07:00 (CEST = UTC+2)
-    startAt: "2026-09-05T12:00:00+02:00",
-    endAt: "2026-09-06T07:00:00+02:00",
+    // Sa 5. Sept 2026 16:00 bis So 6. Sept 06:00 (CEST = UTC+2)
+    startAt: "2026-09-05T16:00:00+02:00",
+    endAt: "2026-09-06T06:00:00+02:00",
     url: "https://kulturspinnerei.ch/",
   },
 ];
