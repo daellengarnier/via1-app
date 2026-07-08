@@ -786,7 +786,7 @@ export default function HomeScreen() {
             <p className="font-mono text-[10px] text-gray-500">
               {spinnereiEvent
                 ? `${spinnereiEvent.dateLabel} · ${spinnereiEvent.startTime}`
-                : "Sa 5. Sept · 12:00"}
+                : "Sa 5. Sept · 16:00"}
             </p>
           </a>
         ) : (
@@ -987,7 +987,7 @@ export default function HomeScreen() {
                 {spinnereiEvent?.dateLabel ?? "Sa 5. Sept"}
               </p>
               <p className="font-mono text-[10px] text-gray-500">
-                {spinnereiEvent?.timeRange ?? "12:00 – 07:00"}
+                {spinnereiEvent?.timeRange ?? "16:00 – 06:00"}
               </p>
               <button
                 type="button"
