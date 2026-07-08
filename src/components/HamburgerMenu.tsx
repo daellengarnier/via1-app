@@ -263,7 +263,73 @@ export function HamburgerMenu() {
             <span className="text-sm text-white">🎮</span>
           )}
         </button>
+
+        {/* Payment Badge — Spinnerei */}
+        <a
+          href="https://pay.raisenow.io/mpmxz"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-secondary"
+          aria-label="Spinnerei bezahlen (TWINT)"
+          title="Spinnerei bezahlen (TWINT)"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <rect
+              x="2.5"
+              y="6"
+              width="19"
+              height="12"
+              rx="1.5"
+              stroke="white"
+              strokeWidth="1.4"
+            />
+            <text
+              x="12"
+              y="15.5"
+              fill="white"
+              fontSize="9.5"
+              fontWeight="800"
+              fontFamily="ui-monospace, monospace"
+              textAnchor="middle"
+            >
+              S
+            </text>
+          </svg>
+        </a>
       </div>
+
+      {/* Payment Badge — Verein Uuh (links vom Snake) */}
+      <a
+        href="https://pay.raisenow.io/hzqxq"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed right-28 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-secondary"
+        aria-label="Verein Uuh bezahlen (TWINT)"
+        title="Verein Uuh bezahlen (TWINT)"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect
+            x="2.5"
+            y="6"
+            width="19"
+            height="12"
+            rx="1.5"
+            stroke="white"
+            strokeWidth="1.4"
+          />
+          <text
+            x="12"
+            y="15.5"
+            fill="white"
+            fontSize="9.5"
+            fontWeight="800"
+            fontFamily="ui-monospace, monospace"
+            textAnchor="middle"
+          >
+            U
+          </text>
+        </svg>
+      </a>
 
       {/* Snake Badge — direkt links vom Hamburger */}
       <button
