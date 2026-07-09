@@ -99,6 +99,7 @@ jobs:
             git fetch origin main && git reset --hard origin/main
             docker pull ghcr.io/daellengarnier/via1-app:latest && \
             docker compose up -d && \
+            docker compose run --rm --entrypoint certbot certbot renew --webroot -w /var/www/certbot --non-interactive || true
             docker compose restart nginx && \
             docker image prune -f
             echo "Deploy done"
