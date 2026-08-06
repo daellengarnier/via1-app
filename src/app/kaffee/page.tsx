@@ -445,11 +445,10 @@ export default function KaffeePage() {
             {!showCustom ? (
               <div className="flex flex-col gap-2">
                 <label className="flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-amber-600/40 bg-amber-600/5 p-3 text-xs font-semibold text-amber-200 transition-colors hover:border-amber-500 hover:bg-amber-600/10">
-                  {scanning ? "📷 Scannt…" : "📷 Etikette fotografieren"}
+                  {scanning ? "📷 Scannt…" : "📷 Etikette scannen (Foto oder Galerie)"}
                   <input
                     type="file"
                     accept="image/*"
-                    capture="environment"
                     onChange={handleScanPhoto}
                     disabled={scanning}
                     className="hidden"
@@ -481,7 +480,6 @@ export default function KaffeePage() {
                     <input
                       type="file"
                       accept="image/*"
-                      capture="environment"
                       onChange={handleScanPhoto}
                       disabled={scanning}
                       className="hidden"
