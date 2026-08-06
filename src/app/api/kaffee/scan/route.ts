@@ -93,8 +93,15 @@ Wenn ein Feld nicht ersichtlich ist: leerer String (für Strings) oder false (f�
     if (!res.ok) {
       const err = await res.text();
       console.error("Claude API error", res.status, err);
+      let detail = err;
+      try {
+        const parsed = JSON.parse(err) as { error?: { message?: string } };
+        if (parsed.error?.message) detail = parsed.error.message;
+      } catch {
+        // err war kein JSON — den Text 1:1 nehmen
+      }
       return NextResponse.json(
-        { error: `Claude API Fehler (${res.status})` },
+        { error: `Claude API Fehler (${res.status}): ${detail}` },
         { status: 502 }
       );
     }
