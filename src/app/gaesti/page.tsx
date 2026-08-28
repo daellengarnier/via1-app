@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 interface Comment {
@@ -101,6 +102,9 @@ const reglementSections: { title: string; items: string[] }[] = [
 ];
 
 export default function GaestiPage() {
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id ?? "";
+  const isAdmin = (session?.user?.roles ?? []).includes("ADMIN");
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
@@ -119,6 +123,10 @@ export default function GaestiPage() {
   );
   const [openCommentsId, setOpenCommentsId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
+  const [editingBookingId, setEditingBookingId] = useState<string | null>(null);
+  const [editGuest, setEditGuest] = useState("");
+  const [editFrom, setEditFrom] = useState("");
+  const [editTo, setEditTo] = useState("");
 
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfWeek(year, month);
@@ -233,6 +241,46 @@ export default function GaestiPage() {
     } catch (err) {
       console.error("Buchung loeschen", err);
       alert("Konnte nicht loeschen.");
+    }
+  }
+
+  function startEditBooking(b: Booking) {
+    setEditingBookingId(b.id);
+    setEditGuest(b.guest);
+    setEditFrom(b.from);
+    setEditTo(b.to);
+  }
+
+  async function saveEditBooking(bookingId: string) {
+    if (!editGuest.trim() || !editFrom || !editTo) return;
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guest: editGuest.trim(),
+          from: editFrom,
+          to: editTo,
+        }),
+      });
+      if (res.status === 409) {
+        const data = (await res.json()) as { error: string };
+        alert(data.error);
+        return;
+      }
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(data.error ?? "Konnte nicht speichern.");
+        return;
+      }
+      const updated = (await res.json()) as Booking;
+      setBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? updated : b))
+      );
+      setEditingBookingId(null);
+    } catch (err) {
+      console.error("Buchung bearbeiten", err);
+      alert("Konnte nicht speichern.");
     }
   }
 
@@ -460,26 +508,94 @@ export default function GaestiPage() {
                 ×
               </button>
             </div>
-            {booking ? (
-              <div>
-                <p className="text-base font-semibold text-white">
-                  {booking.guest}
-                </p>
-                <p className="mt-0.5 text-xs text-gray-400">
-                  Eingeladen von{" "}
-                  <span className="text-blue-300">{booking.invitedBy}</span>
-                </p>
-                <p className="mt-1 text-xs text-gray-500">
-                  {formatDateShort(booking.from)} – {formatDateShort(booking.to)}
-                </p>
-                <button
-                  onClick={() => deleteBooking(booking.id)}
-                  className="mt-3 rounded border border-red-500/40 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10"
-                >
-                  Buchung löschen
-                </button>
-              </div>
-            ) : (
+            {booking ? (() => {
+              const canManage =
+                booking.invitedById === currentUserId || isAdmin;
+              const isEditing = editingBookingId === booking.id;
+              if (isEditing) {
+                return (
+                  <div>
+                    <label className="mb-1 block text-[10px] text-gray-400">
+                      Name des Gastes
+                    </label>
+                    <input
+                      type="text"
+                      value={editGuest}
+                      onChange={(e) => setEditGuest(e.target.value)}
+                      className="mb-2 w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
+                    />
+                    <div className="mb-2 grid grid-cols-2 gap-2">
+                      <div className="min-w-0">
+                        <label className="mb-1 block text-[10px] text-gray-400">
+                          Von
+                        </label>
+                        <input
+                          type="date"
+                          value={editFrom}
+                          onChange={(e) => setEditFrom(e.target.value)}
+                          className="box-border block h-10 w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 text-xs text-white focus:border-blue-400 focus:outline-none"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <label className="mb-1 block text-[10px] text-gray-400">
+                          Bis
+                        </label>
+                        <input
+                          type="date"
+                          value={editTo}
+                          onChange={(e) => setEditTo(e.target.value)}
+                          className="box-border block h-10 w-full min-w-0 appearance-none rounded border border-gray-700 bg-gray-900 px-2 text-xs text-white focus:border-blue-400 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => saveEditBooking(booking.id)}
+                        className="rounded bg-blue-400 px-4 py-1.5 font-mono text-xs font-bold text-dark"
+                      >
+                        Speichern
+                      </button>
+                      <button
+                        onClick={() => setEditingBookingId(null)}
+                        className="rounded px-4 py-1.5 text-xs text-gray-400 hover:text-white"
+                      >
+                        Abbrechen
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div>
+                  <p className="text-base font-semibold text-white">
+                    {booking.guest}
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-400">
+                    Eingeladen von{" "}
+                    <span className="text-blue-300">{booking.invitedBy}</span>
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {formatDateShort(booking.from)} – {formatDateShort(booking.to)}
+                  </p>
+                  {canManage && (
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => startEditBooking(booking)}
+                        className="rounded border border-blue-500/40 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-300 hover:bg-blue-500/10"
+                      >
+                        ✎ Bearbeiten
+                      </button>
+                      <button
+                        onClick={() => deleteBooking(booking.id)}
+                        className="rounded border border-red-500/40 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10"
+                      >
+                        Löschen
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })() : (
               <div>
                 <p className="text-base font-semibold text-blue-300">Frei</p>
                 <p className="mt-0.5 text-xs text-gray-500">
