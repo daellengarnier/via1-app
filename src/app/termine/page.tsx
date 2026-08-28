@@ -303,16 +303,24 @@ export default function TerminePage() {
       ? termine
       : termine.filter((t) => t.type === filter);
 
-  // Heutige und zukuenftige Termine anzeigen — Platzhalter (date="")
-  // sind noch ohne Datum aber gehoeren immer ans Top der Liste.
-  const upcoming = filtered.filter((t) => !t.date || t.date >= todayStr);
-  // Platzhalter zuerst, dann nach Datum aufsteigend.
-  const sorted = [...upcoming].sort((a, b) => {
-    if (!a.date && !b.date) return 0;
-    if (!a.date) return -1;
-    if (!b.date) return 1;
-    return a.date.localeCompare(b.date);
-  });
+  // Archiv-Tab: alle archivierten Termine zeigen (meist vergangen),
+  // neueste zuerst. Normal-Tab: heutige + zukuenftige Termine +
+  // Platzhalter (date="") ganz oben, aufsteigend.
+  const sorted = showArchive
+    ? [...filtered].sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return b.date.localeCompare(a.date);
+      })
+    : [...filtered.filter((t) => !t.date || t.date >= todayStr)].sort(
+        (a, b) => {
+          if (!a.date && !b.date) return 0;
+          if (!a.date) return -1;
+          if (!b.date) return 1;
+          return a.date.localeCompare(b.date);
+        }
+      );
 
   // lastHaussitzung kommt aus dem separaten Fetch oben — auch
   // archivierte Sitzungen werden beruecksichtigt.
