@@ -74,21 +74,19 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  if (fromDate.getTime() >= toDate.getTime()) {
+  if (fromDate.getTime() > toDate.getTime()) {
     return NextResponse.json(
-      { error: "Abreisetag muss nach Anreisetag liegen (mindestens 1 Nacht)" },
+      { error: "from muss vor to sein" },
       { status: 400 }
     );
   }
 
-  // Konfliktpruefung: ueberlappende Naechte.
-  // from = Anreisetag, to = Abreisetag (Hotel-Semantik). Der Abreisetag
-  // selbst ist NICHT belegt — jemand kann am Abreisetag der Vor-
-  // buchung anreisen. Deshalb strikt < / > (halb-offene Intervalle).
+  // Konfliktpruefung: ueberlappende Buchungen (beide Grenzen inklusiv,
+  // da to bei uns als letzter belegter Tag interpretiert wird).
   const conflict = await prisma.booking.findFirst({
     where: {
-      fromDate: { lt: toDate },
-      toDate: { gt: fromDate },
+      fromDate: { lte: toDate },
+      toDate: { gte: fromDate },
     },
     include: { createdBy: { select: { name: true } } },
   });
