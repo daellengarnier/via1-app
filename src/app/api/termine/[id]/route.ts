@@ -75,10 +75,12 @@ export async function PATCH(
 
   const body = (await req.json()) as Record<string, unknown>;
 
-  // archived ist eine sensible Aktion (versteckt den Termin) — hier
-  // schaerfen wir die Permission, auch wenn der Rest des PATCH aktuell
-  // offen ist (siehe Security-Audit, spaeter wird's komplett verschaerft).
-  if (typeof body.archived === "boolean") {
+  // Archivieren (archived=true) triggert Pendenz-Publish + Notifications
+  // — deshalb nur fuer Edit-berechtigte User. Un-archivieren (=false)
+  // macht den Termin lediglich wieder sichtbar (harmlos), das darf jede
+  // eingeloggte Person, damit z.B. eine kurzfristig abgesagte Sitzung
+  // von jeder:m Bewohner:in reaktiviert werden kann.
+  if (body.archived === true) {
     if (!canEditTermin(session, existing)) {
       return NextResponse.json(
         {
