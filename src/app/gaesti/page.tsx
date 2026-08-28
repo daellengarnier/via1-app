@@ -30,8 +30,10 @@ function getFirstDayOfWeek(year: number, month: number): number {
   return day === 0 ? 6 : day - 1; // Monday = 0
 }
 
+// Hotel-Semantik: from = Anreise (belegt), to = Abreise (NICHT mehr
+// belegt — jemand kann am Abreisetag anreisen).
 function isDateInRange(date: string, from: string, to: string): boolean {
-  return date >= from && date <= to;
+  return date >= from && date < to;
 }
 
 function formatDateShort(iso: string): string {
@@ -375,12 +377,16 @@ export default function GaestiPage() {
               (booking !== undefined && booking.id === selectedBookingId);
 
             // Mehrtages-Balken: Rundungen an Buchungs-Start/Ende und
-            // an den Wochen-Raendern (Mo/So)
+            // an den Wochen-Raendern (Mo/So). Der letzte belegte Tag
+            // ist to - 1 Tag (Abreisetag zaehlt nicht mehr als belegt).
             let isBookingStart = false;
             let isBookingEnd = false;
             if (booking) {
+              const lastNight = new Date(booking.to);
+              lastNight.setDate(lastNight.getDate() - 1);
+              const lastNightStr = lastNight.toISOString().split("T")[0]!;
               isBookingStart = dateStr === booking.from;
-              isBookingEnd = dateStr === booking.to;
+              isBookingEnd = dateStr === lastNightStr;
               const dow = new Date(dateStr).getDay(); // 0=So, 1=Mo
               if (dow === 1) isBookingStart = true; // Montag: neuer Start
               if (dow === 0) isBookingEnd = true; // Sonntag: Ende
