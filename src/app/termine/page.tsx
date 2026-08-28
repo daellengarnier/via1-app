@@ -941,20 +941,24 @@ export default function TerminePage() {
         ))}
       </div>
 
-      {/* Info: letzte Haussitzung */}
-      {lastHaussitzungLabel && (
-        <div className="mb-3 rounded-md border border-white/10 bg-white/5 px-3 py-2">
+      {/* Info: letzte Haussitzung — klickbar */}
+      {lastHaussitzungLabel && lastHaussitzung && (
+        <Link
+          href={`/termine/${lastHaussitzung.id}`}
+          className="mb-3 block rounded-md border border-white/10 bg-white/5 px-3 py-2 transition-colors hover:border-white/20 hover:bg-white/10"
+        >
           <p className="font-mono text-[10px] uppercase tracking-wider text-gray-400">
             Letzte Haussitzung:{" "}
             <span className="text-white">{lastHaussitzungLabel}</span>
-            {lastHaussitzung?.responsibleWg && (
+            {lastHaussitzung.responsibleWg && (
               <span className="text-gray-500">
                 {" "}
                 · {lastHaussitzung.responsibleWg.name}
               </span>
             )}
+            <span className="ml-1 text-gray-600">›</span>
           </p>
-        </div>
+        </Link>
       )}
 
       {/* Liste — kompakt */}
