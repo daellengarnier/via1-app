@@ -1060,15 +1060,13 @@ export default function TerminDetailPage() {
               . Für Korrekturen kannst du sie wieder eröffnen.
             </p>
           </div>
-          {termin.canEdit && (
-            <button
-              type="button"
-              onClick={toggleArchive}
-              className="rounded border border-emerald-500/40 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10"
-            >
-              ↻ Wieder eröffnen
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={toggleArchive}
+            className="rounded border border-emerald-500/40 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10"
+          >
+            ↻ Wieder eröffnen
+          </button>
         </div>
       )}
 
