@@ -1,17 +1,17 @@
 // Permission-Helper fuer Termin- und Traktanden-Bearbeitung.
 //
-// Wer darf den Termin / Traktanden bearbeiten?
-//   - Admin (immer)
+// Aktuell: jede eingeloggte Person darf alles bearbeiten
+// (User-Entscheid: "Alles fuer alle bearbeitbar"). Archivieren
+// (archived=true) bleibt separat geschuetzt, weil es Pendenz-Publish
+// + Push-Notifications triggert (siehe api/termine/[id]/route.ts).
+//
+// Historischer Kontext (falls wir das spaeter wieder verschaerfen wollen):
+//   - Admin
 //   - Termin-Ersteller
 //   - Termin-Editoren (Co-Bearbeiter aus M2M)
 //   - Person die als sitzungsleitung im Termin steht (Name-Match)
 //   - Person die als protokollfuehrung im Termin steht (Name-Match)
 //   - Beim Traktandum zusaetzlich: Ersteller des Traktandums
-//
-// Sitzungsleitung und Protokollfuehrung sind freie Strings (kein FK).
-// Wir matchen case-insensitive auf den Display-Namen des Users.
-// Bei Tippfehlern im Feld kann es zu False-Negatives kommen — das
-// nehmen wir hin, ein Admin kann immer eingreifen.
 
 interface SessionUser {
   id?: string;
@@ -33,31 +33,17 @@ interface TraktandumLike {
   createdById: string;
 }
 
-function normalizeName(s: string | null | undefined): string {
-  return (s ?? "").trim().toLowerCase();
-}
-
 export function canEditTermin(
   session: SessionLike | null,
-  termin: TerminLike
+  _termin: TerminLike
 ): boolean {
-  const userId = session?.user?.id;
-  if (!userId) return false;
-  if ((session?.user?.roles ?? []).includes("ADMIN")) return true;
-  if (termin.createdById === userId) return true;
-  if ((termin.editors ?? []).some((e) => e.id === userId)) return true;
-  const me = normalizeName(session?.user?.name);
-  if (!me) return false;
-  if (me === normalizeName(termin.sitzungsleitung)) return true;
-  if (me === normalizeName(termin.protokollfuehrung)) return true;
-  return false;
+  return !!session?.user?.id;
 }
 
 export function canEditTraktandum(
   session: SessionLike | null,
-  termin: TerminLike,
-  traktandum: TraktandumLike
+  _termin: TerminLike,
+  _traktandum: TraktandumLike
 ): boolean {
-  if (canEditTermin(session, termin)) return true;
-  return traktandum.createdById === session?.user?.id;
+  return !!session?.user?.id;
 }
