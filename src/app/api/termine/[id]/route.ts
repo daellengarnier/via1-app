@@ -141,6 +141,11 @@ export async function PATCH(
       data.date = combineDateTime(body.date, body.time);
     }
   }
+  // Explizit auf "Datum offen" (Placeholder) zuruecksetzen — nur wenn
+  // es eine Haussitzung ist, sonst ergibt es keinen Sinn.
+  if (body.date === null && existing.isHaussitzung) {
+    data.date = null;
+  }
 
   // Archiv-Toggle: archived=true setzt archivedAt=jetzt, =false setzt null
   if (typeof body.archived === "boolean") {

@@ -1095,6 +1095,40 @@ export default function TerminDetailPage() {
             />
           </div>
         )}
+        {termin.isHaussitzung && termin.date && (
+          <button
+            type="button"
+            onClick={async () => {
+              if (
+                !confirm(
+                  "Datum wirklich entfernen? Die Sitzung erscheint dann als 'Datum folgt'-Placeholder in der Termin-Uebersicht."
+                )
+              )
+                return;
+              try {
+                const res = await fetch(`/api/termine/${termin.id}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ date: null }),
+                });
+                if (!res.ok) {
+                  const data = (await res.json().catch(() => ({}))) as {
+                    error?: string;
+                  };
+                  alert(data.error ?? "Datum konnte nicht entfernt werden.");
+                  return;
+                }
+                loadTermin();
+              } catch (err) {
+                console.error("Datum entfernen", err);
+                alert("Datum konnte nicht entfernt werden.");
+              }
+            }}
+            className="mt-1 text-[10px] text-gray-500 underline hover:text-orange-300"
+          >
+            📌 Datum offen lassen (neu terminieren)
+          </button>
+        )}
         {termin.organizer && (
           <p className="mt-0.5 text-[10px] text-gray-600">
             organisiert von {termin.organizer}
