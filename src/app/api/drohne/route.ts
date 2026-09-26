@@ -20,6 +20,8 @@ import { notify } from "@/lib/notify";
 const SUNRISE_BY_MONTH = [8.0, 7.5, 6.5, 6.5, 5.5, 5.5, 5.5, 6.0, 7.0, 7.5, 7.5, 8.0];
 const SUNSET_BY_MONTH  = [17.0, 17.8, 19.0, 20.3, 21.0, 21.5, 21.5, 20.8, 19.8, 18.5, 16.8, 16.5];
 
+const MAX_FLIGHT_MS = 30 * 60 * 1000;
+
 function isDaylightInBern(): boolean {
   const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone: "Europe/Zurich",
@@ -52,6 +54,17 @@ export async function GET() {
     });
     return NextResponse.json({ flight: null });
   }
+
+  // Auto-Landung: Flights laufen maximal MAX_FLIGHT_MS, danach werden
+  // sie serverseitig beendet — sonst kreist eine vergessene Drohne bis
+  // Sonnenuntergang ueber allen Homescreens.
+  await prisma.droneFlight.updateMany({
+    where: {
+      endedAt: null,
+      startedAt: { lt: new Date(Date.now() - MAX_FLIGHT_MS) },
+    },
+    data: { endedAt: new Date() },
+  });
 
   const flight = await prisma.droneFlight.findFirst({
     where: { endedAt: null },

@@ -68,6 +68,12 @@ const MEHR_ITEMS: MehrItem[] = [
 
 const PINS_KEY = "via1-mehr-pins";
 
+interface DroneMenuFlight {
+  id: string;
+  isMine: boolean;
+  startedBy: { id: string; name: string };
+}
+
 interface Notification {
   id: string;
   kind: string;
@@ -104,6 +110,8 @@ export function HamburgerMenu() {
   const [hasKaffeeAbo, setHasKaffeeAbo] = useState(false);
   const [topScore, setTopScore] = useState<number | null>(null);
   const [snakeTopScore, setSnakeTopScore] = useState<number | null>(null);
+  const [droneFlight, setDroneFlight] = useState<DroneMenuFlight | null>(null);
+  const [droneBusy, setDroneBusy] = useState(false);
   const notifCount = notifications.length;
 
   // Kaffee-Abo Status vom Profil laden
@@ -122,7 +130,63 @@ export function HamburgerMenu() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // Drohnen-Status nur laden wenn das Menu offen ist — dort sitzt der
+  // einzige Start/Stop-Trigger (bewusst kein Easter-Egg mehr, das hat
+  // zu Fehlstarts gefuehrt).
+  const loadDrone = async () => {
+    try {
+      const res = await fetch("/api/drohne", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as { flight: DroneMenuFlight | null };
+      setDroneFlight(data.flight);
+    } catch {
+      // ignore
+    }
+  };
+  useEffect(() => {
+    if (open) loadDrone();
   }, [open]);
+
+  async function startDrone() {
+    if (
+      !confirm(
+        "Drohne für alle starten? Sie erscheint auf jedem Homescreen und alle Bewohner:innen bekommen eine Mitteilung. Landet automatisch nach 30 Minuten."
+      )
+    ) {
+      return;
+    }
+    setDroneBusy(true);
+    try {
+      const res = await fetch("/api/drohne", { method: "POST" });
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(d.error ?? "Drohne konnte nicht gestartet werden.");
+        return;
+      }
+      await loadDrone();
+      window.dispatchEvent(new CustomEvent("via1:drone-changed"));
+    } finally {
+      setDroneBusy(false);
+    }
+  }
+
+  async function stopDrone() {
+    setDroneBusy(true);
+    try {
+      const res = await fetch("/api/drohne/stop", { method: "POST" });
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(d.error ?? "Drohne konnte nicht gelandet werden.");
+        return;
+      }
+      setDroneFlight(null);
+      window.dispatchEvent(new CustomEvent("via1:drone-changed"));
+    } finally {
+      setDroneBusy(false);
+    }
+  }
 
   // Highscores laden — Tetris + Snake getrennt
   useEffect(() => {
@@ -157,8 +221,10 @@ export function HamburgerMenu() {
   };
   useEffect(() => {
     loadNotifications();
-    // Alle 60s pollen
-    const id = setInterval(loadNotifications, 60000);
+    // Alle 60s pollen — nicht im Hintergrund-Tab
+    const id = setInterval(() => {
+      if (!document.hidden) loadNotifications();
+    }, 60000);
     return () => clearInterval(id);
   }, []);
 
@@ -218,7 +284,7 @@ export function HamburgerMenu() {
         {aufgabeDetailMatch && (
           <button
             onClick={() => router.push("/aufgaben")}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-accent"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/85 transition-colors hover:border-accent"
             aria-label="Zurück zur Aufgabenübersicht"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5">
@@ -228,7 +294,7 @@ export function HamburgerMenu() {
         )}
         <button
           onClick={() => setShowNotifs(!showNotifs)}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-accent"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/85 transition-colors hover:border-accent"
           aria-label="Benachrichtigungen"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5">
@@ -245,7 +311,7 @@ export function HamburgerMenu() {
         {/* Game Badge — neben der Glocke */}
         <button
           onClick={() => (window.location.href = "/tetris")}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-accent"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/85 transition-colors hover:border-accent"
           aria-label="Block-Puzzle spielen"
           title={
             topScore && topScore > 0
@@ -269,7 +335,7 @@ export function HamburgerMenu() {
           href="https://pay.raisenow.io/mpmxz"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-secondary"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/85 transition-colors hover:border-secondary"
           aria-label="Spinnerei bezahlen (TWINT)"
           title="Spinnerei bezahlen (TWINT)"
         >
@@ -303,7 +369,7 @@ export function HamburgerMenu() {
         href="https://pay.raisenow.io/hzqxq"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed right-28 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-secondary"
+        className="fixed right-28 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/85 transition-colors hover:border-secondary"
         aria-label="Verein Uuh bezahlen (TWINT)"
         title="Verein Uuh bezahlen (TWINT)"
       >
@@ -334,7 +400,7 @@ export function HamburgerMenu() {
       {/* Snake Badge — direkt links vom Hamburger */}
       <button
         onClick={() => (window.location.href = "/snake")}
-        className="fixed right-16 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-cyan-400"
+        className="fixed right-16 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/85 transition-colors hover:border-cyan-400"
         aria-label="Snake spielen"
         title={
           snakeTopScore && snakeTopScore > 0
@@ -356,7 +422,7 @@ export function HamburgerMenu() {
       {/* Hamburger Button — RECHTS */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed right-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/80 backdrop-blur-sm transition-colors hover:border-accent"
+        className="fixed right-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/85 transition-colors hover:border-accent"
         aria-label="Menu öffnen"
       >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -571,6 +637,37 @@ export function HamburgerMenu() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Drohne — einziger Start/Stop-Trigger */}
+          <div className="mb-3 rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+            {droneFlight ? (
+              <>
+                <p className="text-xs text-gray-300">
+                  🚁 Drohne fliegt · gestartet von{" "}
+                  <span className="text-white">{droneFlight.startedBy.name}</span>
+                </p>
+                {(droneFlight.isMine || isAdmin) && (
+                  <button
+                    type="button"
+                    onClick={stopDrone}
+                    disabled={droneBusy}
+                    className="mt-2 w-full rounded border border-gray-600 py-1.5 font-display text-[10px] font-bold uppercase tracking-widest text-gray-200 transition-colors hover:border-accent hover:text-white disabled:opacity-40"
+                  >
+                    Drohne landen
+                  </button>
+                )}
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={startDrone}
+                disabled={droneBusy}
+                className="w-full rounded border border-gray-700 py-1.5 font-display text-[10px] font-bold uppercase tracking-widest text-gray-400 transition-colors hover:border-accent hover:text-white disabled:opacity-40"
+              >
+                🚁 Drohne starten
+              </button>
+            )}
           </div>
 
           {/* Feedback */}

@@ -14,28 +14,6 @@ function CheckIcon() {
   return <span className="text-lg leading-none">✓</span>;
 }
 
-function EinkaufIcon() {
-  // Einkaufskorb (Line-Art, monochrom) — etwas groesser
-  return (
-    <svg
-      width="24"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="-mt-0.5"
-    >
-      {/* Bügel */}
-      <path d="M7 10V8a5 5 0 0110 0v2" />
-      {/* Korb */}
-      <path d="M4 10h16l-1.5 9a2 2 0 01-2 1.7H7.5a2 2 0 01-2-1.7L4 10z" />
-    </svg>
-  );
-}
-
 function KalenderIcon() {
   return (
     <svg
@@ -111,7 +89,6 @@ const navItems: NavItem[] = [
   { href: "/", label: "HOME", icon: <HomeIcon /> },
   { href: "/termine", label: "TERMINE", icon: <KalenderIcon /> },
   { href: "/aufgaben", label: "AUFGABEN", icon: <CheckIcon /> },
-  { href: "/einkauf", label: "BESCHAFFUNG", icon: <EinkaufIcon /> },
   { href: "/aktivitaeten", label: "AKTIVITÄT", icon: <AktivitaetIcon /> },
   { href: "/meine-wg", label: "MEINE WG", icon: <HausIcon /> },
 ];

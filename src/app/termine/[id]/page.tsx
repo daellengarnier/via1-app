@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { jsPDF } from "jspdf";
+import type { jsPDF } from "jspdf";
 import { RichNotes } from "@/components/RichNotes";
 import { renderMarkdown } from "@/lib/markdown-light";
 
@@ -606,8 +606,11 @@ export default function TerminDetailPage() {
   // Cremfarbener Hintergrund, dunkles Teal als Hauptlinie, bunte
   // Akzent-Kreise als Trenner. Ruft KEINE Side-Effects auf — der
   // Caller entscheidet ob er download/preview/archive macht.
-  function buildPdfDoc(): jsPDF | null {
+  async function buildPdfDoc(): Promise<jsPDF | null> {
     if (!termin) return null;
+    // jsPDF (~140 kB) erst laden, wenn wirklich ein PDF gebaut wird —
+    // sonst zahlt jeder Termin-Aufruf den Download.
+    const { jsPDF } = await import("jspdf");
 
     const doc = new jsPDF({
       unit: "mm",
@@ -930,22 +933,28 @@ export default function TerminDetailPage() {
     return doc;
   }
 
-  function downloadPdf() {
-    const doc = buildPdfDoc();
+  async function downloadPdf() {
+    const doc = await buildPdfDoc();
     if (!doc || !termin) return;
     doc.save(`${termin.title.replace(/\s+/g, "_")}_Protokoll.pdf`);
   }
 
-  function previewPdf() {
-    const doc = buildPdfDoc();
-    if (!doc) return;
-    // Blob-URL erzeugen und in neuem Tab oeffnen — Browser zeigt
-    // das PDF inline an, kein Download.
+  async function previewPdf() {
+    // Fenster synchron im Klick-Handler oeffnen — nach dem await wuerde
+    // Safari das window.open als Pop-up blocken.
+    const win = window.open("", "_blank");
+    const doc = await buildPdfDoc();
+    if (!doc) {
+      win?.close();
+      return;
+    }
+    // Blob-URL erzeugen und im Tab anzeigen — Browser zeigt das PDF
+    // inline an, kein Download.
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
-    const win = window.open(url, "_blank");
+    if (win) win.location.href = url;
     // Falls Pop-up geblockt: fallback in current tab
-    if (!win) window.location.href = url;
+    else window.location.href = url;
     // URL nach kurzer Zeit wieder freigeben
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
@@ -962,7 +971,7 @@ export default function TerminDetailPage() {
     ) {
       return;
     }
-    const doc = buildPdfDoc();
+    const doc = await buildPdfDoc();
     if (!doc) return;
     setArchiving(true);
     try {

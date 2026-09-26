@@ -443,8 +443,12 @@ export function LaundryTimers({
 
   useEffect(() => {
     load();
-    const poll = window.setInterval(load, 30_000);
-    const tick = window.setInterval(() => setNow(Date.now()), 1000);
+    const poll = window.setInterval(() => {
+      if (!document.hidden) load();
+    }, 60_000);
+    const tick = window.setInterval(() => {
+      if (!document.hidden) setNow(Date.now());
+    }, 1000);
     return () => {
       window.clearInterval(poll);
       window.clearInterval(tick);
