@@ -3,11 +3,43 @@
 import { useRef, useState, type ReactNode } from "react";
 import {
   HOME_BLOCK_LABELS,
+  KOCHPLAN_DAYS,
   LIST_COUNTS,
   type HomeBlockId,
   type HomeLayout,
+  type KochplanDays,
   type ListCount,
 } from "@/lib/home-layout";
+
+// Bloecke mit einer waehlbaren Anzahl (Eintraege bzw. Tage).
+const COUNT_CONFIG: Partial<
+  Record<
+    HomeBlockId,
+    {
+      options: readonly number[];
+      unit?: string;
+      get: (l: HomeLayout) => number;
+      set: (l: HomeLayout, v: number) => HomeLayout;
+    }
+  >
+> = {
+  termin: {
+    options: LIST_COUNTS,
+    get: (l) => l.termineCount,
+    set: (l, v) => ({ ...l, termineCount: v as ListCount }),
+  },
+  aktivitaet: {
+    options: LIST_COUNTS,
+    get: (l) => l.aktivitaetenCount,
+    set: (l, v) => ({ ...l, aktivitaetenCount: v as ListCount }),
+  },
+  kochen: {
+    options: KOCHPLAN_DAYS,
+    unit: "Tage",
+    get: (l) => l.kochplanDays,
+    set: (l, v) => ({ ...l, kochplanDays: v as KochplanDays }),
+  },
+};
 
 export type BlockSize = "half" | "third" | "full";
 
@@ -105,12 +137,9 @@ export function HomeLayoutGrid({ layout, blocks, editMode, onChange }: Props) {
     });
   }
 
-  function setCount(id: "termin" | "aktivitaet", count: ListCount) {
-    onChange(
-      id === "termin"
-        ? { ...layout, termineCount: count }
-        : { ...layout, aktivitaetenCount: count }
-    );
+  function setCount(id: HomeBlockId, value: number) {
+    const cfg = COUNT_CONFIG[id];
+    if (cfg) onChange(cfg.set(layout, value));
   }
 
   // --- Drag & Drop ---
@@ -162,8 +191,8 @@ export function HomeLayoutGrid({ layout, blocks, editMode, onChange }: Props) {
   function frame(id: HomeBlockId, node: ReactNode) {
     if (!editMode) return node;
     const idx = visible.indexOf(id);
-    const countable = id === "termin" || id === "aktivitaet";
-    const count = id === "termin" ? layout.termineCount : layout.aktivitaetenCount;
+    const countCfg = COUNT_CONFIG[id];
+    const count = countCfg ? countCfg.get(layout) : null;
     const isDragging = drag?.id === id;
     const isOver = drag?.overId === id;
     return (
@@ -193,9 +222,9 @@ export function HomeLayoutGrid({ layout, blocks, editMode, onChange }: Props) {
             <span className="text-sm leading-none text-accent">⠿</span>
             <span className="truncate">{HOME_BLOCK_LABELS[id]}</span>
           </button>
-          {countable && (
+          {countCfg && (
             <span className="flex items-center gap-0.5">
-              {LIST_COUNTS.map((c) => (
+              {countCfg.options.map((c) => (
                 <button
                   key={c}
                   type="button"
@@ -205,11 +234,16 @@ export function HomeLayoutGrid({ layout, blocks, editMode, onChange }: Props) {
                       ? "bg-accent text-dark"
                       : "border border-gray-700 text-gray-400"
                   }`}
-                  title={`${c} anzeigen`}
+                  title={`${c} ${countCfg.unit ?? "anzeigen"}`}
                 >
                   {c}
                 </button>
               ))}
+              {countCfg.unit && (
+                <span className="ml-0.5 font-mono text-[9px] text-gray-500">
+                  {countCfg.unit}
+                </span>
+              )}
             </span>
           )}
           <button

@@ -1199,7 +1199,10 @@ export default function HomeScreen() {
     "divider-1": { size: "full", render: () => renderDivider("1") },
     "divider-2": { size: "full", render: () => renderDivider("2") },
     "divider-3": { size: "full", render: () => renderDivider("3") },
-    kochen: { size: "full", render: () => <WgKochenTile /> },
+    kochen: {
+      size: "full",
+      render: () => <WgKochenTile days={layout.kochplanDays} />,
+    },
     kaffee: { size: "half", render: renderKaffee, available: hasKaffeeAbo },
     spinnerei: { size: "half", render: renderSpinnerei },
     pinnwand: { size: "full", render: renderPinnwand },
