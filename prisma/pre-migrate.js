@@ -48,6 +48,8 @@ const ENSURE_SQL = [
   `ALTER TABLE "termine" ADD COLUMN IF NOT EXISTS "audienceType" TEXT NOT NULL DEFAULT 'ALL'`,
   ...m2m("_TerminAudienceUsers", "termine", "users"),
   ...m2m("_TerminAudienceWgs", "termine", "Wg"),
+  // 0100
+  `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "homeLayout" JSONB`,
 ];
 
 async function main() {
