@@ -133,6 +133,7 @@ model User {
   notifications        Notification[]
   pushSubscriptions    PushSubscription[]
   createdActivities    Activity[]            @relation("ActivityCreator")
+  audienceActivities   Activity[]            @relation("ActivityAudienceUsers")
   activityParticipations ActivityParticipant[]
   activityComments     ActivityComment[]
   reportedDamages      RoomDamage[]          @relation("DamageReporter")
@@ -640,6 +641,11 @@ model Activity {
   startAt      DateTime
   // Serien-ID fuer wiederkehrende Aktivitaeten (null = einmalig)
   recurrenceGroupId String?
+  // Sichtbarkeit: "ALL" (Standard) | "WGS" (nur audienceWgs-Mitglieder)
+  // | "USERS" (nur audienceUsers). Der Ersteller sieht sie immer.
+  audienceType  String                @default("ALL")
+  audienceUsers User[]                @relation("ActivityAudienceUsers")
+  audienceWgs   Wg[]                  @relation("ActivityAudienceWgs")
   createdBy    User                  @relation("ActivityCreator", fields: [createdById], references: [id])
   createdById  String
   participants ActivityParticipant[]
@@ -778,6 +784,7 @@ model Wg {
   doodles             WgDoodle[]
   pinnwandNotes       WgPinnwandNote[]
   guests              WgGuest[]
+  audienceActivities  Activity[]            @relation("ActivityAudienceWgs")
   haussitzungen       Termin[]              @relation("HaussitzungResponsible")
   haussitzungRotation HaussitzungRotation?  @relation("HaussitzungRotationWg")
   lastVisitedByUsers  User[]                @relation("UserLastVisitedWg")

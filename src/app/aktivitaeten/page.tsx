@@ -19,6 +19,14 @@ interface Comment {
   date: string;
 }
 
+type AudienceType = "ALL" | "WGS" | "USERS";
+
+interface Audience {
+  type: AudienceType;
+  users: { id: string; name: string }[];
+  wgs: { id: string; name: string }[];
+}
+
 interface Activity {
   id: string;
   title: string;
@@ -26,6 +34,7 @@ interface Activity {
   location: string;
   startAt: string; // ISO
   recurrenceGroupId: string | null;
+  audience?: Audience;
   createdBy: string;
   createdById: string;
   participants: Participant[];
@@ -135,6 +144,17 @@ export default function AktivitaetenPage() {
   const [editingActivityId, setEditingActivityId] = useState<string | null>(
     null
   );
+  // Publikum: Alle (Standard), bestimmte WGs oder bestimmte Personen
+  const [audienceType, setAudienceType] = useState<AudienceType>("ALL");
+  const [audienceWgIds, setAudienceWgIds] = useState<string[]>([]);
+  const [audienceUserIds, setAudienceUserIds] = useState<string[]>([]);
+  const [wgOptions, setWgOptions] = useState<{ id: string; name: string }[]>(
+    []
+  );
+  const [userOptions, setUserOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [userSearch, setUserSearch] = useState("");
 
   const loadActivities = useCallback(async () => {
     try {
@@ -151,9 +171,45 @@ export default function AktivitaetenPage() {
 
   useEffect(() => {
     loadActivities();
-    const id = setInterval(loadActivities, 60000);
+    const id = setInterval(() => {
+      if (!document.hidden) loadActivities();
+    }, 60000);
     return () => clearInterval(id);
   }, [loadActivities]);
+
+  // WG- und Personen-Listen erst laden, wenn das Formular offen ist.
+  useEffect(() => {
+    if (!showCreate) return;
+    if (wgOptions.length === 0) {
+      fetch("/api/wgs")
+        .then((r) => (r.ok ? r.json() : []))
+        .then((d: { id: string; name: string }[]) => setWgOptions(d))
+        .catch(() => {});
+    }
+    if (userOptions.length === 0) {
+      fetch("/api/users")
+        .then((r) => (r.ok ? r.json() : []))
+        .then((d: { id: string; name: string }[]) =>
+          setUserOptions(d.map((u) => ({ id: u.id, name: u.name })))
+        )
+        .catch(() => {});
+    }
+  }, [showCreate, wgOptions.length, userOptions.length]);
+
+  function audiencePayload() {
+    return {
+      type: audienceType,
+      wgIds: audienceType === "WGS" ? audienceWgIds : [],
+      userIds: audienceType === "USERS" ? audienceUserIds : [],
+    };
+  }
+
+  function resetAudience() {
+    setAudienceType("ALL");
+    setAudienceWgIds([]);
+    setAudienceUserIds([]);
+    setUserSearch("");
+  }
 
   async function createActivity() {
     const template = TEMPLATES.find((t) => t.id === selectedTemplate);
@@ -201,9 +257,13 @@ export default function AktivitaetenPage() {
           recurrence,
           recurrenceCount:
             recurrence === "NONE" ? 1 : Math.max(1, recurrenceCount),
+          audience: audiencePayload(),
         }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error ?? `HTTP ${res.status}`);
+      }
       // Bei Serie ist die Response nur die erste Instanz — darum
       // refetchen wir die Liste, um alle neuen Instanzen zu bekommen
       if (recurrence !== "NONE") {
@@ -227,9 +287,14 @@ export default function AktivitaetenPage() {
       setQuickTimeMinutes(0);
       setRecurrence("NONE");
       setRecurrenceCount(1);
+      resetAudience();
     } catch (err) {
       console.error("Activity erstellen", err);
-      alert("Konnte Aktivität nicht erstellen.");
+      alert(
+        err instanceof Error && err.message && !err.message.startsWith("HTTP")
+          ? err.message
+          : "Konnte Aktivität nicht erstellen."
+      );
     }
   }
 
@@ -310,6 +375,9 @@ export default function AktivitaetenPage() {
     );
     setQuickTimeMinutes(null);
     setRecurrence("NONE");
+    setAudienceType(a.audience?.type ?? "ALL");
+    setAudienceWgIds(a.audience?.wgs.map((w) => w.id) ?? []);
+    setAudienceUserIds(a.audience?.users.map((u) => u.id) ?? []);
     setShowCreate(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -335,9 +403,13 @@ export default function AktivitaetenPage() {
           description: customDescription,
           location: customLocation,
           startAt,
+          audience: audiencePayload(),
         }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error ?? `HTTP ${res.status}`);
+      }
       const updated = (await res.json()) as Activity;
       setActivities((prev) =>
         prev
@@ -351,9 +423,14 @@ export default function AktivitaetenPage() {
       setCustomLocation("");
       setCustomTime("");
       setCustomDate("");
+      resetAudience();
     } catch (err) {
       console.error("Activity bearbeiten", err);
-      alert("Konnte Aktivität nicht speichern.");
+      alert(
+        err instanceof Error && err.message && !err.message.startsWith("HTTP")
+          ? err.message
+          : "Konnte Aktivität nicht speichern."
+      );
     }
   }
 
@@ -581,6 +658,110 @@ export default function AktivitaetenPage() {
             </div>
           )}
 
+          {/* Publikum */}
+          <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-blue-300">
+            WER SIEHT&apos;S?
+          </p>
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {(
+              [
+                ["ALL", "Alle"],
+                ["WGS", "Bestimmte WGs"],
+                ["USERS", "Bestimmte Personen"],
+              ] as [AudienceType, string][]
+            ).map(([t, label]) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setAudienceType(t)}
+                className={`rounded-full px-3 py-1 font-mono text-[10px] font-bold transition-colors ${
+                  audienceType === t
+                    ? "bg-blue-400 text-dark"
+                    : "border border-gray-700 text-gray-400"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {audienceType === "WGS" && (
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {wgOptions.map((w) => {
+                const on = audienceWgIds.includes(w.id);
+                return (
+                  <button
+                    key={w.id}
+                    type="button"
+                    onClick={() =>
+                      setAudienceWgIds((prev) =>
+                        on ? prev.filter((x) => x !== w.id) : [...prev, w.id]
+                      )
+                    }
+                    className={`rounded border px-2.5 py-1 text-xs transition-colors ${
+                      on
+                        ? "border-blue-400 bg-blue-400/20 text-blue-200"
+                        : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
+                    }`}
+                  >
+                    {on ? "✓ " : ""}
+                    {w.name}
+                  </button>
+                );
+              })}
+              {wgOptions.length === 0 && (
+                <p className="text-xs text-gray-600">Lade WGs …</p>
+              )}
+            </div>
+          )}
+          {audienceType === "USERS" && (
+            <div className="mb-3">
+              <input
+                type="text"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                placeholder="Name suchen …"
+                className="mb-2 w-full rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-blue-400 focus:outline-none"
+              />
+              <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
+                {userOptions
+                  .filter(
+                    (u) =>
+                      u.id !== session?.user?.id &&
+                      (!userSearch ||
+                        u.name.toLowerCase().includes(userSearch.toLowerCase()))
+                  )
+                  .map((u) => {
+                    const on = audienceUserIds.includes(u.id);
+                    return (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() =>
+                          setAudienceUserIds((prev) =>
+                            on
+                              ? prev.filter((x) => x !== u.id)
+                              : [...prev, u.id]
+                          )
+                        }
+                        className={`rounded border px-2.5 py-1 text-xs transition-colors ${
+                          on
+                            ? "border-blue-400 bg-blue-400/20 text-blue-200"
+                            : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
+                        }`}
+                      >
+                        {on ? "✓ " : ""}
+                        {u.name}
+                      </button>
+                    );
+                  })}
+              </div>
+              <p className="mt-1 text-[10px] text-gray-500">
+                {audienceUserIds.length} ausgewählt · du selbst siehst sie
+                immer
+              </p>
+            </div>
+          )}
+
           <div className="flex gap-2">
             <button
               onClick={
@@ -665,6 +846,14 @@ export default function AktivitaetenPage() {
                       </span>
                     )}
                   </p>
+                  {a.audience && a.audience.type !== "ALL" && (
+                    <p className="mt-0.5 text-[10px] text-blue-300/80">
+                      🔒 nur{" "}
+                      {a.audience.type === "WGS"
+                        ? a.audience.wgs.map((w) => w.name).join(", ")
+                        : a.audience.users.map((u) => u.name).join(", ")}
+                    </p>
+                  )}
                 </div>
                 {isOwn && (
                   <button

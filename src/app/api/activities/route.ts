@@ -4,6 +4,15 @@ import { randomBytes } from "crypto";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notify";
+import {
+  AUDIENCE_INCLUDE,
+  audienceCreateData,
+  getMyWgIds,
+  normalizeAudience,
+  resolveAudienceUserIds,
+  serializeAudience,
+  visibleActivityWhere,
+} from "@/lib/activity-audience";
 
 type Recurrence = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY";
 
@@ -31,10 +40,15 @@ export async function GET() {
   const oneHourAgo = new Date();
   oneHourAgo.setHours(oneHourAgo.getHours() - 1);
 
+  const myWgIds = await getMyWgIds(session.user.id);
   const activities = await prisma.activity.findMany({
-    where: { startAt: { gte: oneHourAgo } },
+    where: {
+      startAt: { gte: oneHourAgo },
+      ...visibleActivityWhere(session.user.id, myWgIds),
+    },
     orderBy: { startAt: "asc" },
     include: {
+      ...AUDIENCE_INCLUDE,
       createdBy: { select: { id: true, name: true } },
       participants: {
         include: { user: { select: { id: true, name: true } } },
@@ -64,6 +78,7 @@ export async function GET() {
       location: a.location,
       startAt: a.startAt.toISOString(),
       recurrenceGroupId: a.recurrenceGroupId,
+      audience: serializeAudience(a),
       createdBy: a.createdBy.name,
       createdById: a.createdBy.id,
       participants: a.participants.map((p) => ({
@@ -102,7 +117,14 @@ export async function POST(req: Request) {
     startAt?: unknown;
     recurrence?: unknown;
     recurrenceCount?: unknown;
+    audience?: unknown;
   };
+
+  const audienceResult = await normalizeAudience(body.audience);
+  if (!audienceResult.ok) {
+    return NextResponse.json({ error: audienceResult.error }, { status: 400 });
+  }
+  const audience = audienceResult.value;
 
   const title = typeof body.title === "string" ? body.title.trim() : "";
   const description =
@@ -148,6 +170,7 @@ export async function POST(req: Request) {
       startAt,
       recurrenceGroupId,
       createdById: session.user.id,
+      ...audienceCreateData(audience),
       participants: {
         create: {
           userId: session.user.id,
@@ -156,6 +179,7 @@ export async function POST(req: Request) {
       },
     },
     include: {
+      ...AUDIENCE_INCLUDE,
       createdBy: { select: { id: true, name: true } },
       participants: {
         include: { user: { select: { id: true, name: true } } },
@@ -175,6 +199,7 @@ export async function POST(req: Request) {
           startAt: nextDate,
           recurrenceGroupId,
           createdById: session.user.id,
+          ...audienceCreateData(audience),
           participants: {
             create: {
               userId: session.user.id,
@@ -206,7 +231,7 @@ export async function POST(req: Request) {
       description ? " · " + description : ""
     }`,
     link: "/aktivitaeten",
-    audience: "all",
+    audience: await resolveAudienceUserIds(first),
     excludeUserId: session.user.id,
   }).catch((e) => console.error("notify", e));
 
@@ -217,6 +242,7 @@ export async function POST(req: Request) {
     location: first.location,
     startAt: first.startAt.toISOString(),
     recurrenceGroupId: first.recurrenceGroupId,
+    audience: serializeAudience(first),
     createdBy: first.createdBy.name,
     createdById: first.createdBy.id,
     participants: first.participants.map((p) => ({

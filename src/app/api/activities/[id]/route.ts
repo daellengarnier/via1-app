@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  AUDIENCE_INCLUDE,
+  audienceUpdateData,
+  normalizeAudience,
+  serializeAudience,
+} from "@/lib/activity-audience";
 
 // PATCH /api/activities/[id] — eigene Aktivitaet bearbeiten
 export async function PATCH(
@@ -28,8 +34,19 @@ export async function PATCH(
     description?: unknown;
     location?: unknown;
     startAt?: unknown;
+    audience?: unknown;
   };
   const data: Record<string, unknown> = {};
+  if (body.audience !== undefined) {
+    const audienceResult = await normalizeAudience(body.audience);
+    if (!audienceResult.ok) {
+      return NextResponse.json(
+        { error: audienceResult.error },
+        { status: 400 }
+      );
+    }
+    Object.assign(data, audienceUpdateData(audienceResult.value));
+  }
   if (typeof body.title === "string" && body.title.trim()) {
     data.title = body.title.trim();
   }
@@ -48,6 +65,7 @@ export async function PATCH(
     where: { id: params.id },
     data,
     include: {
+      ...AUDIENCE_INCLUDE,
       createdBy: { select: { id: true, name: true } },
       participants: {
         include: { user: { select: { id: true, name: true } } },
@@ -68,6 +86,7 @@ export async function PATCH(
     location: updated.location,
     startAt: updated.startAt.toISOString(),
     recurrenceGroupId: updated.recurrenceGroupId,
+    audience: serializeAudience(updated),
     createdBy: updated.createdBy.name,
     createdById: updated.createdBy.id,
     participants: updated.participants.map((p) => ({

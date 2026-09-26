@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notify";
+import { canSeeActivity } from "@/lib/activity-audience";
 
 // PUT /api/activities/[id]/participation
 // Body: { status: "going" | "not-going" | null }
@@ -18,7 +19,7 @@ export async function PUT(
   const activity = await prisma.activity.findUnique({
     where: { id: params.id },
   });
-  if (!activity) {
+  if (!activity || !(await canSeeActivity(activity.id, session.user.id))) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
