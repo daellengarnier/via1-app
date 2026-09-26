@@ -11,6 +11,14 @@ import {
 } from "@/lib/termine-serialize";
 import { notify } from "@/lib/notify";
 import { ensureNextHaussitzungPlaceholder } from "@/lib/haussitzung-rotation";
+import {
+  AUDIENCE_INCLUDE,
+  audienceCreateData,
+  getMyWgIds,
+  normalizeAudience,
+  resolveAudienceUserIds,
+  visibleTerminWhere,
+} from "@/lib/audience";
 
 // GET /api/termine?archived=true&false
 // Filter: archived=true zeigt nur archivierte Termine,
@@ -32,11 +40,16 @@ export async function GET(req: Request) {
     console.error("ensureNextHaussitzungPlaceholder", err);
   });
 
+  const myWgIds = await getMyWgIds(session.user.id);
   const termine = await prisma.termin.findMany({
-    where: showArchived ? { archivedAt: { not: null } } : { archivedAt: null },
+    where: {
+      ...(showArchived ? { archivedAt: { not: null } } : { archivedAt: null }),
+      ...visibleTerminWhere(session.user.id, myWgIds),
+    },
     // Platzhalter (date IS NULL) zuerst, dann nach Datum absteigend
     orderBy: [{ date: { sort: "desc", nulls: "first" } }],
     include: {
+      ...AUDIENCE_INCLUDE,
       _count: { select: { traktanden: true, comments: true } },
       createdBy: { select: { name: true } },
       attendances: true,
@@ -105,7 +118,14 @@ export async function POST(req: Request) {
     dinnerMenu?: unknown;
     withAttendance?: unknown;
     editorIds?: unknown;
+    audience?: unknown;
   };
+
+  const audienceResult = await normalizeAudience(body.audience);
+  if (!audienceResult.ok) {
+    return NextResponse.json({ error: audienceResult.error }, { status: 400 });
+  }
+  const audience = audienceResult.value;
 
   const title = typeof body.title === "string" ? body.title.trim() : "";
   const date = typeof body.date === "string" ? body.date : "";
@@ -170,11 +190,13 @@ export async function POST(req: Request) {
       dinnerMenu,
       withAttendance,
       createdById: session.user.id,
+      ...audienceCreateData(audience),
       ...(editorIds.length > 0 && {
         editors: { connect: editorIds.map((id) => ({ id })) },
       }),
     },
     include: {
+      ...AUDIENCE_INCLUDE,
       _count: { select: { traktanden: true, comments: true } },
       createdBy: { select: { name: true } },
       attendances: {
@@ -199,7 +221,7 @@ export async function POST(req: Request) {
     title: `${labelByType[type]}: ${title}`,
     body: `${dateHuman} · ${time}${location ? ` · ${location}` : ""}`,
     link: `/termine/${termin.id}`,
-    audience: "all",
+    audience: await resolveAudienceUserIds(termin),
     excludeUserId: session.user.id,
   }).catch((e) => console.error("notify", e));
 

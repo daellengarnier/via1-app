@@ -8,8 +8,15 @@ import {
   combineDateTime,
   serializeTerminDetail,
 } from "@/lib/termine-serialize";
+import {
+  AUDIENCE_INCLUDE,
+  audienceUpdateData,
+  canSeeTermin,
+  normalizeAudience,
+} from "@/lib/audience";
 
 const terminDetailInclude = {
+  ...AUDIENCE_INCLUDE,
   createdBy: true,
   editors: true,
   traktanden: {
@@ -38,6 +45,9 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (!(await canSeeTermin(params.id, session.user.id))) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
   const termin = await prisma.termin.findUnique({
     where: { id: params.id },
     include: terminDetailInclude,
@@ -92,6 +102,17 @@ export async function PATCH(
     }
   }
   const data: Record<string, unknown> = {};
+
+  if (body.audience !== undefined) {
+    const audienceResult = await normalizeAudience(body.audience);
+    if (!audienceResult.ok) {
+      return NextResponse.json(
+        { error: audienceResult.error },
+        { status: 400 }
+      );
+    }
+    Object.assign(data, audienceUpdateData(audienceResult.value));
+  }
 
   if (typeof body.title === "string") data.title = body.title.trim();
   if (typeof body.location === "string") data.location = body.location.trim();
