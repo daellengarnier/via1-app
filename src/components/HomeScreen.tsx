@@ -14,6 +14,7 @@ import {
 } from "./DroneOverlay";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { usePutzplan } from "@/lib/putzplan-store";
+import { WgKochenTile } from "./WgKochenTile";
 
 interface ReactionSummary {
   emoji: string;
@@ -774,6 +775,9 @@ export default function HomeScreen() {
           </defs>
         </svg>
       </div>
+
+      {/* Kochen heute in der eigenen WG (nur mit WG-Zuordnung) */}
+      <WgKochenTile />
 
       {/* Kaffee (nur für Abo) + Spinnerei — 2-Spalten */}
       {hasKaffeeAbo ? (
