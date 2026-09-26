@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWgAccess } from "@/lib/wg-access";
+import { USER_AVATAR_SELECT, withAvatarUrl } from "@/lib/avatar";
 
 interface PatchBody {
   title?: string;
@@ -28,7 +29,7 @@ export async function GET(
       },
       comments: {
         include: {
-          author: { select: { id: true, name: true, avatar: true } },
+          author: { select: USER_AVATAR_SELECT },
         },
         orderBy: { createdAt: "asc" },
       },
@@ -56,7 +57,7 @@ export async function GET(
     comments: t.comments.map((c) => ({
       id: c.id,
       text: c.text,
-      author: c.author,
+      author: withAvatarUrl(c.author),
       createdAt: c.createdAt.toISOString(),
     })),
   });

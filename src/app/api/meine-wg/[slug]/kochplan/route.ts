@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWgAccess, wgMemberFilter } from "@/lib/wg-access";
+import { USER_AVATAR_SELECT, withAvatarUrl } from "@/lib/avatar";
 import {
   addDaysUTC,
   effectiveKochDay,
@@ -30,16 +31,16 @@ export async function GET(
     prisma.wgKochEintrag.findMany({
       where: { wgId: access.wg.id, date: { gte: from, lte: to } },
       include: {
-        cook: { select: { id: true, name: true, avatar: true } },
+        cook: { select: USER_AVATAR_SELECT },
         createdBy: { select: { id: true, name: true } },
         signups: {
           include: {
-            user: { select: { id: true, name: true, avatar: true } },
+            user: { select: USER_AVATAR_SELECT },
           },
         },
         comments: {
           include: {
-            author: { select: { id: true, name: true, avatar: true } },
+            author: { select: USER_AVATAR_SELECT },
           },
           orderBy: { createdAt: "asc" },
         },
@@ -56,7 +57,7 @@ export async function GET(
     }),
     prisma.user.findMany({
       where: wgMemberFilter(access.wg.id),
-      select: { id: true, name: true, avatar: true },
+      select: USER_AVATAR_SELECT,
       orderBy: { name: "asc" },
     }),
   ]);
@@ -65,7 +66,7 @@ export async function GET(
     today: isoDate(today),
     from: isoDate(from),
     to: isoDate(to),
-    members,
+    members: members.map(withAvatarUrl),
     kinder: kinder.map((k) => ({
       id: k.id,
       name: k.name,
@@ -78,12 +79,12 @@ export async function GET(
       time: e.time,
       menu: e.menu,
       description: e.description,
-      cook: e.cook,
+      cook: withAvatarUrl(e.cook),
       createdBy: e.createdBy,
       createdAt: e.createdAt.toISOString(),
       signups: e.signups.map((s) => ({
         id: s.id,
-        user: s.user,
+        user: withAvatarUrl(s.user),
         status: s.status, // "going" | "declined"
         childrenIds: s.childrenIds,
         guests: s.guests,
@@ -91,7 +92,7 @@ export async function GET(
       })),
       comments: e.comments.map((c) => ({
         id: c.id,
-        author: c.author,
+        author: withAvatarUrl(c.author),
         text: c.text,
         createdAt: c.createdAt.toISOString(),
       })),

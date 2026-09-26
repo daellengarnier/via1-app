@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWgAccess, wgMemberFilter } from "@/lib/wg-access";
 import { summarizeReactions } from "@/lib/reactions";
+import { USER_AVATAR_SELECT, withAvatarUrl } from "@/lib/avatar";
 import {
   addDaysUTC,
   effectiveKochDay,
@@ -39,10 +40,10 @@ export async function GET(
     prisma.wgKochEintrag.findMany({
       where: { wgId: access.wg.id, date: { gte: today, lte: to } },
       include: {
-        cook: { select: { id: true, name: true, avatar: true } },
+        cook: { select: USER_AVATAR_SELECT },
         signups: {
           include: {
-            user: { select: { id: true, name: true, avatar: true } },
+            user: { select: USER_AVATAR_SELECT },
           },
         },
       },
@@ -54,7 +55,7 @@ export async function GET(
     }),
     prisma.user.findMany({
       where: wgMemberFilter(access.wg.id),
-      select: { id: true, name: true, avatar: true },
+      select: USER_AVATAR_SELECT,
       orderBy: { name: "asc" },
     }),
     prisma.wgEinkauf.findMany({
@@ -71,7 +72,7 @@ export async function GET(
     prisma.wgAemtliState.findUnique({
       where: { wgId: access.wg.id },
       include: {
-        lastDoneBy: { select: { id: true, name: true, avatar: true } },
+        lastDoneBy: { select: USER_AVATAR_SELECT },
       },
     }),
     prisma.user.findMany({
@@ -89,7 +90,7 @@ export async function GET(
     }),
     prisma.user.findMany({
       where: { AND: [wgMemberFilter(access.wg.id), { birthday: { not: null } }] },
-      select: { id: true, name: true, avatar: true, birthday: true },
+      select: { ...USER_AVATAR_SELECT, birthday: true },
     }),
     prisma.wgDoodle.findMany({
       where: { wgId: access.wg.id, finalizedAt: null },
@@ -103,7 +104,7 @@ export async function GET(
     prisma.wgPinnwandNote.findMany({
       where: { wgId: access.wg.id },
       include: {
-        author: { select: { id: true, name: true, avatar: true } },
+        author: { select: USER_AVATAR_SELECT },
         comments: { select: { id: true } },
         reactions: { select: { emoji: true, userId: true } },
       },
@@ -130,7 +131,7 @@ export async function GET(
       );
       if (daysUntil > 7) return null;
       return {
-        user: { id: m.id, name: m.name, avatar: m.avatar },
+        user: withAvatarUrl(m),
         date: next.toISOString().slice(0, 10),
         age: next.getFullYear() - m.birthday.getUTCFullYear(),
         daysUntil,
@@ -154,7 +155,7 @@ export async function GET(
   return NextResponse.json({
     koch: {
       today: isoDate(today),
-      members: kochMembers,
+      members: kochMembers.map(withAvatarUrl),
       kinder: kinder.map((k) => ({
         id: k.id,
         name: k.name,
@@ -167,9 +168,9 @@ export async function GET(
         time: e.time,
         menu: e.menu,
         description: e.description,
-        cook: e.cook,
+        cook: withAvatarUrl(e.cook),
         signups: e.signups.map((s) => ({
-          user: s.user,
+          user: withAvatarUrl(s.user),
           status: s.status,
           childrenIds: s.childrenIds,
           guests: s.guests,
@@ -190,7 +191,7 @@ export async function GET(
           rotationOrder: aemtliState.rotationOrder,
           currentIndex: aemtliState.currentIndex,
           currentUser: aemtliCurrentUser,
-          lastDoneBy: aemtliState.lastDoneBy,
+          lastDoneBy: withAvatarUrl(aemtliState.lastDoneBy),
           lastDoneAt: aemtliState.lastDoneAt?.toISOString() ?? null,
           checkedPflicht: aemtliState.checkedPflicht,
         }
@@ -218,7 +219,7 @@ export async function GET(
       id: n.id,
       text: n.text,
       color: n.color,
-      author: n.author,
+      author: withAvatarUrl(n.author),
       createdAt: n.createdAt.toISOString(),
       comments: n.comments,
       reactions: summarizeReactions(n.reactions, access.user.id),

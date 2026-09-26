@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notify";
+import { USER_AVATAR_SELECT, withAvatarUrl } from "@/lib/avatar";
 
 // API fuer die Drohne (3-Tap-Easter-Egg).
 //
@@ -70,7 +71,7 @@ export async function GET() {
     where: { endedAt: null },
     orderBy: { startedAt: "desc" },
     include: {
-      startedBy: { select: { id: true, name: true, avatar: true } },
+      startedBy: { select: USER_AVATAR_SELECT },
       complaints: {
         orderBy: { createdAt: "desc" },
         take: 10,
@@ -91,7 +92,7 @@ export async function GET() {
     flight: {
       id: flight.id,
       startedAt: flight.startedAt.toISOString(),
-      startedBy: flight.startedBy,
+      startedBy: withAvatarUrl(flight.startedBy),
       isMine: flight.startedById === me,
       complaints: flight.complaints.map((c) => ({
         id: c.id,

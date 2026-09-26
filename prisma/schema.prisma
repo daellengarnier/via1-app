@@ -77,6 +77,10 @@ model User {
   setupToken  String?   @unique
   passwordSet Boolean   @default(false)
   avatar      String?
+  // Cache-Stempel fuers Profilbild: null = kein Bild. Wird ueberall statt
+  // der Base64-Spalte selektiert, damit Listen-Endpoints klein bleiben;
+  // das Bild selbst kommt ueber /api/users/[id]/avatar?v=<stempel>.
+  avatarUpdatedAt DateTime?
   birthday    DateTime?
   diet        Diet?
   allergies   String?

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { summarizeReactions } from "@/lib/reactions";
+import { USER_AVATAR_SELECT, withAvatarUrl } from "@/lib/avatar";
 
 const VALID_KINDS = new Set(["liked", "want_to_try"]);
 
@@ -23,7 +24,7 @@ export async function GET() {
   const list = await prisma.kaffeeWunsch.findMany({
     orderBy: { createdAt: "desc" },
     include: {
-      createdBy: { select: { id: true, name: true, avatar: true } },
+      createdBy: { select: USER_AVATAR_SELECT },
       reactions: { select: { emoji: true, userId: true } },
     },
   });
@@ -37,7 +38,7 @@ export async function GET() {
       shopUrl: w.shopUrl,
       kind: w.kind,
       createdAt: w.createdAt.toISOString(),
-      createdBy: w.createdBy,
+      createdBy: withAvatarUrl(w.createdBy),
       reactions: summarizeReactions(w.reactions, meId),
     }))
   );

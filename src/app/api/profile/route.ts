@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { avatarUrl } from "@/lib/avatar";
 
 const dietToApi = (d: "FLEISCH" | "VEGI" | "VEGAN" | null): string => {
   if (!d) return "fleisch";
@@ -47,7 +48,7 @@ export async function GET() {
     room: user.room?.keyNumber ?? "",
     diet: dietToApi(user.diet ?? null),
     allergies: user.allergies ?? "",
-    profileImage: user.avatar,
+    profileImage: avatarUrl(user),
     hasKaffeeAbo: user.hasKaffeeAbo,
     favoriteAnimal: user.favoriteAnimal ?? "",
     notifications: {
@@ -104,15 +105,24 @@ export async function PATCH(req: Request) {
     data.diet = dietFromApi(body.diet);
   }
   if (typeof body.allergies === "string") data.allergies = body.allergies;
-  if (typeof body.profileImage === "string" || body.profileImage === null) {
-    const img = typeof body.profileImage === "string" ? body.profileImage : null;
-    if (img && img.length > 700_000) {
+  // Nur ein neues Bild (data:image/...) oder explizites null aendert
+  // den Avatar. Der Client schickt beim Speichern sonst die Avatar-URL
+  // aus dem GET zurueck — die darf nicht als Bild gespeichert werden.
+  if (body.profileImage === null) {
+    data.avatar = null;
+    data.avatarUpdatedAt = null;
+  } else if (
+    typeof body.profileImage === "string" &&
+    body.profileImage.startsWith("data:image/")
+  ) {
+    if (body.profileImage.length > 700_000) {
       return NextResponse.json(
         { error: "Bild zu gross (max ~500KB)" },
         { status: 400 }
       );
     }
-    data.avatar = img;
+    data.avatar = body.profileImage;
+    data.avatarUpdatedAt = new Date();
   }
 
   if (
@@ -192,7 +202,7 @@ export async function PATCH(req: Request) {
     room: user.room?.keyNumber ?? "",
     diet: dietToApi(user.diet ?? null),
     allergies: user.allergies ?? "",
-    profileImage: user.avatar,
+    profileImage: avatarUrl(user),
     hasKaffeeAbo: user.hasKaffeeAbo,
     favoriteAnimal: user.favoriteAnimal ?? "",
     notifications: {

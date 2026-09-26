@@ -4,6 +4,7 @@ import { notify } from "@/lib/notify";
 import { getWgMemberUserIds, requireWgAccess } from "@/lib/wg-access";
 import { isValidColor } from "@/lib/wg-pinnwand-colors";
 import { summarizeReactions } from "@/lib/reactions";
+import { USER_AVATAR_SELECT, withAvatarUrl } from "@/lib/avatar";
 
 interface CreateBody {
   text?: string;
@@ -21,10 +22,10 @@ export async function GET(
   const notes = await prisma.wgPinnwandNote.findMany({
     where: { wgId: access.wg.id },
     include: {
-      author: { select: { id: true, name: true, avatar: true } },
+      author: { select: USER_AVATAR_SELECT },
       comments: {
         include: {
-          author: { select: { id: true, name: true, avatar: true } },
+          author: { select: USER_AVATAR_SELECT },
         },
         orderBy: { createdAt: "asc" },
       },
@@ -38,12 +39,12 @@ export async function GET(
       id: n.id,
       text: n.text,
       color: n.color,
-      author: n.author,
+      author: withAvatarUrl(n.author),
       createdAt: n.createdAt.toISOString(),
       comments: n.comments.map((c) => ({
         id: c.id,
         text: c.text,
-        author: c.author,
+        author: withAvatarUrl(c.author),
         createdAt: c.createdAt.toISOString(),
       })),
       reactions: summarizeReactions(n.reactions, access.user.id),

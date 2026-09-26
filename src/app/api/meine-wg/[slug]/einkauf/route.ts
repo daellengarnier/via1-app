@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWgAccess } from "@/lib/wg-access";
+import { USER_AVATAR_SELECT, withAvatarUrl } from "@/lib/avatar";
 
 // GET /api/meine-wg/[slug]/einkauf — Liste (offen + erledigt zuletzt 30 Tage)
 export async function GET(
@@ -17,11 +18,11 @@ export async function GET(
       OR: [{ done: false }, { doneAt: { gte: since } }],
     },
     include: {
-      createdBy: { select: { id: true, name: true, avatar: true } },
-      doneBy: { select: { id: true, name: true, avatar: true } },
+      createdBy: { select: USER_AVATAR_SELECT },
+      doneBy: { select: USER_AVATAR_SELECT },
       comments: {
         include: {
-          author: { select: { id: true, name: true, avatar: true } },
+          author: { select: USER_AVATAR_SELECT },
         },
         orderBy: { createdAt: "asc" },
       },
@@ -36,12 +37,12 @@ export async function GET(
       done: i.done,
       createdAt: i.createdAt.toISOString(),
       doneAt: i.doneAt?.toISOString() ?? null,
-      createdBy: i.createdBy,
-      doneBy: i.doneBy,
+      createdBy: withAvatarUrl(i.createdBy),
+      doneBy: withAvatarUrl(i.doneBy),
       comments: i.comments.map((c) => ({
         id: c.id,
         text: c.text,
-        author: c.author,
+        author: withAvatarUrl(c.author),
         createdAt: c.createdAt.toISOString(),
       })),
     }))

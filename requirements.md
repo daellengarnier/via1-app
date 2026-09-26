@@ -231,3 +231,4 @@ Keine Punkte oder Ranglisten - eher spielerisch und spassig.
 | 2026-04-10 | Migration von Vite auf Next.js auf main | Server-Session |
 | 2026-04-10 | CLAUDE.md und requirements.md zusammengefuehrt (Alains + Yvess Kontext) | Yves |
 | 2026-09-26 | Cleanup vor Redesign (Branch `cleanup`): Beschaffung (/einkauf) entfernt, Wetter + Aare von Home entfernt, Drohne entschaerft (kein Triple-Tap mehr, Start/Stop nur im Hamburger-Menu mit Bestaetigung, Auto-Landung nach 30 Min), Polling-Intervalle verlaengert + pausiert im Hintergrund-Tab, Hintergrund-Partikel und backdrop-blur reduziert, jsPDF lazy geladen | Alain |
+| 2026-09-26 | Performance: Profilbilder aus allen Listen-Endpoints entfernt (waren Base64 im JSON, /api/users = mehrere MB). Neu `avatarUpdatedAt`-Spalte (Migration 0097) + Bild-Endpoint `/api/users/[id]/avatar` mit Browser-Cache | Alain |
