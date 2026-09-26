@@ -8,11 +8,12 @@ import {
   decodeWgUnlock,
   wgSlug,
 } from "@/lib/wg-unlock";
-import { effectiveKochDay, isoDate } from "@/lib/wg-koch-day";
+import { addDaysUTC, effectiveKochDay, isoDate } from "@/lib/wg-koch-day";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/home/wg-kochen — Kochplan-Kurzfassung fuer die Home-Kachel.
+// GET /api/home/wg-kochen?days=1|2|3 — Kochplan-Kurzfassung fuer die
+// Home-Kachel (heute, optional morgen und uebermorgen).
 //
 // Leitet die WG aus dem eigenen Zimmer ab (Fallback: zuletzt besuchte
 // WG, z.B. fuer Partner:innen ohne eigenes Zimmer hier). Respektiert
@@ -34,12 +35,15 @@ interface EntryDto {
   myGuests: number;
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const meId = session.user.id;
+
+  const daysParam = Number(new URL(req.url).searchParams.get("days") ?? "1");
+  const days = daysParam === 2 || daysParam === 3 ? daysParam : 1;
 
   const me = await prisma.user.findUnique({
     where: { id: meId },
@@ -55,6 +59,7 @@ export async function GET() {
 
   const wgDto = { id: wg.id, name: wg.name, slug: wgSlug(wg.name) };
   const today = effectiveKochDay();
+  const dates = Array.from({ length: days }, (_, i) => addDaysUTC(today, i));
 
   const payload = decodeWgUnlock(cookies().get(WG_UNLOCK_COOKIE_NAME)?.value);
   const unlocked =
@@ -64,13 +69,15 @@ export async function GET() {
       wg: wgDto,
       unlocked: false,
       today: isoDate(today),
-      lunch: null,
-      dinner: null,
+      days: [],
     });
   }
 
   const eintraege = await prisma.wgKochEintrag.findMany({
-    where: { wgId: wg.id, date: today },
+    where: {
+      wgId: wg.id,
+      date: { gte: dates[0], lte: dates[dates.length - 1] },
+    },
     include: {
       cook: { select: { id: true, name: true } },
       signups: {
@@ -84,8 +91,10 @@ export async function GET() {
     },
   });
 
-  const toDto = (slot: "lunch" | "dinner"): EntryDto | null => {
-    const e = eintraege.find((x) => x.slot === slot);
+  const toDto = (dateIso: string, slot: "lunch" | "dinner"): EntryDto | null => {
+    const e = eintraege.find(
+      (x) => isoDate(x.date) === dateIso && x.slot === slot
+    );
     if (!e) return null;
     const going = e.signups.filter((s) => s.status === "going");
     const kids = going.reduce((sum, s) => sum + s.childrenIds.length, 0);
@@ -112,7 +121,9 @@ export async function GET() {
     wg: wgDto,
     unlocked: true,
     today: isoDate(today),
-    lunch: toDto("lunch"),
-    dinner: toDto("dinner"),
+    days: dates.map((d) => {
+      const iso = isoDate(d);
+      return { date: iso, lunch: toDto(iso, "lunch"), dinner: toDto(iso, "dinner") };
+    }),
   });
 }

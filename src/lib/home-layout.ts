@@ -25,12 +25,17 @@ export type HomeBlockId = (typeof HOME_BLOCK_IDS)[number];
 export const LIST_COUNTS = [1, 3, 5] as const;
 export type ListCount = (typeof LIST_COUNTS)[number];
 
+export const KOCHPLAN_DAYS = [1, 2, 3] as const;
+export type KochplanDays = (typeof KOCHPLAN_DAYS)[number];
+
 export interface HomeLayout {
   order: HomeBlockId[];
   hidden: HomeBlockId[];
   // Wie viele kommende Termine / Aktivitaeten die Kachel zeigt.
   termineCount: ListCount;
   aktivitaetenCount: ListCount;
+  // Wie viele Tage die Kochplan-Kachel zeigt (heute, morgen, ...).
+  kochplanDays: KochplanDays;
 }
 
 // Standard = die bisherige Reihenfolge.
@@ -52,6 +57,7 @@ export const DEFAULT_HOME_LAYOUT: HomeLayout = {
   hidden: ["divider-2", "divider-3"],
   termineCount: 1,
   aktivitaetenCount: 1,
+  kochplanDays: 1,
 };
 
 export const HOME_BLOCK_LABELS: Record<HomeBlockId, string> = {
@@ -60,7 +66,7 @@ export const HOME_BLOCK_LABELS: Record<HomeBlockId, string> = {
   sauna: "Sauna",
   aufgaben: "Aufgaben",
   putzen: "Putzen",
-  kochen: "Kochen (WG)",
+  kochen: "Kochplan",
   kaffee: "Kaffeemühle",
   spinnerei: "Spinnerei",
   pinnwand: "Pinnwand",
@@ -75,6 +81,10 @@ function isBlockId(v: unknown): v is HomeBlockId {
 
 function toCount(v: unknown, fallback: ListCount): ListCount {
   return v === 1 || v === 3 || v === 5 ? v : fallback;
+}
+
+function toDays(v: unknown, fallback: KochplanDays): KochplanDays {
+  return v === 1 || v === 2 || v === 3 ? v : fallback;
 }
 
 // Macht aus beliebigem (gespeichertem oder geschicktem) JSON ein
@@ -107,5 +117,6 @@ export function normalizeHomeLayout(raw: unknown): HomeLayout {
     hidden: Array.from(new Set(hidden)),
     termineCount: toCount(o.termineCount, d.termineCount),
     aktivitaetenCount: toCount(o.aktivitaetenCount, d.aktivitaetenCount),
+    kochplanDays: toDays(o.kochplanDays, d.kochplanDays),
   };
 }
