@@ -1219,13 +1219,14 @@ export default function HomeScreen() {
       />
       <LaundryTimers onSpinChange={setLaundrySpinning} />
 
-      {/* Anpassen-Modus: Bloecke verschieben / ausblenden */}
-      <div className="-mt-2 mb-3 flex items-center justify-end gap-3">
+      {/* Anpassen-Modus: Bloecke verschieben / ausblenden — bewusst nur
+          ein kleiner Textlink, damit er keine Hoehe frisst */}
+      <div className="-mt-4 mb-2 flex items-center justify-end gap-3 leading-none">
         {editMode && (
           <button
             type="button"
             onClick={resetLayout}
-            className="font-mono text-[10px] uppercase tracking-wider text-gray-500 hover:text-red-400"
+            className="font-mono text-[10px] text-gray-500 hover:text-red-400"
           >
             Zurücksetzen
           </button>
@@ -1233,13 +1234,13 @@ export default function HomeScreen() {
         <button
           type="button"
           onClick={() => setEditMode((v) => !v)}
-          className={`rounded-full border px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider transition-colors ${
+          className={`font-mono text-[10px] transition-colors ${
             editMode
-              ? "border-accent bg-accent text-dark"
-              : "border-gray-700 text-gray-500 hover:border-accent hover:text-white"
+              ? "font-bold text-accent"
+              : "text-gray-500 hover:text-accent"
           }`}
         >
-          {editMode ? "✓ Fertig" : "⚙ Anpassen"}
+          {editMode ? "✓ Fertig" : "Übersicht anpassen"}
         </button>
       </div>
 
