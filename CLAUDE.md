@@ -193,6 +193,8 @@ Nach einem Merge auf `main` passiert automatisch:
 - **Profilbilder nie im Listen-JSON (Sept 2026):** `users.avatar` ist eine Base64-Data-URL (bis 700 KB). `/api/users` lieferte alle 25 Bewohner:innen inkl. Bild = mehrere MB pro Aufruf, geladen bei jedem Termine-Tab und jeder Termin-Detailseite — das war der Hauptgrund fuer die 2-4 s Verzoegerung beim Navigieren. Regel: in Prisma-Selects immer `USER_AVATAR_SELECT` + `withAvatarUrl()` aus `src/lib/avatar.ts` verwenden, nie `avatar: true`. Das Bild kommt ueber `/api/users/[id]/avatar?v=<avatarUpdatedAt>` mit immutable-Cache.
 - **Let's Encrypt:** Der `certbot`-Container in docker-compose hatte kein Command und hat nie erneuert → Cert lief ab. Jetzt: Renewal-Loop im Container + `certbot renew` im Deploy-Workflow.
 
+- **Home-Bloecke (Sept 2026):** `HomeScreen.tsx` rendert die Kacheln als Bloecke ueber `HomeLayoutGrid` in der pro Person gespeicherten Reihenfolge (`users.homeLayout`, Typen/Defaults in `src/lib/home-layout.ts`). Neue Kachel = neue ID in `HOME_BLOCK_IDS` + Label + Eintrag in `DEFAULT_HOME_LAYOUT.order` + `blocks`-Definition in HomeScreen (Groesse half/third/full). Bestehende Layouts bekommen neue Bloecke automatisch hinten angehaengt (`normalizeHomeLayout`).
+
 ## Sackgassen / Was nicht funktioniert hat
 
 > Hier werden Ansaetze dokumentiert, die verworfen wurden - inkl. Grund. Das verhindert, dass wir denselben Fehler zweimal machen.

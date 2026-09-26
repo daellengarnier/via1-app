@@ -15,6 +15,12 @@ import {
 import { useCurrentKaffee } from "@/lib/kaffee-store";
 import { usePutzplan } from "@/lib/putzplan-store";
 import { WgKochenTile } from "./WgKochenTile";
+import { HomeLayoutGrid, type HomeBlockDef } from "./HomeLayoutGrid";
+import {
+  normalizeHomeLayout,
+  type HomeBlockId,
+  type HomeLayout,
+} from "@/lib/home-layout";
 
 interface ReactionSummary {
   emoji: string;
@@ -131,12 +137,52 @@ export default function HomeScreen() {
   );
   // Cached state: zeigt sofort die letzten gesehenen Daten beim Mount,
   // statt erst den Server-Roundtrip abzuwarten.
-  const [nextTermin, setNextTermin] = useState<NextTermin | null>(
-    () => readLs<NextTermin | null>("via1-home-nextTermin", null)
+  const [upcomingTermine, setUpcomingTermine] = useState<NextTermin[]>(() =>
+    readLs<NextTermin[]>("via1-home-upcomingTermine", [])
   );
-  const [nextActivity, setNextActivity] = useState<NextActivity | null>(
-    () => readLs<NextActivity | null>("via1-home-nextActivity", null)
+  const [upcomingActivities, setUpcomingActivities] = useState<
+    NextActivity[]
+  >(() => readLs<NextActivity[]>("via1-home-upcomingActivities", []));
+  const nextTermin = upcomingTermine[0] ?? null;
+  const nextActivity = upcomingActivities[0] ?? null;
+  // Individuelle Anordnung der Bloecke (Server = Quelle, localStorage
+  // nur damit die Seite sofort in der gewohnten Reihenfolge steht).
+  const [layout, setLayout] = useState<HomeLayout>(() =>
+    normalizeHomeLayout(readLs<unknown>("via1-home-layout", null))
   );
+  const [editMode, setEditMode] = useState(false);
+  useEffect(() => {
+    fetch("/api/home/layout")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: unknown) => {
+        if (!d) return;
+        const l = normalizeHomeLayout(d);
+        setLayout(l);
+        writeLs("via1-home-layout", l);
+      })
+      .catch(() => {});
+  }, []);
+  function updateLayout(next: HomeLayout) {
+    setLayout(next);
+    writeLs("via1-home-layout", next);
+    fetch("/api/home/layout", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(next),
+    }).catch(() => {});
+  }
+  async function resetLayout() {
+    if (!confirm("Anordnung auf Standard zurücksetzen?")) return;
+    try {
+      const res = await fetch("/api/home/layout", { method: "DELETE" });
+      const d: unknown = res.ok ? await res.json() : null;
+      const l = normalizeHomeLayout(d);
+      setLayout(l);
+      writeLs("via1-home-layout", l);
+    } catch {
+      // ignore
+    }
+  }
   const [pinnwand, setPinnwand] = useState<PinnwandEintrag[]>(
     () => readLs<PinnwandEintrag[]>("via1-home-pinnwand", [])
   );
@@ -384,9 +430,9 @@ export default function HomeScreen() {
               ? a.time.localeCompare(b.time)
               : a.date.localeCompare(b.date)
           );
-        const next = upcoming[0] ?? null;
-        setNextTermin(next);
-        writeLs("via1-home-nextTermin", next);
+        const list = upcoming.slice(0, 5);
+        setUpcomingTermine(list);
+        writeLs("via1-home-upcomingTermine", list);
       })
       .catch(() => {});
   }, []);
@@ -404,25 +450,19 @@ export default function HomeScreen() {
     fetch("/api/activities")
       .then((r) => (r.ok ? r.json() : []))
       .then((data: ApiActivity[]) => {
-        const sorted = [...data].sort((a, b) =>
-          a.startAt.localeCompare(b.startAt)
-        );
-        const first = sorted[0];
-        if (!first) {
-          setNextActivity(null);
-          writeLs("via1-home-nextActivity", null);
-          return;
-        }
-        const next: NextActivity = {
-          id: first.id,
-          title: first.title,
-          startAt: first.startAt,
-          location: first.location,
-          createdBy: first.createdBy,
-          participantsGoing: first.participants.filter((p) => p.going).length,
-        };
-        setNextActivity(next);
-        writeLs("via1-home-nextActivity", next);
+        const list: NextActivity[] = [...data]
+          .sort((a, b) => a.startAt.localeCompare(b.startAt))
+          .slice(0, 5)
+          .map((a) => ({
+            id: a.id,
+            title: a.title,
+            startAt: a.startAt,
+            location: a.location,
+            createdBy: a.createdBy,
+            participantsGoing: a.participants.filter((p) => p.going).length,
+          }));
+        setUpcomingActivities(list);
+        writeLs("via1-home-upcomingActivities", list);
       })
       .catch(() => {});
   }, []);
@@ -554,22 +594,16 @@ export default function HomeScreen() {
     }
   }
 
-  return (
-    <div
-      className={`relative p-4 pb-20 ${
-        laundrySpinning ? "home-spin-vibration" : ""
-      }`}
-    >
-      <TabHeader
-        title={`${getGreeting()}, ${userName}`}
-        icon="/pyramid.webp"
-        color="green"
-        scrollable
-      />
-      <LaundryTimers onSpinChange={setLaundrySpinning} />
+  // ---- Home-Bloecke (individuell anordenbar, siehe src/lib/home-layout.ts) ----
+  const fmtDay = (iso: string) =>
+    new Date(iso).toLocaleDateString("de-CH", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    });
 
-      {/* Nächster Termin + Spinnerei — rund & nebeneinander */}
-      <div className="mb-4 grid grid-cols-2 gap-3">
+  const renderTermin = () =>
+    layout.termineCount === 1 ? (
         <div
           className={`wg-glow-border cursor-pointer rounded-full border border-accent/30 bg-accent/5 px-4 py-3 text-center transition-colors hover:bg-accent/10 ${
             nextTermin && isToday(nextTermin.date) ? "home-tile-pulse" : ""
@@ -595,7 +629,46 @@ export default function HomeScreen() {
               : "—"}
           </p>
         </div>
-        {nextActivity ? (
+    ) : (
+      <div
+        className="wg-glow-border mb-4 cursor-pointer rounded-2xl border border-accent/30 bg-accent/5 px-4 py-3 transition-colors hover:bg-accent/10"
+        style={{ ["--tile-glow-rgb" as string]: "184, 240, 104" }}
+        onClick={() => router.push("/termine")}
+      >
+        <p className="font-display text-[9px] font-bold uppercase tracking-widest text-accent">
+          TERMINE
+        </p>
+        {upcomingTermine.length === 0 ? (
+          <p className="mt-1 text-xs text-gray-500">Keine</p>
+        ) : (
+          <ul className="mt-1 space-y-1">
+            {upcomingTermine.slice(0, layout.termineCount).map((t) => (
+              <li
+                key={t.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/termine/${t.id}`);
+                }}
+                className={`flex items-baseline justify-between gap-3 ${
+                  isToday(t.date) ? "text-accent" : ""
+                }`}
+              >
+                <span className="truncate text-xs font-medium text-white">
+                  {t.title}
+                </span>
+                <span className="shrink-0 font-mono text-[10px] text-gray-500">
+                  {fmtDay(t.date)} · {t.time}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+
+  const renderAktivitaet = () =>
+    layout.aktivitaetenCount === 1 ? (
+      nextActivity ? (
           <div
             className={`wg-glow-border cursor-pointer rounded-full border border-blue-400/30 bg-blue-400/5 px-4 py-3 text-center transition-colors hover:bg-blue-400/10 ${
               isToday(nextActivity.startAt) ? "home-tile-pulse" : ""
@@ -622,30 +695,11 @@ export default function HomeScreen() {
               })}
             </p>
           </div>
-        ) : !hasKaffeeAbo ? (
-          <a
-            href="https://kulturspinnerei.ch"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`wg-glow-border cursor-pointer rounded-full border border-secondary/30 bg-secondary/5 px-4 py-3 text-center transition-colors hover:bg-secondary/10 ${
-              spinnereiEvent && isToday(spinnereiEvent.startAt) ? "home-tile-pulse" : ""
-            }`}
-            style={{ ["--tile-glow-rgb" as string]: "255, 107, 43" }}
+      ) : (
+          <div
+            className="cursor-pointer rounded-full border border-gray-800 bg-white/5 px-4 py-3 text-center"
+            onClick={() => router.push("/aktivitaeten")}
           >
-            <p className="font-display text-[9px] font-bold uppercase tracking-widest text-secondary">
-              SPINNEREI
-            </p>
-            <p className="mt-0.5 truncate text-xs font-medium text-white">
-              {spinnereiEvent?.title ?? "Hausfest 2026"}
-            </p>
-            <p className="font-mono text-[10px] text-gray-500">
-              {spinnereiEvent
-                ? `${spinnereiEvent.dateLabel} · ${spinnereiEvent.startTime}`
-                : "Sa 5. Sept · 16:00"}
-            </p>
-          </a>
-        ) : (
-          <div className="rounded-full border border-gray-800 bg-white/5 px-4 py-3 text-center">
             <p className="font-display text-[9px] font-bold uppercase tracking-widest text-gray-500">
               AKTIVITÄT
             </p>
@@ -654,11 +708,47 @@ export default function HomeScreen() {
             </p>
             <p className="font-mono text-[10px] text-gray-700">—</p>
           </div>
+      )
+    ) : (
+      <div
+        className="wg-glow-border mb-4 cursor-pointer rounded-2xl border border-blue-400/30 bg-blue-400/5 px-4 py-3 transition-colors hover:bg-blue-400/10"
+        style={{ ["--tile-glow-rgb" as string]: "96, 165, 250" }}
+        onClick={() => router.push("/aktivitaeten")}
+      >
+        <p className="font-display text-[9px] font-bold uppercase tracking-widest text-blue-300">
+          AKTIVITÄTEN
+        </p>
+        {upcomingActivities.length === 0 ? (
+          <p className="mt-1 text-xs text-gray-500">Keine geplant</p>
+        ) : (
+          <ul className="mt-1 space-y-1">
+            {upcomingActivities
+              .slice(0, layout.aktivitaetenCount)
+              .map((a) => (
+                <li
+                  key={a.id}
+                  className={`flex items-baseline justify-between gap-3 ${
+                    isToday(a.startAt) ? "text-blue-300" : ""
+                  }`}
+                >
+                  <span className="truncate text-xs font-medium text-white">
+                    {a.title}
+                  </span>
+                  <span className="shrink-0 font-mono text-[10px] text-gray-500">
+                    {fmtDay(a.startAt)} ·{" "}
+                    {new Date(a.startAt).toLocaleTimeString("de-CH", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </li>
+              ))}
+          </ul>
         )}
       </div>
+    );
 
-      {/* Glasige Neon-Kacheln — ohne Gästi */}
-      <div className="mb-4 grid grid-cols-3 gap-3">
+  const renderSauna = () => (
         <div
           className={`wg-glow-border cursor-pointer rounded-xl border bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-red-500/30 hover:shadow-[0_0_20px_rgba(255,50,50,0.1)] ${
             saunaHeating
@@ -689,6 +779,9 @@ export default function HomeScreen() {
           </p>
           <SaunaSparkline />
         </div>
+  );
+
+  const renderAufgaben = () => (
         <div
           className="wg-glow-border cursor-pointer rounded-xl border border-yellow-400/15 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-yellow-400/30 hover:shadow-[0_0_20px_rgba(255,220,50,0.1)]"
           style={{ ["--tile-glow-rgb" as string]: "250, 204, 21" }}
@@ -702,6 +795,9 @@ export default function HomeScreen() {
           </p>
           <p className="mt-1 text-[10px] text-gray-500">offen</p>
         </div>
+  );
+
+  const renderPutzen = () => (
         <div
           className="wg-glow-border cursor-pointer rounded-xl border border-violet-500/15 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:border-violet-500/30 hover:shadow-[0_0_20px_rgba(150,100,255,0.1)]"
           style={{ ["--tile-glow-rgb" as string]: "139, 92, 246" }}
@@ -741,9 +837,11 @@ export default function HomeScreen() {
             </p>
           )}
         </div>
-      </div>
+  );
 
-      {/* Animierte Wellenlinie als Trenner */}
+  // Animierte Wellenlinie als Trenner — eigene Gradient-ID pro Instanz,
+  // weil es bis zu drei davon geben kann.
+  const renderDivider = (key: string) => (
       <div className="mb-4 flex justify-center overflow-hidden">
         <svg
           viewBox="0 0 400 20"
@@ -753,7 +851,7 @@ export default function HomeScreen() {
           <path
             d="M0 10 Q25 0 50 10 T100 10 T150 10 T200 10 T250 10 T300 10 T350 10 T400 10"
             fill="none"
-            stroke="url(#wave-grad)"
+            stroke={`url(#wave-grad-${key})`}
             strokeWidth="1.5"
             strokeLinecap="round"
           >
@@ -765,7 +863,7 @@ export default function HomeScreen() {
             />
           </path>
           <defs>
-            <linearGradient id="wave-grad" x1="0" y1="0" x2="1" y2="0">
+            <linearGradient id={`wave-grad-${key}`} x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="transparent" />
               <stop offset="20%" stopColor="rgba(184,240,104,0.3)" />
               <stop offset="50%" stopColor="rgba(184,240,104,0.5)" />
@@ -775,14 +873,9 @@ export default function HomeScreen() {
           </defs>
         </svg>
       </div>
+  );
 
-      {/* Kochen heute in der eigenen WG (nur mit WG-Zuordnung) */}
-      <WgKochenTile />
-
-      {/* Kaffee (nur für Abo) + Spinnerei — 2-Spalten */}
-      {hasKaffeeAbo ? (
-        <div className="mb-5">
-          <div className="grid grid-cols-2 gap-3">
+  const renderKaffee = () => (
             <div
               className="wg-glow-border cursor-pointer rounded-2xl border border-amber-600/30 bg-gradient-to-br from-amber-700/15 to-transparent p-3 transition-all hover:border-amber-500/50"
               style={{ ["--tile-glow-rgb" as string]: "217, 119, 6" }}
@@ -813,6 +906,9 @@ export default function HomeScreen() {
                 )}
               </div>
             </div>
+  );
+
+  const renderSpinnerei = () => (
             <div
               className={`wg-glow-border group flex cursor-pointer flex-col rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 to-transparent p-3 transition-all hover:border-secondary/60 ${
                 spinnereiEvent && isToday(spinnereiEvent.startAt) ? "home-tile-pulse" : ""
@@ -862,11 +958,9 @@ export default function HomeScreen() {
                 📋 Schichtplan →
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
+  );
 
-      {/* Pinnwand als Sticky Notes */}
+  const renderPinnwand = () => (
       <div className="relative">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex-1" />
@@ -1088,6 +1182,73 @@ export default function HomeScreen() {
           <p className="text-center text-xs text-red-400">{pinnwandError}</p>
         )}
       </div>
+  );
+
+  const blocks: Partial<Record<HomeBlockId, HomeBlockDef>> = {
+    termin: {
+      size: layout.termineCount === 1 ? "half" : "full",
+      render: renderTermin,
+    },
+    aktivitaet: {
+      size: layout.aktivitaetenCount === 1 ? "half" : "full",
+      render: renderAktivitaet,
+    },
+    sauna: { size: "third", render: renderSauna },
+    aufgaben: { size: "third", render: renderAufgaben },
+    putzen: { size: "third", render: renderPutzen },
+    "divider-1": { size: "full", render: () => renderDivider("1") },
+    "divider-2": { size: "full", render: () => renderDivider("2") },
+    "divider-3": { size: "full", render: () => renderDivider("3") },
+    kochen: { size: "full", render: () => <WgKochenTile /> },
+    kaffee: { size: "half", render: renderKaffee, available: hasKaffeeAbo },
+    spinnerei: { size: "half", render: renderSpinnerei },
+    pinnwand: { size: "full", render: renderPinnwand },
+  };
+
+  return (
+    <div
+      className={`relative p-4 pb-20 ${
+        laundrySpinning ? "home-spin-vibration" : ""
+      }`}
+    >
+      <TabHeader
+        title={`${getGreeting()}, ${userName}`}
+        icon="/pyramid.webp"
+        color="green"
+        scrollable
+      />
+      <LaundryTimers onSpinChange={setLaundrySpinning} />
+
+      {/* Anpassen-Modus: Bloecke verschieben / ausblenden */}
+      <div className="-mt-2 mb-3 flex items-center justify-end gap-3">
+        {editMode && (
+          <button
+            type="button"
+            onClick={resetLayout}
+            className="font-mono text-[10px] uppercase tracking-wider text-gray-500 hover:text-red-400"
+          >
+            Zurücksetzen
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setEditMode((v) => !v)}
+          className={`rounded-full border px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider transition-colors ${
+            editMode
+              ? "border-accent bg-accent text-dark"
+              : "border-gray-700 text-gray-500 hover:border-accent hover:text-white"
+          }`}
+        >
+          {editMode ? "✓ Fertig" : "⚙ Anpassen"}
+        </button>
+      </div>
+
+      <HomeLayoutGrid
+        layout={layout}
+        blocks={blocks}
+        editMode={editMode}
+        onChange={updateLayout}
+      />
 
       {/* Pinnwand Kommentar-Modal */}
       {pinnwandCommentsOpen && (() => {
