@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notify";
+import { canSeeActivity } from "@/lib/activity-audience";
 
 // POST /api/activities/[id]/comments
 export async function POST(
@@ -20,7 +21,7 @@ export async function POST(
       participants: true,
     },
   });
-  if (!activity) {
+  if (!activity || !(await canSeeActivity(activity.id, session.user.id))) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
