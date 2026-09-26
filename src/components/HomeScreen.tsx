@@ -10,7 +10,6 @@ import { ReactionBar } from "./ReactionBar";
 import {
   DroneOverlay,
   DroneHistoryButton,
-  isDaylight,
   type DroneFlightInfo,
 } from "./DroneOverlay";
 import { useCurrentKaffee } from "@/lib/kaffee-store";
@@ -55,17 +54,6 @@ interface NextActivity {
   participantsGoing: number;
 }
 
-interface WeatherData {
-  temp: number;
-  code: number;
-  summary: string;
-}
-
-interface AareData {
-  temp: number;
-  flow: number;
-}
-
 // Prueft ob ein Datum (ISO oder "YYYY-MM-DD") "heute" in der lokalen
 // Zeitzone ist. Wird fuer die Pulse-Animation auf den Home-Tiles genutzt.
 function isToday(value: string | Date | null | undefined): boolean {
@@ -107,43 +95,6 @@ function getGreeting(): string {
   if (hour < 12) return "Guten Morgen";
   if (hour < 17) return "Guten Nachmittag";
   return "Guten Abend";
-}
-
-// WMO Weather Codes zu Text + Emoji
-function codeToText(code: number): string {
-  if (code === 0) return "☀️ Sonnig";
-  if (code <= 2) return "🌤️ Überwiegend sonnig";
-  if (code === 3) return "☁️ Bewölkt";
-  if (code <= 48) return "🌫️ Neblig";
-  if (code <= 57) return "🌦️ Nieselregen";
-  if (code <= 67) return "🌧️ Regen";
-  if (code <= 77) return "❄️ Schnee";
-  if (code <= 82) return "🌧️ Regenschauer";
-  if (code <= 86) return "🌨️ Schneeschauer";
-  if (code >= 95) return "⛈️ Gewitter";
-  return "Wetter";
-}
-
-function weatherSummary(
-  code: number,
-  willRainTonight: boolean,
-  willRainDaytime: boolean
-): string {
-  const hour = new Date().getHours();
-  let text = codeToText(code);
-  // Morgens (bis 12): Tagesprognose
-  if (hour < 12 && willRainDaytime) {
-    text += " · 🌧️ Regen tagsüber";
-  }
-  // Abends (ab 18): Nachtprognose
-  if (hour >= 18 && willRainTonight) {
-    text += " · 🌙 Regen in der Nacht";
-  }
-  // Nachmittag: beides moeglich
-  if (hour >= 12 && hour < 18) {
-    if (willRainTonight) text += " · 🌙 Regen heute Nacht";
-  }
-  return text;
 }
 
 export default function HomeScreen() {
@@ -204,34 +155,23 @@ export default function HomeScreen() {
     }
   }, []);
 
+  // Polling nur nach Aktiv-Status (nicht nach Objekt-Referenz), sonst
+  // wird das Intervall bei jeder Antwort neu aufgesetzt. Im Hintergrund-
+  // Tab wird nicht gepollt. Start/Stop laeuft ueber das Hamburger-Menu,
+  // das nach einer Aktion "via1:drone-changed" feuert.
+  const droneActive = droneFlight !== null;
   useEffect(() => {
     fetchDroneState();
-    const intervalMs = droneFlight ? 4000 : 12000;
-    const id = window.setInterval(fetchDroneState, intervalMs);
-    return () => window.clearInterval(id);
-  }, [droneFlight, fetchDroneState]);
-
-  // Triple-Tap auf Pyramide → startet einen Flight oder stoppt den
-  // eigenen. Bei Nacht ignorieren wir den Trigger komplett.
-  useEffect(() => {
-    async function onDroneTrigger() {
-      if (!isDaylight()) return;
-      if (droneFlight) {
-        if (droneFlight.isMine) {
-          await fetch("/api/drohne/stop", { method: "POST" }).catch(() => {});
-          fetchDroneState();
-        }
-        // Anderer User hat sie gestartet: nichts tun (oder ggf. Klick
-        // auf die Drohne zum Beschweren).
-        return;
-      }
-      await fetch("/api/drohne", { method: "POST" }).catch(() => {});
-      fetchDroneState();
-    }
-    window.addEventListener("via1:rave-trigger", onDroneTrigger);
-    return () =>
-      window.removeEventListener("via1:rave-trigger", onDroneTrigger);
-  }, [droneFlight, fetchDroneState]);
+    const intervalMs = droneActive ? 10_000 : 60_000;
+    const id = window.setInterval(() => {
+      if (!document.hidden) fetchDroneState();
+    }, intervalMs);
+    window.addEventListener("via1:drone-changed", fetchDroneState);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("via1:drone-changed", fetchDroneState);
+    };
+  }, [droneActive, fetchDroneState]);
   const [pinnwandCommentsOpen, setPinnwandCommentsOpen] = useState<
     string | null
   >(null);
@@ -246,8 +186,6 @@ export default function HomeScreen() {
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editNoteText, setEditNoteText] = useState("");
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [aare, setAare] = useState<AareData | null>(null);
   const [spinnereiEvent, setSpinnereiEvent] = useState<{
     title: string;
     dateLabel: string;
@@ -371,9 +309,10 @@ export default function HomeScreen() {
     fetchSauna();
     fetchHeating();
     const id = setInterval(() => {
+      if (document.hidden) return;
       fetchSauna();
       fetchHeating();
-    }, 15000);
+    }, 60_000);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -483,71 +422,6 @@ export default function HomeScreen() {
         };
         setNextActivity(next);
         writeLs("via1-home-nextActivity", next);
-      })
-      .catch(() => {});
-  }, []);
-
-  // Wetter laden (Open-Meteo, kein API Key)
-  useEffect(() => {
-    const url =
-      "https://api.open-meteo.com/v1/forecast?latitude=46.9480&longitude=7.4474&current=temperature_2m,weather_code&hourly=precipitation&forecast_days=1&timezone=Europe%2FZurich";
-    fetch(url)
-      .then((r) => r.json())
-      .then((data: {
-        current?: { temperature_2m: number; weather_code: number };
-        hourly?: { time: string[]; precipitation: number[] };
-      }) => {
-        if (!data.current) return;
-        const now = new Date();
-        const currentHour = now.getHours();
-        let willRainTonight = false;
-        let willRainDaytime = false;
-        if (data.hourly) {
-          data.hourly.time.forEach((t, i) => {
-            const d = new Date(t);
-            const h = d.getHours();
-            const precip = data.hourly!.precipitation[i] ?? 0;
-            if (precip < 0.2) return;
-            // Nacht: 20-06 Uhr
-            if ((h >= 20 || h < 6) && h >= currentHour) {
-              willRainTonight = true;
-            }
-            // Tag: 06-20 Uhr
-            if (h >= 6 && h < 20 && h >= currentHour) {
-              willRainDaytime = true;
-            }
-          });
-        }
-        setWeather({
-          temp: Math.round(data.current.temperature_2m),
-          code: data.current.weather_code,
-          summary: weatherSummary(
-            data.current.weather_code,
-            willRainTonight,
-            willRainDaytime
-          ),
-        });
-      })
-      .catch(() => {});
-  }, []);
-
-  // Aare-Daten laden (aare.guru API, kein API Key)
-  useEffect(() => {
-    const url =
-      "https://aareguru.existenz.ch/v2018/current?city=bern&app=via1-app&version=1.0";
-    fetch(url)
-      .then((r) => r.json())
-      .then((data: { aare?: { temperature?: number; flow?: number } }) => {
-        if (!data.aare) return;
-        if (
-          typeof data.aare.temperature === "number" &&
-          typeof data.aare.flow === "number"
-        ) {
-          setAare({
-            temp: Math.round(data.aare.temperature * 10) / 10,
-            flow: Math.round(data.aare.flow),
-          });
-        }
       })
       .catch(() => {});
   }, []);
@@ -692,26 +566,6 @@ export default function HomeScreen() {
         scrollable
       />
       <LaundryTimers onSpinChange={setLaundrySpinning} />
-
-      {/* Wetter + Aare */}
-      {(weather || aare) && (
-        <div className="-mt-4 mb-6 space-y-0.5 text-center">
-          {weather && (
-            <p className="text-sm text-gray-400">
-              {weather.summary} · {weather.temp}°C
-              <span className="ml-1 text-[9px] text-gray-600">
-                ({new Date().getHours() < 12 ? "Prognose heute" : "aktuell + Nacht"})
-              </span>
-            </p>
-          )}
-          {aare && (
-            <p className="font-mono text-xs text-cyan-300/80">
-              🌊 Aare {aare.temp}°C · {aare.flow} m³/s
-            </p>
-          )}
-        </div>
-      )}
-      {!weather && !aare && <div className="-mt-4 mb-6 h-5" />}
 
       {/* Nächster Termin + Spinnerei — rund & nebeneinander */}
       <div className="mb-4 grid grid-cols-2 gap-3">
@@ -1049,7 +903,7 @@ export default function HomeScreen() {
           {profileMissing.length > 0 && (
             <button
               onClick={() => router.push("/profil")}
-              className="relative overflow-hidden rounded-2xl border border-amber-400/40 bg-gradient-to-br from-amber-400/30 to-amber-600/10 rotate-1 p-3 pb-7 text-left shadow-lg backdrop-blur-md transition-transform hover:rotate-0 hover:scale-105"
+              className="relative overflow-hidden rounded-2xl border border-amber-400/40 bg-gradient-to-br from-amber-400/30 to-amber-600/10 rotate-1 p-3 pb-7 text-left shadow-lg transition-transform hover:rotate-0 hover:scale-105"
               style={{
                 boxShadow:
                   "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
@@ -1114,7 +968,7 @@ export default function HomeScreen() {
             return (
               <div
                 key={p.id}
-                className={`relative overflow-hidden rounded-2xl border ${style.border} bg-gradient-to-br ${style.grad} ${style.rot} p-3 pb-7 shadow-lg backdrop-blur-md transition-transform hover:rotate-0 hover:scale-105`}
+                className={`relative overflow-hidden rounded-2xl border ${style.border} bg-gradient-to-br ${style.grad} ${style.rot} p-3 pb-7 shadow-lg transition-transform hover:rotate-0 hover:scale-105`}
                 style={{
                   boxShadow:
                     "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
@@ -1406,7 +1260,7 @@ function LatestProtokollPin() {
       href={`/api/sitzungsprotokolle/${item.id}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="relative block overflow-hidden rounded-2xl border border-yellow-400/30 bg-gradient-to-br from-yellow-400/30 to-yellow-600/10 p-3 pb-7 shadow-lg backdrop-blur-md -rotate-1 transition-transform hover:rotate-0 hover:scale-105"
+      className="relative block overflow-hidden rounded-2xl border border-yellow-400/30 bg-gradient-to-br from-yellow-400/30 to-yellow-600/10 p-3 pb-7 shadow-lg -rotate-1 transition-transform hover:rotate-0 hover:scale-105"
       style={{
         boxShadow:
           "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",

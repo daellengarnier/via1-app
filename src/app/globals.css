@@ -198,6 +198,10 @@ body {
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
+  /* Eigener Compositor-Layer: der Blur wird einmal gerastert und nur
+     noch per transform bewegt statt pro Frame neu berechnet. */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .via-glow-1 {

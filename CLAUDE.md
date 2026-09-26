@@ -188,12 +188,17 @@ Nach einem Merge auf `main` passiert automatisch:
 - **PostgreSQL Enum-Werte:** Neue Enum-Werte (`ALTER TYPE ... ADD VALUE`) muessen in einer separaten Migration committed werden, BEVOR sie in Tabellen verwendet werden. Sonst Fehler `55P04 unsafe use of new value`. Also: Migration 1 = Enum erweitern, Migration 2 = Enum verwenden.
 - **Docker Build Cache:** `--no-cache` dauert 4-5 Min. Besser: `CACHEBUST` Build-Arg im Dockerfile um nur ab `COPY . .` neu zu bauen.
 - **Fehlgeschlagene Prisma-Migration:** Manuell aus `_prisma_migrations` loeschen: `DELETE FROM _prisma_migrations WHERE migration_name = '...';`
+- **Performance auf Mobile (Sept 2026):** Die App fuehlte sich "langsam" an. Ursachen: (1) Home feuerte ~17 Requests beim Mount + 5 Polling-Schleifen (Drohne 12s, Sauna 15s, Waesche 30s ...) von ~25 offenen PWAs → Dauerlast auf dem VPS; (2) `backdrop-filter: blur()` auf vielen kleinen Elementen (Pinnwand-Notizen, Header-Badges) + 15 geblurrte animierte Partikel → Scroll-Jank auf iOS. Regel ab jetzt: Polling ≥ 60s ausser auf der Detailseite der Sache selbst, `if (document.hidden) return` in jedem Intervall, `backdrop-filter` nur fuer einzelne grosse Flaechen (Overlays), nie fuer Listen-Elemente.
+- **Let's Encrypt:** Der `certbot`-Container in docker-compose hatte kein Command und hat nie erneuert → Cert lief ab. Jetzt: Renewal-Loop im Container + `certbot renew` im Deploy-Workflow.
 
 ## Sackgassen / Was nicht funktioniert hat
 
 > Hier werden Ansaetze dokumentiert, die verworfen wurden - inkl. Grund. Das verhindert, dass wir denselben Fehler zweimal machen.
 
 - **Vite + React Router** als Framework -> Migriert auf Next.js (Full-Stack, API Routes integriert, kein separater Backend-Server noetig)
+- **Triple-Tap-Easter-Egg als Trigger fuer die Drohne** -> Unsichtbarer 160px-Hotspot ueber der Pyramide wurde staendig versehentlich ausgeloest (Flug + Push an alle). Ersetzt durch bewussten Button im Hamburger-Menu mit Bestaetigung + Auto-Landung nach 30 Min.
+- **Beschaffung (/einkauf) auf Haus-Ebene** -> wurde nicht genutzt, entfernt (Sept 2026). Die WG-interne Einkaufsliste unter /meine-wg bleibt.
+- **Wetter + Aare-Temperatur auf Home** -> nette Spielerei, aber nicht genutzt und zwei externe Requests pro Home-Load. Entfernt.
 
 ## Offene Fragen
 
