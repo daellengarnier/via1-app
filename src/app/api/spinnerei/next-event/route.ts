@@ -42,6 +42,31 @@ interface JsonLdEvent {
   url?: string;
 }
 
+// WordPress liefert Titel im JSON-LD HTML-kodiert (&#039; fuer ',
+// &amp; fuer &). Ohne Dekodierung landen die Entities 1:1 in der Kachel.
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+};
+
+function decodeHtmlEntities(s: string): string {
+  return s
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) =>
+      String.fromCodePoint(parseInt(hex, 16))
+    )
+    .replace(/&#(\d+);/g, (_, dec: string) =>
+      String.fromCodePoint(parseInt(dec, 10))
+    )
+    .replace(
+      /&([a-z]+);/gi,
+      (match, name: string) => NAMED_ENTITIES[name.toLowerCase()] ?? match
+    );
+}
+
 function isEventType(t: unknown): boolean {
   if (typeof t === "string") return t === "Event" || t.endsWith("Event");
   if (Array.isArray(t)) return t.some(isEventType);
@@ -81,7 +106,7 @@ function collectEventsFromJsonLd(html: string): SpinnereiEvent[] {
       if (!isEventType(e["@type"])) continue;
       if (!e.name || !e.startDate) continue;
       events.push({
-        title: e.name,
+        title: decodeHtmlEntities(e.name).trim(),
         startAt: e.startDate,
         endAt: e.endDate ?? null,
         url: e.url ?? null,

@@ -294,7 +294,7 @@ export function HamburgerMenu() {
         )}
         <button
           onClick={() => setShowNotifs(!showNotifs)}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/85 transition-colors hover:border-accent"
+          className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-black/85 transition-colors hover:border-accent"
           aria-label="Benachrichtigungen"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5">

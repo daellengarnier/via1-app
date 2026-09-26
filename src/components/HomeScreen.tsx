@@ -922,7 +922,6 @@ export default function HomeScreen() {
               </div>
             </button>
           )}
-          <LatestProtokollPin />
           {pinnwand.map((p, i) => {
             const styles = [
               {
@@ -1222,62 +1221,3 @@ export default function HomeScreen() {
   );
 }
 
-interface ProtokollDTO {
-  id: string;
-  title: string;
-  date: string;
-  wgName: string | null;
-  createdBy: { id: string; name: string };
-}
-
-// Gepinntes Element ganz oben in der Pinnwand: zeigt das juengste
-// Sitzungsprotokoll und oeffnet das PDF direkt im neuen Tab.
-// Im gleichen Sticky-Note-Stil wie die anderen Pinnwand-Eintraege
-// (gelbe Variante, leicht nach links gekippt) — damit es als Teil
-// der Pinnwand wirkt, nicht als Fremdkoerper.
-function LatestProtokollPin() {
-  const [item, setItem] = useState<ProtokollDTO | null>(null);
-  useEffect(() => {
-    fetch("/api/sitzungsprotokolle")
-      .then((r) => (r.ok ? r.json() : []))
-      .then((list: ProtokollDTO[]) => setItem(list[0] ?? null))
-      .catch(() => {});
-  }, []);
-  if (!item) return null;
-
-  const d = new Date(item.date);
-  const dateStr = d.toLocaleDateString("de-CH", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-  const subline = [item.wgName, `von ${item.createdBy.name}`]
-    .filter((s): s is string => !!s)
-    .join(" · ");
-
-  return (
-    <a
-      href={`/api/sitzungsprotokolle/${item.id}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="relative block overflow-hidden rounded-2xl border border-yellow-400/30 bg-gradient-to-br from-yellow-400/30 to-yellow-600/10 p-3 pb-7 shadow-lg -rotate-1 transition-transform hover:rotate-0 hover:scale-105"
-      style={{
-        boxShadow:
-          "0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
-      }}
-    >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
-      <p className="relative text-xs font-semibold leading-relaxed text-yellow-100">
-        📝 Sitzungsprotokoll · {item.title}
-      </p>
-      <p className="relative mt-1 text-[10px] leading-snug text-yellow-100/80">
-        {dateStr}
-        {subline ? ` · ${subline}` : ""}
-      </p>
-      <div className="absolute bottom-1.5 left-3 right-3 flex items-end justify-between font-mono text-[9px] text-yellow-300/80">
-        <span>📄 PDF öffnen</span>
-        <span>— Via 1 ›</span>
-      </div>
-    </a>
-  );
-}
