@@ -11,11 +11,14 @@ import type {
   Diet,
 } from "@prisma/client";
 import { canEditTermin, canEditTraktandum } from "./termin-permissions";
+import { serializeAudience, type AudienceDto } from "./audience";
 
 // Serialisierte Typen fuer das Frontend
 export interface TerminBaseDTO {
   isArchived: boolean;
   archivedAt: string | null;
+  // Wer sieht den Termin (Alle / bestimmte WGs / bestimmte Personen)
+  audience: AudienceDto;
 }
 
 export interface TerminListDTO extends TerminBaseDTO {
@@ -221,6 +224,8 @@ export function serializeTerminList(
     dinnerMenu?: string | null;
     createdBy?: { name: string };
     responsibleWg?: { id: string; name: string } | null;
+    audienceUsers?: { id: string; name: string }[];
+    audienceWgs?: { id: string; name: string }[];
   },
   currentUserId: string | null,
   attendances: { status: AttendanceStatus; userId: string }[],
@@ -268,6 +273,7 @@ export function serializeTerminList(
     archivedAt: termin.archivedAt
       ? termin.archivedAt.toISOString()
       : null,
+    audience: serializeAudience(termin),
   };
 }
 
@@ -275,6 +281,8 @@ export function serializeTerminDetail(
   termin: Termin & {
     createdBy: User;
     editors?: User[];
+    audienceUsers?: { id: string; name: string }[];
+    audienceWgs?: { id: string; name: string }[];
     traktanden: (Traktandum & { createdBy: User })[];
     attendances: (Attendance & { user: User })[];
     mealSignups: (MealSignup & {

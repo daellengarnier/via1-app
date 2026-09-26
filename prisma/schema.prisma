@@ -134,6 +134,7 @@ model User {
   pushSubscriptions    PushSubscription[]
   createdActivities    Activity[]            @relation("ActivityCreator")
   audienceActivities   Activity[]            @relation("ActivityAudienceUsers")
+  audienceTermine      Termin[]              @relation("TerminAudienceUsers")
   activityParticipations ActivityParticipant[]
   activityComments     ActivityComment[]
   reportedDamages      RoomDamage[]          @relation("DamageReporter")
@@ -291,6 +292,10 @@ model Termin {
   // Notizen, Datum, etc.) — vom Ersteller beim Anlegen festgelegt.
   // Creator ist implizit immer Bearbeiter und muss hier nicht stehen.
   editors           User[]           @relation("TerminEditor")
+  // Sichtbarkeit: "ALL" (Standard) | "WGS" | "USERS" — siehe src/lib/audience.ts
+  audienceType      String           @default("ALL")
+  audienceUsers     User[]           @relation("TerminAudienceUsers")
+  audienceWgs       Wg[]             @relation("TerminAudienceWgs")
   traktanden        Traktandum[]
   attendances       Attendance[]
   mealSignups       MealSignup[]
@@ -785,6 +790,7 @@ model Wg {
   pinnwandNotes       WgPinnwandNote[]
   guests              WgGuest[]
   audienceActivities  Activity[]            @relation("ActivityAudienceWgs")
+  audienceTermine     Termin[]              @relation("TerminAudienceWgs")
   haussitzungen       Termin[]              @relation("HaussitzungResponsible")
   haussitzungRotation HaussitzungRotation?  @relation("HaussitzungRotationWg")
   lastVisitedByUsers  User[]                @relation("UserLastVisitedWg")

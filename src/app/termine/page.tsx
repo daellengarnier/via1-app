@@ -35,7 +35,14 @@ interface Termin {
   commentCount: number;
   isHaussitzung: boolean;
   responsibleWg: { id: string; name: string } | null;
+  audience?: {
+    type: AudienceType;
+    users: { id: string; name: string }[];
+    wgs: { id: string; name: string }[];
+  };
 }
+
+type AudienceType = "ALL" | "WGS" | "USERS";
 
 const wgNames = [
   "Nordwind",
@@ -277,15 +284,39 @@ export default function TerminePage() {
     { id: string; name: string }[] | null
   >(null);
   const [editorPickerOpen, setEditorPickerOpen] = useState(false);
+  // Publikum: Alle (Standard), bestimmte WGs oder bestimmte Personen
+  const [audienceType, setAudienceType] = useState<AudienceType>("ALL");
+  const [audienceWgIds, setAudienceWgIds] = useState<string[]>([]);
+  const [audienceUserIds, setAudienceUserIds] = useState<string[]>([]);
+  const [audienceUserSearch, setAudienceUserSearch] = useState("");
+  const [wgOptions, setWgOptions] = useState<{ id: string; name: string }[]>(
+    []
+  );
   useEffect(() => {
-    if (!editorPickerOpen || allUsers !== null) return;
+    if ((!editorPickerOpen && audienceType !== "USERS") || allUsers !== null) {
+      return;
+    }
     fetch("/api/users")
       .then((r) => r.json())
       .then((d: { id: string; name: string }[]) =>
         setAllUsers(d.map((u) => ({ id: u.id, name: u.name })))
       )
       .catch(() => setAllUsers([]));
-  }, [editorPickerOpen, allUsers]);
+  }, [editorPickerOpen, audienceType, allUsers]);
+  useEffect(() => {
+    if (audienceType !== "WGS" || wgOptions.length > 0) return;
+    fetch("/api/wgs")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: { id: string; name: string }[]) => setWgOptions(d))
+      .catch(() => {});
+  }, [audienceType, wgOptions.length]);
+
+  function resetAudience() {
+    setAudienceType("ALL");
+    setAudienceWgIds([]);
+    setAudienceUserIds([]);
+    setAudienceUserSearch("");
+  }
 
   const WG_LOCATIONS = [
     "Nordwind",
@@ -355,6 +386,15 @@ export default function TerminePage() {
               ? newWithAttendance
               : false,
         editorIds: newEditorIds,
+        audience: {
+          type: audienceType,
+          wgIds: audienceType === "WGS" ? audienceWgIds : [],
+          userIds: audienceType === "USERS" ? audienceUserIds : [],
+        },
+      };
+      const readError = async (res: Response) => {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        return new Error(d.error ?? `HTTP ${res.status}`);
       };
       if (editingId) {
         const res = await fetch(`/api/termine/${editingId}`, {
@@ -362,7 +402,7 @@ export default function TerminePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw await readError(res);
         // Reload to get correct list entry (detail endpoint returns
         // a detail DTO, not list-compatible)
         await loadTermine();
@@ -372,16 +412,21 @@ export default function TerminePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw await readError(res);
         const created = (await res.json()) as Termin;
         setTermine((prev) => [created, ...prev]);
       }
       setShowCreate(false);
       setEditingId(null);
       resetForm();
+      resetAudience();
     } catch (err) {
       console.error("Termin speichern", err);
-      alert("Konnte Termin nicht speichern.");
+      alert(
+        err instanceof Error && err.message && !err.message.startsWith("HTTP")
+          ? err.message
+          : "Konnte Termin nicht speichern."
+      );
     }
   }
 
@@ -406,6 +451,9 @@ export default function TerminePage() {
     );
     setNewDinnerMenu(t.dinnerMenu ?? "");
     setNewWithAttendance(t.withAttendance);
+    setAudienceType(t.audience?.type ?? "ALL");
+    setAudienceWgIds(t.audience?.wgs.map((w) => w.id) ?? []);
+    setAudienceUserIds(t.audience?.users.map((u) => u.id) ?? []);
     // Editors aus dem Detail-Endpoint nachladen — Liste hat sie nicht.
     setNewEditorIds([]);
     fetch(`/api/termine/${t.id}`)
@@ -454,6 +502,7 @@ export default function TerminePage() {
   }
 
   function resetForm() {
+    resetAudience();
     setNewTitle("");
     setNewDate("");
     setNewTime("19:30");
@@ -877,6 +926,117 @@ export default function TerminePage() {
             )}
           </div>
 
+          {/* Publikum */}
+          <div className="mb-3">
+            <label className="mb-1 block text-xs text-gray-400">
+              Wer sieht&apos;s?
+            </label>
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {(
+                [
+                  ["ALL", "Alle"],
+                  ["WGS", "Bestimmte WGs"],
+                  ["USERS", "Bestimmte Personen"],
+                ] as [AudienceType, string][]
+              ).map(([t, label]) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setAudienceType(t)}
+                  className={`rounded-full px-3 py-1 font-mono text-[10px] font-bold transition-colors ${
+                    audienceType === t
+                      ? "bg-orange-400 text-black"
+                      : "border border-gray-700 text-gray-400"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {audienceType === "WGS" && (
+              <div className="flex flex-wrap gap-1.5">
+                {wgOptions.map((w) => {
+                  const on = audienceWgIds.includes(w.id);
+                  return (
+                    <button
+                      key={w.id}
+                      type="button"
+                      onClick={() =>
+                        setAudienceWgIds((prev) =>
+                          on ? prev.filter((x) => x !== w.id) : [...prev, w.id]
+                        )
+                      }
+                      className={`rounded border px-2.5 py-1 text-xs transition-colors ${
+                        on
+                          ? "border-orange-400 bg-orange-400/15 text-orange-200"
+                          : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
+                      }`}
+                    >
+                      {on ? "✓ " : ""}
+                      {w.name}
+                    </button>
+                  );
+                })}
+                {wgOptions.length === 0 && (
+                  <p className="text-xs text-gray-600">Lade WGs …</p>
+                )}
+              </div>
+            )}
+            {audienceType === "USERS" && (
+              <div>
+                <input
+                  type="text"
+                  value={audienceUserSearch}
+                  onChange={(e) => setAudienceUserSearch(e.target.value)}
+                  placeholder="Name suchen …"
+                  className="mb-2 w-full rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-orange-400 focus:outline-none"
+                />
+                <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
+                  {(allUsers ?? [])
+                    .filter(
+                      (u) =>
+                        u.id !== currentUserId &&
+                        (!audienceUserSearch ||
+                          u.name
+                            .toLowerCase()
+                            .includes(audienceUserSearch.toLowerCase()))
+                    )
+                    .map((u) => {
+                      const on = audienceUserIds.includes(u.id);
+                      return (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() =>
+                            setAudienceUserIds((prev) =>
+                              on
+                                ? prev.filter((x) => x !== u.id)
+                                : [...prev, u.id]
+                            )
+                          }
+                          className={`rounded border px-2.5 py-1 text-xs transition-colors ${
+                            on
+                              ? "border-orange-400 bg-orange-400/15 text-orange-200"
+                              : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
+                          }`}
+                        >
+                          {on ? "✓ " : ""}
+                          {u.name}
+                        </button>
+                      );
+                    })}
+                  {allUsers === null && (
+                    <p className="text-xs text-gray-600">Lade …</p>
+                  )}
+                </div>
+                <p className="mt-1 text-[10px] text-gray-500">
+                  {audienceUserIds.length} ausgewählt · du selbst siehst ihn
+                  immer
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Buttons */}
           <div className="flex gap-2">
             <button
@@ -891,6 +1051,7 @@ export default function TerminePage() {
                 setShowCreate(false);
                 setEditingId(null);
                 resetForm();
+                resetAudience();
               }}
               className="rounded px-4 py-2 text-xs text-gray-400 hover:text-white"
             >
@@ -1448,6 +1609,14 @@ export default function TerminePage() {
                     {t.isHaussitzung && !t.date
                       ? "automatisch erstellt"
                       : `erstellt von ${t.createdBy}`}
+                  </p>
+                )}
+                {t.audience && t.audience.type !== "ALL" && (
+                  <p className="mt-0.5 text-[10px] text-orange-300/80">
+                    🔒 nur{" "}
+                    {t.audience.type === "WGS"
+                      ? t.audience.wgs.map((w) => w.name).join(", ")
+                      : t.audience.users.map((u) => u.name).join(", ")}
                   </p>
                 )}
               </Link>
