@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWgAccess } from "@/lib/wg-access";
+import { USER_AVATAR_SELECT, withAvatarUrl } from "@/lib/avatar";
 
 // GET /api/meine-wg/[slug]/aemtli — kompletter State (auto-seed bei Bedarf)
 export async function GET(
@@ -14,9 +15,7 @@ export async function GET(
   const members = await prisma.user.findMany({
     where: { room: { wgId: access.wg.id } },
     select: {
-      id: true,
-      name: true,
-      avatar: true,
+      ...USER_AVATAR_SELECT,
       room: { select: { keyNumber: true } },
     },
     orderBy: { name: "asc" },
@@ -26,23 +25,23 @@ export async function GET(
   let state = await prisma.wgAemtliState.findUnique({
     where: { wgId: access.wg.id },
     include: {
-      lastDoneBy: { select: { id: true, name: true, avatar: true } },
+      lastDoneBy: { select: USER_AVATAR_SELECT },
       history: {
         include: {
-          byUser: { select: { id: true, name: true, avatar: true } },
+          byUser: { select: USER_AVATAR_SELECT },
         },
         orderBy: { doneAt: "desc" },
         take: 50,
       },
       bonusLog: {
         include: {
-          byUser: { select: { id: true, name: true, avatar: true } },
+          byUser: { select: USER_AVATAR_SELECT },
         },
       },
       swapRequests: {
         include: {
-          fromUser: { select: { id: true, name: true, avatar: true } },
-          toUser: { select: { id: true, name: true, avatar: true } },
+          fromUser: { select: USER_AVATAR_SELECT },
+          toUser: { select: USER_AVATAR_SELECT },
         },
         where: { status: "pending" },
         orderBy: { createdAt: "desc" },
@@ -57,21 +56,21 @@ export async function GET(
         rotationOrder: members.map((m) => m.id),
       },
       include: {
-        lastDoneBy: { select: { id: true, name: true, avatar: true } },
+        lastDoneBy: { select: USER_AVATAR_SELECT },
         history: {
           include: {
-            byUser: { select: { id: true, name: true, avatar: true } },
+            byUser: { select: USER_AVATAR_SELECT },
           },
         },
         bonusLog: {
           include: {
-            byUser: { select: { id: true, name: true, avatar: true } },
+            byUser: { select: USER_AVATAR_SELECT },
           },
         },
         swapRequests: {
           include: {
-            fromUser: { select: { id: true, name: true, avatar: true } },
-            toUser: { select: { id: true, name: true, avatar: true } },
+            fromUser: { select: USER_AVATAR_SELECT },
+            toUser: { select: USER_AVATAR_SELECT },
           },
         },
       },
@@ -82,34 +81,38 @@ export async function GET(
   const order = state.rotationOrder;
   const currentUserId =
     order.length > 0 ? order[state.currentIndex % order.length] : null;
+  const publicMembers = members.map((m) => ({
+    ...withAvatarUrl(m),
+    room: m.room,
+  }));
   const currentUser = currentUserId
-    ? members.find((m) => m.id === currentUserId) ?? null
+    ? publicMembers.find((m) => m.id === currentUserId) ?? null
     : null;
 
   return NextResponse.json({
-    members,
+    members: publicMembers,
     rotationOrder: order,
     currentIndex: state.currentIndex,
     currentUser,
-    lastDoneBy: state.lastDoneBy,
+    lastDoneBy: withAvatarUrl(state.lastDoneBy),
     lastDoneAt: state.lastDoneAt?.toISOString() ?? null,
     checkedPflicht: state.checkedPflicht,
     customBonus: state.customBonus,
     history: state.history.map((h) => ({
       id: h.id,
-      byUser: h.byUser,
+      byUser: withAvatarUrl(h.byUser),
       doneAt: h.doneAt.toISOString(),
     })),
     bonusLog: Object.fromEntries(
       state.bonusLog.map((l) => [
         l.taskName,
-        { byUser: l.byUser, date: l.date.toISOString() },
+        { byUser: withAvatarUrl(l.byUser), date: l.date.toISOString() },
       ])
     ),
     swapRequests: state.swapRequests.map((s) => ({
       id: s.id,
-      from: s.fromUser,
-      to: s.toUser,
+      from: withAvatarUrl(s.fromUser),
+      to: withAvatarUrl(s.toUser),
       status: s.status,
       createdAt: s.createdAt.toISOString(),
     })),

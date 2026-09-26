@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWgAccess } from "@/lib/wg-access";
+import { USER_AVATAR_SELECT, withAvatarUrl } from "@/lib/avatar";
 
 // GET /api/meine-wg/[slug]/doodle/[id] — Detail mit Optionen + Votes
 export async function GET(
@@ -18,7 +19,7 @@ export async function GET(
         include: {
           votes: {
             include: {
-              user: { select: { id: true, name: true, avatar: true } },
+              user: { select: USER_AVATAR_SELECT },
             },
           },
         },
@@ -43,7 +44,7 @@ export async function GET(
     options: d.options.map((o) => ({
       id: o.id,
       date: o.date.toISOString(),
-      voters: o.votes.map((v) => v.user),
+      voters: o.votes.map((v) => withAvatarUrl(v.user)),
     })),
   });
 }

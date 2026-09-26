@@ -6,6 +6,7 @@ import {
   requireWgAccess,
   wgMemberFilter,
 } from "@/lib/wg-access";
+import { USER_AVATAR_SELECT, withAvatarUrl } from "@/lib/avatar";
 
 interface CreateBody {
   title?: string;
@@ -41,12 +42,7 @@ export async function GET(
     }),
     prisma.user.findMany({
       where: { AND: [wgMemberFilter(access.wg.id), { birthday: { not: null } }] },
-      select: {
-        id: true,
-        name: true,
-        avatar: true,
-        birthday: true,
-      },
+      select: { ...USER_AVATAR_SELECT, birthday: true },
     }),
   ]);
 
@@ -75,7 +71,7 @@ export async function GET(
       const age =
         next.getFullYear() - m.birthday.getUTCFullYear();
       upcoming.push({
-        user: { id: m.id, name: m.name, avatar: m.avatar },
+        user: withAvatarUrl(m),
         date: next.toISOString().slice(0, 10),
         age,
         daysUntil,

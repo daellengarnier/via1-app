@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { avatarUrl } from "@/lib/avatar";
 
 // GET /api/users — Liste aller Bewohner:innen mit Zimmer + WG
 // fuer Attendance-Modal, Meal-Signups-Zuordnung, Bewohnende-Seite.
@@ -20,7 +21,7 @@ export async function GET() {
         name: true,
         fullName: true,
         favoriteAnimal: true,
-        avatar: true,
+        avatarUpdatedAt: true,
         birthday: true,
         diet: true,
         allergies: true,
@@ -82,7 +83,7 @@ export async function GET() {
         name: u.name,
         fullName: u.fullName ?? "",
         favoriteAnimal: u.favoriteAnimal ?? "",
-        avatar: u.avatar ?? null,
+        avatar: avatarUrl(u),
         birthday: u.birthday ? u.birthday.toISOString().split("T")[0] : null,
         diet: u.diet ? dietMap[u.diet] : null,
         allergies: u.allergies ?? "",
