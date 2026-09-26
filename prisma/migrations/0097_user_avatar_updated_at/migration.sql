@@ -3,7 +3,9 @@
 -- das Bild selbst kommt ueber /api/users/[id]/avatar?v=<stempel>.
 -- Additiv, kein Datenverlust.
 
-ALTER TABLE "users" ADD COLUMN "avatarUpdatedAt" TIMESTAMP(3);
+-- IF NOT EXISTS, weil prisma/pre-migrate.js die Spalte als Notfall-
+-- Massnahme schon vor "migrate deploy" anlegen kann (siehe dort).
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "avatarUpdatedAt" TIMESTAMP(3);
 
 -- Backfill: wer schon ein Bild hat, bekommt den bisherigen updatedAt
 -- als Stempel (fuer die Cache-URL reicht irgendein stabiler Wert).
