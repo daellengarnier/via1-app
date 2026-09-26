@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import {
   HOME_BLOCK_LABELS,
   LIST_COUNTS,
@@ -26,14 +26,28 @@ interface Props {
   onChange: (next: HomeLayout) => void;
 }
 
+interface DragState {
+  id: HomeBlockId;
+  x: number;
+  y: number;
+  overId: HomeBlockId | null;
+  after: boolean;
+}
+
 const CAP: Record<BlockSize, number> = { half: 2, third: 3, full: 1 };
 
 // Rendert die Bloecke in der gespeicherten Reihenfolge. Aufeinander-
 // folgende gleich grosse Bloecke teilen sich eine Zeile (2 halbe, 3
 // drittel); ein uebrig bleibender Block fuellt seine Zeile allein.
-// Im Bearbeiten-Modus bekommt jeder Block eine kleine Leiste mit
-// Verschieben/Ausblenden, unten erscheinen die ausgeblendeten Bloecke.
+//
+// Bearbeiten-Modus: jeder Block bekommt eine Leiste mit Griff (Drag &
+// Drop ueber Pointer-Events — kein HTML5-DnD, das ist auf iOS unzu-
+// verlaessig), ▲ ▼ als Fallback, ✕ zum Ausblenden und bei Terminen/
+// Aktivitaeten die Anzahl 1/3/5. Unten die ausgeblendeten Bloecke.
 export function HomeLayoutGrid({ layout, blocks, editMode, onChange }: Props) {
+  const [drag, setDrag] = useState<DragState | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+
   const usable = (id: HomeBlockId) =>
     !!blocks[id] && blocks[id]!.available !== false;
   const visible = layout.order.filter(
@@ -63,9 +77,16 @@ export function HomeLayoutGrid({ layout, blocks, editMode, onChange }: Props) {
     const idx = visible.indexOf(id);
     const target = visible[idx + dir];
     if (!target) return;
+    placeRelative(id, target, dir > 0);
+  }
+
+  // id aus der Reihenfolge nehmen und vor/nach target wieder einfuegen.
+  function placeRelative(id: HomeBlockId, target: HomeBlockId, after: boolean) {
+    if (id === target) return;
     const order = layout.order.filter((x) => x !== id);
-    const targetIdx = order.indexOf(target);
-    order.splice(dir < 0 ? targetIdx : targetIdx + 1, 0, id);
+    const i = order.indexOf(target);
+    if (i < 0) return;
+    order.splice(after ? i + 1 : i, 0, id);
     onChange({ ...layout, order });
   }
 
@@ -92,18 +113,86 @@ export function HomeLayoutGrid({ layout, blocks, editMode, onChange }: Props) {
     );
   }
 
+  // --- Drag & Drop ---
+  // Der Block bleibt an Ort und Stelle (leicht ausgegraut), unter dem
+  // Finger schwebt nur ein Label. So trifft elementFromPoint immer den
+  // Block unter dem Finger, nicht den gezogenen.
+  function onHandlePointerDown(id: HomeBlockId, e: React.PointerEvent) {
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const s: DragState = { id, x: e.clientX, y: e.clientY, overId: null, after: false };
+    dragRef.current = s;
+    setDrag(s);
+  }
+
+  function onHandlePointerMove(e: React.PointerEvent) {
+    const d = dragRef.current;
+    if (!d) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const target = el?.closest<HTMLElement>("[data-block-id]") ?? null;
+    let overId: HomeBlockId | null = null;
+    let after = false;
+    if (target && target.dataset.blockId && target.dataset.blockId !== d.id) {
+      overId = target.dataset.blockId as HomeBlockId;
+      const r = target.getBoundingClientRect();
+      after = e.clientY > r.top + r.height / 2;
+    }
+    const next: DragState = { id: d.id, x: e.clientX, y: e.clientY, overId, after };
+    dragRef.current = next;
+    setDrag(next);
+
+    // Am Bildschirmrand langsam mitscrollen.
+    const margin = 90;
+    if (e.clientY < margin) window.scrollBy(0, -10);
+    else if (e.clientY > window.innerHeight - margin) window.scrollBy(0, 10);
+  }
+
+  function onHandlePointerUp() {
+    const d = dragRef.current;
+    dragRef.current = null;
+    setDrag(null);
+    if (d?.overId) placeRelative(d.id, d.overId, d.after);
+  }
+
+  function onHandlePointerCancel() {
+    dragRef.current = null;
+    setDrag(null);
+  }
+
   function frame(id: HomeBlockId, node: ReactNode) {
     if (!editMode) return node;
     const idx = visible.indexOf(id);
     const countable = id === "termin" || id === "aktivitaet";
     const count = id === "termin" ? layout.termineCount : layout.aktivitaetenCount;
+    const isDragging = drag?.id === id;
+    const isOver = drag?.overId === id;
     return (
-      <div className="mb-3 rounded-2xl border border-dashed border-accent/40 p-1">
+      <div
+        data-block-id={id}
+        className={`relative mb-3 rounded-2xl border border-dashed p-1 transition-opacity ${
+          isOver ? "border-accent" : "border-accent/40"
+        } ${isDragging ? "opacity-40" : ""}`}
+      >
+        {isOver && !drag?.after && (
+          <div className="absolute -top-2 left-2 right-2 h-1 rounded-full bg-accent" />
+        )}
+        {isOver && drag?.after && (
+          <div className="absolute -bottom-2 left-2 right-2 h-1 rounded-full bg-accent" />
+        )}
         <div className="pointer-events-none opacity-80">{node}</div>
         <div className="mt-1 flex flex-wrap items-center gap-1 rounded-md bg-black/70 px-1.5 py-1">
-          <span className="mr-auto truncate font-mono text-[9px] uppercase tracking-wider text-gray-400">
-            {HOME_BLOCK_LABELS[id]}
-          </span>
+          <button
+            type="button"
+            onPointerDown={(e) => onHandlePointerDown(id, e)}
+            onPointerMove={onHandlePointerMove}
+            onPointerUp={onHandlePointerUp}
+            onPointerCancel={onHandlePointerCancel}
+            className="mr-auto flex min-w-0 cursor-grab touch-none select-none items-center gap-1.5 rounded px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-gray-300 active:cursor-grabbing"
+            aria-label={`${HOME_BLOCK_LABELS[id]} verschieben`}
+          >
+            <span className="text-sm leading-none text-accent">⠿</span>
+            <span className="truncate">{HOME_BLOCK_LABELS[id]}</span>
+          </button>
           {countable && (
             <span className="flex items-center gap-0.5">
               {LIST_COUNTS.map((c) => (
@@ -203,6 +292,15 @@ export function HomeLayoutGrid({ layout, blocks, editMode, onChange }: Props) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {drag && (
+        <div
+          className="pointer-events-none fixed z-[80] rounded-full bg-accent px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-dark shadow-lg"
+          style={{ left: drag.x + 14, top: drag.y - 16 }}
+        >
+          ⠿ {HOME_BLOCK_LABELS[drag.id]}
         </div>
       )}
     </>
