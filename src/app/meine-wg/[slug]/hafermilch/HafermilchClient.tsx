@@ -281,8 +281,8 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
       <WgPageHeader
         backToWgSlug={slug}
         backToWgName={wgName}
-        title="Milchbüechli"
-        subtitle="Oatly-Hafermilch-Kasse"
+        title="Oatly-Milchbüechli"
+        subtitle="Hafermilch-Kasse der WG"
       />
 
       {!data ? (

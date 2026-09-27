@@ -248,3 +248,4 @@ Keine Punkte oder Ranglisten - eher spielerisch und spassig.
 | 2026-09-27 | Hafermilch: "Wer zahlt wem" paarweise verrechnet statt "wenigste Zahlungen" (war korrekt, aber unverstaendlich: Dritte sollten Ambar statt Alain zahlen) | Alain |
 | 2026-09-27 | Hafermilch: "Unterwegs"-Anzeige und Lieferzeit-Einstellung aus der UI entfernt (User-Wunsch); Vorrat einfach eintragen. Lieferzeit bleibt intern 2 Tage | Alain |
 | 2026-09-27 | Dashboard-Kachel heisst "Milchbüechli" (Oatly-Kasse): Bilanz + Vorrat/Reichweite + Ø-Konsum + Spruch je nach Fuellstand. Rechenlogik dedupliziert Teilnehmer-IDs pro Bestellung | Alain |
+| 2026-09-27 | Kachel heisst "Oatly-Milchbüechli" (Oatly muss sichtbar sein). Zusaetzlich Aufschluesselung pro Person unter der Bilanz: "von Nici 54.78 · Davina 54.78 …" (gruen) bzw. "an Ambar 14.94" (orange), paarweise verrechnet wie auf der Oatly-Seite | Alain |

@@ -115,6 +115,8 @@ interface HafermilchSummary {
   daysLeft?: number | null;
   bottlesPerHeadWeek?: number | null;
   litersPerHeadWeek?: number | null;
+  owedToMe?: { name: string; amountCents: number }[];
+  iOwe?: { name: string; amountCents: number }[];
 }
 
 interface DashboardData {
@@ -293,6 +295,12 @@ function HafermilchTile({
   if (perHead !== null) details.push(`Ø ${perHead.toFixed(1)} Fl./Kopf/Woche`);
   const spruch = data && data.participants > 0 ? haferSpruch(stock, daysLeft) : null;
 
+  // Wer schuldet mir was / wem schulde ich was — paarweise verrechnet
+  const fmtList = (l: { name: string; amountCents: number }[]) =>
+    l.map((e) => `${e.name} ${chf(e.amountCents)}`).join(" · ");
+  const owedToMe = data?.owedToMe ?? [];
+  const iOwe = data?.iOwe ?? [];
+
   return (
     <Link
       href={href}
@@ -300,12 +308,19 @@ function HafermilchTile({
     >
       <div className="min-w-0">
         <p className="font-display text-xs font-bold uppercase tracking-widest text-white">
-          🥛 Milchbüechli
-          <span className="ml-1.5 font-mono text-[9px] font-normal normal-case tracking-wider text-gray-500">
-            Oatly-Kasse
-          </span>
+          🥛 Oatly-Milchbüechli
         </p>
         <p className={`mt-0.5 truncate text-sm ${tone}`}>{text}</p>
+        {owedToMe.length > 0 && (
+          <p className="truncate font-mono text-[10px] text-emerald-300/80">
+            von {fmtList(owedToMe)}
+          </p>
+        )}
+        {iOwe.length > 0 && (
+          <p className="truncate font-mono text-[10px] text-orange-300/80">
+            an {fmtList(iOwe)}
+          </p>
+        )}
         {details.length > 0 && (
           <p className="mt-0.5 truncate font-mono text-[10px] text-gray-400">
             {details.join(" · ")}
