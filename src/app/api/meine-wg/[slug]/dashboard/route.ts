@@ -220,7 +220,7 @@ export async function GET(
     })),
     hafermilch: {
       participants: hafermilch.stats.participants,
-      cartons: hafermilch.stats.cartons,
+      cartons: hafermilch.stats.counts.carton + hafermilch.stats.counts.carton1l,
       isParticipant: hafermilch.settings.participantIds.includes(access.user.id),
       myNetCents:
         hafermilch.balances.find((b) => b.userId === access.user.id)?.netCents ??

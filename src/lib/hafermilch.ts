@@ -6,10 +6,26 @@ import { isoDate } from "@/lib/wg-koch-day";
 // Mittrinkenden verteilt (Snapshot pro Bestellung), Zahlungen gleichen
 // aus. Alle Betraege in Rappen.
 
+// carton = Karton 6 x 1.5 l, carton1l = Karton 6 x 1 l,
+// single = Packung 1.5 l, single1l = Packung 1 l
+export type HafermilchUnit = "carton" | "carton1l" | "single" | "single1l";
+
+export const HAFERMILCH_UNITS: HafermilchUnit[] = [
+  "carton",
+  "carton1l",
+  "single",
+  "single1l",
+];
+
+export function toUnit(v: unknown): HafermilchUnit {
+  return v === "carton1l" || v === "single" || v === "single1l" ? v : "carton";
+}
+
 export interface OrderDto {
   id: string;
   date: string;
   boughtById: string;
+  unit: HafermilchUnit;
   quantity: number;
   unitCents: number;
   totalCents: number;
@@ -36,13 +52,20 @@ export interface HafermilchData {
   members: { id: string; name: string }[];
   // Namen auch fuer Personen, die nicht (mehr) Mitglied sind
   names: Record<string, string>;
-  settings: { participantIds: string[]; unitCents: number };
+  settings: {
+    participantIds: string[];
+    unitCents: number;
+    carton1lCents: number;
+    singleCents: number;
+    single1lCents: number;
+  };
   orders: OrderDto[];
   payments: PaymentDto[];
   balances: { userId: string; netCents: number }[];
   settlements: Settlement[];
   stats: {
-    cartons: number;
+    // Stueckzahlen pro Einheit
+    counts: Record<HafermilchUnit, number>;
     totalCents: number;
     participants: number;
     perPersonCents: number;
@@ -132,6 +155,9 @@ export async function loadHafermilch(wgId: string): Promise<HafermilchData> {
 
   const participantIds = settings?.participantIds ?? [];
   const unitCents = settings?.unitCents ?? 2490;
+  const carton1lCents = settings?.carton1lCents ?? 1740;
+  const singleCents = settings?.singleCents ?? 415;
+  const single1lCents = settings?.single1lCents ?? 290;
 
   // Namen fuer alle referenzierten IDs (auch Ex-Mitglieder).
   const ids = new Set<string>(members.map((m) => m.id));
@@ -156,18 +182,20 @@ export async function loadHafermilch(wgId: string): Promise<HafermilchData> {
   for (const u of [...members, ...extra]) names[u.id] = u.name;
 
   const bal = computeBalances(orders, payments);
-  const cartons = orders.reduce((s, o) => s + o.quantity, 0);
+  const counts = { carton: 0, carton1l: 0, single: 0, single1l: 0 };
+  for (const o of orders) counts[toUnit(o.unit)] += o.quantity;
   const totalCents = orders.reduce((s, o) => s + o.quantity * o.unitCents, 0);
   const participants = participantIds.length;
 
   return {
     members,
     names,
-    settings: { participantIds, unitCents },
+    settings: { participantIds, unitCents, carton1lCents, singleCents, single1lCents },
     orders: orders.map((o) => ({
       id: o.id,
       date: isoDate(o.date),
       boughtById: o.boughtById,
+      unit: toUnit(o.unit),
       quantity: o.quantity,
       unitCents: o.unitCents,
       totalCents: o.quantity * o.unitCents,
@@ -188,7 +216,7 @@ export async function loadHafermilch(wgId: string): Promise<HafermilchData> {
       .sort((a, b) => b.netCents - a.netCents),
     settlements: settle(bal),
     stats: {
-      cartons,
+      counts,
       totalCents,
       participants,
       perPersonCents: participants > 0 ? Math.round(totalCents / participants) : 0,
@@ -198,4 +226,23 @@ export async function loadHafermilch(wgId: string): Promise<HafermilchData> {
 
 export function chf(cents: number): string {
   return (cents / 100).toFixed(2);
+}
+
+export function unitLabel(unit: HafermilchUnit, quantity: number): string {
+  const pack = quantity === 1 ? "Packung" : "Packungen";
+  const box = quantity === 1 ? "Karton" : "Kartons";
+  if (unit === "single") return `${pack} 1.5 l`;
+  if (unit === "single1l") return `${pack} 1 l`;
+  if (unit === "carton1l") return `${box} 6 × 1 l`;
+  return `${box} 6 × 1.5 l`;
+}
+
+export function defaultCentsFor(
+  s: { unitCents: number; carton1lCents: number; singleCents: number; single1lCents: number },
+  unit: HafermilchUnit
+): number {
+  if (unit === "carton1l") return s.carton1lCents;
+  if (unit === "single") return s.singleCents;
+  if (unit === "single1l") return s.single1lCents;
+  return s.unitCents;
 }

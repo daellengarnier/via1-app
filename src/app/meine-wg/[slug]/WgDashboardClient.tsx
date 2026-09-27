@@ -262,6 +262,7 @@ function HafermilchTile({
     text = `Du schuldest CHF ${chf(-data.myNetCents)}`;
   } else {
     text = `Ausgeglichen · ${data.cartons} Karton${data.cartons === 1 ? "" : "s"} bisher`;
+    // (nur Kartons gezaehlt — Packungen sind die Ausnahme)
   }
   return (
     <Link
