@@ -65,7 +65,6 @@ interface Data {
     bottlesPerHeadWeek: number;
     litersPerHeadWeek: number;
     daysLeft: number | null;
-    pending: { date: string; deliveryDate: string; bottles: number }[];
   } | null;
   orders: Order[];
   payments: Payment[];
@@ -139,16 +138,14 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
     single1l: "2.90",
   });
 
-  // Vorrat / Lieferzeit
+  // Vorrat
   const [stockInput, setStockInput] = useState("");
-  const [deliveryDaysInput, setDeliveryDaysInput] = useState("2");
 
   const base = `/api/meine-wg/${slug}/hafermilch`;
 
   const apply = useCallback(
     (d: Data) => {
       setData(d);
-      setDeliveryDaysInput(String(d.settings.deliveryDays));
       setPrices({
         carton: chf(d.settings.unitCents),
         carton1l: chf(d.settings.carton1lCents),
@@ -227,12 +224,6 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
       body: JSON.stringify({ stockCount: Math.round(n), stockAt: todayIso() }),
     });
     if (ok) setStockInput("");
-  }
-
-  async function saveDeliveryDays() {
-    const n = Number(deliveryDaysInput);
-    if (!Number.isFinite(n)) return;
-    await call(base, { method: "PUT", body: JSON.stringify({ deliveryDays: n }) });
   }
 
   async function addOrder(e: React.FormEvent) {
@@ -365,23 +356,6 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
                     <span className="text-[11px] text-gray-500">CHF</span>
                   </div>
                 ))}
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <label className="w-36 text-[11px] text-gray-400">
-                  Lieferzeit (Tage)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  max={30}
-                  value={deliveryDaysInput}
-                  onChange={(e) => setDeliveryDaysInput(e.target.value)}
-                  onBlur={saveDeliveryDays}
-                  className="w-20 rounded border border-gray-700 bg-black/40 px-2 py-1 text-right text-sm text-white focus:border-white focus:outline-none"
-                />
-                <span className="text-[11px] text-gray-500">
-                  Bestellung zählt erst ab Lieferung
-                </span>
               </div>
             </div>
           ) : null}
@@ -632,14 +606,6 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
                         </span>
                       )}
                     </p>
-                    {data.consumption.pending.length > 0 && (
-                      <p className="text-[11px] text-emerald-300">
-                        Unterwegs:{" "}
-                        {data.consumption.pending
-                          .map((p) => `${p.bottles} Flaschen am ${fmtDate(p.deliveryDate)}`)
-                          .join(", ")}
-                      </p>
-                    )}
                   </>
                 ) : (
                   <p className="text-xs text-gray-500">
@@ -663,7 +629,7 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
                     disabled={busy || stockInput === ""}
                     className="rounded-md border border-gray-600 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-200 hover:border-white disabled:opacity-40"
                   >
-                    Vorrat heute aktualisieren
+                    Vorrat eintragen
                   </button>
                 </form>
               </div>
