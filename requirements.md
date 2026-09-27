@@ -246,3 +246,4 @@ Keine Punkte oder Ranglisten - eher spielerisch und spassig.
 | 2026-09-27 | Migration 0104: Ambars Oatly-Bestellungen (21.07. 2 Kartons, 31.08. 1 Karton) importiert | Alain |
 | 2026-09-27 | Hafermilch: Verbrauchsstatistik (Ø Flaschen/Liter pro Kopf und Woche, Reichweite des Vorrats, Lieferungen unterwegs). Lieferzeit einstellbar (Default 2 Tage), Vorrat mit Datum erfassbar (Migration 0105, Seed: 3 Flaschen am 27.09.) | Alain |
 | 2026-09-27 | Hafermilch: "Wer zahlt wem" paarweise verrechnet statt "wenigste Zahlungen" (war korrekt, aber unverstaendlich: Dritte sollten Ambar statt Alain zahlen) | Alain |
+| 2026-09-27 | Hafermilch: "Unterwegs"-Anzeige und Lieferzeit-Einstellung aus der UI entfernt (User-Wunsch); Vorrat einfach eintragen. Lieferzeit bleibt intern 2 Tage | Alain |

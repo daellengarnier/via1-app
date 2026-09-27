@@ -63,8 +63,6 @@ export interface ConsumptionDto {
   litersPerHeadWeek: number;
   // Reichweite des Vorrats in Tagen (null = kein Verbrauch messbar)
   daysLeft: number | null;
-  // Noch nicht gelieferte Bestellungen
-  pending: { date: string; deliveryDate: string; bottles: number }[];
 }
 
 export interface HafermilchData {
@@ -347,15 +345,6 @@ export function computeConsumption(
   const litersPerBottle = deliveredBottles > 0 ? deliveredLiters / deliveredBottles : 1.5;
   const bottlesPerHeadWeek = consumedBottles / opts.participants / weeks;
   const bottlesPerDay = consumedBottles / days;
-  const today = new Date().toISOString().slice(0, 10);
-  const pending = withDelivery
-    .filter((o) => o.deliveryDate > today)
-    .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate))
-    .map((o) => ({
-      date: o.date,
-      deliveryDate: o.deliveryDate,
-      bottles: bottlesOf(o.unit, o.quantity),
-    }));
   return {
     refDate,
     since,
@@ -367,7 +356,6 @@ export function computeConsumption(
     bottlesPerHeadWeek,
     litersPerHeadWeek: bottlesPerHeadWeek * litersPerBottle,
     daysLeft: bottlesPerDay > 0 ? opts.stockCount / bottlesPerDay : null,
-    pending,
   };
 }
 
