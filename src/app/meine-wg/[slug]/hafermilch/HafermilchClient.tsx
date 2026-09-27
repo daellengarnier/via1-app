@@ -417,8 +417,11 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
 
               {/* Wer zahlt wem */}
               <div className="wg-tile p-3">
-                <p className="mb-2 font-display text-xs font-bold uppercase tracking-widest text-white">
+                <p className="font-display text-xs font-bold uppercase tracking-widest text-white">
                   Wer zahlt wem
+                </p>
+                <p className="mb-2 text-[10px] text-gray-500">
+                  Dein Anteil an den Einkäufen der anderen — gegenseitig verrechnet.
                 </p>
                 {data.settlements.length === 0 ? (
                   <p className="text-xs text-gray-500">Niemand schuldet jemandem etwas. 🎉</p>

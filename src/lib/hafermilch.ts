@@ -132,30 +132,43 @@ export function computeBalances(
   return bal;
 }
 
-// Wenigste Zahlungen, damit alle bei null landen (greedy).
-export function settle(bal: Map<string, number>): Settlement[] {
-  const debtors = Array.from(bal.entries())
-    .filter(([, c]) => c < 0)
-    .map(([id, c]) => ({ id, c: -c }))
-    .sort((a, b) => b.c - a.c);
-  const creditors = Array.from(bal.entries())
-    .filter(([, c]) => c > 0)
-    .map(([id, c]) => ({ id, c }))
-    .sort((a, b) => b.c - a.c);
-  const out: Settlement[] = [];
-  let i = 0;
-  let j = 0;
-  while (i < debtors.length && j < creditors.length) {
-    const d = debtors[i]!;
-    const c = creditors[j]!;
-    const amount = Math.min(d.c, c.c);
-    if (amount > 0) out.push({ fromId: d.id, toId: c.id, amountCents: amount });
-    d.c -= amount;
-    c.c -= amount;
-    if (d.c === 0) i += 1;
-    if (c.c === 0) j += 1;
+// Paarweise Schulden: jede Person schuldet jeder Kaeuferin ihren Anteil
+// an deren Einkaeufen; Gegenseitiges wird verrechnet, Zahlungen mindern
+// die jeweilige Paar-Schuld. Bewusst NICHT "wenigste Zahlungen" — das
+// war mathematisch richtig, aber niemand konnte nachvollziehen, warum
+// jemand einer dritten Person statt der Kaeuferin zahlen soll.
+export function settle(orders: OrderLike[], payments: PaymentLike[]): Settlement[] {
+  // debt[from][to] = from schuldet to
+  const debt = new Map<string, Map<string, number>>();
+  const add = (from: string, to: string, c: number) => {
+    if (from === to || c === 0) return;
+    const row = debt.get(from) ?? new Map<string, number>();
+    row.set(to, (row.get(to) ?? 0) + c);
+    debt.set(from, row);
+  };
+  for (const o of orders) {
+    const cost = o.quantity * o.unitCents;
+    const parts = o.participantIds.length > 0 ? o.participantIds : [o.boughtById];
+    const share = Math.floor(cost / parts.length);
+    for (const p of parts) add(p, o.boughtById, share);
   }
-  return out;
+  for (const p of payments) add(p.fromId, p.toId, -p.amountCents);
+
+  const out: Settlement[] = [];
+  const seen = new Set<string>();
+  for (const [a, row] of debt) {
+    for (const b of row.keys()) {
+      const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const ab = debt.get(a)?.get(b) ?? 0;
+      const ba = debt.get(b)?.get(a) ?? 0;
+      const net = ab - ba;
+      if (net > 0) out.push({ fromId: a, toId: b, amountCents: net });
+      else if (net < 0) out.push({ fromId: b, toId: a, amountCents: -net });
+    }
+  }
+  return out.sort((x, y) => y.amountCents - x.amountCents);
 }
 
 export async function loadHafermilch(wgId: string): Promise<HafermilchData> {
@@ -259,7 +272,7 @@ export async function loadHafermilch(wgId: string): Promise<HafermilchData> {
       .filter(([, c]) => c !== 0)
       .map(([userId, netCents]) => ({ userId, netCents }))
       .sort((a, b) => b.netCents - a.netCents),
-    settlements: settle(bal),
+    settlements: settle(orders, payments),
     stats: {
       counts,
       totalCents,
