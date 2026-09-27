@@ -281,8 +281,8 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
       <WgPageHeader
         backToWgSlug={slug}
         backToWgName={wgName}
-        title="Oatly"
-        subtitle="Hafermilch-Kasse · Karton à 6 × 1.5 l"
+        title="Milchbüechli"
+        subtitle="Oatly-Hafermilch-Kasse"
       />
 
       {!data ? (

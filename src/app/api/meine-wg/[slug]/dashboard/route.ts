@@ -225,6 +225,11 @@ export async function GET(
       myNetCents:
         hafermilch.balances.find((b) => b.userId === access.user.id)?.netCents ??
         0,
+      stockCount: hafermilch.settings.stockCount,
+      stockAt: hafermilch.settings.stockAt,
+      daysLeft: hafermilch.consumption?.daysLeft ?? null,
+      bottlesPerHeadWeek: hafermilch.consumption?.bottlesPerHeadWeek ?? null,
+      litersPerHeadWeek: hafermilch.consumption?.litersPerHeadWeek ?? null,
     },
     pinnwand: pinnwandNotes.map((n) => ({
       id: n.id,

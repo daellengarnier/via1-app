@@ -110,6 +110,11 @@ interface HafermilchSummary {
   cartons: number;
   isParticipant: boolean;
   myNetCents: number;
+  stockCount?: number | null;
+  stockAt?: string | null;
+  daysLeft?: number | null;
+  bottlesPerHeadWeek?: number | null;
+  litersPerHeadWeek?: number | null;
 }
 
 interface DashboardData {
@@ -237,7 +242,20 @@ export function WgDashboardClient({ slug, meId, meName }: Props) {
   );
 }
 
-// ===== OATLY-HAFERMILCH-TILE =====
+// ===== MILCHBÜECHLI (OATLY-HAFERMILCH-TILE) =====
+
+// Spruch je nach Fuellstand — darf ein bisschen lustig sein.
+function haferSpruch(stock: number | null | undefined, daysLeft: number | null | undefined): string | null {
+  if (stock === null || stock === undefined) return null;
+  if (stock === 0) return "Trocken. Kaffee schwarz — oder jemand bestellt.";
+  if (daysLeft !== null && daysLeft !== undefined) {
+    if (daysLeft < 2) return "Letzte Tropfen. Wer bestellt?";
+    if (daysLeft < 5) return "Wird knapp — bald nachlegen.";
+    if (daysLeft < 14) return "Reicht noch, aber nicht ewig.";
+    return "Hafer-Reserven solide. Prost.";
+  }
+  return stock <= 3 ? "Wird knapp — bald nachlegen." : "Genug für alle.";
+}
 
 function HafermilchTile({
   slug,
@@ -261,9 +279,20 @@ function HafermilchTile({
     tone = "text-orange-300";
     text = `Du schuldest CHF ${chf(-data.myNetCents)}`;
   } else {
-    text = `Ausgeglichen · ${data.cartons} Karton${data.cartons === 1 ? "" : "s"} bisher`;
-    // (nur Kartons gezaehlt — Packungen sind die Ausnahme)
+    text = "Alles ausgeglichen";
   }
+
+  const stock = data?.stockCount ?? null;
+  const daysLeft = data?.daysLeft ?? null;
+  const perHead = data?.bottlesPerHeadWeek ?? null;
+  const details: string[] = [];
+  if (stock !== null) {
+    details.push(`Vorrat ${stock} Fl.`);
+    if (daysLeft !== null) details.push(`reicht ~${Math.max(0, Math.round(daysLeft))} Tage`);
+  }
+  if (perHead !== null) details.push(`Ø ${perHead.toFixed(1)} Fl./Kopf/Woche`);
+  const spruch = data && data.participants > 0 ? haferSpruch(stock, daysLeft) : null;
+
   return (
     <Link
       href={href}
@@ -271,9 +300,20 @@ function HafermilchTile({
     >
       <div className="min-w-0">
         <p className="font-display text-xs font-bold uppercase tracking-widest text-white">
-          🥛 Oatly
+          🥛 Milchbüechli
+          <span className="ml-1.5 font-mono text-[9px] font-normal normal-case tracking-wider text-gray-500">
+            Oatly-Kasse
+          </span>
         </p>
         <p className={`mt-0.5 truncate text-sm ${tone}`}>{text}</p>
+        {details.length > 0 && (
+          <p className="mt-0.5 truncate font-mono text-[10px] text-gray-400">
+            {details.join(" · ")}
+          </p>
+        )}
+        {spruch && (
+          <p className="mt-0.5 truncate text-[11px] italic text-gray-500">{spruch}</p>
+        )}
       </div>
       <span className="ml-3 shrink-0 font-mono text-lg text-gray-400">→</span>
     </Link>
