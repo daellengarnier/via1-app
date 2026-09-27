@@ -50,6 +50,32 @@ const ENSURE_SQL = [
   ...m2m("_TerminAudienceWgs", "termine", "Wg"),
   // 0100
   `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "homeLayout" JSONB`,
+  // 0101 — Oatly-Hafermilch-Kasse
+  `CREATE TABLE IF NOT EXISTS "WgHafermilchSettings" (
+    "id" TEXT NOT NULL, "wgId" TEXT NOT NULL,
+    "participantIds" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "unitCents" INTEGER NOT NULL DEFAULT 2490,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "WgHafermilchSettings_pkey" PRIMARY KEY ("id"))`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "WgHafermilchSettings_wgId_key" ON "WgHafermilchSettings"("wgId")`,
+  fkGuard("WgHafermilchSettings", "WgHafermilchSettings_wgId_fkey", "wgId", "Wg"),
+  `CREATE TABLE IF NOT EXISTS "WgHafermilchOrder" (
+    "id" TEXT NOT NULL, "wgId" TEXT NOT NULL, "boughtById" TEXT NOT NULL,
+    "date" DATE NOT NULL, "quantity" INTEGER NOT NULL, "unitCents" INTEGER NOT NULL,
+    "participantIds" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "createdById" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "WgHafermilchOrder_pkey" PRIMARY KEY ("id"))`,
+  `CREATE INDEX IF NOT EXISTS "WgHafermilchOrder_wgId_date_idx" ON "WgHafermilchOrder"("wgId", "date")`,
+  fkGuard("WgHafermilchOrder", "WgHafermilchOrder_wgId_fkey", "wgId", "Wg"),
+  `CREATE TABLE IF NOT EXISTS "WgHafermilchPayment" (
+    "id" TEXT NOT NULL, "wgId" TEXT NOT NULL, "fromId" TEXT NOT NULL, "toId" TEXT NOT NULL,
+    "amountCents" INTEGER NOT NULL, "date" DATE NOT NULL,
+    "createdById" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "WgHafermilchPayment_pkey" PRIMARY KEY ("id"))`,
+  `CREATE INDEX IF NOT EXISTS "WgHafermilchPayment_wgId_date_idx" ON "WgHafermilchPayment"("wgId", "date")`,
+  fkGuard("WgHafermilchPayment", "WgHafermilchPayment_wgId_fkey", "wgId", "Wg"),
 ];
 
 async function main() {
