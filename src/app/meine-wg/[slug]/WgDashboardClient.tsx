@@ -105,6 +105,13 @@ interface Props {
   meName: string;
 }
 
+interface HafermilchSummary {
+  participants: number;
+  cartons: number;
+  isParticipant: boolean;
+  myNetCents: number;
+}
+
 interface DashboardData {
   koch: KochData;
   shopping: ShoppingItem[];
@@ -112,6 +119,7 @@ interface DashboardData {
   termine: TermineData;
   doodles: DoodleItem[];
   pinnwand: PinnwandNote[];
+  hafermilch?: HafermilchSummary;
 }
 
 // Stale-while-revalidate cache: beim Wiederoeffnen der App zeigen wir
@@ -151,6 +159,7 @@ export function WgDashboardClient({ slug, meId, meName }: Props) {
   const [termine, setTermine] = useState<TermineData | null>(() => loadCachedDashboard(slug)?.termine ?? null);
   const [doodles, setDoodles] = useState<DoodleItem[] | null>(() => loadCachedDashboard(slug)?.doodles ?? null);
   const [pinnwand, setPinnwand] = useState<PinnwandNote[] | null>(() => loadCachedDashboard(slug)?.pinnwand ?? null);
+  const [hafermilch, setHafermilch] = useState<HafermilchSummary | null>(() => loadCachedDashboard(slug)?.hafermilch ?? null);
 
   // Ein einziger API-Call statt 6 separate Round-Trips fuer schnelleres
   // erstes Rendering. Cache wird nach erfolgreicher Antwort aktualisiert.
@@ -169,6 +178,7 @@ export function WgDashboardClient({ slug, meId, meName }: Props) {
       setTermine(data.termine);
       setDoodles(data.doodles);
       setPinnwand(data.pinnwand);
+      setHafermilch(data.hafermilch ?? null);
       saveCachedDashboard(slug, data);
     } catch (err) {
       if ((err as { name?: string })?.name === "AbortError") return;
@@ -207,6 +217,8 @@ export function WgDashboardClient({ slug, meId, meName }: Props) {
     <div className="space-y-3">
       <KochTile slug={slug} meId={meId} meName={meName} data={koch} onChanged={loadAll} />
 
+      <HafermilchTile slug={slug} data={hafermilch} />
+
       <div className="grid grid-cols-2 items-start gap-3">
         <div ref={leftRef} className="flex flex-col gap-3">
           <AemtliTile slug={slug} data={aemtli} meId={meId} onChanged={loadAll} />
@@ -222,6 +234,48 @@ export function WgDashboardClient({ slug, meId, meName }: Props) {
 
       <PinnwandInline slug={slug} notes={pinnwand} meId={meId} onChanged={loadAll} />
     </div>
+  );
+}
+
+// ===== OATLY-HAFERMILCH-TILE =====
+
+function HafermilchTile({
+  slug,
+  data,
+}: {
+  slug: string;
+  data: HafermilchSummary | null;
+}) {
+  const href = `/meine-wg/${slug}/hafermilch`;
+  const chf = (c: number) => (c / 100).toFixed(2);
+  let text: React.ReactNode;
+  let tone = "text-gray-300";
+  if (!data) {
+    text = <span className="inline-block h-4 w-32 animate-pulse rounded bg-white/10" />;
+  } else if (data.participants === 0) {
+    text = "Hafermilch-Kasse einrichten →";
+  } else if (data.myNetCents > 0) {
+    tone = "text-emerald-300";
+    text = `Du bekommst CHF ${chf(data.myNetCents)} zurück`;
+  } else if (data.myNetCents < 0) {
+    tone = "text-orange-300";
+    text = `Du schuldest CHF ${chf(-data.myNetCents)}`;
+  } else {
+    text = `Ausgeglichen · ${data.cartons} Karton${data.cartons === 1 ? "" : "s"} bisher`;
+  }
+  return (
+    <Link
+      href={href}
+      className="wg-tile flex items-center justify-between p-3 hover:wg-tile-strong"
+    >
+      <div className="min-w-0">
+        <p className="font-display text-xs font-bold uppercase tracking-widest text-white">
+          🥛 Oatly
+        </p>
+        <p className={`mt-0.5 truncate text-sm ${tone}`}>{text}</p>
+      </div>
+      <span className="ml-3 shrink-0 font-mono text-lg text-gray-400">→</span>
+    </Link>
   );
 }
 

@@ -786,6 +786,9 @@ model Wg {
   kochEintraege       WgKochEintrag[]
   kochKinder          WgKochKind[]
   einkauf             WgEinkauf[]
+  hafermilchSettings  WgHafermilchSettings?
+  hafermilchOrders    WgHafermilchOrder[]
+  hafermilchPayments  WgHafermilchPayment[]
   aemtli              WgAemtliState?
   termine             WgTermin[]
   doodles             WgDoodle[]
@@ -926,6 +929,49 @@ model WgEinkaufComment {
   createdAt DateTime  @default(now())
 
   @@index([einkaufId])
+}
+
+// Oatly-Hafermilch-Kasse pro WG (bewusst produktspezifisch, User-Entscheid):
+// Kartons werden bestellt und gleichmaessig auf die Mittrinkenden verteilt;
+// Zahlungen gleichen die Salden aus. User-Bezuege als plain IDs — Namen
+// werden ueber die Mitgliederliste aufgeloest.
+model WgHafermilchSettings {
+  id             String   @id @default(cuid())
+  wgId           String   @unique
+  wg             Wg       @relation(fields: [wgId], references: [id], onDelete: Cascade)
+  participantIds String[] @default([])
+  unitCents      Int      @default(2490) // Standardpreis pro Karton (6 x 1.5 l)
+  updatedAt      DateTime @updatedAt
+}
+
+model WgHafermilchOrder {
+  id             String   @id @default(cuid())
+  wgId           String
+  wg             Wg       @relation(fields: [wgId], references: [id], onDelete: Cascade)
+  boughtById     String
+  date           DateTime @db.Date
+  quantity       Int
+  unitCents      Int
+  // Snapshot der Mittrinkenden zum Bestellzeitpunkt
+  participantIds String[] @default([])
+  createdById    String
+  createdAt      DateTime @default(now())
+
+  @@index([wgId, date])
+}
+
+model WgHafermilchPayment {
+  id          String   @id @default(cuid())
+  wgId        String
+  wg          Wg       @relation(fields: [wgId], references: [id], onDelete: Cascade)
+  fromId      String
+  toId        String
+  amountCents Int
+  date        DateTime @db.Date
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@index([wgId, date])
 }
 
 // Aemtli nach Family-WG-Style: EINE Rotation pro WG durch alle Mitglieder.

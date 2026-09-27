@@ -203,6 +203,7 @@ Nach einem Merge auf `main` passiert automatisch:
 - **Triple-Tap-Easter-Egg als Trigger fuer die Drohne** -> Unsichtbarer 160px-Hotspot ueber der Pyramide wurde staendig versehentlich ausgeloest (Flug + Push an alle). Ersetzt durch bewussten Button im Hamburger-Menu mit Bestaetigung + Auto-Landung nach 30 Min.
 - **Beschaffung (/einkauf) auf Haus-Ebene** -> wurde nicht genutzt, entfernt (Sept 2026). Die WG-interne Einkaufsliste unter /meine-wg bleibt.
 - **Wetter + Aare-Temperatur auf Home** -> nette Spielerei, aber nicht genutzt und zwei externe Requests pro Home-Load. Entfernt.
+- **Generische WG-Kasse (Splitwise-artig)** -> vorgeschlagen, von Alain abgelehnt; gewuenscht war explizit eine Oatly-Hafermilch-Kasse (`src/lib/hafermilch.ts`). Die Rechenlogik (computeBalances/settle) ist trotzdem produktneutral und koennte spaeter fuer eine Kasse wiederverwendet werden. Neue Notification-Kinds brauchen einen Enum-Wert (separate Migration!) — deshalb nutzt die Kasse den bestehenden Kind `WG_EINKAUF_COMMENT` (steuert nur die Pref notifyMeineWg).
 
 ## Offene Fragen
 

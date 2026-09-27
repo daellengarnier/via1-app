@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireWgAccess, wgMemberFilter } from "@/lib/wg-access";
 import { summarizeReactions } from "@/lib/reactions";
 import { USER_AVATAR_SELECT, withAvatarUrl } from "@/lib/avatar";
+import { loadHafermilch } from "@/lib/hafermilch";
 import {
   addDaysUTC,
   effectiveKochDay,
@@ -36,6 +37,7 @@ export async function GET(
     bdayMembers,
     doodles,
     pinnwandNotes,
+    hafermilch,
   ] = await Promise.all([
     prisma.wgKochEintrag.findMany({
       where: { wgId: access.wg.id, date: { gte: today, lte: to } },
@@ -111,6 +113,7 @@ export async function GET(
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
+    loadHafermilch(access.wg.id),
   ]);
 
   // Geburtstage in den naechsten 7 Tagen ermitteln
@@ -215,6 +218,14 @@ export async function GET(
       optionCount: d._count.options,
       totalVotes: d.options.reduce((s, o) => s + o._count.votes, 0),
     })),
+    hafermilch: {
+      participants: hafermilch.stats.participants,
+      cartons: hafermilch.stats.cartons,
+      isParticipant: hafermilch.settings.participantIds.includes(access.user.id),
+      myNetCents:
+        hafermilch.balances.find((b) => b.userId === access.user.id)?.netCents ??
+        0,
+    },
     pinnwand: pinnwandNotes.map((n) => ({
       id: n.id,
       text: n.text,
