@@ -225,6 +225,19 @@ export async function GET(
       myNetCents:
         hafermilch.balances.find((b) => b.userId === access.user.id)?.netCents ??
         0,
+      // Aufschluesselung pro Person (paarweise, gegenseitig verrechnet)
+      owedToMe: hafermilch.settlements
+        .filter((s) => s.toId === access.user.id)
+        .map((s) => ({
+          name: hafermilch.names[s.fromId] ?? "?",
+          amountCents: s.amountCents,
+        })),
+      iOwe: hafermilch.settlements
+        .filter((s) => s.fromId === access.user.id)
+        .map((s) => ({
+          name: hafermilch.names[s.toId] ?? "?",
+          amountCents: s.amountCents,
+        })),
       stockCount: hafermilch.settings.stockCount,
       stockAt: hafermilch.settings.stockAt,
       daysLeft: hafermilch.consumption?.daysLeft ?? null,
