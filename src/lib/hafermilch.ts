@@ -48,6 +48,25 @@ export interface Settlement {
   amountCents: number;
 }
 
+export interface ConsumptionDto {
+  // Bezugsdatum der Statistik (= Datum des letzten Vorrats)
+  refDate: string;
+  // erste Lieferung
+  since: string;
+  weeks: number;
+  participants: number;
+  deliveredBottles: number;
+  stockCount: number;
+  consumedBottles: number;
+  // Ø pro Kopf und Woche
+  bottlesPerHeadWeek: number;
+  litersPerHeadWeek: number;
+  // Reichweite des Vorrats in Tagen (null = kein Verbrauch messbar)
+  daysLeft: number | null;
+  // Noch nicht gelieferte Bestellungen
+  pending: { date: string; deliveryDate: string; bottles: number }[];
+}
+
 export interface HafermilchData {
   members: { id: string; name: string }[];
   // Namen auch fuer Personen, die nicht (mehr) Mitglied sind
@@ -58,7 +77,11 @@ export interface HafermilchData {
     carton1lCents: number;
     singleCents: number;
     single1lCents: number;
+    deliveryDays: number;
+    stockCount: number | null;
+    stockAt: string | null;
   };
+  consumption: ConsumptionDto | null;
   orders: OrderDto[];
   payments: PaymentDto[];
   balances: { userId: string; netCents: number }[];
@@ -158,6 +181,9 @@ export async function loadHafermilch(wgId: string): Promise<HafermilchData> {
   const carton1lCents = settings?.carton1lCents ?? 1740;
   const singleCents = settings?.singleCents ?? 415;
   const single1lCents = settings?.single1lCents ?? 290;
+  const deliveryDays = settings?.deliveryDays ?? 2;
+  const stockCount = settings?.stockCount ?? null;
+  const stockAt = settings?.stockAt ? isoDate(settings.stockAt) : null;
 
   // Namen fuer alle referenzierten IDs (auch Ex-Mitglieder).
   const ids = new Set<string>(members.map((m) => m.id));
@@ -187,10 +213,29 @@ export async function loadHafermilch(wgId: string): Promise<HafermilchData> {
   const totalCents = orders.reduce((s, o) => s + o.quantity * o.unitCents, 0);
   const participants = participantIds.length;
 
+  const consumption = computeConsumption(
+    orders.map((o) => ({
+      date: isoDate(o.date),
+      unit: toUnit(o.unit),
+      quantity: o.quantity,
+    })),
+    { deliveryDays, stockCount, stockAt, participants }
+  );
+
   return {
     members,
     names,
-    settings: { participantIds, unitCents, carton1lCents, singleCents, single1lCents },
+    settings: {
+      participantIds,
+      unitCents,
+      carton1lCents,
+      singleCents,
+      single1lCents,
+      deliveryDays,
+      stockCount,
+      stockAt,
+    },
+    consumption,
     orders: orders.map((o) => ({
       id: o.id,
       date: isoDate(o.date),
@@ -226,6 +271,91 @@ export async function loadHafermilch(wgId: string): Promise<HafermilchData> {
 
 export function chf(cents: number): string {
   return (cents / 100).toFixed(2);
+}
+
+export function bottlesOf(unit: HafermilchUnit, quantity: number): number {
+  return unit === "carton" || unit === "carton1l" ? quantity * 6 : quantity;
+}
+
+export function litersOf(unit: HafermilchUnit, quantity: number): number {
+  const perBottle = unit === "carton1l" || unit === "single1l" ? 1 : 1.5;
+  return bottlesOf(unit, quantity) * perBottle;
+}
+
+function addDaysIso(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function daysBetween(fromIso: string, toIso: string): number {
+  const a = new Date(`${fromIso}T00:00:00Z`).getTime();
+  const b = new Date(`${toIso}T00:00:00Z`).getTime();
+  return Math.round((b - a) / 86_400_000);
+}
+
+// Verbrauch = gelieferte Flaschen (bis zum Vorrats-Datum) minus Vorrat,
+// verteilt auf Personen und Wochen seit der ersten Lieferung. Ohne
+// erfassten Vorrat gibt es keine Statistik (null).
+export function computeConsumption(
+  orders: { date: string; unit: HafermilchUnit; quantity: number }[],
+  opts: {
+    deliveryDays: number;
+    stockCount: number | null;
+    stockAt: string | null;
+    participants: number;
+  }
+): ConsumptionDto | null {
+  if (opts.stockCount === null || !opts.stockAt || opts.participants <= 0) {
+    return null;
+  }
+  const refDate = opts.stockAt;
+  const withDelivery = orders.map((o) => ({
+    ...o,
+    deliveryDate: addDaysIso(o.date, opts.deliveryDays),
+  }));
+  const delivered = withDelivery.filter((o) => o.deliveryDate <= refDate);
+  if (delivered.length === 0) return null;
+  const since = delivered
+    .map((o) => o.deliveryDate)
+    .sort()[0]!;
+  const days = Math.max(1, daysBetween(since, refDate));
+  const weeks = days / 7;
+  const deliveredBottles = delivered.reduce(
+    (s, o) => s + bottlesOf(o.unit, o.quantity),
+    0
+  );
+  const deliveredLiters = delivered.reduce(
+    (s, o) => s + litersOf(o.unit, o.quantity),
+    0
+  );
+  const consumedBottles = Math.max(0, deliveredBottles - opts.stockCount);
+  // Liter anteilig zum Flaschen-Verbrauch (Mischbestand 1 l / 1.5 l)
+  const litersPerBottle = deliveredBottles > 0 ? deliveredLiters / deliveredBottles : 1.5;
+  const bottlesPerHeadWeek = consumedBottles / opts.participants / weeks;
+  const bottlesPerDay = consumedBottles / days;
+  const today = new Date().toISOString().slice(0, 10);
+  const pending = withDelivery
+    .filter((o) => o.deliveryDate > today)
+    .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate))
+    .map((o) => ({
+      date: o.date,
+      deliveryDate: o.deliveryDate,
+      bottles: bottlesOf(o.unit, o.quantity),
+    }));
+  return {
+    refDate,
+    since,
+    weeks,
+    participants: opts.participants,
+    deliveredBottles,
+    stockCount: opts.stockCount,
+    consumedBottles,
+    bottlesPerHeadWeek,
+    litersPerHeadWeek: bottlesPerHeadWeek * litersPerBottle,
+    daysLeft: bottlesPerDay > 0 ? opts.stockCount / bottlesPerDay : null,
+    pending,
+  };
 }
 
 export function unitLabel(unit: HafermilchUnit, quantity: number): string {

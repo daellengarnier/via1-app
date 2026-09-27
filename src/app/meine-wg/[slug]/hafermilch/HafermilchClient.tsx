@@ -50,7 +50,23 @@ interface Data {
     carton1lCents: number;
     singleCents: number;
     single1lCents: number;
+    deliveryDays: number;
+    stockCount: number | null;
+    stockAt: string | null;
   };
+  consumption: {
+    refDate: string;
+    since: string;
+    weeks: number;
+    participants: number;
+    deliveredBottles: number;
+    stockCount: number;
+    consumedBottles: number;
+    bottlesPerHeadWeek: number;
+    litersPerHeadWeek: number;
+    daysLeft: number | null;
+    pending: { date: string; deliveryDate: string; bottles: number }[];
+  } | null;
   orders: Order[];
   payments: Payment[];
   balances: { userId: string; netCents: number }[];
@@ -123,11 +139,16 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
     single1l: "2.90",
   });
 
+  // Vorrat / Lieferzeit
+  const [stockInput, setStockInput] = useState("");
+  const [deliveryDaysInput, setDeliveryDaysInput] = useState("2");
+
   const base = `/api/meine-wg/${slug}/hafermilch`;
 
   const apply = useCallback(
     (d: Data) => {
       setData(d);
+      setDeliveryDaysInput(String(d.settings.deliveryDays));
       setPrices({
         carton: chf(d.settings.unitCents),
         carton1l: chf(d.settings.carton1lCents),
@@ -195,6 +216,23 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
     if (!c) return;
     const key = UNITS.find((x) => x.id === u)!.priceKey;
     await call(base, { method: "PUT", body: JSON.stringify({ [key]: c }) });
+  }
+
+  async function saveStock(e: React.FormEvent) {
+    e.preventDefault();
+    const n = Number(stockInput);
+    if (!Number.isFinite(n) || n < 0) return;
+    const ok = await call(base, {
+      method: "PUT",
+      body: JSON.stringify({ stockCount: Math.round(n), stockAt: todayIso() }),
+    });
+    if (ok) setStockInput("");
+  }
+
+  async function saveDeliveryDays() {
+    const n = Number(deliveryDaysInput);
+    if (!Number.isFinite(n)) return;
+    await call(base, { method: "PUT", body: JSON.stringify({ deliveryDays: n }) });
   }
 
   async function addOrder(e: React.FormEvent) {
@@ -327,6 +365,23 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
                     <span className="text-[11px] text-gray-500">CHF</span>
                   </div>
                 ))}
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <label className="w-36 text-[11px] text-gray-400">
+                  Lieferzeit (Tage)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={30}
+                  value={deliveryDaysInput}
+                  onChange={(e) => setDeliveryDaysInput(e.target.value)}
+                  onBlur={saveDeliveryDays}
+                  className="w-20 rounded border border-gray-700 bg-black/40 px-2 py-1 text-right text-sm text-white focus:border-white focus:outline-none"
+                />
+                <span className="text-[11px] text-gray-500">
+                  Bestellung zählt erst ab Lieferung
+                </span>
               </div>
             </div>
           ) : null}
@@ -540,6 +595,75 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
                   </button>
                 </div>
               )}
+
+              {/* Verbrauch + Vorrat */}
+              <div className="wg-tile p-3">
+                <p className="mb-2 font-display text-xs font-bold uppercase tracking-widest text-white">
+                  Verbrauch
+                </p>
+                {data.consumption ? (
+                  <>
+                    <p className="font-display text-2xl font-bold text-white">
+                      Ø {data.consumption.bottlesPerHeadWeek.toFixed(1)} Flaschen
+                      <span className="ml-1 text-sm font-normal text-gray-400">
+                        pro Kopf und Woche
+                      </span>
+                    </p>
+                    <p className="text-[11px] text-gray-400">
+                      ≈ {data.consumption.litersPerHeadWeek.toFixed(1)} l · seit{" "}
+                      {fmtDate(data.consumption.since)} ({data.consumption.weeks.toFixed(1)}{" "}
+                      Wochen) · {data.consumption.consumedBottles} von{" "}
+                      {data.consumption.deliveredBottles} gelieferten Flaschen getrunken
+                    </p>
+                    <p className="mt-2 text-sm text-white">
+                      Vorrat: <span className="font-bold">{data.consumption.stockCount}</span>{" "}
+                      Flaschen
+                      <span className="text-gray-500">
+                        {" "}
+                        (Stand {fmtDate(data.consumption.refDate)})
+                      </span>
+                      {data.consumption.daysLeft !== null && (
+                        <span className="text-gray-400">
+                          {" "}
+                          · reicht noch ca. {Math.round(data.consumption.daysLeft)} Tage
+                        </span>
+                      )}
+                    </p>
+                    {data.consumption.pending.length > 0 && (
+                      <p className="text-[11px] text-emerald-300">
+                        Unterwegs:{" "}
+                        {data.consumption.pending
+                          .map((p) => `${p.bottles} Flaschen am ${fmtDate(p.deliveryDate)}`)
+                          .join(", ")}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    Trag einmal den aktuellen Vorrat ein, dann rechnet die Kasse den
+                    Verbrauch aus.
+                  </p>
+                )}
+                <form onSubmit={saveStock} className="mt-2 flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={1000}
+                    inputMode="numeric"
+                    value={stockInput}
+                    onChange={(e) => setStockInput(e.target.value)}
+                    placeholder="Flaschen"
+                    className="w-24 rounded border border-gray-700 bg-black/40 px-2 py-1.5 text-sm text-white placeholder-gray-600 focus:border-white focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={busy || stockInput === ""}
+                    className="rounded-md border border-gray-600 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-200 hover:border-white disabled:opacity-40"
+                  >
+                    Vorrat heute aktualisieren
+                  </button>
+                </form>
+              </div>
 
               {/* Zahlen */}
               <p className="text-center font-mono text-[10px] uppercase tracking-wider text-gray-500">

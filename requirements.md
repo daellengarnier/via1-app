@@ -244,3 +244,4 @@ Keine Punkte oder Ranglisten - eher spielerisch und spassig.
 | 2026-09-27 | Hafermilch: Einheiten Karton 6 x 1.5 l, Karton 6 x 1 l, Packung 1.5 l, Packung 1 l — je eigener Standardpreis in den Einstellungen (Migration 0102), Preis pro Bestellung frei anpassbar | Alain |
 | 2026-09-27 | Migration 0103: einmaliger Daten-Import fuer Alains WG (Mittrinkende Dällen/Nici/Davina/Ambar/RO, 6 Bestellungen = 11 Kartons). Idempotent, ueberspringt sich selbst bei unklaren Namen | Alain |
 | 2026-09-27 | Migration 0104: Ambars Oatly-Bestellungen (21.07. 2 Kartons, 31.08. 1 Karton) importiert | Alain |
+| 2026-09-27 | Hafermilch: Verbrauchsstatistik (Ø Flaschen/Liter pro Kopf und Woche, Reichweite des Vorrats, Lieferungen unterwegs). Lieferzeit einstellbar (Default 2 Tage), Vorrat mit Datum erfassbar (Migration 0105, Seed: 3 Flaschen am 27.09.) | Alain |
