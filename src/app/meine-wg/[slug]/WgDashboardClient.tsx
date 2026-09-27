@@ -266,53 +266,112 @@ function HafermilchTile({
 }) {
   const href = `/meine-wg/${slug}/hafermilch`;
   const chf = (c: number) => (c / 100).toFixed(2);
-  let text: React.ReactNode;
-  let tone = "text-gray-300";
+
   if (!data) {
-    text = <span className="inline-block h-4 w-32 animate-pulse rounded bg-white/10" />;
-  } else if (data.participants === 0) {
-    text = "Hafermilch-Kasse einrichten →";
-  } else if (data.myNetCents > 0) {
-    tone = "text-emerald-300";
-    text = `Du bekommst CHF ${chf(data.myNetCents)} zurück`;
-  } else if (data.myNetCents < 0) {
-    tone = "text-orange-300";
-    text = `Du schuldest CHF ${chf(-data.myNetCents)}`;
-  } else {
-    text = "Alles ausgeglichen";
+    return (
+      <Tile href={href} icon="🥛" title="Oatly-Milchbüechli">
+        <div className="space-y-2"><div className="h-4 animate-pulse rounded bg-white/10" /><div className="h-3 w-2/3 animate-pulse rounded bg-white/10" /></div>
+      </Tile>
+    );
   }
 
-  const stock = data?.stockCount ?? null;
-  const daysLeft = data?.daysLeft ?? null;
-  const perHead = data?.bottlesPerHeadWeek ?? null;
-  const details: string[] = [];
-  if (stock !== null) {
-    details.push(`Vorrat ${stock} Fl.`);
-    if (daysLeft !== null) details.push(`reicht ~${Math.max(0, Math.round(daysLeft))} Tage`);
+  if (data.participants === 0) {
+    return (
+      <Link href={href} className="block wg-tile-heavy p-3">
+        <div className="mb-2 flex items-baseline justify-between">
+          <span className="font-display text-[11px] font-bold uppercase tracking-widest text-white">
+            🥛 Oatly-Milchbüechli
+          </span>
+        </div>
+        <div className="wg-glow-border rounded-lg border border-white/15 bg-black/30 p-2">
+          <p className="text-sm text-white">Hafermilch-Kasse einrichten →</p>
+          <p className="text-[10px] text-gray-400">Wer trinkt mit, wer hat bestellt?</p>
+        </div>
+      </Link>
+    );
   }
-  if (perHead !== null) details.push(`Ø ${perHead.toFixed(1)} Fl./Kopf/Woche`);
-  const spruch = data && data.participants > 0 ? haferSpruch(stock, daysLeft) : null;
+
+  // Bilanz-Karte
+  let balLabel = "Bilanz";
+  let balValue = "CHF 0.00";
+  let balSub = "alles ausgeglichen";
+  let balTone = "text-white";
+  if (data.myNetCents > 0) {
+    balLabel = "Zu gut";
+    balValue = `CHF ${chf(data.myNetCents)}`;
+    balSub = "bekommst du zurück";
+    balTone = "text-emerald-300";
+  } else if (data.myNetCents < 0) {
+    balLabel = "Schulden";
+    balValue = `CHF ${chf(-data.myNetCents)}`;
+    balSub = "schuldest du";
+    balTone = "text-orange-300";
+  }
+
+  // Vorrat-Karte
+  const stock = data.stockCount ?? null;
+  const daysLeft = data.daysLeft ?? null;
+  const perHead = data.bottlesPerHeadWeek ?? null;
+  const spruch = haferSpruch(stock, daysLeft);
 
   return (
-    <Link
-      href={href}
-      className="wg-tile flex items-center justify-between p-3 hover:wg-tile-strong"
-    >
-      <div className="min-w-0">
-        <p className="font-display text-xs font-bold uppercase tracking-widest text-white">
+    <Link href={href} className="block wg-tile-heavy p-3">
+      <div className="mb-2 flex items-baseline justify-between">
+        <span className="font-display text-[11px] font-bold uppercase tracking-widest text-white">
           🥛 Oatly-Milchbüechli
-        </p>
-        <p className={`mt-0.5 truncate text-sm ${tone}`}>{text}</p>
-        {details.length > 0 && (
-          <p className="mt-0.5 truncate font-mono text-[10px] text-gray-400">
-            {details.join(" · ")}
-          </p>
-        )}
-        {spruch && (
-          <p className="mt-0.5 truncate text-[11px] italic text-gray-500">{spruch}</p>
-        )}
+        </span>
+        <span className="font-mono text-[10px] uppercase tracking-wider text-white">
+          Details →
+        </span>
       </div>
-      <span className="ml-3 shrink-0 font-mono text-lg text-gray-400">→</span>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="wg-glow-border rounded-lg border border-white/15 bg-black/30 p-2">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-gray-400">
+            {balLabel}
+          </p>
+          <p className={`mt-0.5 font-display text-base font-bold ${balTone}`}>
+            {balValue}
+          </p>
+          <p className="text-[10px] text-gray-400">{balSub}</p>
+        </div>
+        <div className="wg-glow-border rounded-lg border border-white/15 bg-black/30 p-2">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-gray-400">
+            Vorrat
+          </p>
+          {stock !== null ? (
+            <>
+              <p className="mt-0.5 font-display text-base font-bold text-white">
+                {stock} {stock === 1 ? "Flasche" : "Flaschen"}
+              </p>
+              <p className="text-[10px] text-gray-400">
+                {daysLeft !== null
+                  ? `reicht noch ~${Math.max(0, Math.round(daysLeft))} Tage`
+                  : "Reichweite unbekannt"}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-0.5 font-display text-base font-bold text-gray-500">–</p>
+              <p className="text-[10px] text-gray-400">noch nicht eingetragen</p>
+            </>
+          )}
+        </div>
+      </div>
+
+      {(perHead !== null || spruch) && (
+        <div className="mt-2 border-t border-white/10 pt-1.5">
+          {perHead !== null && (
+            <p className="font-mono text-[10px] uppercase tracking-wider text-gray-300">
+              <span className="text-gray-500">Ø Konsum: </span>
+              {perHead.toFixed(1)} Fl. pro Kopf und Woche
+            </p>
+          )}
+          {spruch && (
+            <p className="mt-0.5 text-[11px] italic text-gray-400">{spruch}</p>
+          )}
+        </div>
+      )}
     </Link>
   );
 }
