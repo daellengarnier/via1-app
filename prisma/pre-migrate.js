@@ -107,6 +107,24 @@ const ENSURE_SQL = [
       ('hm-seed-daellen-2026-09-27', v_wg, v_daellen, DATE '2026-09-27', 'carton', 3, 2490, v_ids, v_daellen, NOW())
     ON CONFLICT (id) DO NOTHING;
   END $$`,
+  // 0104 — Ambars Bestellungen (idempotent)
+  `DO $$
+  DECLARE v_ambar TEXT; v_wg TEXT; v_ids TEXT[]; v_cnt INT;
+  BEGIN
+    SELECT r."wgId" INTO v_wg FROM users u LEFT JOIN "Room" r ON r.id = u."roomId"
+     WHERE lower(u.name) = 'dällen' AND u."passwordSet" = TRUE LIMIT 1;
+    SELECT id INTO v_ambar FROM users WHERE lower(name) = 'ambar' AND "passwordSet" = TRUE LIMIT 1;
+    IF v_ambar IS NULL OR v_wg IS NULL THEN RETURN; END IF;
+    SELECT array_agg(id), count(*) INTO v_ids, v_cnt FROM users
+     WHERE lower(name) IN ('dällen','nici','davina','ambar','ro') AND "passwordSet" = TRUE;
+    IF v_cnt <> 5 THEN RETURN; END IF;
+    INSERT INTO "WgHafermilchOrder"
+      (id, "wgId", "boughtById", date, unit, quantity, "unitCents", "participantIds", "createdById", "createdAt")
+    VALUES
+      ('hm-seed-ambar-2026-07-21', v_wg, v_ambar, DATE '2026-07-21', 'carton', 2, 2490, v_ids, v_ambar, NOW()),
+      ('hm-seed-ambar-2026-08-31', v_wg, v_ambar, DATE '2026-08-31', 'carton', 1, 2490, v_ids, v_ambar, NOW())
+    ON CONFLICT (id) DO NOTHING;
+  END $$`,
 ];
 
 async function main() {
