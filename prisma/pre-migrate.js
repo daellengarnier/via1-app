@@ -107,6 +107,10 @@ const ENSURE_SQL = [
       ('hm-seed-daellen-2026-09-27', v_wg, v_daellen, DATE '2026-09-27', 'carton', 3, 2490, v_ids, v_daellen, NOW())
     ON CONFLICT (id) DO NOTHING;
   END $$`,
+  // 0105 — Verbrauchsstatistik
+  `ALTER TABLE "WgHafermilchSettings" ADD COLUMN IF NOT EXISTS "deliveryDays" INTEGER NOT NULL DEFAULT 2`,
+  `ALTER TABLE "WgHafermilchSettings" ADD COLUMN IF NOT EXISTS "stockCount" INTEGER`,
+  `ALTER TABLE "WgHafermilchSettings" ADD COLUMN IF NOT EXISTS "stockAt" DATE`,
   // 0104 — Ambars Bestellungen (idempotent)
   `DO $$
   DECLARE v_ambar TEXT; v_wg TEXT; v_ids TEXT[]; v_cnt INT;
@@ -124,6 +128,16 @@ const ENSURE_SQL = [
       ('hm-seed-ambar-2026-07-21', v_wg, v_ambar, DATE '2026-07-21', 'carton', 2, 2490, v_ids, v_ambar, NOW()),
       ('hm-seed-ambar-2026-08-31', v_wg, v_ambar, DATE '2026-08-31', 'carton', 1, 2490, v_ids, v_ambar, NOW())
     ON CONFLICT (id) DO NOTHING;
+  END $$`,
+  // 0105 — Vorrat-Seed (nur wenn noch nie erfasst)
+  `DO $$
+  DECLARE v_wg TEXT;
+  BEGIN
+    SELECT r."wgId" INTO v_wg FROM users u LEFT JOIN "Room" r ON r.id = u."roomId"
+     WHERE lower(u.name) = 'dällen' AND u."passwordSet" = TRUE LIMIT 1;
+    IF v_wg IS NULL THEN RETURN; END IF;
+    UPDATE "WgHafermilchSettings" SET "stockCount" = 3, "stockAt" = DATE '2026-09-27', "updatedAt" = NOW()
+     WHERE "wgId" = v_wg AND "stockAt" IS NULL;
   END $$`,
 ];
 

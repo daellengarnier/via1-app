@@ -944,6 +944,11 @@ model WgHafermilchSettings {
   carton1lCents  Int      @default(1740) // Standardpreis pro Karton (6 x 1 l)
   singleCents    Int      @default(415)  // Standardpreis pro einzelne Packung (1.5 l)
   single1lCents  Int      @default(290)  // Standardpreis pro einzelne Packung (1 l)
+  // Lieferzeit in Tagen: Bestellungen zaehlen erst ab Lieferung als Vorrat
+  deliveryDays   Int      @default(2)
+  // Letzter erfasster Vorrat (Flaschen) + Datum, fuer die Verbrauchsstatistik
+  stockCount     Int?
+  stockAt        DateTime? @db.Date
   updatedAt      DateTime @updatedAt
 }
 
