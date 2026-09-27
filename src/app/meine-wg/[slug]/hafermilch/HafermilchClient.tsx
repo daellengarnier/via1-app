@@ -3,10 +3,25 @@
 import { useCallback, useEffect, useState } from "react";
 import { WgPageHeader } from "@/components/WgPageHeader";
 
+type Unit = "carton" | "carton1l" | "single" | "single1l";
+
+const UNITS: {
+  id: Unit;
+  label: string;
+  short: string;
+  priceKey: "unitCents" | "carton1lCents" | "singleCents" | "single1lCents";
+}[] = [
+  { id: "carton", label: "Karton 6 × 1.5 l", short: "Kartons", priceKey: "unitCents" },
+  { id: "carton1l", label: "Karton 6 × 1 l", short: "Kartons", priceKey: "carton1lCents" },
+  { id: "single", label: "Packung 1.5 l", short: "Packungen", priceKey: "singleCents" },
+  { id: "single1l", label: "Packung 1 l", short: "Packungen", priceKey: "single1lCents" },
+];
+
 interface Order {
   id: string;
   date: string;
   boughtById: string;
+  unit: Unit;
   quantity: number;
   unitCents: number;
   totalCents: number;
@@ -29,13 +44,19 @@ interface Settlement {
 interface Data {
   members: { id: string; name: string }[];
   names: Record<string, string>;
-  settings: { participantIds: string[]; unitCents: number };
+  settings: {
+    participantIds: string[];
+    unitCents: number;
+    carton1lCents: number;
+    singleCents: number;
+    single1lCents: number;
+  };
   orders: Order[];
   payments: Payment[];
   balances: { userId: string; netCents: number }[];
   settlements: Settlement[];
   stats: {
-    cartons: number;
+    counts: Record<Unit, number>;
     totalCents: number;
     participants: number;
     perPersonCents: number;
@@ -66,6 +87,18 @@ function parseChf(s: string): number | null {
   if (!Number.isFinite(n) || n <= 0) return null;
   return Math.round(n * 100);
 }
+function unitLabel(unit: Unit, n: number): string {
+  const pack = n === 1 ? "Packung" : "Packungen";
+  const box = n === 1 ? "Karton" : "Kartons";
+  if (unit === "single") return `${pack} 1.5 l`;
+  if (unit === "single1l") return `${pack} 1 l`;
+  if (unit === "carton1l") return `${box} 6 × 1 l`;
+  return `${box} 6 × 1.5 l`;
+}
+function defaultCents(s: Data["settings"], unit: Unit): number {
+  const key = UNITS.find((u) => u.id === unit)?.priceKey ?? "unitCents";
+  return s[key];
+}
 
 export function HafermilchClient({ slug, wgName, meId }: Props) {
   const [data, setData] = useState<Data | null>(null);
@@ -77,24 +110,41 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
   // Bestell-Formular
   const [date, setDate] = useState(todayIso());
   const [qty, setQty] = useState(1);
+  const [unit, setUnit] = useState<Unit>("carton");
   const [price, setPrice] = useState("24.90");
   const [buyer, setBuyer] = useState(meId);
   const [priceTouched, setPriceTouched] = useState(false);
 
-  // Einstellungen
-  const [unitPrice, setUnitPrice] = useState("24.90");
+  // Einstellungen: Standardpreise pro Einheit (als CHF-Strings)
+  const [prices, setPrices] = useState<Record<Unit, string>>({
+    carton: "24.90",
+    carton1l: "17.40",
+    single: "4.15",
+    single1l: "2.90",
+  });
 
   const base = `/api/meine-wg/${slug}/hafermilch`;
 
   const apply = useCallback(
     (d: Data) => {
       setData(d);
-      const p = chf(d.settings.unitCents);
-      setUnitPrice(p);
-      if (!priceTouched) setPrice(p);
+      setPrices({
+        carton: chf(d.settings.unitCents),
+        carton1l: chf(d.settings.carton1lCents),
+        single: chf(d.settings.singleCents),
+        single1l: chf(d.settings.single1lCents),
+      });
+      if (!priceTouched) setPrice(chf(defaultCents(d.settings, unit)));
     },
-    [priceTouched]
+    [priceTouched, unit]
   );
+
+  // Einheit wechseln → Standardpreis der Einheit uebernehmen.
+  function switchUnit(u: Unit) {
+    setUnit(u);
+    setPriceTouched(false);
+    if (data) setPrice(chf(defaultCents(data.settings, u)));
+  }
 
   const load = useCallback(async () => {
     const res = await fetch(base, { cache: "no-store" });
@@ -140,10 +190,11 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
     await call(base, { method: "PUT", body: JSON.stringify({ participantIds: ids }) });
   }
 
-  async function saveUnitPrice() {
-    const c = parseChf(unitPrice);
+  async function saveDefaultPrice(u: Unit) {
+    const c = parseChf(prices[u]);
     if (!c) return;
-    await call(base, { method: "PUT", body: JSON.stringify({ unitCents: c }) });
+    const key = UNITS.find((x) => x.id === u)!.priceKey;
+    await call(base, { method: "PUT", body: JSON.stringify({ [key]: c }) });
   }
 
   async function addOrder(e: React.FormEvent) {
@@ -155,13 +206,20 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
     }
     const ok = await call(`${base}/orders`, {
       method: "POST",
-      body: JSON.stringify({ date, quantity: qty, unitCents, boughtById: buyer }),
+      body: JSON.stringify({
+        date,
+        quantity: qty,
+        unit,
+        unitCents,
+        boughtById: buyer,
+      }),
     });
     if (ok) {
       setShowForm(false);
       setQty(1);
       setDate(todayIso());
       setBuyer(meId);
+      setPriceTouched(false);
     }
   }
 
@@ -249,17 +307,26 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
                   );
                 })}
               </div>
-              <div className="mt-3 flex items-center gap-2">
-                <label className="text-[11px] text-gray-400">Preis pro Karton</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={unitPrice}
-                  onChange={(e) => setUnitPrice(e.target.value)}
-                  onBlur={saveUnitPrice}
-                  className="w-20 rounded border border-gray-700 bg-black/40 px-2 py-1 text-right text-sm text-white focus:border-white focus:outline-none"
-                />
-                <span className="text-[11px] text-gray-500">CHF</span>
+              <p className="mb-1 mt-3 text-[10px] uppercase tracking-wider text-gray-500">
+                Standardpreise (pro Bestellung anpassbar)
+              </p>
+              <div className="space-y-2">
+                {UNITS.map((u) => (
+                  <div key={u.id} className="flex items-center gap-2">
+                    <label className="w-36 text-[11px] text-gray-400">{u.label}</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={prices[u.id]}
+                      onChange={(e) =>
+                        setPrices((p) => ({ ...p, [u.id]: e.target.value }))
+                      }
+                      onBlur={() => saveDefaultPrice(u.id)}
+                      className="w-20 rounded border border-gray-700 bg-black/40 px-2 py-1 text-right text-sm text-white focus:border-white focus:outline-none"
+                    />
+                    <span className="text-[11px] text-gray-500">CHF</span>
+                  </div>
+                ))}
               </div>
             </div>
           ) : null}
@@ -345,6 +412,22 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
                   <p className="font-display text-xs font-bold uppercase tracking-widest text-white">
                     Bestellung erfassen
                   </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {UNITS.map((u) => (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() => switchUnit(u.id)}
+                        className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                          unit === u.id
+                            ? "border-white bg-white text-black"
+                            : "border-gray-600 text-gray-300 hover:border-white"
+                        }`}
+                      >
+                        {u.label}
+                      </button>
+                    ))}
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="mb-1 block text-[10px] text-gray-400">Datum</label>
@@ -357,7 +440,9 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-[10px] text-gray-400">Kartons</label>
+                      <label className="mb-1 block text-[10px] text-gray-400">
+                        {UNITS.find((u) => u.id === unit)?.short ?? "Anzahl"}
+                      </label>
                       <div className="flex h-10 items-center rounded border border-gray-700 bg-black/40">
                         <button
                           type="button"
@@ -380,7 +465,7 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
                     </div>
                     <div>
                       <label className="mb-1 block text-[10px] text-gray-400">
-                        Preis pro Karton (CHF)
+                        Preis pro {unit.startsWith("carton") ? "Karton" : "Packung"} (CHF) — anpassbar
                       </label>
                       <input
                         type="text"
@@ -458,9 +543,11 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
 
               {/* Zahlen */}
               <p className="text-center font-mono text-[10px] uppercase tracking-wider text-gray-500">
-                {data.stats.cartons} Kartons · CHF {chf(data.stats.totalCents)} ·{" "}
-                {data.stats.participants} Personen · CHF {chf(data.stats.perPersonCents)}{" "}
-                pro Person
+                {UNITS.filter((u) => data.stats.counts[u.id] > 0)
+                  .map((u) => `${data.stats.counts[u.id]} × ${u.label}`)
+                  .join(" + ") || "noch nichts bestellt"}{" "}
+                · CHF {chf(data.stats.totalCents)} · {data.stats.participants} Personen ·
+                CHF {chf(data.stats.perPersonCents)} pro Person
               </p>
 
               {/* Verlauf */}
@@ -488,7 +575,7 @@ export function HafermilchClient({ slug, wgName, meId }: Props) {
                           >
                             <div className="min-w-0">
                               <p className="truncate text-sm text-white">
-                                🥛 {row.o.quantity} Karton{row.o.quantity === 1 ? "" : "s"} ·{" "}
+                                🥛 {row.o.quantity} {unitLabel(row.o.unit, row.o.quantity)} ·{" "}
                                 {name(row.o.boughtById)}
                               </p>
                               <p className="font-mono text-[10px] text-gray-500">

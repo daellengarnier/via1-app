@@ -76,6 +76,37 @@ const ENSURE_SQL = [
     CONSTRAINT "WgHafermilchPayment_pkey" PRIMARY KEY ("id"))`,
   `CREATE INDEX IF NOT EXISTS "WgHafermilchPayment_wgId_date_idx" ON "WgHafermilchPayment"("wgId", "date")`,
   fkGuard("WgHafermilchPayment", "WgHafermilchPayment_wgId_fkey", "wgId", "Wg"),
+  // 0102
+  `ALTER TABLE "WgHafermilchSettings" ADD COLUMN IF NOT EXISTS "singleCents" INTEGER NOT NULL DEFAULT 415`,
+  `ALTER TABLE "WgHafermilchSettings" ADD COLUMN IF NOT EXISTS "single1lCents" INTEGER NOT NULL DEFAULT 290`,
+  `ALTER TABLE "WgHafermilchSettings" ADD COLUMN IF NOT EXISTS "carton1lCents" INTEGER NOT NULL DEFAULT 1740`,
+  `ALTER TABLE "WgHafermilchOrder" ADD COLUMN IF NOT EXISTS "unit" TEXT NOT NULL DEFAULT 'carton'`,
+  // 0103 — einmaliger Daten-Import (idempotent, feste IDs; siehe Migration)
+  `DO $$
+  DECLARE v_daellen TEXT; v_wg TEXT; v_ids TEXT[]; v_cnt INT;
+  BEGIN
+    SELECT u.id, r."wgId" INTO v_daellen, v_wg
+      FROM users u LEFT JOIN "Room" r ON r.id = u."roomId"
+     WHERE lower(u.name) = 'dällen' AND u."passwordSet" = TRUE LIMIT 1;
+    IF v_daellen IS NULL OR v_wg IS NULL THEN RETURN; END IF;
+    SELECT array_agg(id), count(*) INTO v_ids, v_cnt FROM users
+     WHERE lower(name) IN ('dällen','nici','davina','ambar','ro') AND "passwordSet" = TRUE;
+    IF v_cnt <> 5 THEN RETURN; END IF;
+    INSERT INTO "WgHafermilchSettings" (id, "wgId", "participantIds", "unitCents", "updatedAt")
+    VALUES ('hm-seed-' || v_wg, v_wg, v_ids, 2490, NOW())
+    ON CONFLICT ("wgId") DO UPDATE SET "participantIds" = EXCLUDED."participantIds", "updatedAt" = NOW()
+      WHERE cardinality("WgHafermilchSettings"."participantIds") = 0;
+    INSERT INTO "WgHafermilchOrder"
+      (id, "wgId", "boughtById", date, unit, quantity, "unitCents", "participantIds", "createdById", "createdAt")
+    VALUES
+      ('hm-seed-daellen-2026-07-15', v_wg, v_daellen, DATE '2026-07-15', 'carton', 2, 2490, v_ids, v_daellen, NOW()),
+      ('hm-seed-daellen-2026-08-07', v_wg, v_daellen, DATE '2026-08-07', 'carton', 1, 2490, v_ids, v_daellen, NOW()),
+      ('hm-seed-daellen-2026-08-17', v_wg, v_daellen, DATE '2026-08-17', 'carton', 1, 2490, v_ids, v_daellen, NOW()),
+      ('hm-seed-daellen-2026-08-21', v_wg, v_daellen, DATE '2026-08-21', 'carton', 1, 2490, v_ids, v_daellen, NOW()),
+      ('hm-seed-daellen-2026-09-03', v_wg, v_daellen, DATE '2026-09-03', 'carton', 3, 2490, v_ids, v_daellen, NOW()),
+      ('hm-seed-daellen-2026-09-27', v_wg, v_daellen, DATE '2026-09-27', 'carton', 3, 2490, v_ids, v_daellen, NOW())
+    ON CONFLICT (id) DO NOTHING;
+  END $$`,
 ];
 
 async function main() {

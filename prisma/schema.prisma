@@ -941,6 +941,9 @@ model WgHafermilchSettings {
   wg             Wg       @relation(fields: [wgId], references: [id], onDelete: Cascade)
   participantIds String[] @default([])
   unitCents      Int      @default(2490) // Standardpreis pro Karton (6 x 1.5 l)
+  carton1lCents  Int      @default(1740) // Standardpreis pro Karton (6 x 1 l)
+  singleCents    Int      @default(415)  // Standardpreis pro einzelne Packung (1.5 l)
+  single1lCents  Int      @default(290)  // Standardpreis pro einzelne Packung (1 l)
   updatedAt      DateTime @updatedAt
 }
 
@@ -950,6 +953,9 @@ model WgHafermilchOrder {
   wg             Wg       @relation(fields: [wgId], references: [id], onDelete: Cascade)
   boughtById     String
   date           DateTime @db.Date
+  // "carton" = Karton 6 x 1.5 l, "carton1l" = Karton 6 x 1 l,
+  // "single" = Packung 1.5 l, "single1l" = Packung 1 l
+  unit           String   @default("carton")
   quantity       Int
   unitCents      Int
   // Snapshot der Mittrinkenden zum Bestellzeitpunkt

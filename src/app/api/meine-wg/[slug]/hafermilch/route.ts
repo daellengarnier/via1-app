@@ -25,12 +25,21 @@ export async function PUT(
   const body = (await req.json().catch(() => null)) as {
     participantIds?: unknown;
     unitCents?: unknown;
+    carton1lCents?: unknown;
+    singleCents?: unknown;
+    single1lCents?: unknown;
   } | null;
   if (!body) {
     return NextResponse.json({ error: "Ungueltiger Body" }, { status: 400 });
   }
 
-  const data: { participantIds?: string[]; unitCents?: number } = {};
+  const data: {
+    participantIds?: string[];
+    unitCents?: number;
+    carton1lCents?: number;
+    singleCents?: number;
+    single1lCents?: number;
+  } = {};
   if (Array.isArray(body.participantIds)) {
     const wanted = body.participantIds.filter(
       (x): x is string => typeof x === "string"
@@ -41,12 +50,16 @@ export async function PUT(
     });
     data.participantIds = members.map((m) => m.id);
   }
-  if (typeof body.unitCents === "number" && Number.isFinite(body.unitCents)) {
-    const c = Math.round(body.unitCents);
-    if (c < 1 || c > 100_000) {
-      return NextResponse.json({ error: "Preis unplausibel" }, { status: 400 });
+  const priceFields = ["unitCents", "carton1lCents", "singleCents", "single1lCents"] as const;
+  for (const f of priceFields) {
+    const v = body[f];
+    if (typeof v === "number" && Number.isFinite(v)) {
+      const c = Math.round(v);
+      if (c < 1 || c > 100_000) {
+        return NextResponse.json({ error: "Preis unplausibel" }, { status: 400 });
+      }
+      data[f] = c;
     }
-    data.unitCents = c;
   }
 
   await prisma.wgHafermilchSettings.upsert({
