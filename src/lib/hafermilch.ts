@@ -105,6 +105,13 @@ interface PaymentLike {
   amountCents: number;
 }
 
+// Mittrinkende einer Bestellung — dedupliziert, damit ein doppelt
+// gespeicherter Eintrag niemanden doppelt belastet.
+function participantsOf(o: OrderLike): string[] {
+  const raw = o.participantIds.length > 0 ? o.participantIds : [o.boughtById];
+  return Array.from(new Set(raw));
+}
+
 // Saldo pro Person: > 0 bekommt Geld, < 0 schuldet Geld.
 export function computeBalances(
   orders: OrderLike[],
@@ -114,7 +121,7 @@ export function computeBalances(
   const add = (id: string, c: number) => bal.set(id, (bal.get(id) ?? 0) + c);
   for (const o of orders) {
     const cost = o.quantity * o.unitCents;
-    const parts = o.participantIds.length > 0 ? o.participantIds : [o.boughtById];
+    const parts = participantsOf(o);
     const share = Math.floor(cost / parts.length);
     const rest = cost - share * parts.length;
     add(o.boughtById, cost);
@@ -146,7 +153,7 @@ export function settle(orders: OrderLike[], payments: PaymentLike[]): Settlement
   };
   for (const o of orders) {
     const cost = o.quantity * o.unitCents;
-    const parts = o.participantIds.length > 0 ? o.participantIds : [o.boughtById];
+    const parts = participantsOf(o);
     const share = Math.floor(cost / parts.length);
     for (const p of parts) add(p, o.boughtById, share);
   }
