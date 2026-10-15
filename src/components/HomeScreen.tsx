@@ -610,7 +610,7 @@ export default function HomeScreen() {
           }`}
           style={{ ["--tile-glow-rgb" as string]: "184, 240, 104" }}
           onClick={() =>
-            router.push(nextTermin ? `/termine/${nextTermin.id}` : "/termine")
+            router.push("/termine")
           }
         >
           <p className="font-display text-[9px] font-bold uppercase tracking-widest text-accent">
