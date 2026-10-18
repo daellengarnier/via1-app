@@ -1,7 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireWgAccess } from "@/lib/wg-access";
+import { requireWgAccess, getWgMemberUserIds } from "@/lib/wg-access";
 import { USER_AVATAR_SELECT, withAvatarUrl } from "@/lib/avatar";
+import { notify } from "@/lib/notify";
+
+// Dauer, wie lange ein frisch gepinntes Protokoll auf der WG-Pinnwand
+// sichtbar bleibt (Standard-Wunsch: 7 Tage).
+const PROTOKOLL_PIN_DAYS = 7;
+
+function formatPinDate(d: Date): string {
+  return d.toLocaleDateString("de-CH", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
+}
 
 interface PatchBody {
   title?: string;
@@ -103,11 +116,68 @@ export async function PATCH(
   if (body.description !== undefined) {
     data.description = body.description?.trim() || null;
   }
-  if (body.protokoll !== undefined) {
-    data.protokoll = body.protokoll?.trim() || null;
+  const newProtokoll =
+    body.protokoll !== undefined ? body.protokoll?.trim() || null : undefined;
+  if (newProtokoll !== undefined) {
+    data.protokoll = newProtokoll;
   }
 
   await prisma.wgTermin.update({ where: { id: t.id }, data });
+
+  // Standardmaessig: wenn das Protokoll erstmals eingegeben (oder nach dem
+  // Loeschen neu befuellt) wird, als Pinnwand-Note der WG anheften — 7 Tage
+  // sichtbar. Idempotent via unique(wgTerminId): mehrfaches Speichern des
+  // Protokolls erzeugt KEINE zusaetzlichen Notes, aber beim ersten
+  // Nicht-Leer-Werden entsteht genau ein Post.
+  const wasEmpty = !t.protokoll || t.protokoll.trim() === "";
+  const nowHasContent = typeof newProtokoll === "string" && newProtokoll.length > 0;
+  if (newProtokoll !== undefined && wasEmpty && nowHasContent) {
+    const expiresAt = new Date(
+      Date.now() + PROTOKOLL_PIN_DAYS * 24 * 60 * 60 * 1000
+    );
+    const linkUrl = `/meine-wg/${params.slug}/termine/${t.id}`;
+    const dateStr = formatPinDate(t.date);
+    const snippet = newProtokoll.slice(0, 180);
+    const text = `📋 Protokoll „${t.title}" vom ${dateStr}\n\n${snippet}${
+      newProtokoll.length > snippet.length ? " …" : ""
+    }`.slice(0, 500);
+
+    try {
+      await prisma.wgPinnwandNote.upsert({
+        where: { wgTerminId: t.id },
+        create: {
+          wgId: t.wgId,
+          text,
+          color: "yellow",
+          authorId: access.user.id,
+          linkUrl,
+          expiresAt,
+          wgTerminId: t.id,
+        },
+        update: {
+          text,
+          linkUrl,
+          expiresAt,
+          updatedAt: new Date(),
+        },
+      });
+
+      const memberIds = await getWgMemberUserIds(t.wgId);
+      if (memberIds.length > 0) {
+        await notify({
+          kind: "WG_PINNWAND_NEW",
+          title: `📋 ${access.wg.name}: Sitzungsprotokoll ist da`,
+          body: `${t.title} vom ${dateStr}`,
+          link: `/meine-wg/${params.slug}/pinnwand`,
+          audience: memberIds,
+          excludeUserId: access.user.id,
+        });
+      }
+    } catch (err) {
+      console.error("auto-pin protokoll failed", err);
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
 

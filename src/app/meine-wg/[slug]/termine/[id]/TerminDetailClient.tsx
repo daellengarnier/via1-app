@@ -248,6 +248,7 @@ export function TerminDetailClient({ slug, wgName, terminId, meId }: Props) {
           slug={slug}
           terminId={terminId}
           initial={termin.protokoll ?? ""}
+          termin={termin}
           editing={editProto}
           onEdit={() => setEditProto(true)}
           onSaved={() => {
@@ -402,6 +403,7 @@ function ProtokollEditor({
   slug,
   terminId,
   initial,
+  termin,
   editing,
   onEdit,
   onSaved,
@@ -410,6 +412,7 @@ function ProtokollEditor({
   slug: string;
   terminId: string;
   initial: string;
+  termin: Termin;
   editing: boolean;
   onEdit: () => void;
   onSaved: () => void;
@@ -432,6 +435,56 @@ function ProtokollEditor({
     }
   }
 
+  function sendByMail() {
+    const dateStr = new Date(termin.date).toLocaleDateString("de-CH", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const subject = `Protokoll ${termin.title} (${dateStr})`;
+
+    const lines: string[] = [];
+    lines.push(`Protokoll der Sitzung „${termin.title}"`);
+    lines.push(`Datum: ${dateStr}`);
+    if (termin.location) lines.push(`Ort: ${termin.location}`);
+    lines.push("");
+
+    if (termin.traktanden.length > 0) {
+      lines.push("Traktanden:");
+      termin.traktanden
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .forEach((tr, i) => {
+          lines.push(`${i + 1}. ${tr.title}`);
+          if (tr.notes && tr.notes.trim()) {
+            tr.notes
+              .trim()
+              .split("\n")
+              .forEach((l) => lines.push(`   ${l}`));
+          }
+        });
+      lines.push("");
+    }
+
+    if (initial && initial.trim()) {
+      lines.push("Protokoll:");
+      lines.push(initial.trim());
+    }
+
+    const body = lines.join("\n");
+    // mailto hat Laengenlimits (praktisch ~2000 Zeichen) — bei zu langem
+    // Body kuerzen wir und verweisen auf die App.
+    const MAX = 1800;
+    let finalBody = body;
+    if (finalBody.length > MAX) {
+      finalBody =
+        finalBody.slice(0, MAX) +
+        `\n\n[gekuerzt — vollstaendiges Protokoll in der App: /meine-wg/${slug}/termine/${terminId}]`;
+    }
+    const href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`;
+    window.location.href = href;
+  }
+
   if (!editing) {
     return (
       <div>
@@ -442,12 +495,28 @@ function ProtokollEditor({
         ) : (
           <p className="text-xs italic text-gray-600">noch leer</p>
         )}
-        <button
-          onClick={onEdit}
-          className="mt-2 rounded border border-gray-700 px-2 py-1 font-mono text-[10px] uppercase text-gray-400 hover:border-white/50 hover:text-white"
-        >
-          ✎ Bearbeiten
-        </button>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button
+            onClick={onEdit}
+            className="rounded border border-gray-700 px-2 py-1 font-mono text-[10px] uppercase text-gray-400 hover:border-white/50 hover:text-white"
+          >
+            ✎ Bearbeiten
+          </button>
+          {initial && (
+            <button
+              onClick={sendByMail}
+              className="rounded border border-gray-700 px-2 py-1 font-mono text-[10px] uppercase text-gray-400 hover:border-white/50 hover:text-white"
+            >
+              ✉ Per Mail senden
+            </button>
+          )}
+        </div>
+        {initial && (
+          <p className="mt-2 text-[10px] text-gray-600">
+            Beim Speichern wird das Protokoll automatisch für 7 Tage an die
+            WG-Pinnwand gehängt.
+          </p>
+        )}
       </div>
     );
   }

@@ -104,7 +104,10 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     }),
     prisma.wgPinnwandNote.findMany({
-      where: { wgId: access.wg.id },
+      where: {
+        wgId: access.wg.id,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
       include: {
         author: { select: USER_AVATAR_SELECT },
         comments: { select: { id: true } },

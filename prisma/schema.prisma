@@ -1138,19 +1138,23 @@ model WgDoodleVote {
 }
 
 model WgPinnwandNote {
-  id        String              @id @default(cuid())
-  wgId      String
-  wg        Wg                  @relation(fields: [wgId], references: [id], onDelete: Cascade)
-  text      String
-  color     String              @default("yellow")
-  authorId  String
-  author    User                @relation("WgPinnwandAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  comments  WgPinnwandComment[]
-  reactions WgPinnwandReaction[]
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  id          String              @id @default(cuid())
+  wgId        String
+  wg          Wg                  @relation(fields: [wgId], references: [id], onDelete: Cascade)
+  text        String
+  color       String              @default("yellow")
+  linkUrl     String?
+  expiresAt   DateTime?
+  wgTerminId  String?             @unique
+  authorId    String
+  author      User                @relation("WgPinnwandAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  comments    WgPinnwandComment[]
+  reactions   WgPinnwandReaction[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 
   @@index([wgId, createdAt])
+  @@index([expiresAt])
 }
 
 // Emoji-Reactions auf WG-Pinnwand-Posts (analog zu PinnwandReaction).

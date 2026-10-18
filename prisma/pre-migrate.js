@@ -139,6 +139,12 @@ const ENSURE_SQL = [
     UPDATE "WgHafermilchSettings" SET "stockCount" = 3, "stockAt" = DATE '2026-09-27', "updatedAt" = NOW()
      WHERE "wgId" = v_wg AND "stockAt" IS NULL;
   END $$`,
+  // 0106 — WgPinnwandNote: Link / Ablaufdatum / Protokoll-Verknuepfung
+  `ALTER TABLE "WgPinnwandNote" ADD COLUMN IF NOT EXISTS "linkUrl" TEXT`,
+  `ALTER TABLE "WgPinnwandNote" ADD COLUMN IF NOT EXISTS "expiresAt" TIMESTAMP(3)`,
+  `ALTER TABLE "WgPinnwandNote" ADD COLUMN IF NOT EXISTS "wgTerminId" TEXT`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "WgPinnwandNote_wgTerminId_key" ON "WgPinnwandNote"("wgTerminId")`,
+  `CREATE INDEX IF NOT EXISTS "WgPinnwandNote_expiresAt_idx" ON "WgPinnwandNote"("expiresAt")`,
 ];
 
 async function main() {

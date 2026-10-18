@@ -30,6 +30,9 @@ interface Note {
   id: string;
   text: string;
   color: string;
+  linkUrl?: string | null;
+  expiresAt?: string | null;
+  wgTerminId?: string | null;
   author: Person;
   createdAt: string;
   comments: Comment[];
@@ -206,6 +209,16 @@ function NoteCard({
       >
         {note.text}
       </p>
+      {note.linkUrl && (
+        <div className="relative mt-2" onClick={(e) => e.stopPropagation()}>
+          <a
+            href={note.linkUrl}
+            className="inline-flex items-center gap-1 rounded border border-white/30 bg-white/10 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/20"
+          >
+            → Öffnen
+          </a>
+        </div>
+      )}
       <div
         className="relative mt-2"
         onClick={(e) => e.stopPropagation()}

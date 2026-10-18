@@ -19,8 +19,12 @@ export async function GET(
   const access = await requireWgAccess(params.slug);
   if (!access.ok) return access.response;
 
+  const now = new Date();
   const notes = await prisma.wgPinnwandNote.findMany({
-    where: { wgId: access.wg.id },
+    where: {
+      wgId: access.wg.id,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+    },
     include: {
       author: { select: USER_AVATAR_SELECT },
       comments: {
@@ -39,6 +43,9 @@ export async function GET(
       id: n.id,
       text: n.text,
       color: n.color,
+      linkUrl: n.linkUrl ?? null,
+      expiresAt: n.expiresAt ? n.expiresAt.toISOString() : null,
+      wgTerminId: n.wgTerminId ?? null,
       author: withAvatarUrl(n.author),
       createdAt: n.createdAt.toISOString(),
       comments: n.comments.map((c) => ({
