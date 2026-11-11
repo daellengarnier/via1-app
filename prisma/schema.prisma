@@ -1389,7 +1389,10 @@ model FeedbackComment {
 model SaunaReading {
   id          Int      @id @default(autoincrement())
   tempTopC    Decimal  @db.Decimal(5, 2)
+  // Zweiter Fuehler (unten): seit 11.2026 unbenutzt. Spalte bleibt wegen der alten Messwerte.
   tempBottomC Decimal? @db.Decimal(5, 2)
+  // Relative Luftfeuchte in Prozent. Null = Fuehler ohne Feuchte (alter ESP32) oder kein Wert.
+  humidityPct Decimal? @db.Decimal(5, 2)
   rssi        Int?
   recordedAt  DateTime @default(now())
 

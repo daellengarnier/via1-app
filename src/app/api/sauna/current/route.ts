@@ -11,6 +11,7 @@ export async function GET() {
   if (!latest) {
     return NextResponse.json({
       tempTopC: null,
+      humidityPct: null,
       tempBottomC: null,
       rssi: null,
       ageSeconds: null,
@@ -24,7 +25,11 @@ export async function GET() {
 
   return NextResponse.json({
     tempTopC: Number(latest.tempTopC),
-    tempBottomC: latest.tempBottomC !== null ? Number(latest.tempBottomC) : null,
+    humidityPct: latest.humidityPct !== null ? Number(latest.humidityPct) : null,
+    // Immer null, nur noch fuer offene alte Browser-Tabs: Deren Code ruft
+    // `tempBottomC.toFixed()` auf, sobald das Feld FEHLT (undefined !== null) und stuerzt ab.
+    // Kann raus, sobald niemand mehr die Fassung vor 11.2026 offen hat.
+    tempBottomC: null,
     rssi: latest.rssi,
     ageSeconds,
     recordedAt: latest.recordedAt.toISOString(),
