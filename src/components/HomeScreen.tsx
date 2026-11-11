@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { TabHeader } from "./TabHeader";
 import { LaundryTimers } from "./LaundryTimers";
-import { SaunaSparkline } from "./SaunaChart";
 import { ReactionBar } from "./ReactionBar";
 import {
   DroneOverlay,
@@ -127,7 +126,6 @@ export default function HomeScreen() {
       )
     : null;
   const [saunaTemp, setSaunaTemp] = useState<number | null>(null);
-  const [saunaHumidity, setSaunaHumidity] = useState<number | null>(null);
   const [saunaLive, setSaunaLive] = useState(false);
   const [saunaAgeSec, setSaunaAgeSec] = useState<number | null>(null);
   const [saunaHeating, setSaunaHeating] = useState<
@@ -318,8 +316,8 @@ export default function HomeScreen() {
     loadPinnwand();
   }, [loadPinnwand]);
 
-  // Sauna: Temperatur + Feuchte vom Fuehler in der Sauna (Tuya, kommt via Home Assistant
-  // jede Minute herein). Frisch = < 2 Min alt.
+  // Sauna: Temperatur vom Fuehler in der Sauna (Tuya, kommt via Home Assistant jede
+  // Minute herein). Frisch = < 2 Min alt. Die Feuchte zeigt nur die Sauna-Seite.
   useEffect(() => {
     let cancelled = false;
     async function fetchSauna() {
@@ -328,23 +326,16 @@ export default function HomeScreen() {
         if (!res.ok) throw new Error(String(res.status));
         const data: {
           tempTopC: number | null;
-          humidityPct?: number | null;
           ageSeconds: number | null;
         } = await res.json();
         if (cancelled) return;
         if (data.tempTopC === null || data.ageSeconds === null) {
           setSaunaTemp(null);
-          setSaunaHumidity(null);
           setSaunaLive(false);
           setSaunaAgeSec(null);
           return;
         }
         setSaunaTemp(Math.round(data.tempTopC * 10) / 10);
-        setSaunaHumidity(
-          typeof data.humidityPct === "number"
-            ? Math.round(data.humidityPct)
-            : null
-        );
         setSaunaAgeSec(data.ageSeconds);
         setSaunaLive(data.ageSeconds < 120);
       } catch {
@@ -772,17 +763,20 @@ export default function HomeScreen() {
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-red-400">
             SAUNA
           </p>
-          <p className="mt-1 font-mono text-2xl font-bold text-white">
-            {saunaTemp ?? "–"}°C
-            {/* Feuchte klein daneben, nur wenn es einen Wert gibt. Kein "– %": Der alte
-                Fuehler hatte keine Feuchte, und ein Strich saehe nach Defekt aus. */}
-            {saunaHumidity !== null && (
-              <span className="ml-2 text-sm font-normal text-sky-300">
-                {saunaHumidity} %
-              </span>
-            )}
+          {/* Die Kachel hat denselben Aufbau wie AUFGABEN und PUTZEN daneben: Titel, eine
+              grosse Zeile, eine kleine Zeile. Mehr nicht.
+              Vorher standen hier zusaetzlich die Feuchte und eine kleine Kurve. Damit war
+              die Sauna-Kachel hoeher als ihre Nachbarn, und "77.7°C 0 %" brach in der
+              schmalen Drittel-Kachel um. Feuchte und Kurve stehen jetzt nur noch eine
+              Ebene dahinter, auf der Sauna-Seite (ein Tipp auf die Kachel).
+              Ganze Grad statt Zehntel: "77.7°C" ist auf einem schmalen Telefon breiter
+              als die Kachel. Den genauen Wert zeigt die Sauna-Seite. */}
+          <p className="mt-1 whitespace-nowrap font-mono text-2xl font-bold text-white">
+            {saunaTemp === null ? "–" : Math.round(saunaTemp)}°C
           </p>
-          <p className="mt-1 text-[10px] text-gray-500">
+          {/* truncate: "🔥 <langer Name> heizt ein" darf nicht auf zwei Zeilen laufen,
+              sonst waechst die Kachel wieder ueber die Nachbarn hinaus. */}
+          <p className="mt-1 truncate text-[10px] text-gray-500">
             {saunaHeating
               ? `🔥 ${saunaHeating.startedByName} heizt ein`
               : saunaTemp === null
@@ -795,7 +789,6 @@ export default function HomeScreen() {
                       : "kalt"
                   : `vor ${Math.round((saunaAgeSec ?? 0) / 60)} Min`}
           </p>
-          <SaunaSparkline />
         </div>
   );
 
