@@ -108,7 +108,7 @@ const saunaSections = [
 
 interface SaunaReading {
   tempTopC: number | null;
-  tempBottomC: number | null;
+  humidityPct: number | null;
   ageSeconds: number | null;
 }
 
@@ -122,7 +122,7 @@ export default function SaunaPage() {
   const [showReglement, setShowReglement] = useState(false);
   const [reading, setReading] = useState<SaunaReading>({
     tempTopC: null,
-    tempBottomC: null,
+    humidityPct: null,
     ageSeconds: null,
   });
   const [heating, setHeating] = useState<HeatingState | null>(null);
@@ -174,7 +174,9 @@ export default function SaunaPage() {
 
   const isHeating = heating !== null;
   const tempTop = reading.tempTopC;
-  const tempBottom = reading.tempBottomC;
+  // `?? null`: Waehrend eines Deploys kann kurz noch die alte API antworten, die das Feld
+  // nicht kennt. undefined wuerde unten bei toFixed() abstuerzen.
+  const humidity = reading.humidityPct ?? null;
   const sensorLive = reading.ageSeconds !== null && reading.ageSeconds < 120;
   const ageMin = reading.ageSeconds !== null ? Math.round(reading.ageSeconds / 60) : null;
 
@@ -215,7 +217,7 @@ export default function SaunaPage() {
           className="wg-glow-border flex flex-col items-center rounded-lg border border-gray-800 bg-white/10 p-4"
         >
           <p className="font-display text-[10px] font-bold uppercase tracking-widest text-red-400">
-            OBEN
+            TEMPERATUR
           </p>
           <p className="mt-1 font-mono text-3xl font-bold text-red-400">
             {tempTop !== null ? `${tempTop.toFixed(1)}°C` : "–"}
@@ -229,16 +231,22 @@ export default function SaunaPage() {
           </p>
         </div>
 
-        {/* Temperatur unten */}
-        <div className="flex flex-col items-center rounded-lg border border-gray-800 bg-white/10 p-4 opacity-60">
-          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500">
-            UNTEN
+        {/* Luftfeuchte – derselbe Fuehler wie die Temperatur, darum auch derselbe
+            "live / vor x Min."-Zustand. Frueher stand hier ein zweiter Temperaturfuehler
+            "UNTEN", den es nie gab: Die Kachel zeigte dauerhaft "nicht verfuegbar". */}
+        <div className="flex flex-col items-center rounded-lg border border-gray-800 bg-white/10 p-4">
+          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-sky-300">
+            FEUCHTE
           </p>
-          <p className="mt-1 font-mono text-3xl font-bold text-gray-600">
-            {tempBottom !== null ? `${tempBottom.toFixed(1)}°C` : "–"}
+          <p className="mt-1 font-mono text-3xl font-bold text-sky-300">
+            {humidity !== null ? `${Math.round(humidity)} %` : "–"}
           </p>
-          <p className="mt-1 text-[10px] text-gray-600">
-            {tempBottom !== null ? "live" : "nicht verfügbar"}
+          <p className="mt-1 text-[10px] text-gray-500">
+            {humidity === null
+              ? "kein Wert"
+              : sensorLive
+                ? "live"
+                : `vor ${ageMin} Min.`}
           </p>
         </div>
       </div>

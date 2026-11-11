@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 interface Point {
   t: string;
   top: number | null;
-  bottom: number | null;
+  // Relative Luftfeuchte in %. Fehlt bei alten Messwerten (ESP32 ohne Feuchte).
+  humidity?: number | null;
 }
 
 interface Props {
@@ -79,9 +80,12 @@ export function SaunaChart({ hours = 2, className = "" }: Props) {
     );
   }
 
-  // Y-Achse: dynamisch zwischen 0..max(top|bottom) mit ein bisschen padding
+  // Y-Achse (links, °C): dynamisch zwischen 0..max(Temperatur) mit ein bisschen padding.
+  // Die Feuchte zaehlt hier bewusst NICHT mit: Sie hat eine eigene, feste Skala 0..100 %
+  // (rechts). Prozent und Grad auf derselben Achse wuerden so aussehen, als waeren
+  // "40" Grad und "40" Prozent dasselbe.
   const allVals = points
-    .flatMap((p) => [p.top, p.bottom])
+    .map((p) => p.top)
     .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
   const maxV = Math.max(100, Math.ceil(Math.max(...allVals, 25) / 10) * 10 + 5);
   const minV = Math.min(0, Math.floor(Math.min(...allVals, 15) / 10) * 10);
@@ -105,24 +109,25 @@ export function SaunaChart({ hours = 2, className = "" }: Props) {
       typeof p.top === "number" ? { x: xFor(i), y: yFor(p.top) } : null
     )
     .filter((p): p is { x: number; y: number } => p !== null);
-  const bottomPts = points
+  // Feuchte: feste Skala 0 % (unten) bis 100 % (oben) ueber die ganze Hoehe.
+  const yForHum = (v: number) =>
+    PAD_T + innerH - (Math.min(100, Math.max(0, v)) / 100) * innerH;
+  const humPts = points
     .map((p, i) =>
-      typeof p.bottom === "number" ? { x: xFor(i), y: yFor(p.bottom) } : null
+      typeof p.humidity === "number"
+        ? { x: xFor(i), y: yForHum(p.humidity) }
+        : null
     )
     .filter((p): p is { x: number; y: number } => p !== null);
 
   const topPath = smoothPath(topPts);
-  const bottomPath = smoothPath(bottomPts);
+  const humPath = smoothPath(humPts);
 
   // Area unter der Kurve (zur baseline = Y-Achse von minV)
   const baseY = yFor(minV);
   const topArea =
     topPts.length >= 2
       ? `${topPath} L${topPts[topPts.length - 1]!.x},${baseY} L${topPts[0]!.x},${baseY} Z`
-      : "";
-  const bottomArea =
-    bottomPts.length >= 2
-      ? `${bottomPath} L${bottomPts[bottomPts.length - 1]!.x},${baseY} L${bottomPts[0]!.x},${baseY} Z`
       : "";
 
   // Zeit-Labels (Start / Mitte / Ende)
@@ -142,11 +147,11 @@ export function SaunaChart({ hours = 2, className = "" }: Props) {
       .slice()
       .reverse()
       .find((p) => typeof p.top === "number")?.top ?? null;
-  const lastBottom =
+  const lastHum =
     points
       .slice()
       .reverse()
-      .find((p) => typeof p.bottom === "number")?.bottom ?? null;
+      .find((p) => typeof p.humidity === "number")?.humidity ?? null;
 
   return (
     <div className={`rounded-xl border border-gray-800 bg-white/5 p-3 ${className}`}>
@@ -154,12 +159,16 @@ export function SaunaChart({ hours = 2, className = "" }: Props) {
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1 text-red-400">
             <span className="inline-block h-2 w-2 rounded-full bg-red-400" />
-            OBEN {lastTop !== null && `${lastTop.toFixed(1)}°`}
+            TEMP {lastTop !== null && `${lastTop.toFixed(1)}°`}
           </span>
-          <span className="flex items-center gap-1 text-orange-300">
-            <span className="inline-block h-2 w-2 rounded-full bg-orange-300" />
-            UNTEN {lastBottom !== null ? `${lastBottom.toFixed(1)}°` : "–"}
-          </span>
+          {/* Legende nur zeigen, wenn es im Zeitraum ueberhaupt Feuchtewerte gibt.
+              Sonst stuende "FEUCHTE –" ueber einer Kurve, die es nicht gibt. */}
+          {lastHum !== null && (
+            <span className="flex items-center gap-1 text-sky-300">
+              <span className="inline-block h-2 w-2 rounded-full bg-sky-300" />
+              FEUCHTE {Math.round(lastHum)} %
+            </span>
+          )}
         </div>
         <span className="text-gray-500">{hours}h Verlauf</span>
       </div>
@@ -173,10 +182,6 @@ export function SaunaChart({ hours = 2, className = "" }: Props) {
           <linearGradient id="grad-top" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="rgb(248,113,113)" stopOpacity="0.55" />
             <stop offset="100%" stopColor="rgb(248,113,113)" stopOpacity="0.05" />
-          </linearGradient>
-          <linearGradient id="grad-bottom" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgb(253,186,116)" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="rgb(253,186,116)" stopOpacity="0.05" />
           </linearGradient>
         </defs>
 
@@ -204,17 +209,34 @@ export function SaunaChart({ hours = 2, className = "" }: Props) {
           </g>
         ))}
 
-        {/* Bottom area + line zuerst (damit sie hinter Top liegt) */}
-        {bottomArea && <path d={bottomArea} fill="url(#grad-bottom)" />}
-        {bottomPath && (
-          <path
-            d={bottomPath}
-            fill="none"
-            stroke="rgb(253,186,116)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+        {/* Feuchte zuerst (liegt hinter der Temperatur): duenne gestrichelte Linie ohne
+            Flaeche, damit man sie nicht fuer eine zweite Temperatur haelt. Rechts ihre
+            eigene Skala in Prozent. */}
+        {humPath && (
+          <>
+            <path
+              d={humPath}
+              fill="none"
+              stroke="rgb(125,211,252)"
+              strokeWidth="1.4"
+              strokeDasharray="4 3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {[0, 50, 100].map((v) => (
+              <text
+                key={`h${v}`}
+                x={W - PAD_R + 3}
+                y={yForHum(v) + 3}
+                textAnchor="start"
+                fontSize="7"
+                fill="rgb(125,211,252)"
+                fillOpacity="0.7"
+              >
+                {v}
+              </text>
+            ))}
+          </>
         )}
 
         {/* Top area + line */}
@@ -254,7 +276,7 @@ export function SaunaChart({ hours = 2, className = "" }: Props) {
   );
 }
 
-// Kompakte Sparkline fuer die Homescreen-Kachel — nur OBEN-Linie
+// Kompakte Sparkline fuer die Homescreen-Kachel — nur die Temperatur
 export function SaunaSparkline() {
   const [points, setPoints] = useState<Point[] | null>(null);
 

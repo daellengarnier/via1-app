@@ -127,6 +127,7 @@ export default function HomeScreen() {
       )
     : null;
   const [saunaTemp, setSaunaTemp] = useState<number | null>(null);
+  const [saunaHumidity, setSaunaHumidity] = useState<number | null>(null);
   const [saunaLive, setSaunaLive] = useState(false);
   const [saunaAgeSec, setSaunaAgeSec] = useState<number | null>(null);
   const [saunaHeating, setSaunaHeating] = useState<
@@ -317,23 +318,33 @@ export default function HomeScreen() {
     loadPinnwand();
   }, [loadPinnwand]);
 
-  // Sauna-Temperatur: echter Sensor (ESP32 + DS18B20). Frisch = < 2 Min alt.
+  // Sauna: Temperatur + Feuchte vom Fuehler in der Sauna (Tuya, kommt via Home Assistant
+  // jede Minute herein). Frisch = < 2 Min alt.
   useEffect(() => {
     let cancelled = false;
     async function fetchSauna() {
       try {
         const res = await fetch("/api/sauna/current", { cache: "no-store" });
         if (!res.ok) throw new Error(String(res.status));
-        const data: { tempTopC: number | null; ageSeconds: number | null } =
-          await res.json();
+        const data: {
+          tempTopC: number | null;
+          humidityPct?: number | null;
+          ageSeconds: number | null;
+        } = await res.json();
         if (cancelled) return;
         if (data.tempTopC === null || data.ageSeconds === null) {
           setSaunaTemp(null);
+          setSaunaHumidity(null);
           setSaunaLive(false);
           setSaunaAgeSec(null);
           return;
         }
         setSaunaTemp(Math.round(data.tempTopC * 10) / 10);
+        setSaunaHumidity(
+          typeof data.humidityPct === "number"
+            ? Math.round(data.humidityPct)
+            : null
+        );
         setSaunaAgeSec(data.ageSeconds);
         setSaunaLive(data.ageSeconds < 120);
       } catch {
@@ -763,6 +774,13 @@ export default function HomeScreen() {
           </p>
           <p className="mt-1 font-mono text-2xl font-bold text-white">
             {saunaTemp ?? "–"}°C
+            {/* Feuchte klein daneben, nur wenn es einen Wert gibt. Kein "– %": Der alte
+                Fuehler hatte keine Feuchte, und ein Strich saehe nach Defekt aus. */}
+            {saunaHumidity !== null && (
+              <span className="ml-2 text-sm font-normal text-sky-300">
+                {saunaHumidity} %
+              </span>
+            )}
           </p>
           <p className="mt-1 text-[10px] text-gray-500">
             {saunaHeating

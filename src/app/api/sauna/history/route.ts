@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 interface BucketRow {
   bucket: Date;
   top: number | null;
-  bottom: number | null;
+  humidity: number | null;
 }
 
 export async function GET(req: NextRequest) {
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     SELECT
       to_timestamp(floor(extract(epoch FROM "recordedAt") / $1) * $1) AS bucket,
       AVG("tempTopC")::float8 AS top,
-      AVG("tempBottomC")::float8 AS bottom
+      AVG("humidityPct")::float8 AS humidity
     FROM sauna_readings
     WHERE "recordedAt" > NOW() - ($2 || ' hours')::interval
     GROUP BY bucket
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     points: rows.map((r) => ({
       t: r.bucket.toISOString(),
       top: r.top,
-      bottom: r.bottom,
+      humidity: r.humidity,
     })),
   });
 }

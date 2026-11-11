@@ -30,26 +30,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
-  // ESP sendet aktuell `tempC` (single sensor), spaeter `tempTopC` + `tempBottomC`.
+  // Ein Fuehler, eine Temperatur. Sender schicken `tempC` (Home-Assistant-Bote, alter ESP32);
+  // `tempTopC` wird aus Gewohnheit weiter angenommen. Einen zweiten Fuehler "unten" gibt es
+  // nicht mehr (Entscheid Yves 11.11.2026) – dafuer die Luftfeuchte.
   const tempTopC = asNum(body.tempTopC) ?? asNum(body.tempC);
-  const tempBottomC = asNum(body.tempBottomC);
 
   if (tempTopC === null || tempTopC < -55 || tempTopC > 150) {
     return NextResponse.json({ error: "tempTopC out of range" }, { status: 400 });
   }
-  if (tempBottomC !== null && (tempBottomC < -55 || tempBottomC > 150)) {
-    return NextResponse.json(
-      { error: "tempBottomC out of range" },
-      { status: 400 }
-    );
-  }
+
+  // Feuchte ist Beigabe, nicht Pflicht: Ein unsinniger Feuchtewert (Fuehler spinnt, Feld fehlt)
+  // darf die gueltige Temperatur NICHT mitreissen. Darum wird er verworfen statt mit 400
+  // abgelehnt – sonst stuende die Sauna in der App als "offline" da, obwohl sie misst.
+  const humidityRaw = asNum(body.humidityPct) ?? asNum(body.humidity);
+  const humidityPct =
+    humidityRaw !== null && humidityRaw >= 0 && humidityRaw <= 100
+      ? humidityRaw
+      : null;
 
   const rssi = asNum(body.rssi);
 
   const reading = await prisma.saunaReading.create({
     data: {
       tempTopC,
-      tempBottomC: tempBottomC ?? undefined,
+      humidityPct: humidityPct ?? undefined,
       rssi: rssi !== null ? Math.round(rssi) : undefined,
     },
   });
